@@ -414,7 +414,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
       <div style={{ padding: collapsed ? "20px 0" : "22px 20px", display:"flex",
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
         borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-        {!collapsed && <Logo size={26} light={true}/>}
+        {!collapsed && <Logo size={26}/>}
         <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
           cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
           {collapsed ? "→" : "←"}
@@ -1722,7 +1722,7 @@ function Engagement() {
 
 // ─── CALENDAR ────────────────────────────────────────────────────────────────
 // ─── CALENDLY CONFIG — change this one line to your Calendly URL ──────────────
-const CALENDLY_URL = "https://calendly.com/agrgarima";
+const CALENDLY_URL = "https://calendly.com/agrgarima?embed_domain=finzzup&embed_type=Inline";
 
 // Floating "Book a Call" button shown on every portal page
 const FloatingCalendly = () => {
@@ -1859,7 +1859,7 @@ function MyDocs({ client }) {
       setUploading(false); e.target.value=""; return;
     }
     const { data: urlData } = supabase.storage.from("client-docs").getPublicUrl(path);
-    const { data: row } = await supabase.from("client_uploads").insert({
+    const { data: row, error: dbErr } = await supabase.from("client_uploads").insert({
       client_id:   client.id,
       name:        file.name,
       category,
@@ -1867,6 +1867,10 @@ function MyDocs({ client }) {
       file_size:   (file.size/1024/1024).toFixed(2) + " MB",
       uploaded_by: client.name,
     }).select().single();
+    if (dbErr) {
+      alert("File uploaded to storage but failed to save record: " + dbErr.message + "\n\nMake sure the client_uploads table exists in Supabase.");
+      setUploading(false); e.target.value=""; return;
+    }
     if (row) setMyDocs(prev => [row, ...prev]);
     setUploading(false); e.target.value="";
   };
@@ -2132,6 +2136,7 @@ function AdminPanel({ admin, onLogout }) {
   const [engagement, setEngagement] = useState({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
   const [docs, setDocs]           = useState([]);
   const [docLoading, setDocLoading] = useState(false);
+  const [clientUploads, setClientUploads] = useState([]);
 
   useEffect(() => { fetchClients(); }, []);
 
@@ -2160,6 +2165,10 @@ function AdminPanel({ admin, onLogout }) {
     const { data: docData } = await supabase.from("documents")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setDocs(docData || []);
+    // Load client submissions
+    const { data: cuData } = await supabase.from("client_uploads")
+      .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
+    setClientUploads(cuData || []);
   };
 
   const saveKPIs = async () => {
@@ -2356,7 +2365,7 @@ function AdminPanel({ admin, onLogout }) {
                 {clients.map(c => (
                   <Card key={c.id} style={{ padding:"16px 20px", cursor:"pointer",
                     borderLeft: selected?.id===c.id ? `3px solid ${C.amber}` : `3px solid transparent` }}
-                    onClick={() => { selectClient(c); setTab("kpis"); }}>
+                    onClick={() => { selectClient(c); setTab("documents"); }}>
                     <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
                       <div>
                         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>{c.name}</div>
@@ -2731,6 +2740,42 @@ function AdminPanel({ admin, onLogout }) {
                           }} style={{ padding:"7px 12px", borderRadius:8, border:`1px solid ${C.border}`,
                             background:"none", color:C.red, cursor:"pointer", fontSize:13 }}>🗑</button>
                         </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* Client Submissions */}
+                <Card style={{ marginTop:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    📥 Client Submissions ({clientUploads.length})
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>
+                    Documents uploaded by {selected.name} from their portal
+                  </p>
+                  {clientUploads.length === 0 && (
+                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No submissions from client yet.</p>
+                  )}
+                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                    {clientUploads.map((d,i) => (
+                      <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                        padding:"12px 14px", borderRadius:10, background:`${C.green}08`,
+                        border:`1px solid ${C.green}30`, flexWrap:"wrap", gap:10 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                          <div style={{ width:36, height:36, borderRadius:9, background:`${C.green}15`,
+                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📨</div>
+                          <div>
+                            <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
+                            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
+                              {d.category} · {d.file_size} · {new Date(d.created_at).toLocaleDateString("en-IN")}
+                            </div>
+                          </div>
+                        </div>
+                        <a href={d.file_url} target="_blank" rel="noopener"
+                          style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${C.green}`,
+                            color:C.green, fontFamily:F, fontWeight:600, fontSize:12, textDecoration:"none" }}>
+                          View
+                        </a>
                       </div>
                     ))}
                   </div>
