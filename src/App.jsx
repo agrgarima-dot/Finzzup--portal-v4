@@ -1,4 +1,4 @@
-aimport { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
