@@ -1746,7 +1746,7 @@ function Engagement() {
 
 // ─── CALENDAR ────────────────────────────────────────────────────────────────
 // ─── CALENDLY CONFIG — change this one line to your Calendly URL ──────────────
-const CALENDLY_URL = "https://calendly.com/garima-finzzup"; // 🔧 replace with your actual URL
+const CALENDLY_URL = "https://calendly.com/agrgarima"; 
 
 // Floating "Book a Call" button shown on every portal page
 const FloatingCalendly = () => {
