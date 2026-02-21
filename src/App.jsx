@@ -145,6 +145,26 @@ const Logo = ({ size=28 }) => (
 );
 
 // ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
+// InputField must be defined OUTSIDE Login — otherwise React remounts it on
+// every keystroke (losing focus). Receives setForm + setError as props.
+const InputField = ({ label, fkey, type="text", placeholder="", form, setForm, setError }) => (
+  <div style={{ marginBottom:14 }}>
+    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+      letterSpacing:"0.08em", display:"block", marginBottom:7, fontFamily:F }}>{label}</label>
+    <input value={form[fkey]}
+      onChange={e => { setForm(f=>({...f,[fkey]:e.target.value})); setError(""); }}
+      type={type} placeholder={placeholder}
+      autoComplete={type==="password"?"current-password":"email"}
+      style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:16,
+        border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+        background:C.bg, outline:"none", boxSizing:"border-box", transition:"border-color 0.2s",
+        WebkitTextSizeAdjust:"100%", touchAction:"manipulation" }}
+      onFocus={e => e.target.style.borderColor = C.blue}
+      onBlur={e  => e.target.style.borderColor = C.border}
+    />
+  </div>
+);
+
 function Login({ onLogin }) {
   const [step, setStep]     = useState("code"); // "code" | "register" | "signin"
   const [code, setCode]     = useState("");
@@ -202,24 +222,6 @@ function Login({ onLogin }) {
     if (dbErr || !data) { setError("Account not found. Please register first."); return; }
     onLogin(data);
   };
-
-  const InputField = ({ label, fkey, type="text", placeholder="" }) => (
-    <div style={{ marginBottom:14 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-        letterSpacing:"0.08em", display:"block", marginBottom:7, fontFamily:F }}>{label}</label>
-      <input value={form[fkey]}
-        onChange={e => { setForm(f=>({...f,[fkey]:e.target.value})); setError(""); }}
-        type={type} placeholder={placeholder}
-        autoComplete={type==="password"?"current-password":"email"}
-        style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:16,
-          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-          background:C.bg, outline:"none", boxSizing:"border-box", transition:"border-color 0.2s",
-          WebkitTextSizeAdjust:"100%", touchAction:"manipulation" }}
-        onFocus={e => e.target.style.borderColor = C.blue}
-        onBlur={e  => e.target.style.borderColor = C.border}
-      />
-    </div>
-  );
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center",
@@ -317,9 +319,9 @@ function Login({ onLogin }) {
               </div>
             </div>
             <h2 style={{ fontWeight:700, fontSize:18, color:C.text, marginBottom:20 }}>Create your account</h2>
-            <InputField label="Email"            fkey="email"    type="email"    placeholder="your@email.com" />
-            <InputField label="Password"         fkey="password" type="password" placeholder="Min 6 characters" />
-            <InputField label="Confirm Password" fkey="confirm"  type="password" placeholder="Repeat password" />
+            <InputField label="Email"            fkey="email"    type="email"    placeholder="your@email.com"   form={form} setForm={setForm} setError={setError}/>
+            <InputField label="Password"         fkey="password" type="password" placeholder="Min 6 characters" form={form} setForm={setForm} setError={setError}/>
+            <InputField label="Confirm Password" fkey="confirm"  type="password" placeholder="Repeat password"  form={form} setForm={setForm} setError={setError}/>
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
             <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
               borderRadius:12, border:"none", background:C.grad1, color:"white",
@@ -340,8 +342,8 @@ function Login({ onLogin }) {
             <p style={{ fontSize:13, color:C.muted, marginBottom:24, lineHeight:1.6 }}>
               Sign in to your Finzzup portal.
             </p>
-            <InputField label="Email"    fkey="email"    type="email"    placeholder="your@email.com" />
-            <InputField label="Password" fkey="password" type="password" placeholder="Your password" />
+            <InputField label="Email"    fkey="email"    type="email"    placeholder="your@email.com" form={form} setForm={setForm} setError={setError}/>
+            <InputField label="Password" fkey="password" type="password" placeholder="Your password"  form={form} setForm={setForm} setError={setError}/>
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
             <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
               borderRadius:12, border:"none", background:C.grad1, color:"white",
