@@ -2111,29 +2111,28 @@ function AdminLogin({ onLogin }) {
 }
 
 function AdminPanel({ admin, onLogout }) {
-  const [tab, setTab]         = useState("clients");
-  const [clients, setClients] = useState([]);
-  const [selected, setSelected] = useState(null); // selected client for editing
-  const [loading, setLoading] = useState(false);
-  const [saved, setSaved]     = useState(false);
+  const [view, setView]         = useState("clients"); // "clients" | "addclient" | "profile"
+  const [clients, setClients]   = useState([]);
+  const [selected, setSelected] = useState(null);
+  const [profileTab, setProfileTab] = useState("docs"); // "docs" | "kpis" | "actions" | "engagement"
+  const [loading, setLoading]   = useState(false);
+  const [saved, setSaved]       = useState(false);
 
-  // KPI edit state
+  // KPI state
   const [kpis, setKpis] = useState({
     month:"", revenue:"", gross_margin:"", cash_balance:"",
     burn_rate:"", runway:"", arr:"", garima_note:""
   });
-
-  // Action items state
-  const [actions, setActions] = useState([]);
+  // Action items
+  const [actions, setActions]   = useState([]);
   const [newAction, setNewAction] = useState({ text:"", priority:"High", month:"" });
-
-  // New client state
+  // New client
   const [newClient, setNewClient] = useState({
     name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both"
   });
-
-  // Engagement state
+  // Engagement
   const [engagement, setEngagement] = useState({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
+  // Docs
   const [docs, setDocs]           = useState([]);
   const [docLoading, setDocLoading] = useState(false);
   const [clientUploads, setClientUploads] = useState([]);
@@ -2145,101 +2144,67 @@ function AdminPanel({ admin, onLogout }) {
     setClients(data || []);
   };
 
-  const selectClient = async (c) => {
-    setSelected(c); setSaved(false);
-    // Load latest KPIs
+  const openClient = async (c) => {
+    setSelected(c); setSaved(false); setView("profile"); setProfileTab("docs");
     const { data: kpiData } = await supabase.from("kpis")
       .select("*").eq("client_id", c.id).order("updated_at", { ascending:false }).limit(1).single();
     if (kpiData) setKpis(kpiData);
     else setKpis({ month:"", revenue:"", gross_margin:"", cash_balance:"", burn_rate:"", runway:"", arr:"", garima_note:"" });
-    // Load actions
     const { data: actData } = await supabase.from("action_items")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setActions(actData || []);
-    // Load engagement
     const { data: engData } = await supabase.from("engagements")
       .select("*").eq("client_id", c.id).single();
     if (engData) setEngagement(engData);
     else setEngagement({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
-    // Load documents
     const { data: docData } = await supabase.from("documents")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setDocs(docData || []);
-    // Load client submissions
     const { data: cuData } = await supabase.from("client_uploads")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setClientUploads(cuData || []);
   };
 
   const saveKPIs = async () => {
-    if (!selected) return;
-    setLoading(true);
+    if (!selected) return; setLoading(true);
     const payload = { ...kpis, client_id: selected.id, updated_at: new Date().toISOString() };
-    if (kpis.id) {
-      await supabase.from("kpis").update(payload).eq("id", kpis.id);
-    } else {
-      const { data } = await supabase.from("kpis").insert(payload).select().single();
-      if (data) setKpis(data);
-    }
-    setLoading(false); setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    if (kpis.id) { await supabase.from("kpis").update(payload).eq("id", kpis.id); }
+    else { const { data } = await supabase.from("kpis").insert(payload).select().single(); if (data) setKpis(data); }
+    setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
   };
-
   const addAction = async () => {
     if (!selected || !newAction.text) return;
-    const { data } = await supabase.from("action_items")
-      .insert({ ...newAction, client_id: selected.id }).select().single();
+    const { data } = await supabase.from("action_items").insert({ ...newAction, client_id: selected.id }).select().single();
     if (data) setActions(prev => [data, ...prev]);
     setNewAction({ text:"", priority:"High", month:newAction.month });
   };
-
   const toggleAction = async (a) => {
     await supabase.from("action_items").update({ done: !a.done }).eq("id", a.id);
     setActions(prev => prev.map(x => x.id===a.id ? {...x, done:!x.done} : x));
   };
-
   const deleteAction = async (id) => {
     await supabase.from("action_items").delete().eq("id", id);
     setActions(prev => prev.filter(x => x.id!==id));
   };
-
   const saveEngagement = async () => {
-    if (!selected) return;
-    setLoading(true);
-    if (engagement.id) {
-      await supabase.from("engagements").update(engagement).eq("id", engagement.id);
-    } else {
-      const { data } = await supabase.from("engagements")
-        .insert({ ...engagement, client_id: selected.id }).select().single();
-      if (data) setEngagement(data);
-    }
-    setLoading(false); setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
+    if (!selected) return; setLoading(true);
+    if (engagement.id) { await supabase.from("engagements").update(engagement).eq("id", engagement.id); }
+    else { const { data } = await supabase.from("engagements").insert({ ...engagement, client_id: selected.id }).select().single(); if (data) setEngagement(data); }
+    setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
   };
-
   const createClient = async () => {
     if (!newClient.name || !newClient.email || !newClient.invite_code) return;
     const { data, error } = await supabase.from("clients").insert(newClient).select().single();
     if (error) { alert("Error: " + error.message); return; }
     setClients(prev => [data, ...prev]);
     setNewClient({ name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both" });
-    setTab("clients");
+    setView("clients");
   };
-
   const genCode = () => {
     const prefix = newClient.company?.slice(0,4).toUpperCase().replace(/\s/g,"") || "CLIE";
     const year = new Date().getFullYear();
     setNewClient(c => ({ ...c, invite_code: `${prefix}${year}` }));
   };
-
-  const ADMIN_TABS = [
-    { id:"clients",    icon:"👥", label:"All Clients"     },
-    { id:"addclient",  icon:"➕", label:"Add Client"      },
-    { id:"kpis",       icon:"📊", label:"Update KPIs"     },
-    { id:"actions",    icon:"✅", label:"Action Items"    },
-    { id:"engagement", icon:"📋", label:"Valuation"       },
-    { id:"documents",  icon:"📁", label:"Documents"       },
-  ];
 
   const Input = ({ label, val, onChange, type="text", placeholder="", mono=false }) => (
     <div style={{ marginBottom:12 }}>
@@ -2279,7 +2244,7 @@ function AdminPanel({ admin, onLogout }) {
 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
-      {/* Admin Sidebar */}
+      {/* ── Sidebar ── */}
       <aside style={{ width:220, minHeight:"100vh", background:C.navy, flexShrink:0,
         display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ padding:"22px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
@@ -2293,198 +2258,370 @@ function AdminPanel({ admin, onLogout }) {
           <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", fontFamily:F }}>Logged in as</div>
           <div style={{ fontSize:13, fontWeight:700, color:"white", fontFamily:F, marginTop:2 }}>{admin.name}</div>
         </div>
-        {/* Client selector */}
-        {clients.length > 0 && (
-          <div style={{ padding:"10px 12px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-            <div style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.35)",
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
-              Active Client
-            </div>
-            <select value={selected?.id || ""} onChange={e => {
-              const c = clients.find(x => x.id===e.target.value);
-              if (c) selectClient(c);
-            }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, fontSize:12,
-              background:"#1a2744", border:"1px solid rgba(255,255,255,0.2)",
-              color:"white", fontFamily:F, outline:"none" }}>
-              <option value="" style={{ background:"#1a2744", color:"white" }}>— Select client —</option>
-              {clients.map(c => <option key={c.id} value={c.id} style={{ background:"#1a2744", color:"white" }}>{c.name} ({c.client_pack})</option>)}
-            </select>
-          </div>
-        )}
+
+        {/* Nav */}
         <nav style={{ flex:1, padding:"10px 0" }}>
-          {ADMIN_TABS.map(t => (
-            <button key={t.id} onClick={() => setTab(t.id)} style={{
+          {[
+            { id:"clients",   icon:"👥", label:"All Clients" },
+            { id:"addclient", icon:"➕", label:"Add Client"  },
+          ].map(t => (
+            <button key={t.id} onClick={() => setView(t.id)} style={{
               display:"flex", alignItems:"center", gap:10, width:"100%",
-              padding:"11px 16px", background:tab===t.id?"rgba(251,191,36,0.15)":"transparent",
+              padding:"11px 16px", background:view===t.id?"rgba(251,191,36,0.15)":"transparent",
               border:"none", cursor:"pointer",
-              borderLeft:tab===t.id?"3px solid #FBBF24":"3px solid transparent",
-              fontFamily:F }}>
+              borderLeft:view===t.id?"3px solid #FBBF24":"3px solid transparent", fontFamily:F }}>
               <span style={{ fontSize:16 }}>{t.icon}</span>
               <span style={{ fontSize:13, fontWeight:600,
-                color:tab===t.id?"#FBBF24":"rgba(255,255,255,0.5)" }}>{t.label}</span>
+                color:view===t.id?"#FBBF24":"rgba(255,255,255,0.5)" }}>{t.label}</span>
             </button>
           ))}
+
+          {/* Client list in sidebar */}
+          {clients.length > 0 && (
+            <div style={{ marginTop:12 }}>
+              <div style={{ padding:"0 16px 6px", fontSize:10, fontWeight:700,
+                color:"rgba(255,255,255,0.3)", textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>
+                Clients
+              </div>
+              {clients.map(c => (
+                <button key={c.id} onClick={() => openClient(c)} style={{
+                  display:"flex", alignItems:"center", gap:10, width:"100%",
+                  padding:"9px 16px", border:"none", cursor:"pointer", fontFamily:F,
+                  background: selected?.id===c.id && view==="profile" ? "rgba(251,191,36,0.12)" : "transparent",
+                  borderLeft: selected?.id===c.id && view==="profile" ? "3px solid #FBBF24" : "3px solid transparent" }}>
+                  <div style={{ width:28, height:28, borderRadius:"50%", flexShrink:0,
+                    background:"linear-gradient(135deg,#3B6FF7,#7C3AED)",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    fontSize:11, fontWeight:700, color:"white" }}>
+                    {c.name?.charAt(0) || "?"}
+                  </div>
+                  <div style={{ overflow:"hidden", textAlign:"left" }}>
+                    <div style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.85)",
+                      whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{c.name}</div>
+                    <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", marginTop:1 }}>{c.client_pack}</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </nav>
+
         <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
-          <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
-            width:"100%", padding:"10px 12px", background:"none", border:"none",
-            cursor:"pointer", borderRadius:8, fontFamily:F, fontSize:13,
-            fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
+          <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8, width:"100%",
+            padding:"10px 12px", background:"none", border:"none", cursor:"pointer", borderRadius:8,
+            fontFamily:F, fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
             <span>🚪</span> Sign Out
           </button>
         </div>
       </aside>
 
-      {/* Main content */}
+      {/* ── Main Content ── */}
       <div style={{ flex:1, overflowY:"auto" }}>
-        {/* Header */}
-        <div style={{ height:58, background:C.bg2, borderBottom:`1px solid ${C.border}`,
-          display:"flex", alignItems:"center", padding:"0 24px", gap:12 }}>
-          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:17, color:C.text, margin:0 }}>
-            {ADMIN_TABS.find(t=>t.id===tab)?.label}
-          </h1>
-          {selected && tab !== "clients" && tab !== "addclient" && (
-            <div style={{ padding:"4px 12px", borderRadius:100, background:`${C.amber}15`,
-              border:`1px solid ${C.amber}30` }}>
-              <span style={{ fontSize:12, fontWeight:700, color:C.amber, fontFamily:F }}>
-                {selected.name} — {selected.company}
+
+        {/* ── ALL CLIENTS view ── */}
+        {view === "clients" && (
+          <div>
+            <div style={{ height:58, background:C.bg2, borderBottom:`1px solid ${C.border}`,
+              display:"flex", alignItems:"center", padding:"0 24px" }}>
+              <h1 style={{ fontFamily:F, fontWeight:700, fontSize:17, color:C.text, margin:0 }}>All Clients</h1>
+              <span style={{ marginLeft:12, fontSize:12, color:C.muted, fontFamily:F }}>
+                {clients.length} registered
               </span>
             </div>
-          )}
-        </div>
-
-        <div style={{ padding:24 }}>
-
-          {/* ── ALL CLIENTS ── */}
-          {tab === "clients" && (
-            <div>
-              <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>
-                {clients.length} client{clients.length!==1?"s":""} registered
-              </p>
-              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                {clients.map(c => (
-                  <Card key={c.id} style={{ padding:"16px 20px", cursor:"pointer",
-                    borderLeft: selected?.id===c.id ? `3px solid ${C.amber}` : `3px solid transparent` }}
-                    onClick={() => { selectClient(c); setTab("documents"); }}>
-                    <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
-                      <div>
-                        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>{c.name}</div>
-                        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{c.company}</div>
-                        <div style={{ fontFamily:FM, fontSize:11, color:C.dim, marginTop:4 }}>{c.email}</div>
-                      </div>
-                      <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6 }}>
-                        <Badge color={C.blue}>{c.client_pack}</Badge>
-                        <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.amber }}>
-                          {c.invite_code}
-                        </div>
-                        <div style={{ fontSize:11, color:c.active?C.green:C.red, fontWeight:700, fontFamily:F }}>
-                          {c.active ? "● Active" : "● Inactive"}
-                        </div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-              {clients.length === 0 && (
+            <div style={{ padding:24 }}>
+              {clients.length === 0 ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👥</div>
                   <div style={{ fontFamily:F, fontSize:15, color:C.muted }}>No clients yet</div>
-                  <button onClick={() => setTab("addclient")} style={{ marginTop:16, padding:"10px 20px",
+                  <button onClick={() => setView("addclient")} style={{ marginTop:16, padding:"10px 20px",
                     borderRadius:10, border:"none", background:C.blue, color:"white",
                     fontFamily:F, fontWeight:700, cursor:"pointer" }}>
                     Add First Client →
                   </button>
                 </Card>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+                  {clients.map(c => (
+                    <Card key={c.id} style={{ padding:"16px 20px", cursor:"pointer",
+                      borderLeft:`3px solid ${selected?.id===c.id?C.amber:"transparent"}`,
+                      transition:"border-color 0.2s" }}
+                      onClick={() => openClient(c)}>
+                      <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                          <div style={{ width:44, height:44, borderRadius:"50%", flexShrink:0,
+                            background:"linear-gradient(135deg,#3B6FF7,#7C3AED)",
+                            display:"flex", alignItems:"center", justifyContent:"center",
+                            fontSize:17, fontWeight:700, color:"white" }}>
+                            {c.name?.charAt(0) || "?"}
+                          </div>
+                          <div>
+                            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>{c.name}</div>
+                            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{c.company}</div>
+                            <div style={{ fontFamily:FM, fontSize:11, color:C.dim, marginTop:3 }}>{c.email}</div>
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6 }}>
+                          <Badge color={C.blue}>{c.client_pack}</Badge>
+                          <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.amber }}>{c.invite_code}</div>
+                          <div style={{ fontSize:11, color:c.active?C.green:C.red, fontWeight:700, fontFamily:F }}>
+                            {c.active ? "● Active" : "● Inactive"}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ marginTop:10, fontFamily:F, fontSize:12, color:C.blue, fontWeight:600 }}>
+                        Open client profile →
+                      </div>
+                    </Card>
+                  ))}
+                </div>
               )}
             </div>
-          )}
+          </div>
+        )}
 
-          {/* ── ADD CLIENT ── */}
-          {tab === "addclient" && (
-            <Card style={{ maxWidth:520 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:20 }}>
-                New Client Details
-              </div>
-              <Input label="Client Name"    val={newClient.name}    onChange={v=>setNewClient(c=>({...c,name:v}))}    placeholder="e.g. Ravi Sharma" />
-              <Input label="Company"        val={newClient.company} onChange={v=>setNewClient(c=>({...c,company:v}))} placeholder="e.g. Sharma Textiles Pvt Ltd" />
-              <Input label="Email"          val={newClient.email}   onChange={v=>setNewClient(c=>({...c,email:v}))}   type="email" placeholder="client@company.com" />
-              <div style={{ display:"flex", gap:10, alignItems:"flex-end" }}>
-                <div style={{ flex:1 }}>
-                  <Input label="Invite Code" val={newClient.invite_code}
-                    onChange={v=>setNewClient(c=>({...c,invite_code:v.toUpperCase()}))}
-                    placeholder="e.g. SHAR2026" mono={true} />
+        {/* ── ADD CLIENT view ── */}
+        {view === "addclient" && (
+          <div>
+            <div style={{ height:58, background:C.bg2, borderBottom:`1px solid ${C.border}`,
+              display:"flex", alignItems:"center", padding:"0 24px" }}>
+              <h1 style={{ fontFamily:F, fontWeight:700, fontSize:17, color:C.text, margin:0 }}>Add New Client</h1>
+            </div>
+            <div style={{ padding:24 }}>
+              <Card style={{ maxWidth:520 }}>
+                <Input label="Client Name"    val={newClient.name}    onChange={v=>setNewClient(c=>({...c,name:v}))}    placeholder="e.g. Ravi Sharma" />
+                <Input label="Company"        val={newClient.company} onChange={v=>setNewClient(c=>({...c,company:v}))} placeholder="e.g. Sharma Textiles Pvt Ltd" />
+                <Input label="Email"          val={newClient.email}   onChange={v=>setNewClient(c=>({...c,email:v}))}   type="email" placeholder="client@company.com" />
+                <div style={{ display:"flex", gap:10, alignItems:"flex-end" }}>
+                  <div style={{ flex:1 }}>
+                    <Input label="Invite Code" val={newClient.invite_code}
+                      onChange={v=>setNewClient(c=>({...c,invite_code:v.toUpperCase()}))}
+                      placeholder="e.g. SHAR2026" mono={true} />
+                  </div>
+                  <button onClick={genCode} style={{ padding:"10px 14px", borderRadius:9, marginBottom:12,
+                    border:`1px solid ${C.border}`, background:C.bg3, fontFamily:F, fontSize:12,
+                    color:C.muted, cursor:"pointer", whiteSpace:"nowrap" }}>
+                    Auto-generate
+                  </button>
                 </div>
-                <button onClick={genCode} style={{ padding:"10px 14px", borderRadius:9, marginBottom:12,
-                  border:`1px solid ${C.border}`, background:C.bg3, fontFamily:F, fontSize:12,
-                  color:C.muted, cursor:"pointer", whiteSpace:"nowrap" }}>
-                  Auto-generate
+                <Select label="Pack Type" val={newClient.client_pack}
+                  onChange={v=>setNewClient(c=>({...c,client_pack:v}))}
+                  options={[
+                    {value:"startup",label:"Startup"},
+                    {value:"sme",label:"SME"},
+                    {value:"corporate",label:"Corporate"},
+                    {value:"valuation",label:"Valuation Only"},
+                  ]}/>
+                <Select label="Service Type" val={newClient.type}
+                  onChange={v=>setNewClient(c=>({...c,type:v}))}
+                  options={[
+                    {value:"both",label:"CFO + Valuation"},
+                    {value:"cfo",label:"CFO Only"},
+                    {value:"valuation",label:"Valuation Only"},
+                  ]}/>
+                <button onClick={createClient} style={{ padding:"11px 24px", borderRadius:10,
+                  border:"none", background:C.grad1, color:"white",
+                  fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", width:"100%" }}>
+                  Create Client Account
                 </button>
-              </div>
-              <Select label="Pack Type" val={newClient.client_pack}
-                onChange={v=>setNewClient(c=>({...c,client_pack:v}))}
-                options={[
-                  {value:"startup",   label:"Startup / CFO Pack"},
-                  {value:"msme",      label:"MSME Pack"},
-                  {value:"corporate", label:"Corporate Pack"},
-                ]}/>
-              <Select label="Service Type" val={newClient.type}
-                onChange={v=>setNewClient(c=>({...c,type:v}))}
-                options={[
-                  {value:"both",      label:"CFO + Valuation"},
-                  {value:"cfo",       label:"CFO Only"},
-                  {value:"valuation", label:"Valuation Only"},
-                ]}/>
-              <div style={{ marginTop:8 }}>
-                <button onClick={createClient} style={{ padding:"12px 24px", borderRadius:10,
-                  border:"none", background:C.grad1, color:"white", fontFamily:F,
-                  fontWeight:700, fontSize:14, cursor:"pointer", touchAction:"manipulation" }}>
-                  Create Client →
-                </button>
-              </div>
-              <div style={{ marginTop:16, padding:"10px 14px", borderRadius:10,
-                background:`${C.blue}08`, border:`1px solid ${C.blue}20` }}>
-                <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0, lineHeight:1.7 }}>
-                  💡 After creating, share the invite code with your client. They go to the portal,
-                  enter the code, and create their own password. No manual password setup needed.
-                </p>
-              </div>
-            </Card>
-          )}
+              </Card>
+            </div>
+          </div>
+        )}
 
-          {/* ── UPDATE KPIs ── */}
-          {tab === "kpis" && (
-            <div style={{ maxWidth:600 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (
-                <Card>
+        {/* ── CLIENT PROFILE view ── */}
+        {view === "profile" && selected && (
+          <div>
+            {/* Profile header */}
+            <div style={{ background:C.navy, padding:"20px 28px 0", borderBottom:`1px solid rgba(255,255,255,0.08)` }}>
+              <button onClick={() => setView("clients")} style={{ background:"none", border:"none",
+                color:"rgba(255,255,255,0.4)", fontFamily:F, fontSize:12, cursor:"pointer",
+                padding:"0 0 12px", display:"flex", alignItems:"center", gap:6 }}>
+                ← Back to All Clients
+              </button>
+              <div style={{ display:"flex", alignItems:"center", gap:18, paddingBottom:20 }}>
+                <div style={{ width:56, height:56, borderRadius:"50%",
+                  background:"linear-gradient(135deg,#3B6FF7,#7C3AED)",
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  fontSize:22, fontWeight:700, color:"white", flexShrink:0 }}>
+                  {selected.name?.charAt(0) || "?"}
+                </div>
+                <div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:20, color:"white" }}>{selected.name}</div>
+                  <div style={{ fontFamily:F, fontSize:13, color:"rgba(255,255,255,0.5)", marginTop:3 }}>
+                    {selected.company} · {selected.email}
+                  </div>
+                  <div style={{ display:"flex", gap:8, marginTop:8 }}>
+                    <Badge color={C.blue}>{selected.client_pack}</Badge>
+                    <Badge color={C.amber}>{selected.invite_code}</Badge>
+                    <Badge color={selected.active?C.green:C.red}>{selected.active?"Active":"Inactive"}</Badge>
+                  </div>
+                </div>
+              </div>
+              {/* Inner tabs */}
+              <div style={{ display:"flex", gap:0 }}>
+                {[
+                  { id:"docs",       icon:"📁", label:"Documents"  },
+                  { id:"kpis",       icon:"📊", label:"KPIs"        },
+                  { id:"actions",    icon:"✅", label:"Actions"     },
+                  { id:"engagement", icon:"📋", label:"Engagement"  },
+                ].map(t => (
+                  <button key={t.id} onClick={() => setProfileTab(t.id)} style={{
+                    padding:"10px 20px", border:"none", cursor:"pointer", fontFamily:F,
+                    background:"transparent", borderBottom:profileTab===t.id?"2px solid #FBBF24":"2px solid transparent",
+                    color:profileTab===t.id?"#FBBF24":"rgba(255,255,255,0.45)",
+                    fontSize:13, fontWeight:600, display:"flex", alignItems:"center", gap:7,
+                    transition:"color 0.15s", touchAction:"manipulation" }}>
+                    <span>{t.icon}</span> {t.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tab content */}
+            <div style={{ padding:24 }}>
+
+              {/* ─── DOCS TAB ─── */}
+              {profileTab === "docs" && (
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }} className="profile-docs-grid">
+
+                  {/* Left: client's submissions */}
+                  <Card>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      📥 Client Submissions
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>
+                      Documents {selected.name} sent you
+                    </p>
+                    {clientUploads.length === 0 && (
+                      <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No submissions yet.</p>
+                    )}
+                    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                      {clientUploads.map((d,i) => (
+                        <div key={i} style={{ padding:"10px 12px", borderRadius:10,
+                          background:`${C.green}08`, border:`1px solid ${C.green}25` }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                            <span style={{ fontSize:20 }}>📨</span>
+                            <div style={{ flex:1, overflow:"hidden" }}>
+                              <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text,
+                                whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{d.name}</div>
+                              <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
+                                {d.category} · {d.file_size} · {new Date(d.created_at).toLocaleDateString("en-IN")}
+                              </div>
+                            </div>
+                            <a href={d.file_url} target="_blank" rel="noopener"
+                              style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${C.green}`,
+                                color:C.green, fontFamily:F, fontWeight:600, fontSize:11, textDecoration:"none",
+                                whiteSpace:"nowrap" }}>View</a>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+
+                  {/* Right: Garima's uploads back to client */}
+                  <Card>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      📤 Upload to Client
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>
+                      Reports, board packs, valuation docs
+                    </p>
+                    <label style={{ display:"block", padding:"20px", borderRadius:12,
+                      border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
+                      background:C.bg, marginBottom:16 }}
+                      onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
+                      onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
+                      <input type="file" style={{ display:"none" }}
+                        accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.ppt,.pptx"
+                        onChange={async (e) => {
+                          const file = e.target.files[0];
+                          if (!file) return;
+                          if (file.size > 10*1024*1024) { alert("Max 10MB"); e.target.value=""; return; }
+                          setDocLoading(true);
+                          const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g,"_");
+                          const path = `${selected.id}/${Date.now()}-${safeName}`;
+                          const { error: upErr } = await supabase.storage.from("client-docs").upload(path, file, { upsert:false });
+                          if (upErr) { alert("Upload failed: "+upErr.message); setDocLoading(false); e.target.value=""; return; }
+                          const { data: urlData } = supabase.storage.from("client-docs").getPublicUrl(path);
+                          const { data: docRow, error: dbErr } = await supabase.from("documents").insert({
+                            client_id: selected.id, name: file.name,
+                            file_url: urlData.publicUrl,
+                            file_size: (file.size/1024/1024).toFixed(2)+" MB",
+                            uploaded_by: "garima"
+                          }).select().single();
+                          if (dbErr) alert("File stored but DB error: "+dbErr.message);
+                          if (docRow) setDocs(prev => [docRow, ...prev]);
+                          setDocLoading(false); e.target.value="";
+                        }}/>
+                      {docLoading ? (
+                        <div style={{ fontFamily:F, fontSize:13, color:C.blue }}>Uploading…</div>
+                      ) : (<>
+                        <div style={{ fontSize:28, marginBottom:6 }}>📤</div>
+                        <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>Click to upload</div>
+                        <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:3 }}>PDF, Excel, Word — max 10MB</div>
+                      </>)}
+                    </label>
+                    {docs.length === 0 && (
+                      <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No documents sent to client yet.</p>
+                    )}
+                    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                      {docs.map((d,i) => (
+                        <div key={i} style={{ padding:"10px 12px", borderRadius:10,
+                          background:`${C.blue}08`, border:`1px solid ${C.blue}20` }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                            <span style={{ fontSize:20 }}>📄</span>
+                            <div style={{ flex:1, overflow:"hidden" }}>
+                              <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text,
+                                whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{d.name}</div>
+                              <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
+                                {d.file_size} · {new Date(d.created_at).toLocaleDateString("en-IN")}
+                              </div>
+                            </div>
+                            <div style={{ display:"flex", gap:6 }}>
+                              <a href={d.file_url} target="_blank" rel="noopener"
+                                style={{ padding:"5px 10px", borderRadius:7, border:`1px solid ${C.blue}`,
+                                  color:C.blue, fontFamily:F, fontWeight:600, fontSize:11, textDecoration:"none" }}>View</a>
+                              <button onClick={async () => {
+                                await supabase.from("documents").delete().eq("id", d.id);
+                                setDocs(prev => prev.filter(x => x.id!==d.id));
+                              }} style={{ padding:"5px 8px", borderRadius:7, border:`1px solid ${C.border}`,
+                                background:"none", color:C.red, cursor:"pointer", fontSize:13 }}>🗑</button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              )}
+
+              {/* ─── KPIs TAB ─── */}
+              {profileTab === "kpis" && (
+                <Card style={{ maxWidth:560 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:4 }}>
-                    KPI Update — {selected.name}
+                    Update KPIs for {selected.name}
                   </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20 }}>
-                    These numbers appear on the client's dashboard instantly after saving.
+                    Numbers show instantly on client's dashboard after saving.
                   </p>
                   <Input label="Month" val={kpis.month} onChange={v=>setKpis(k=>({...k,month:v}))} placeholder="e.g. February 2026" />
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }} className="kpi-edit-grid">
                     {[
-                      { label:"Revenue",      key:"revenue",      placeholder:"e.g. ₹8.4 Cr"  },
-                      { label:"Gross Margin", key:"gross_margin", placeholder:"e.g. 41%"       },
-                      { label:"Cash Balance", key:"cash_balance", placeholder:"e.g. ₹2.1 Cr"  },
-                      { label:"Burn Rate",    key:"burn_rate",    placeholder:"e.g. ₹48L/mo"  },
-                      { label:"Runway",       key:"runway",       placeholder:"e.g. 4.4 months"},
-                      { label:"ARR",          key:"arr",          placeholder:"e.g. ₹6.2 Cr"  },
+                      { label:"Revenue",      key:"revenue",      placeholder:"e.g. ₹8.4 Cr"   },
+                      { label:"Gross Margin", key:"gross_margin", placeholder:"e.g. 41%"        },
+                      { label:"Cash Balance", key:"cash_balance", placeholder:"e.g. ₹2.1 Cr"   },
+                      { label:"Burn Rate",    key:"burn_rate",    placeholder:"e.g. ₹48L/mo"   },
+                      { label:"Runway",       key:"runway",       placeholder:"e.g. 4.4 months" },
+                      { label:"ARR",          key:"arr",          placeholder:"e.g. ₹6.2 Cr"   },
                     ].map(f => (
                       <Input key={f.key} label={f.label} val={kpis[f.key]||""}
                         onChange={v=>setKpis(k=>({...k,[f.key]:v}))} placeholder={f.placeholder} mono />
                     ))}
                   </div>
-                  <div style={{ marginBottom:12 }}>
+                  <div style={{ marginBottom:16 }}>
                     <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
                       letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>
-                      Garima's Note (shown on dashboard)
+                      Your Note for Client (shown on dashboard)
                     </label>
                     <textarea value={kpis.garima_note||""} onChange={e=>setKpis(k=>({...k,garima_note:e.target.value}))}
                       rows={4} placeholder="Write your monthly note for the client here..."
@@ -2492,94 +2629,76 @@ function AdminPanel({ admin, onLogout }) {
                         border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                         background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
                       onFocus={e => e.target.style.borderColor = C.amber}
-                      onBlur={e  => e.target.style.borderColor = C.border}
-                    />
+                      onBlur={e  => e.target.style.borderColor = C.border}/>
                   </div>
                   <SaveBtn onClick={saveKPIs}/>
+                  <style>{`.kpi-edit-grid{grid-template-columns:1fr 1fr!important}@media(max-width:480px){.kpi-edit-grid{grid-template-columns:1fr!important}}`}</style>
                 </Card>
               )}
-              <style>{`.kpi-edit-grid{grid-template-columns:1fr 1fr!important}@media(max-width:480px){.kpi-edit-grid{grid-template-columns:1fr!important}}`}</style>
-            </div>
-          )}
 
-          {/* ── ACTION ITEMS ── */}
-          {tab === "actions" && (
-            <div style={{ maxWidth:600 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (<>
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-                    Add Action Item for {selected.name}
-                  </div>
-                  <div style={{ marginBottom:12 }}>
-                    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>Action</label>
-                    <input value={newAction.text} onChange={e=>setNewAction(a=>({...a,text:e.target.value}))}
-                      placeholder="e.g. File GST returns for Q3 by 15 March"
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-                        border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                        background:C.bg, outline:"none", boxSizing:"border-box" }}/>
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <Select label="Priority" val={newAction.priority} onChange={v=>setNewAction(a=>({...a,priority:v}))}
-                      options={[{value:"High",label:"High"},{value:"Medium",label:"Medium"},{value:"Low",label:"Low"}]}/>
-                    <Input label="Month" val={newAction.month} onChange={v=>setNewAction(a=>({...a,month:v}))} placeholder="e.g. March 2026"/>
-                  </div>
-                  <button onClick={addAction} style={{ padding:"10px 20px", borderRadius:10,
-                    border:"none", background:C.grad1, color:"white", fontFamily:F,
-                    fontWeight:700, fontSize:13, cursor:"pointer" }}>
-                    + Add Item
-                  </button>
-                </Card>
-                <Card>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-                    Current Action Items ({actions.length})
-                  </div>
-                  {actions.length === 0 && (
-                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No action items yet.</p>
-                  )}
-                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                    {actions.map(a => (
-                      <div key={a.id} style={{ display:"flex", alignItems:"flex-start", gap:10,
-                        padding:"10px 14px", borderRadius:10, background:a.done?`${C.green}06`:C.bg,
-                        border:`1px solid ${a.done?C.green+"25":C.border}` }}>
-                        <div onClick={() => toggleAction(a)} style={{ width:20, height:20, borderRadius:6,
-                          background:a.done?C.green:C.bg3, display:"flex", alignItems:"center",
-                          justifyContent:"center", cursor:"pointer", flexShrink:0, marginTop:2 }}>
-                          {a.done && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
-                        </div>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontFamily:F, fontSize:13, color:a.done?C.dim:C.text,
-                            textDecoration:a.done?"line-through":"none" }}>{a.text}</div>
-                          <div style={{ display:"flex", gap:8, marginTop:4, flexWrap:"wrap" }}>
-                            <PriBadge p={a.priority}/>
-                            {a.month && <span style={{ fontSize:11, color:C.dim, fontFamily:F }}>{a.month}</span>}
+              {/* ─── ACTIONS TAB ─── */}
+              {profileTab === "actions" && (
+                <div style={{ maxWidth:600 }}>
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
+                      Add Action Item
+                    </div>
+                    <div style={{ marginBottom:12 }}>
+                      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+                        letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>Action</label>
+                      <input value={newAction.text} onChange={e=>setNewAction(a=>({...a,text:e.target.value}))}
+                        placeholder="e.g. File GST returns for Q3 by 15 March"
+                        style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+                          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                          background:C.bg, outline:"none", boxSizing:"border-box" }}/>
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                      <Select label="Priority" val={newAction.priority} onChange={v=>setNewAction(a=>({...a,priority:v}))}
+                        options={[{value:"High",label:"High"},{value:"Medium",label:"Medium"},{value:"Low",label:"Low"}]}/>
+                      <Input label="Month" val={newAction.month} onChange={v=>setNewAction(a=>({...a,month:v}))} placeholder="e.g. March 2026"/>
+                    </div>
+                    <button onClick={addAction} style={{ padding:"10px 20px", borderRadius:10,
+                      border:"none", background:C.grad1, color:"white",
+                      fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                      + Add Item
+                    </button>
+                  </Card>
+                  <Card>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
+                      Action Items ({actions.length})
+                    </div>
+                    {actions.length === 0 && <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No action items yet.</p>}
+                    <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                      {actions.map(a => (
+                        <div key={a.id} style={{ display:"flex", alignItems:"flex-start", gap:10,
+                          padding:"10px 14px", borderRadius:10,
+                          background:a.done?`${C.green}06`:C.bg,
+                          border:`1px solid ${a.done?C.green+"25":C.border}` }}>
+                          <div onClick={() => toggleAction(a)} style={{ width:20, height:20, borderRadius:6,
+                            background:a.done?C.green:C.bg3, display:"flex", alignItems:"center",
+                            justifyContent:"center", cursor:"pointer", flexShrink:0, marginTop:2 }}>
+                            {a.done && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
                           </div>
+                          <div style={{ flex:1 }}>
+                            <div style={{ fontFamily:F, fontSize:13, color:a.done?C.dim:C.text,
+                              textDecoration:a.done?"line-through":"none" }}>{a.text}</div>
+                            <div style={{ display:"flex", gap:8, marginTop:4, flexWrap:"wrap" }}>
+                              <PriBadge p={a.priority}/>
+                              {a.month && <span style={{ fontSize:11, color:C.dim, fontFamily:F }}>{a.month}</span>}
+                            </div>
+                          </div>
+                          <button onClick={() => deleteAction(a.id)} style={{ background:"none", border:"none",
+                            color:C.dim, cursor:"pointer", fontSize:16, padding:2 }}>🗑</button>
                         </div>
-                        <button onClick={() => deleteAction(a.id)} style={{ background:"none", border:"none",
-                          color:C.dim, cursor:"pointer", fontSize:16, padding:2 }}>🗑</button>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </>)}
-            </div>
-          )}
+                      ))}
+                    </div>
+                  </Card>
+                </div>
+              )}
 
-          {/* ── VALUATION ENGAGEMENT ── */}
-          {tab === "engagement" && (
-            <div style={{ maxWidth:520 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (
-                <Card>
+              {/* ─── ENGAGEMENT TAB ─── */}
+              {profileTab === "engagement" && (
+                <Card style={{ maxWidth:520 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:20 }}>
                     Valuation Engagement — {selected.name}
                   </div>
@@ -2625,170 +2744,20 @@ function AdminPanel({ admin, onLogout }) {
                   <SaveBtn onClick={saveEngagement}/>
                 </Card>
               )}
+
             </div>
-          )}
+          </div>
+        )}
 
-          {/* ── DOCUMENTS ── */}
-          {tab === "documents" && (
-            <div style={{ maxWidth:600 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (<>
-                {/* Upload area */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>
-                    Upload Document for {selected.name}
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Upload board packs, valuation reports, or any client document. Max 10MB per file.
-                  </p>
-                  <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
-                    border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
-                    background:C.bg, transition:"border-color 0.2s" }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                    <input type="file" style={{ display:"none" }}
-                      accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.ppt,.pptx"
-                      onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if (!file || !selected) return;
-                        // 10MB limit
-                        if (file.size > 10 * 1024 * 1024) {
-                          alert("File is too large. Maximum size is 10MB.");
-                          e.target.value = "";
-                          return;
-                        }
-                        setDocLoading(true);
-                        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-                        const path = `${selected.id}/${Date.now()}-${safeName}`;
-                        const { error: upErr } = await supabase.storage
-                          .from("client-docs").upload(path, file, { upsert: false });
-                        if (upErr) {
-                          console.error("Upload error:", upErr);
-                          alert("Upload failed: " + upErr.message + "\n\nMake sure the 'client-docs' bucket exists in Supabase Storage and is set to Public.");
-                          setDocLoading(false);
-                          e.target.value = "";
-                          return;
-                        }
-                        const { data: urlData } = supabase.storage
-                          .from("client-docs").getPublicUrl(path);
-                        const { data: docRow, error: dbErr } = await supabase.from("documents").insert({
-                          client_id: selected.id,
-                          name: file.name,
-                          file_url: urlData.publicUrl,
-                          file_size: (file.size/1024/1024).toFixed(2) + " MB",
-                          uploaded_by: "garima",
-                        }).select().single();
-                        if (dbErr) {
-                          console.error("DB insert error:", dbErr);
-                          alert("File uploaded but failed to save record: " + dbErr.message);
-                        }
-                        if (docRow) setDocs(prev => [docRow, ...prev]);
-                        setDocLoading(false);
-                        e.target.value = "";
-                      }}
-                    />
-                    {docLoading ? (
-                      <div style={{ fontFamily:F, fontSize:14, color:C.blue }}>Uploading…</div>
-                    ) : (<>
-                      <div style={{ fontSize:32, marginBottom:8 }}>📤</div>
-                      <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text }}>
-                        Click to upload a file
-                      </div>
-                      <div style={{ fontFamily:F, fontSize:12, color:C.dim, marginTop:4 }}>
-                        PDF, Excel, Word — max 10MB
-                      </div>
-                    </>)}
-                  </label>
-                </Card>
-
-                {/* Document list */}
-                <Card>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-                    Uploaded Documents ({docs.length})
-                  </div>
-                  {docs.length === 0 && (
-                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No documents uploaded yet.</p>
-                  )}
-                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                    {docs.map((d,i) => (
-                      <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                        padding:"12px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}`,
-                        flexWrap:"wrap", gap:10 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                          <div style={{ width:36, height:36, borderRadius:9, background:`${C.blue}12`,
-                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📄</div>
-                          <div>
-                            <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
-                            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
-                              {d.file_size} · {new Date(d.created_at).toLocaleDateString("en-IN")}
-                            </div>
-                          </div>
-                        </div>
-                        <div style={{ display:"flex", gap:8 }}>
-                          <a href={d.file_url} target="_blank" rel="noopener"
-                            style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${C.blue}`,
-                              color:C.blue, fontFamily:F, fontWeight:600, fontSize:12, textDecoration:"none" }}>
-                            View
-                          </a>
-                          <button onClick={async () => {
-                            await supabase.from("documents").delete().eq("id", d.id);
-                            setDocs(prev => prev.filter(x => x.id!==d.id));
-                          }} style={{ padding:"7px 12px", borderRadius:8, border:`1px solid ${C.border}`,
-                            background:"none", color:C.red, cursor:"pointer", fontSize:13 }}>🗑</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-
-                {/* Client Submissions */}
-                <Card style={{ marginTop:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    📥 Client Submissions ({clientUploads.length})
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>
-                    Documents uploaded by {selected.name} from their portal
-                  </p>
-                  {clientUploads.length === 0 && (
-                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No submissions from client yet.</p>
-                  )}
-                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                    {clientUploads.map((d,i) => (
-                      <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                        padding:"12px 14px", borderRadius:10, background:`${C.green}08`,
-                        border:`1px solid ${C.green}30`, flexWrap:"wrap", gap:10 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                          <div style={{ width:36, height:36, borderRadius:9, background:`${C.green}15`,
-                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📨</div>
-                          <div>
-                            <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
-                            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
-                              {d.category} · {d.file_size} · {new Date(d.created_at).toLocaleDateString("en-IN")}
-                            </div>
-                          </div>
-                        </div>
-                        <a href={d.file_url} target="_blank" rel="noopener"
-                          style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${C.green}`,
-                            color:C.green, fontFamily:F, fontWeight:600, fontSize:12, textDecoration:"none" }}>
-                          View
-                        </a>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </>)}
-            </div>
-          )}
-
-        </div>
       </div>
+      <style>{`
+        @media(max-width:700px){ .profile-docs-grid{ grid-template-columns:1fr!important } }
+        @media(max-width:480px){ .kpi-edit-grid{ grid-template-columns:1fr!important } }
+      `}</style>
     </div>
   );
 }
+
 
 export default function App() {
   const [client,  setClient]  = useState(null);
