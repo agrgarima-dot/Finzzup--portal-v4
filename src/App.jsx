@@ -486,6 +486,25 @@ function Topbar({ title, client }) {
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 function Dashboard({ client }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from("client_analytics")
+      .select("*").eq("client_id", client.id)
+      .order("updated_at", { ascending:false }).limit(1).single()
+      .then(({ data: d }) => { setData(d); setLoading(false); });
+  }, [client.id]);
+
+  const KPI_META = [
+    { key:"revenue",      label:"Revenue",      icon:"📈", color:C.blue,   bg:"#EEF3FE" },
+    { key:"gross_margin", label:"Gross Margin", icon:"💹", color:C.teal,   bg:"#E6FAF7" },
+    { key:"cash_balance", label:"Cash Balance", icon:"🏦", color:C.amber,  bg:"#FEF7E7" },
+    { key:"burn_rate",    label:"Burn Rate",    icon:"🔥", color:C.purple, bg:"#F3EFFF" },
+    { key:"runway",       label:"Runway",       icon:"⏳", color:C.pink,   bg:"#FEF0F7" },
+    { key:"arr",          label:"ARR",          icon:"🎯", color:C.green,  bg:"#E8FAF3" },
+  ];
+
   return (
     <div style={{ padding:24 }}>
       {/* Welcome */}
@@ -499,66 +518,180 @@ function Dashboard({ client }) {
           </div>
           <div style={{ fontFamily:F, fontWeight:800, fontSize:22, marginBottom:4 }}>{client.name}</div>
           <div style={{ fontFamily:F, fontSize:13, opacity:0.75 }}>
-            {client.company} · Last updated by Garima: 20 Feb 2026
+            {client.company}{data?.month ? ` · Updated: ${data.month}` : ""}
           </div>
         </div>
       </div>
 
-      {/* Garima's note */}
-      <Card style={{ marginBottom:24, borderLeft:`3px solid ${C.blue}` }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
-          letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
-          📝 Note from Garima — Feb 2026
+      {loading ? (
+        <Card style={{ textAlign:"center", padding:40 }}>
+          <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Loading your dashboard…</div>
+        </Card>
+      ) : !data ? (
+        <Card style={{ textAlign:"center", padding:40, borderLeft:`3px solid ${C.amber}` }}>
+          <div style={{ fontSize:28, marginBottom:12 }}>📊</div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>Dashboard being prepared</div>
+          <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>Garima is setting up your analytics. Check back soon.</div>
+        </Card>
+      ) : (<>
+        {/* Garima note */}
+        {data.garima_note && (
+          <Card style={{ marginBottom:24, borderLeft:`3px solid ${C.blue}` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
+              letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
+              📝 Note from Garima{data.month ? ` — ${data.month}` : ""}
+            </div>
+            <p style={{ fontSize:14, color:C.text, lineHeight:1.75, fontFamily:F, margin:0 }}>
+              {data.garima_note}
+            </p>
+          </Card>
+        )}
+
+        {/* KPI Grid */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:24 }} className="kpi-grid">
+          {KPI_META.map((k,i) => {
+            const val = data[k.key]; const prev = data[k.key+"_prev"];
+            if (!val) return null;
+            return (
+              <Card key={i} style={{ padding:18 }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
+                  <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
+                    display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>
+                    {k.icon}
+                  </div>
+                  {prev && <span style={{ fontSize:11, fontWeight:700, color:C.muted,
+                    background:C.bg3, padding:"3px 8px", borderRadius:100, fontFamily:F }}>
+                    Prev: {prev}
+                  </span>}
+                </div>
+                <div style={{ fontFamily:FM, fontWeight:600, fontSize:22, color:k.color, marginBottom:2 }}>{val}</div>
+                <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text }}>{k.label}</div>
+              </Card>
+            );
+          }).filter(Boolean)}
         </div>
-        <p style={{ fontSize:14, color:C.text, lineHeight:1.75, fontFamily:F, margin:0 }}>
-          Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.
-        </p>
-      </Card>
 
-      {/* KPI Grid */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:24 }} className="kpi-grid">
-        {KPIs.map((k,i) => (
-          <Card key={i} style={{ padding:18 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-              <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
-                display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>
-                {k.icon}
-              </div>
-              <span style={{ fontSize:11, fontWeight:700, color:k.trend==="up"?C.green:C.red,
-                background:k.trend==="up"?"#ECFDF5":"#FEF2F2", padding:"3px 8px",
-                borderRadius:100, fontFamily:F }}>
-                {k.trend==="up" ? "▲" : "▼"} vs last month
-              </span>
-            </div>
-            <div style={{ fontFamily:FM, fontWeight:600, fontSize:22, color:k.color, marginBottom:2 }}>
-              {k.value}
-            </div>
-            <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, marginBottom:2 }}>
-              {k.label}
-            </div>
-            <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>
-              Prev: {k.prev}
-            </div>
-          </Card>
-        ))}
-      </div>
+        {/* P&L Summary */}
+        {data.pl_data && (() => {
+          try {
+            const pl = JSON.parse(data.pl_data);
+            if (!pl.length) return null;
+            return (
+              <Card style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>📊 P&L Summary</div>
+                <div style={{ overflowX:"auto" }}>
+                  <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
+                    <thead>
+                      <tr>
+                        {["Line Item","Amount","vs Last Month"].map(h => (
+                          <th key={h} style={{ textAlign:"left", padding:"8px 12px", fontSize:11,
+                            fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em",
+                            borderBottom:`1px solid ${C.border}` }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pl.map((row, i) => (
+                        <tr key={i} style={{ background: i%2===0 ? "transparent" : C.bg }}>
+                          <td style={{ padding:"9px 12px", color:C.text, fontWeight:row.bold?700:400 }}>{row.item}</td>
+                          <td style={{ padding:"9px 12px", color:row.highlight?C.blue:C.text, fontFamily:FM, fontWeight:600 }}>{row.amount}</td>
+                          <td style={{ padding:"9px 12px", color: row.change?.startsWith("+") ? C.green : row.change?.startsWith("-") ? C.red : C.dim, fontSize:12, fontWeight:600 }}>{row.change || "—"}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            );
+          } catch(e) { return null; }
+        })()}
 
-      {/* Quick links row */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }} className="quick-grid">
-        {[
-          { icon:"📁", label:"Latest Report",      sub:"February 2026", color:C.purple, action:"myreport"  },
-          { icon:"✅", label:"Action Items",       sub:"2 pending (High priority)", color:C.red,    action:"actions"    },
-          { icon:"📋", label:"Valuation Status",   sub:"Analysis in progress", color:C.teal,   action:"engagement" },
-        ].map((q,i) => (
-          <Card key={i} style={{ padding:16, cursor:"pointer", transition:"box-shadow 0.2s" }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 16px rgba(15,26,56,0.1)"}
-            onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
-            <div style={{ fontSize:22, marginBottom:8 }}>{q.icon}</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:3 }}>{q.label}</div>
-            <div style={{ fontFamily:F, fontSize:11, color:q.color, fontWeight:600 }}>{q.sub}</div>
-          </Card>
-        ))}
-      </div>
+        {/* Ageing */}
+        {data.aging_data && (() => {
+          try {
+            const ag = JSON.parse(data.aging_data);
+            if (!ag.length) return null;
+            return (
+              <Card style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>⏰ Debtor Ageing</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {ag.map((row, i) => {
+                    const max = Math.max(...ag.map(r => parseFloat(r.amount)||0));
+                    const pct = max ? ((parseFloat(row.amount)||0) / max) * 100 : 0;
+                    const col = i===0 ? C.green : i===1 ? C.amber : i===2 ? C.orange||"#F97316" : C.red;
+                    return (
+                      <div key={i} style={{ display:"flex", alignItems:"center", gap:12 }}>
+                        <div style={{ width:90, fontFamily:F, fontSize:12, color:C.muted, flexShrink:0 }}>{row.bucket}</div>
+                        <div style={{ flex:1, height:8, borderRadius:4, background:C.bg3 }}>
+                          <div style={{ height:"100%", borderRadius:4, width:`${pct}%`, background:col, transition:"width 0.8s" }}/>
+                        </div>
+                        <div style={{ width:70, textAlign:"right", fontFamily:FM, fontSize:13, fontWeight:700, color:col }}>{row.amount}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {data.aging_note && <div style={{ marginTop:14, fontFamily:F, fontSize:13, color:C.amber }}>{data.aging_note}</div>}
+              </Card>
+            );
+          } catch(e) { return null; }
+        })()}
+
+        {/* Cashflow mini chart */}
+        {data.cashflow_data && (() => {
+          try {
+            const cf = JSON.parse(data.cashflow_data);
+            if (!cf.length) return null;
+            return (
+              <Card style={{ marginBottom:20 }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>💰 Cash Flow</div>
+                <div style={{ height:200 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={cf} margin={{ top:5, right:10, left:0, bottom:0 }}>
+                      <defs>
+                        <linearGradient id="cfga" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%"  stopColor={C.blue} stopOpacity={0.15}/>
+                          <stop offset="95%" stopColor={C.blue} stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="cfgf" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%"  stopColor={C.purple} stopOpacity={0.15}/>
+                          <stop offset="95%" stopColor={C.purple} stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+                      <XAxis dataKey="month" tick={{ fontFamily:F, fontSize:11, fill:C.dim }} axisLine={false} tickLine={false}/>
+                      <YAxis tick={{ fontFamily:FM, fontSize:10, fill:C.dim }} axisLine={false} tickLine={false} width={44}/>
+                      <Tooltip/>
+                      <Area type="monotone" dataKey="actual" stroke={C.blue} strokeWidth={2} fill="url(#cfga)" connectNulls={false} dot={{ fill:C.blue, r:3 }}/>
+                      <Area type="monotone" dataKey="forecast" stroke={C.purple} strokeWidth={2} fill="url(#cfgf)" strokeDasharray="5 5" connectNulls={false} dot={{ fill:C.purple, r:3 }}/>
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+                {data.cashflow_note && (
+                  <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10,
+                    background:`${C.amber}08`, border:`1px solid ${C.amber}20` }}>
+                    <span style={{ fontFamily:F, fontSize:13, color:C.amber }}>{data.cashflow_note}</span>
+                  </div>
+                )}
+              </Card>
+            );
+          } catch(e) { return null; }
+        })()}
+
+        {/* Quick links */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }} className="quick-grid">
+          {[
+            { icon:"📁", label:"Latest Report",    sub:"Board packs & reports", color:C.purple },
+            { icon:"✅", label:"Action Items",     sub:"From Garima",            color:C.red    },
+            { icon:"📋", label:"Valuation Status", sub:"Track your engagement",  color:C.teal   },
+          ].map((q,i) => (
+            <Card key={i} style={{ padding:16, cursor:"pointer" }}>
+              <div style={{ fontSize:22, marginBottom:8 }}>{q.icon}</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:3 }}>{q.label}</div>
+              <div style={{ fontFamily:F, fontSize:11, color:q.color, fontWeight:600 }}>{q.sub}</div>
+            </Card>
+          ))}
+        </div>
+      </>)}
 
       <style>{`
         @media(max-width:640px){
@@ -572,170 +705,161 @@ function Dashboard({ client }) {
 }
 
 // ─── CASH FLOW ────────────────────────────────────────────────────────────────
-function CashFlow() {
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (!active || !payload?.length) return null;
-    const d = payload[0];
-    return (
-      <div style={{ background:C.bg2, border:`1px solid ${C.border}`, borderRadius:10,
-        padding:"10px 14px", fontFamily:F, boxShadow:"0 4px 16px rgba(15,26,56,0.1)" }}>
-        <div style={{ fontSize:12, color:C.muted, marginBottom:4 }}>{label}</div>
-        <div style={{ fontSize:16, fontWeight:700, color:d.name==="forecast"?C.purple:C.blue }}>
-          ₹{d.value}L
-        </div>
-        <div style={{ fontSize:11, color:C.dim, marginTop:2 }}>
-          {d.name==="forecast" ? "Forecast" : "Actual"}
-        </div>
-      </div>
-    );
-  };
+function CashFlow({ client }) {
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("client_analytics")
+      .select("cashflow_data,cashflow_note,month").eq("client_id", client.id)
+      .order("updated_at",{ascending:false}).limit(1).single()
+      .then(({ data:d }) => { setData(d); setLoading(false); });
+  }, [client.id]);
+
+  let cf = [];
+  try { if (data?.cashflow_data) cf = JSON.parse(data.cashflow_data); } catch(e) {}
 
   return (
     <div style={{ padding:24 }}>
-      <SectionTitle>Cash Flow — 9 Month View</SectionTitle>
-
-      <Card style={{ marginBottom:20 }}>
-        <div style={{ display:"flex", gap:16, marginBottom:20, flexWrap:"wrap" }}>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-            <div style={{ width:12, height:12, borderRadius:3, background:C.blue }}/>
-            <span style={{ fontSize:12, color:C.muted, fontFamily:F }}>Actual</span>
-          </div>
-          <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-            <div style={{ width:12, height:12, borderRadius:3, background:C.purple, opacity:0.6 }}/>
-            <span style={{ fontSize:12, color:C.muted, fontFamily:F }}>Forecast</span>
-          </div>
-        </div>
-
-        <div style={{ height:260 }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={CASHFLOW} margin={{ top:5, right:10, left:0, bottom:0 }}>
-              <defs>
-                <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={C.blue}   stopOpacity={0.15}/>
-                  <stop offset="95%" stopColor={C.blue}   stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="gf" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%"  stopColor={C.purple} stopOpacity={0.15}/>
-                  <stop offset="95%" stopColor={C.purple} stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
-              <XAxis dataKey="month" tick={{ fontFamily:F, fontSize:11, fill:C.dim }} axisLine={false} tickLine={false}/>
-              <YAxis tick={{ fontFamily:FM, fontSize:10, fill:C.dim }} axisLine={false} tickLine={false}
-                tickFormatter={v=>`₹${v}L`} width={48}/>
-              <Tooltip content={<CustomTooltip/>}/>
-              <ReferenceLine x="Feb" stroke={C.border} strokeDasharray="4 4" label={{ value:"Today", position:"top", fontSize:10, fill:C.dim, fontFamily:F }}/>
-              <Area type="monotone" dataKey="value"    name="actual"   stroke={C.blue}   strokeWidth={2} fill="url(#ga)" connectNulls={false} dot={{ fill:C.blue, r:3 }}/>
-              <Area type="monotone" dataKey="forecast" name="forecast" stroke={C.purple} strokeWidth={2} fill="url(#gf)" strokeDasharray="5 5" connectNulls={false} dot={{ fill:C.purple, r:3 }}/>
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </Card>
-
-      {/* Garima's commentary */}
-      <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase",
-          letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
-          ⚠️ Garima's Analysis — March Watch
-        </div>
-        <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:"0 0 12px" }}>
-          March forecast shows a dip to ₹175L — lowest in 6 months. This is driven by:
-        </p>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {[
-            ["Advance tax payment due 15 March", "~₹32L outflow"],
-            ["Delayed collection from Client B (payment expected April)", "₹45L pushed out"],
-            ["Quarterly vendor payments coinciding", "₹18L"],
-          ].map(([reason, impact], i) => (
-            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-              padding:"9px 12px", borderRadius:8, background:C.bg }}>
-              <span style={{ fontSize:13, color:C.muted, fontFamily:F }}>{reason}</span>
-              <span style={{ fontSize:12, fontWeight:700, color:C.red, fontFamily:FM, whiteSpace:"nowrap", marginLeft:10 }}>{impact}</span>
+      <SectionTitle>Cash Flow — Monthly View</SectionTitle>
+      {loading ? (
+        <Card style={{ textAlign:"center", padding:32 }}><div style={{ fontFamily:F, color:C.muted }}>Loading…</div></Card>
+      ) : cf.length === 0 ? (
+        <Card style={{ textAlign:"center", padding:40 }}>
+          <div style={{ fontSize:28, marginBottom:10 }}>💰</div>
+          <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Cash flow data not yet available. Garima will update this soon.</div>
+        </Card>
+      ) : (<>
+        <Card style={{ marginBottom:20 }}>
+          <div style={{ display:"flex", gap:16, marginBottom:20 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <div style={{ width:12, height:12, borderRadius:3, background:C.blue }}/><span style={{ fontSize:12, color:C.muted, fontFamily:F }}>Actual</span>
             </div>
-          ))}
-        </div>
-        <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10,
-          background:`${C.green}0A`, border:`1px solid ${C.green}20` }}>
-          <span style={{ fontSize:13, fontWeight:600, color:C.green, fontFamily:F }}>
-            ✅ April–May outlook is positive. Hold off on discretionary capex until April.
-          </span>
-        </div>
-      </Card>
+            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <div style={{ width:12, height:12, borderRadius:3, background:C.purple, opacity:0.6 }}/><span style={{ fontSize:12, color:C.muted, fontFamily:F }}>Forecast</span>
+            </div>
+          </div>
+          <div style={{ height:260 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={cf} margin={{ top:5, right:10, left:0, bottom:0 }}>
+                <defs>
+                  <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor={C.blue}   stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor={C.blue}   stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="gf" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%"  stopColor={C.purple} stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor={C.purple} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+                <XAxis dataKey="month" tick={{ fontFamily:F, fontSize:11, fill:C.dim }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontFamily:FM, fontSize:10, fill:C.dim }} axisLine={false} tickLine={false} width={48}/>
+                <Tooltip/>
+                <Area type="monotone" dataKey="actual"   stroke={C.blue}   strokeWidth={2} fill="url(#ga)" connectNulls={false} dot={{ fill:C.blue, r:3 }}/>
+                <Area type="monotone" dataKey="forecast" stroke={C.purple} strokeWidth={2} fill="url(#gf)" strokeDasharray="5 5" connectNulls={false} dot={{ fill:C.purple, r:3 }}/>
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+        {data?.cashflow_note && (
+          <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase",
+              letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>⚠️ Garima's Analysis</div>
+            <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>{data.cashflow_note}</p>
+          </Card>
+        )}
+      </>)}
     </div>
   );
 }
 
 // ─── ACTION ITEMS ─────────────────────────────────────────────────────────────
-function ActionItems() {
-  const [items, setItems] = useState(ACTIONS);
-  const toggle = id => setItems(prev => prev.map(a => a.id===id ? {...a, done:!a.done} : a));
-  const pending  = items.filter(a => !a.done);
-  const done     = items.filter(a => a.done);
+function ActionItems({ client }) {
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase.from("action_items").select("*").eq("client_id", client.id)
+      .order("created_at",{ascending:false})
+      .then(({ data }) => { setItems(data || []); setLoading(false); });
+  }, [client.id]);
+
+  const toggle = async (id, done) => {
+    await supabase.from("action_items").update({ done: !done }).eq("id", id);
+    setItems(prev => prev.map(a => a.id===id ? {...a, done:!done} : a));
+  };
+
+  const pending = items.filter(a => !a.done);
+  const done_   = items.filter(a => a.done);
 
   return (
     <div style={{ padding:24 }}>
-      <SectionTitle
-        sub={`${pending.length} pending · ${done.length} completed`}>
+      <SectionTitle sub={`${pending.length} pending · ${done_.length} completed`}>
         Action Items from Garima
       </SectionTitle>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20, textAlign:"center" }}>
-        {[
-          { label:"Pending", n:pending.length, c:C.red,   bg:"#FEF2F2" },
-          { label:"Done",    n:done.length,    c:C.green, bg:"#ECFDF5" },
-        ].map((s,i) => (
-          <Card key={i} style={{ padding:16 }}>
-            <div style={{ fontFamily:FM, fontSize:32, fontWeight:700, color:s.c }}>{s.n}</div>
-            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{s.label}</div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Pending */}
-      {pending.length > 0 && (
-        <div style={{ marginBottom:24 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-            letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Pending</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {pending.map(a => (
-              <Card key={a.id} style={{ padding:"14px 16px" }}>
-                <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
-                  <button onClick={() => toggle(a.id)} style={{ width:20, height:20, borderRadius:6,
-                    border:`2px solid ${C.border}`, background:"white", cursor:"pointer",
-                    flexShrink:0, marginTop:1, touchAction:"manipulation" }}/>
-                  <div style={{ flex:1 }}>
-                    <p style={{ fontFamily:F, fontSize:14, color:C.text, margin:"0 0 6px", lineHeight:1.5 }}>{a.text}</p>
-                    <PriBadge p={a.priority}/>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+      {loading ? (
+        <Card style={{ textAlign:"center", padding:32 }}><div style={{ fontFamily:F, color:C.muted }}>Loading…</div></Card>
+      ) : items.length === 0 ? (
+        <Card style={{ textAlign:"center", padding:40 }}>
+          <div style={{ fontSize:28, marginBottom:10 }}>✅</div>
+          <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>No action items yet. Garima will add them here.</div>
+        </Card>
+      ) : (<>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20, textAlign:"center" }}>
+          {[{label:"Pending",n:pending.length,c:C.red,bg:"#FEF2F2"},{label:"Done",n:done_.length,c:C.green,bg:"#ECFDF5"}].map((s,i) => (
+            <Card key={i} style={{ padding:16 }}>
+              <div style={{ fontFamily:FM, fontSize:32, fontWeight:700, color:s.c }}>{s.n}</div>
+              <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{s.label}</div>
+            </Card>
+          ))}
         </div>
-      )}
-
-      {/* Done */}
-      {done.length > 0 && (
-        <div>
-          <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-            letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Completed</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {done.map(a => (
-              <Card key={a.id} style={{ padding:"14px 16px", opacity:0.6 }}>
-                <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
-                  <div style={{ width:20, height:20, borderRadius:6, background:C.green,
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    flexShrink:0, marginTop:1, cursor:"pointer" }}
-                    onClick={() => toggle(a.id)}>
-                    <span style={{ color:"white", fontSize:11, fontWeight:900 }}>✓</span>
+        {pending.length > 0 && (
+          <div style={{ marginBottom:24 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+              letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Pending</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {pending.map(a => (
+                <Card key={a.id} style={{ padding:"14px 16px" }}>
+                  <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
+                    <button onClick={() => toggle(a.id, a.done)} style={{ width:20, height:20, borderRadius:6,
+                      border:`2px solid ${C.border}`, background:"white", cursor:"pointer",
+                      flexShrink:0, marginTop:1, touchAction:"manipulation" }}/>
+                    <div style={{ flex:1 }}>
+                      <p style={{ fontFamily:F, fontSize:14, color:C.text, margin:"0 0 6px", lineHeight:1.5 }}>{a.text}</p>
+                      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                        <PriBadge p={a.priority}/>
+                        {a.month && <span style={{ fontSize:11, color:C.dim, fontFamily:F }}>{a.month}</span>}
+                      </div>
+                    </div>
                   </div>
-                  <p style={{ fontFamily:F, fontSize:14, color:C.muted, margin:0, textDecoration:"line-through", lineHeight:1.5 }}>{a.text}</p>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+        {done_.length > 0 && (
+          <div>
+            <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+              letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Completed</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {done_.map(a => (
+                <Card key={a.id} style={{ padding:"14px 16px", opacity:0.6 }}>
+                  <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
+                    <div style={{ width:20, height:20, borderRadius:6, background:C.green,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      flexShrink:0, marginTop:1, cursor:"pointer" }}
+                      onClick={() => toggle(a.id, a.done)}>
+                      <span style={{ color:"white", fontSize:11, fontWeight:900 }}>✓</span>
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:14, color:C.muted, margin:0, textDecoration:"line-through", lineHeight:1.5 }}>{a.text}</p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+      </>)}
     </div>
   );
 }
@@ -1553,9 +1677,34 @@ function BoardPacksTabbed() {
 
 // ─── CFO PACKS (existing component) ──────────────────────────────────────────
 function CFOPacks({ client }) {
-  const packType  = client.clientPack || "startup";
-  const data      = CFO_PACK_DATA[packType];
+  const packType  = client.client_pack || client.clientPack || "startup";
   const [tab, setTab] = useState("pack"); // "pack" | "boardpacks"
+  const [liveData, setLiveData] = useState(null);
+  const staticData = CFO_PACK_DATA[packType] || CFO_PACK_DATA["startup"];
+
+  useEffect(() => {
+    supabase.from("client_analytics").select("cfo_data").eq("client_id", client.id)
+      .order("updated_at",{ascending:false}).limit(1).single()
+      .then(({ data: d }) => {
+        if (!d?.cfo_data) return;
+        try { setLiveData(JSON.parse(d.cfo_data)); } catch(e) {}
+      });
+  }, [client.id]);
+
+  // Merge live data over static defaults — live wins
+  const data = liveData ? {
+    ...staticData,
+    fundraiseScore: liveData.score ?? staticData.fundraiseScore,
+    cashHealth:     liveData.score ?? staticData.cashHealth,
+    ipoScore:       liveData.score ?? staticData.ipoScore,
+    fundraiseBreakdown: liveData.breakdown?.length ? liveData.breakdown.map(b=>({...b})) : staticData.fundraiseBreakdown,
+    cashBreakdown:      liveData.breakdown?.length ? liveData.breakdown : staticData.cashBreakdown,
+    ipoBreakdown:       liveData.breakdown?.length ? liveData.breakdown : staticData.ipoBreakdown,
+    investorMetrics:    liveData.metrics?.length ? liveData.metrics : staticData.investorMetrics,
+    workingCapital:     liveData.metrics?.length ? liveData.metrics : staticData.workingCapital,
+    complianceFlags:    liveData.metrics?.length ? liveData.metrics.map(m=>({flag:m.label,severity:m.flag?"High":"Low",detail:m.note})) : staticData.complianceFlags,
+    garimaNote: liveData.garimaNote || staticData.garimaNote,
+  } : staticData;
 
   return (
     <div style={{ padding:24 }}>
@@ -1626,96 +1775,69 @@ function CFOPacks({ client }) {
 }
 
 // ─── VALUATION ENGAGEMENT ────────────────────────────────────────────────────
-function Engagement() {
-  const pct = (ENGAGEMENT.status / (ENGAGEMENT.stages.length - 1)) * 100;
+function Engagement({ client }) {
+  const [eng, setEng] = useState(null);
+  const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    supabase.from("engagements").select("*").eq("client_id", client.id).single()
+      .then(({ data }) => { setEng(data); setLoading(false); });
+  }, [client.id]);
+
+  const stages = ["Docs Requested","Docs Received","Analysis","Draft Ready","Revision","Final Signed"];
+  const pct = eng ? (eng.status / (stages.length - 1)) * 100 : 0;
 
   return (
     <div style={{ padding:24 }}>
-      <SectionTitle sub="Live status of your valuation engagement.">
-        Valuation Status
-      </SectionTitle>
-
-      {/* Status card */}
-      <Card style={{ marginBottom:20 }}>
-        <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
-          <div>
-            <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Engagement</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>{ENGAGEMENT.type}</div>
-            <div style={{ fontFamily:FM, fontSize:12, color:C.muted, marginTop:3 }}>Ref: {ENGAGEMENT.ref}</div>
-          </div>
-          <div style={{ textAlign:"right" }}>
-            <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Expected</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.blue }}>{ENGAGEMENT.expectedDate}</div>
-          </div>
-        </div>
-
-        {/* Progress bar */}
-        <div style={{ position:"relative", marginBottom:24 }}>
-          <div style={{ height:6, borderRadius:3, background:C.bg3, marginBottom:24 }}>
-            <div style={{ height:"100%", borderRadius:3, background:C.grad1,
-              width:`${pct}%`, transition:"width 0.6s" }}/>
-          </div>
-          <div style={{ display:"flex", justifyContent:"space-between" }}>
-            {ENGAGEMENT.stages.map((s,i) => (
-              <div key={i} style={{ textAlign:"center", flex:1 }}>
-                <div style={{ width:22, height:22, borderRadius:"50%", margin:"0 auto 6px",
-                  background: i <= ENGAGEMENT.status ? C.blue : C.bg3,
-                  border: i === ENGAGEMENT.status ? `3px solid ${C.blue}` : "none",
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  boxShadow: i === ENGAGEMENT.status ? `0 0 0 4px ${C.blue}25` : "none",
-                  transition:"all 0.3s" }}>
-                  {i < ENGAGEMENT.status && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
-                  {i === ENGAGEMENT.status && <span style={{ width:8, height:8, borderRadius:"50%", background:"white", display:"block" }}/>}
-                </div>
-                <div style={{ fontFamily:F, fontSize:10, color: i <= ENGAGEMENT.status ? C.blue : C.dim,
-                  fontWeight: i === ENGAGEMENT.status ? 700 : 500, lineHeight:1.3 }}>
-                  {s}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.blue}08`,
-          border:`1px solid ${C.blue}20` }}>
-          <span style={{ fontFamily:F, fontSize:13, color:C.blue, fontWeight:600 }}>
-            📌 Currently: <strong>{ENGAGEMENT.stages[ENGAGEMENT.status]}</strong> — Garima is building the DCF model. On track for {ENGAGEMENT.expectedDate}.
-          </span>
-        </div>
-      </Card>
-
-      {/* Document checklist */}
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-          Document Checklist
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {ENGAGEMENT.docs.map((d,i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:10, background: d.done ? `${C.green}08` : C.bg,
-              border:`1px solid ${d.done ? C.green+"25" : C.border}` }}>
-              <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
-                background: d.done ? C.green : C.bg3,
-                display:"flex", alignItems:"center", justifyContent:"center" }}>
-                {d.done && <span style={{ color:"white", fontSize:11, fontWeight:900 }}>✓</span>}
-              </div>
-              <span style={{ fontFamily:F, fontSize:13, color: d.done ? C.green : C.muted,
-                fontWeight: d.done ? 600 : 500 }}>{d.name}</span>
-              {!d.done && <Badge color={C.amber} bg="#FFFBEB">Pending</Badge>}
+      <SectionTitle sub="Live status of your valuation engagement.">Valuation Status</SectionTitle>
+      {loading ? (
+        <Card style={{ textAlign:"center", padding:32 }}><div style={{ fontFamily:F, color:C.muted }}>Loading…</div></Card>
+      ) : !eng ? (
+        <Card style={{ textAlign:"center", padding:40 }}>
+          <div style={{ fontSize:28, marginBottom:10 }}>📋</div>
+          <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Valuation engagement details will appear here once set up by Garima.</div>
+        </Card>
+      ) : (<>
+        <Card style={{ marginBottom:20 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
+            <div>
+              <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Engagement</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>{eng.type}</div>
+              {eng.ref_number && <div style={{ fontFamily:FM, fontSize:12, color:C.muted, marginTop:3 }}>Ref: {eng.ref_number}</div>}
             </div>
-          ))}
-        </div>
-        {ENGAGEMENT.docs.some(d => !d.done) && (
-          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10,
-            background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
-            <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
-              ⚠️ Please upload pending documents to avoid delays. Send to garima@finzzup.com or WhatsApp.
+            {eng.expected_date && <div style={{ textAlign:"right" }}>
+              <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Expected</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.blue }}>{eng.expected_date}</div>
+            </div>}
+          </div>
+          <div style={{ position:"relative", marginBottom:24 }}>
+            <div style={{ height:6, borderRadius:3, background:C.bg3, marginBottom:24 }}>
+              <div style={{ height:"100%", borderRadius:3, background:C.grad1, width:`${pct}%`, transition:"width 0.6s" }}/>
+            </div>
+            <div style={{ display:"flex", justifyContent:"space-between" }}>
+              {stages.map((s,i) => (
+                <div key={i} style={{ textAlign:"center", flex:1 }}>
+                  <div style={{ width:22, height:22, borderRadius:"50%", margin:"0 auto 6px",
+                    background: i <= eng.status ? C.blue : C.bg3,
+                    border: i === eng.status ? `3px solid ${C.blue}` : "none",
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    boxShadow: i === eng.status ? `0 0 0 4px ${C.blue}25` : "none" }}>
+                    {i < eng.status && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
+                    {i === eng.status && <span style={{ width:8, height:8, borderRadius:"50%", background:"white", display:"block" }}/>}
+                  </div>
+                  <div style={{ fontFamily:F, fontSize:10, color: i <= eng.status ? C.blue : C.dim,
+                    fontWeight: i === eng.status ? 700 : 500, lineHeight:1.3 }}>{s}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.blue}08`, border:`1px solid ${C.blue}20` }}>
+            <span style={{ fontFamily:F, fontSize:13, color:C.blue, fontWeight:600 }}>
+              📌 Currently: <strong>{stages[eng.status]}</strong>
+              {eng.garima_note ? ` — ${eng.garima_note}` : ""}
             </span>
           </div>
-        )}
-      </Card>
+        </Card>
+      </>)}
     </div>
   );
 }
@@ -2016,10 +2138,10 @@ function Portal({ client, onLogout }) {
 
   const pages = {
     dashboard:  <Dashboard  client={client}/>,
-    cashflow:   <CashFlow/>,
-    actions:    <ActionItems/>,
+    cashflow:   <CashFlow client={client}/>,
+    actions:    <ActionItems client={client}/>,
     myreport:   <MyReport client={client}/>,
-    engagement: <Engagement/>,
+    engagement: <Engagement client={client}/>,
     calendar:   <Calendar/>,
     mydocs:     <MyDocs client={client}/>,
   };
@@ -2109,6 +2231,449 @@ function AdminLogin({ onLogin }) {
     </div>
   );
 }
+
+
+// ═══════════════════════════════════════════════════════════════════
+// ADMIN ANALYTICS — full data entry for all client portal sections
+// ═══════════════════════════════════════════════════════════════════
+function AdminAnalytics({ client }) {
+  const [sub, setSub]       = useState("kpis");
+  const [rec, setRec]       = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved]   = useState(false);
+
+  // ── KPIs ──
+  const kpiKeys = ["revenue","gross_margin","cash_balance","burn_rate","runway","arr"];
+  const kpiMeta = [
+    { key:"revenue",      label:"Revenue",      ph:"₹8.4 Cr" },
+    { key:"gross_margin", label:"Gross Margin", ph:"41%" },
+    { key:"cash_balance", label:"Cash Balance", ph:"₹2.1 Cr" },
+    { key:"burn_rate",    label:"Burn Rate",    ph:"₹48L/mo" },
+    { key:"runway",       label:"Runway",       ph:"4.4 months" },
+    { key:"arr",          label:"ARR",          ph:"₹6.2 Cr" },
+  ];
+  const blankKpis = () => {
+    const o = { month:"", garima_note:"" };
+    kpiKeys.forEach(k => { o[k]=""; o[k+"_prev"]=""; });
+    return o;
+  };
+  const [kpis, setKpis] = useState(blankKpis());
+
+  // ── Cash Flow ──
+  const blankCf = () => Array.from({length:9},()=>({ month:"", actual:"", forecast:"" }));
+  const [cf, setCf]       = useState(blankCf());
+  const [cfNote, setCfNote] = useState("");
+
+  // ── P&L ──
+  const defaultPl = () => [
+    { item:"Revenue",             amount:"", change:"", bold:false, highlight:true  },
+    { item:"Cost of Goods Sold",  amount:"", change:"", bold:false, highlight:false },
+    { item:"Gross Profit",        amount:"", change:"", bold:true,  highlight:true  },
+    { item:"Operating Expenses",  amount:"", change:"", bold:false, highlight:false },
+    { item:"EBITDA",              amount:"", change:"", bold:true,  highlight:true  },
+    { item:"Depreciation",        amount:"", change:"", bold:false, highlight:false },
+    { item:"EBIT",                amount:"", change:"", bold:true,  highlight:false },
+    { item:"Interest",            amount:"", change:"", bold:false, highlight:false },
+    { item:"PBT",                 amount:"", change:"", bold:true,  highlight:false },
+    { item:"Tax",                 amount:"", change:"", bold:false, highlight:false },
+    { item:"PAT (Net Profit)",    amount:"", change:"", bold:true,  highlight:true  },
+  ];
+  const [pl, setPl] = useState(defaultPl());
+
+  // ── Ageing ──
+  const defaultAging = () => [
+    { bucket:"0–30 days",  amount:"" },
+    { bucket:"31–60 days", amount:"" },
+    { bucket:"61–90 days", amount:"" },
+    { bucket:">90 days",   amount:"" },
+  ];
+  const [aging, setAging]       = useState(defaultAging());
+  const [agingNote, setAgingNote] = useState("");
+
+  // ── CFO Pack score ──
+  const defaultCfoScore = (packType) => {
+    if (packType === "startup") return {
+      scoreLabel:"Fundraise Readiness", score:0,
+      breakdown:[ {label:"Revenue Growth",score:0,comment:""},{label:"Gross Margin",score:0,comment:""},{label:"Runway",score:0,comment:""},{label:"Financial Documentation",score:0,comment:""},{label:"Unit Economics",score:0,comment:""} ],
+      metrics: [ {label:"ARR",value:"",flag:false,note:""},{label:"MoM Growth",value:"",flag:false,note:""},{label:"Burn Multiple",value:"",flag:false,note:""},{label:"CAC Payback",value:"",flag:false,note:""},{label:"NRR",value:"",flag:false,note:""},{label:"Gross Margin",value:"",flag:false,note:""} ],
+      garimaNote:"",
+    };
+    if (packType === "msme") return {
+      scoreLabel:"Cash Health", score:0,
+      breakdown:[ {label:"Cash Conversion Cycle",score:0,comment:""},{label:"Working Capital Ratio",score:0,comment:""},{label:"Debtor Days",score:0,comment:""},{label:"Creditor Days",score:0,comment:""},{label:"Inventory Turnover",score:0,comment:""} ],
+      metrics: [ {label:"Current Ratio",value:"",flag:false,note:""},{label:"Quick Ratio",value:"",flag:false,note:""},{label:"Debtor Days",value:"",flag:false,note:""},{label:"Creditor Days",value:"",flag:false,note:""},{label:"Inventory Days",value:"",flag:false,note:""},{label:"Cash Conversion",value:"",flag:false,note:""} ],
+      garimaNote:"",
+    };
+    return {
+      scoreLabel:"IPO Readiness", score:0,
+      breakdown:[ {label:"Revenue Scale",score:0,comment:""},{label:"Profitability",score:0,comment:""},{label:"Governance & Board",score:0,comment:""},{label:"Ind AS Compliance",score:0,comment:""},{label:"Audit Quality",score:0,comment:""} ],
+      metrics: [ {label:"Revenue",value:"",flag:false,note:""},{label:"EBITDA Margin",value:"",flag:false,note:""},{label:"PAT Trend",value:"",flag:false,note:""},{label:"Ind AS Status",value:"",flag:true,note:""},{label:"Board Composition",value:"",flag:false,note:""} ],
+      garimaNote:"",
+    };
+  };
+  const [cfo, setCfo] = useState(() => defaultCfoScore(client.client_pack||"startup"));
+
+  // ── Load existing data ──
+  useEffect(() => {
+    setKpis(blankKpis()); setCf(blankCf()); setCfNote(""); setPl(defaultPl());
+    setAging(defaultAging()); setAgingNote(""); setSaved(false);
+    setCfo(defaultCfoScore(client.client_pack||"startup"));
+    supabase.from("client_analytics").select("*").eq("client_id",client.id)
+      .order("updated_at",{ascending:false}).limit(1).single()
+      .then(({ data:d }) => {
+        if (!d) return;
+        setRec(d);
+        const k = blankKpis();
+        Object.keys(k).forEach(key => { if (d[key]!==undefined && d[key]!==null) k[key]=d[key]; });
+        setKpis(k);
+        try { const p=JSON.parse(d.cashflow_data); if(p?.length){ const rows=[...p]; while(rows.length<9) rows.push({month:"",actual:"",forecast:""}); setCf(rows.slice(0,9)); } } catch(e){}
+        setCfNote(d.cashflow_note||"");
+        try { const p=JSON.parse(d.pl_data); if(p?.length) setPl(p); } catch(e){}
+        try { const p=JSON.parse(d.aging_data); if(p?.length) setAging(p); } catch(e){}
+        setAgingNote(d.aging_note||"");
+        try { const p=JSON.parse(d.cfo_data); if(p) setCfo(p); } catch(e){}
+      });
+  }, [client.id]);
+
+  const save = async () => {
+    setSaving(true);
+    const payload = {
+      client_id: client.id,
+      ...kpis,
+      cashflow_data: JSON.stringify(cf.filter(r=>r.month)),
+      cashflow_note: cfNote,
+      pl_data: JSON.stringify(pl.filter(r=>r.item)),
+      aging_data: JSON.stringify(aging.filter(r=>r.bucket)),
+      aging_note: agingNote,
+      cfo_data: JSON.stringify(cfo),
+      updated_at: new Date().toISOString(),
+    };
+    if (rec?.id) { await supabase.from("client_analytics").update(payload).eq("id",rec.id); }
+    else { const {data} = await supabase.from("client_analytics").insert(payload).select().single(); if(data) setRec(data); }
+    setSaving(false); setSaved(true); setTimeout(()=>setSaved(false),3000);
+  };
+
+  const S = {
+    input: { width:"100%", padding:"9px 11px", borderRadius:8, fontSize:13,
+      border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg2,
+      outline:"none", boxSizing:"border-box" },
+    label: { fontSize:10, fontWeight:700, color:C.muted, textTransform:"uppercase",
+      letterSpacing:"0.08em", display:"block", marginBottom:4, fontFamily:F },
+    sectionTitle: { fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 },
+  };
+
+  const SUBS = [
+    { id:"kpis",     label:"📊 KPIs" },
+    { id:"cashflow", label:"💰 Cash Flow" },
+    { id:"pl",       label:"📋 P&L" },
+    { id:"aging",    label:"⏰ Ageing" },
+    { id:"cfo",      label:"🎯 CFO Score" },
+  ];
+
+  return (
+    <div>
+      {/* Sub-tabs */}
+      <div style={{ display:"flex", gap:0, borderBottom:`1px solid ${C.border}`, marginBottom:20, overflowX:"auto" }}>
+        {SUBS.map(t => (
+          <button key={t.id} onClick={()=>setSub(t.id)} style={{
+            padding:"9px 16px", border:"none", cursor:"pointer", fontFamily:F, fontSize:12,
+            fontWeight:600, whiteSpace:"nowrap", background:"transparent",
+            color:sub===t.id?C.amber:C.muted,
+            borderBottom:sub===t.id?`2px solid ${C.amber}`:"2px solid transparent" }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* ── KPIs ── */}
+      {sub==="kpis" && (
+        <div>
+          <div style={{ marginBottom:14 }}>
+            <label style={S.label}>Period / Month</label>
+            <input value={kpis.month} onChange={e=>setKpis(k=>({...k,month:e.target.value}))}
+              placeholder="e.g. February 2026" style={S.input}/>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+            {kpiMeta.map(({key,label,ph}) => (
+              <Card key={key} style={{ padding:14 }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{label}</div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                  <div>
+                    <label style={S.label}>Current</label>
+                    <input value={kpis[key]||""} onChange={e=>setKpis(k=>({...k,[key]:e.target.value}))}
+                      placeholder={ph} style={S.input}/>
+                  </div>
+                  <div>
+                    <label style={S.label}>Previous</label>
+                    <input value={kpis[key+"_prev"]||""} onChange={e=>setKpis(k=>({...k,[key+"_prev"]:e.target.value}))}
+                      placeholder="e.g. prev value" style={S.input}/>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+          <div>
+            <label style={S.label}>Garima's Note (shown on client dashboard)</label>
+            <textarea value={kpis.garima_note||""} onChange={e=>setKpis(k=>({...k,garima_note:e.target.value}))}
+              rows={5} placeholder="Write your monthly analysis note here — revenue trends, cash watch, recommendations..."
+              style={{...S.input, resize:"vertical"}}/>
+          </div>
+        </div>
+      )}
+
+      {/* ── Cash Flow ── */}
+      {sub==="cashflow" && (
+        <div>
+          <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
+            Enter monthly figures in ₹ Lakhs (e.g. 210 = ₹210L). Past months → Actual. Future months → Forecast.
+          </p>
+          <div style={{ overflowX:"auto", marginBottom:16 }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
+              <thead>
+                <tr>
+                  {["Month","Actual (₹L)","Forecast (₹L)"].map(h=>(
+                    <th key={h} style={{ textAlign:"left", padding:"8px 10px", fontSize:10,
+                      fontWeight:700, color:C.muted, textTransform:"uppercase",
+                      borderBottom:`1px solid ${C.border}` }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cf.map((row,i)=>(
+                  <tr key={i} style={{ background:i%2===0?"transparent":C.bg }}>
+                    <td style={{ padding:"5px 6px" }}>
+                      <input value={row.month} onChange={e=>setCf(p=>p.map((r,j)=>j===i?{...r,month:e.target.value}:r))}
+                        placeholder="e.g. Sep" style={S.input}/>
+                    </td>
+                    <td style={{ padding:"5px 6px" }}>
+                      <input value={row.actual??""} type="number"
+                        onChange={e=>setCf(p=>p.map((r,j)=>j===i?{...r,actual:e.target.value===''?null:Number(e.target.value)}:r))}
+                        placeholder="e.g. 210" style={S.input}/>
+                    </td>
+                    <td style={{ padding:"5px 6px" }}>
+                      <input value={row.forecast??""} type="number"
+                        onChange={e=>setCf(p=>p.map((r,j)=>j===i?{...r,forecast:e.target.value===''?null:Number(e.target.value)}:r))}
+                        placeholder="e.g. 175" style={S.input}/>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div>
+            <label style={S.label}>Cash Flow Analysis Note</label>
+            <textarea value={cfNote} onChange={e=>setCfNote(e.target.value)}
+              rows={4} placeholder="e.g. March forecast dip driven by advance tax ₹32L and delayed collections from Client B ₹45L..."
+              style={{...S.input, resize:"vertical"}}/>
+          </div>
+        </div>
+      )}
+
+      {/* ── P&L ── */}
+      {sub==="pl" && (
+        <div>
+          <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
+            Enter P&L line items. Change: use +6% or -₹12L. Bold = section totals. Highlight = key lines shown prominently.
+          </p>
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F }}>
+              <thead>
+                <tr>
+                  {["Line Item","Amount","MoM Change","Bold","Highlight",""].map((h,i)=>(
+                    <th key={i} style={{ textAlign:"left", padding:"8px 8px", fontSize:10,
+                      fontWeight:700, color:C.muted, textTransform:"uppercase",
+                      borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {pl.map((row,i)=>(
+                  <tr key={i} style={{ background:i%2===0?"transparent":C.bg }}>
+                    <td style={{ padding:"4px 5px" }}>
+                      <input value={row.item} onChange={e=>setPl(p=>p.map((r,j)=>j===i?{...r,item:e.target.value}:r))}
+                        style={{...S.input,fontSize:12}}/>
+                    </td>
+                    <td style={{ padding:"4px 5px" }}>
+                      <input value={row.amount} onChange={e=>setPl(p=>p.map((r,j)=>j===i?{...r,amount:e.target.value}:r))}
+                        placeholder="₹8.4 Cr" style={{...S.input,fontSize:12,width:100}}/>
+                    </td>
+                    <td style={{ padding:"4px 5px" }}>
+                      <input value={row.change} onChange={e=>setPl(p=>p.map((r,j)=>j===i?{...r,change:e.target.value}:r))}
+                        placeholder="+6%" style={{...S.input,fontSize:12,width:80}}/>
+                    </td>
+                    <td style={{ padding:"4px 5px", textAlign:"center" }}>
+                      <input type="checkbox" checked={!!row.bold}
+                        onChange={e=>setPl(p=>p.map((r,j)=>j===i?{...r,bold:e.target.checked}:r))}/>
+                    </td>
+                    <td style={{ padding:"4px 5px", textAlign:"center" }}>
+                      <input type="checkbox" checked={!!row.highlight}
+                        onChange={e=>setPl(p=>p.map((r,j)=>j===i?{...r,highlight:e.target.checked}:r))}/>
+                    </td>
+                    <td style={{ padding:"4px 5px" }}>
+                      <button onClick={()=>setPl(p=>p.filter((_,j)=>j!==i))}
+                        style={{ border:"none", background:"none", color:C.red, cursor:"pointer", fontSize:16 }}>×</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button onClick={()=>setPl(p=>[...p,{item:"",amount:"",change:"",bold:false,highlight:false}])}
+            style={{ marginTop:10, padding:"7px 14px", borderRadius:8, border:`1px solid ${C.border}`,
+              background:C.bg3, fontFamily:F, fontSize:12, color:C.text, cursor:"pointer" }}>
+            + Add Row
+          </button>
+        </div>
+      )}
+
+      {/* ── Ageing ── */}
+      {sub==="aging" && (
+        <div>
+          <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
+            Debtor ageing buckets. Enter amounts in ₹L or ₹Cr (e.g. ₹42L). Bar chart auto-scales.
+          </p>
+          <div style={{ display:"flex", flexDirection:"column", gap:10, marginBottom:16 }}>
+            {aging.map((row,i)=>(
+              <div key={i} style={{ display:"grid", gridTemplateColumns:"160px 1fr 32px", gap:10, alignItems:"center" }}>
+                <input value={row.bucket} onChange={e=>setAging(p=>p.map((r,j)=>j===i?{...r,bucket:e.target.value}:r))}
+                  placeholder="e.g. 0–30 days" style={S.input}/>
+                <input value={row.amount} onChange={e=>setAging(p=>p.map((r,j)=>j===i?{...r,amount:e.target.value}:r))}
+                  placeholder="e.g. ₹42L" style={S.input}/>
+                <button onClick={()=>setAging(p=>p.filter((_,j)=>j!==i))}
+                  style={{ border:"none", background:"none", color:C.red, cursor:"pointer", fontSize:18, padding:0 }}>×</button>
+              </div>
+            ))}
+          </div>
+          <button onClick={()=>setAging(p=>[...p,{bucket:"",amount:""}])}
+            style={{ marginBottom:16, padding:"7px 14px", borderRadius:8, border:`1px solid ${C.border}`,
+              background:C.bg3, fontFamily:F, fontSize:12, color:C.text, cursor:"pointer" }}>
+            + Add Bucket
+          </button>
+          <div>
+            <label style={S.label}>Ageing Observation</label>
+            <textarea value={agingNote} onChange={e=>setAgingNote(e.target.value)}
+              rows={3} placeholder="e.g. Top 3 debtors = 64% of AR. Client B is 68 days overdue — chase immediately."
+              style={{...S.input,resize:"vertical"}}/>
+          </div>
+        </div>
+      )}
+
+      {/* ── CFO Pack Score ── */}
+      {sub==="cfo" && (
+        <div>
+          <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>
+            This powers the CFO pack score gauge and metrics shown in the client's Smart Pack tab.
+            Client pack type: <strong>{client.client_pack || "startup"}</strong>
+          </p>
+
+          {/* Overall Score */}
+          <Card style={{ padding:16, marginBottom:16 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>
+              {cfo.scoreLabel} Score (0–100)
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"120px 1fr", gap:12, alignItems:"center" }}>
+              <input value={cfo.score} type="number" min="0" max="100"
+                onChange={e=>setCfo(c=>({...c,score:Number(e.target.value)}))}
+                style={{...S.input, fontSize:20, fontWeight:700, textAlign:"center"}}/>
+              <div style={{ height:10, borderRadius:5, background:C.bg3 }}>
+                <div style={{ height:"100%", borderRadius:5, width:`${cfo.score}%`,
+                  background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.4s" }}/>
+              </div>
+            </div>
+          </Card>
+
+          {/* Score Breakdown */}
+          <Card style={{ padding:16, marginBottom:16 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Score Breakdown</div>
+            {cfo.breakdown.map((item,i)=>(
+              <div key={i} style={{ marginBottom:12 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"180px 70px 1fr", gap:8, alignItems:"center", marginBottom:4 }}>
+                  <input value={item.label} onChange={e=>setCfo(c=>({...c,breakdown:c.breakdown.map((b,j)=>j===i?{...b,label:e.target.value}:b)}))}
+                    style={{...S.input,fontSize:12}}/>
+                  <input value={item.score} type="number" min="0" max="100"
+                    onChange={e=>setCfo(c=>({...c,breakdown:c.breakdown.map((b,j)=>j===i?{...b,score:Number(e.target.value)}:b)}))}
+                    style={{...S.input,fontSize:12,textAlign:"center"}}/>
+                  <input value={item.comment} onChange={e=>setCfo(c=>({...c,breakdown:c.breakdown.map((b,j)=>j===i?{...b,comment:e.target.value}:b)}))}
+                    placeholder="Comment shown to client" style={{...S.input,fontSize:12}}/>
+                </div>
+                <div style={{ height:4, borderRadius:2, background:C.bg3, marginLeft:0 }}>
+                  <div style={{ height:"100%", borderRadius:2, width:`${item.score}%`,
+                    background:item.score>=75?C.green:item.score>=55?C.amber:C.red, transition:"width 0.4s" }}/>
+                </div>
+              </div>
+            ))}
+          </Card>
+
+          {/* Key Metrics */}
+          <Card style={{ padding:16, marginBottom:16 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Key Metrics Table</div>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
+              <thead>
+                <tr>
+                  {["Metric","Value","Flag?","Note"].map(h=>(
+                    <th key={h} style={{ textAlign:"left", padding:"6px 8px", fontSize:10,
+                      fontWeight:700, color:C.muted, textTransform:"uppercase",
+                      borderBottom:`1px solid ${C.border}` }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {cfo.metrics.map((m,i)=>(
+                  <tr key={i} style={{ background:i%2===0?"transparent":C.bg }}>
+                    <td style={{ padding:"4px 6px" }}>
+                      <input value={m.label} onChange={e=>setCfo(c=>({...c,metrics:c.metrics.map((x,j)=>j===i?{...x,label:e.target.value}:x)}))}
+                        style={{...S.input,fontSize:12,width:130}}/>
+                    </td>
+                    <td style={{ padding:"4px 6px" }}>
+                      <input value={m.value} onChange={e=>setCfo(c=>({...c,metrics:c.metrics.map((x,j)=>j===i?{...x,value:e.target.value}:x)}))}
+                        placeholder="e.g. 41%" style={{...S.input,fontSize:12,width:90}}/>
+                    </td>
+                    <td style={{ padding:"4px 6px", textAlign:"center" }}>
+                      <input type="checkbox" checked={!!m.flag}
+                        onChange={e=>setCfo(c=>({...c,metrics:c.metrics.map((x,j)=>j===i?{...x,flag:e.target.checked}:x)}))}/>
+                    </td>
+                    <td style={{ padding:"4px 6px" }}>
+                      <input value={m.note} onChange={e=>setCfo(c=>({...c,metrics:c.metrics.map((x,j)=>j===i?{...x,note:e.target.value}:x)}))}
+                        placeholder="e.g. Healthy retention" style={{...S.input,fontSize:12}}/>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <button onClick={()=>setCfo(c=>({...c,metrics:[...c.metrics,{label:"",value:"",flag:false,note:""}]}))}
+              style={{ marginTop:10, padding:"6px 12px", borderRadius:8, border:`1px solid ${C.border}`,
+                background:C.bg3, fontFamily:F, fontSize:12, color:C.text, cursor:"pointer" }}>
+              + Add Metric
+            </button>
+          </Card>
+
+          {/* Garima Note */}
+          <div>
+            <label style={S.label}>Garima's CFO Pack Note</label>
+            <textarea value={cfo.garimaNote||""} onChange={e=>setCfo(c=>({...c,garimaNote:e.target.value}))}
+              rows={4} placeholder="Narrative shown at bottom of CFO pack — your expert analysis..."
+              style={{...S.input,resize:"vertical"}}/>
+          </div>
+        </div>
+      )}
+
+      {/* Save */}
+      <div style={{ marginTop:24, paddingTop:16, borderTop:`1px solid ${C.border}`,
+        display:"flex", alignItems:"center", gap:14 }}>
+        <button onClick={save} disabled={saving} style={{ padding:"11px 30px", borderRadius:10,
+          border:"none", fontFamily:F, fontWeight:700, fontSize:14, cursor:saving?"not-allowed":"pointer",
+          background:saved?"#10B981":"linear-gradient(135deg,#F59E0B,#EF4444)", color:"white",
+          opacity:saving?0.75:1, transition:"background 0.3s" }}>
+          {saving?"Saving…":saved?"✅ Published to Client":"Save & Publish to Client"}
+        </button>
+        <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>
+          Client sees updated data instantly after saving
+        </span>
+      </div>
+    </div>
+  );
+}
+
 
 function AdminPanel({ admin, onLogout }) {
   const [view, setView]         = useState("clients"); // "clients" | "addclient" | "profile"
@@ -2461,6 +3026,7 @@ function AdminPanel({ admin, onLogout }) {
               <div style={{ display:"flex", gap:0 }}>
                 {[
                   { id:"docs",       icon:"📁", label:"Documents"  },
+                  { id:"analytics",  icon:"📈", label:"Analytics"   },
                   { id:"kpis",       icon:"📊", label:"KPIs"        },
                   { id:"actions",    icon:"✅", label:"Actions"     },
                   { id:"engagement", icon:"📋", label:"Engagement"  },
@@ -2596,6 +3162,11 @@ function AdminPanel({ admin, onLogout }) {
               )}
 
               {/* ─── KPIs TAB ─── */}
+              {/* ─── ANALYTICS TAB ─── */}
+              {profileTab === "analytics" && (
+                <AdminAnalytics client={selected}/>
+              )}
+
               {profileTab === "kpis" && (
                 <Card style={{ maxWidth:560 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:4 }}>
