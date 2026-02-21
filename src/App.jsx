@@ -138,11 +138,37 @@ const PriBadge = ({ p }) => {
 };
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
-const Logo = ({ size=28 }) => (
-  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-    <img src="/logo.png" alt="Finzzup" style={{ height:size*1.4, width:"auto", objectFit:"contain" }}/>
-  </div>
-);
+// Uses inline SVG so it works without any public folder or image file
+const Logo = ({ size=28, light=false }) => {
+  const [imgOk, setImgOk] = useState(true);
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+      {imgOk ? (
+        <img
+          src="/logo.png"
+          alt="Finzzup"
+          style={{ height:size*1.4, width:"auto", objectFit:"contain",
+            filter: light ? "brightness(0) invert(1)" : "none" }}
+          onError={() => setImgOk(false)}
+        />
+      ) : (
+        // Fallback: always-visible text logo — no image file needed
+        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+          <div style={{ width:size*1.1, height:size*1.1, borderRadius:8,
+            background:C.grad1, display:"flex", alignItems:"center",
+            justifyContent:"center", flexShrink:0 }}>
+            <span style={{ color:"white", fontFamily:F, fontWeight:800,
+              fontSize:size*0.55, letterSpacing:"-0.03em" }}>Fz</span>
+          </div>
+          <span style={{ fontFamily:F, fontWeight:800, fontSize:size*0.85,
+            color: light ? "white" : C.text, letterSpacing:"-0.02em" }}>
+            Finzzup
+          </span>
+        </div>
+      )}
+    </div>
+  );
+};
 
 // ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
 // InputField must be defined OUTSIDE Login — otherwise React remounts it on
@@ -398,6 +424,7 @@ function getNav(client) {
   }
 
   base.push({ id:"calendar", icon:"📅", label:"Book a Call" });
+  base.push({ id:"mydocs",  icon:"📁", label:"My Documents" });
   return base;
 }
 
@@ -411,7 +438,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
       <div style={{ padding: collapsed ? "20px 0" : "22px 20px", display:"flex",
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
         borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-        {!collapsed && <Logo size={26}/>}
+        {!collapsed && <Logo size={26} light={true}/>}
         <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
           cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
           {collapsed ? "→" : "←"}
@@ -1718,7 +1745,64 @@ function Engagement() {
 }
 
 // ─── CALENDAR ────────────────────────────────────────────────────────────────
+// ─── CALENDLY CONFIG — change this one line to your Calendly URL ──────────────
+const CALENDLY_URL = "https://calendly.com/garima-finzzup"; // 🔧 replace with your actual URL
+
+// Floating "Book a Call" button shown on every portal page
+const FloatingCalendly = () => {
+  const [open, setOpen] = useState(false);
+  return (
+    <>
+      {/* Floating button */}
+      <button onClick={() => setOpen(true)}
+        style={{ position:"fixed", bottom:24, right:24, zIndex:999,
+          display:"flex", alignItems:"center", gap:8,
+          padding:"11px 18px", borderRadius:50, border:"none",
+          background:C.grad1, color:"white", fontFamily:F, fontWeight:700,
+          fontSize:13, cursor:"pointer", boxShadow:"0 4px 20px rgba(59,111,247,0.4)",
+          touchAction:"manipulation" }}>
+        📅 Book a Call
+      </button>
+
+      {/* Modal overlay */}
+      {open && (
+        <div onClick={() => setOpen(false)}
+          style={{ position:"fixed", inset:0, zIndex:1000,
+            background:"rgba(10,17,40,0.6)", display:"flex",
+            alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div onClick={e => e.stopPropagation()}
+            style={{ width:"100%", maxWidth:720, background:"white",
+              borderRadius:20, overflow:"hidden", boxShadow:"0 20px 60px rgba(0,0,0,0.3)",
+              display:"flex", flexDirection:"column" }}>
+            {/* Modal header */}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"16px 20px", borderBottom:`1px solid ${C.border}` }}>
+              <div>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>Book a Call with Garima</div>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>30-min Valuation Query · 60-min CFO Strategy</div>
+              </div>
+              <button onClick={() => setOpen(false)}
+                style={{ background:"none", border:"none", fontSize:20,
+                  cursor:"pointer", color:C.muted, lineHeight:1, padding:4 }}>✕</button>
+            </div>
+            {/* Calendly iframe */}
+            <iframe
+              src={CALENDLY_URL}
+              width="100%"
+              height="520"
+              frameBorder="0"
+              title="Book a call with Garima"
+              style={{ display:"block" }}
+            />
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
 function Calendar() {
+  const [open, setOpen] = useState(false);
   return (
     <div style={{ padding:24 }}>
       <SectionTitle sub="Book a 30-min or 60-min call with Garima directly.">
@@ -1727,50 +1811,199 @@ function Calendar() {
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:24 }} className="cal-grid">
         {[
-          { icon:"⚡", title:"30-min Valuation Query", desc:"Questions about your report, methodology, or UDIN.", color:C.blue,   bg:`${C.blue}0A` },
-          { icon:"🧠", title:"60-min CFO Strategy Call",  desc:"Monthly review, cash flow planning, board prep.", color:C.purple, bg:`${C.purple}0A` },
+          { icon:"⚡", title:"30-min Valuation Query", desc:"Questions about your report, methodology, or UDIN.", color:C.blue },
+          { icon:"🧠", title:"60-min CFO Strategy Call", desc:"Monthly review, cash flow planning, board prep.", color:C.purple },
         ].map((t,i) => (
           <Card key={i} style={{ padding:20, borderTop:`3px solid ${t.color}` }}>
             <div style={{ fontSize:28, marginBottom:12 }}>{t.icon}</div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>{t.title}</div>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.6, marginBottom:16 }}>{t.desc}</p>
-            <button style={{ width:"100%", padding:"11px 0", borderRadius:10, border:"none",
-              background:t.color, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
-              cursor:"pointer", touchAction:"manipulation" }}>
+            <a href={CALENDLY_URL} target="_blank" rel="noopener"
+              style={{ display:"block", width:"100%", padding:"11px 0", borderRadius:10, border:"none",
+                background:t.color, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+                cursor:"pointer", textAlign:"center", textDecoration:"none", boxSizing:"border-box" }}>
               Book this →
-            </button>
+            </a>
           </Card>
         ))}
       </div>
 
-      {/* Calendly placeholder */}
-      <Card style={{ textAlign:"center", padding:40 }}>
-        <div style={{ fontSize:40, marginBottom:12 }}>📅</div>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
-          Calendly Booking
-        </div>
-        <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:20, maxWidth:380, margin:"0 auto 20px" }}>
-          To enable live calendar booking, add your Calendly embed URL. Takes 5 minutes.
-        </p>
-        <div style={{ padding:"12px 16px", borderRadius:10, background:C.bg,
-          border:`1px solid ${C.border}`, fontFamily:FM, fontSize:12, color:C.muted,
-          textAlign:"left", marginBottom:20 }}>
-          {`// In your Calendly account, get your embed URL and replace below:`}<br/>
-          {`// <iframe src="https://calendly.com/YOUR_LINK" .../>`}
-        </div>
-        <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ display:"inline-flex",
-          alignItems:"center", gap:8, padding:"11px 20px", borderRadius:10,
-          background:`${C.green}12`, border:`1.5px solid ${C.green}30`,
-          color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
-          💬 WhatsApp Garima to schedule
-        </a>
+      {/* Embedded Calendly */}
+      <Card style={{ padding:0, overflow:"hidden" }}>
+        <iframe
+          src={CALENDLY_URL}
+          width="100%"
+          height="620"
+          frameBorder="0"
+          title="Calendly booking"
+          style={{ display:"block" }}
+        />
       </Card>
+
       <style>{`@media(max-width:500px){.cal-grid{grid-template-columns:1fr!important}}`}</style>
     </div>
   );
 }
 
-// ─── PORTAL SHELL ─────────────────────────────────────────────────────────────
+// ─── CLIENT DOCUMENT UPLOAD ──────────────────────────────────────────────────
+// Clients upload their own docs here; admin sees them in the Documents tab
+const DOC_CATEGORIES = [
+  { id:"financials",   label:"Financial Statements",  icon:"📊", desc:"P&L, Balance Sheet, Trial Balance (audited or provisional)" },
+  { id:"itr",          label:"ITR / Tax Returns",      icon:"🧾", desc:"Last 2-3 years ITR and computation" },
+  { id:"projections",  label:"Business Projections",   icon:"📈", desc:"5-year financial model or projections" },
+  { id:"captable",     label:"Cap Table / Debt",       icon:"💼", desc:"Shareholding pattern, debt schedule, term sheets" },
+  { id:"compliance",   label:"Compliance & Legal",     icon:"⚖️",  desc:"MCA filings, GST returns, FEMA docs, agreements" },
+  { id:"other",        label:"Other Documents",        icon:"📎", desc:"Any other document relevant to your engagement" },
+];
+
+function MyDocs({ client }) {
+  const [myDocs, setMyDocs]   = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [category, setCategory]   = useState("financials");
+
+  useEffect(() => {
+    if (!client?.id) return;
+    supabase.from("client_uploads")
+      .select("*").eq("client_id", client.id)
+      .order("created_at", { ascending:false })
+      .then(({ data }) => { setMyDocs(data || []); setLoading(false); });
+  }, [client?.id]);
+
+  const handleUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) { alert("Max file size is 10MB."); e.target.value=""; return; }
+    setUploading(true);
+    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const path = `client-uploads/${client.id}/${Date.now()}-${safeName}`;
+    const { error: upErr } = await supabase.storage.from("client-docs").upload(path, file, { upsert:false });
+    if (upErr) {
+      alert("Upload failed: " + upErr.message);
+      setUploading(false); e.target.value=""; return;
+    }
+    const { data: urlData } = supabase.storage.from("client-docs").getPublicUrl(path);
+    const { data: row } = await supabase.from("client_uploads").insert({
+      client_id:   client.id,
+      name:        file.name,
+      category,
+      file_url:    urlData.publicUrl,
+      file_size:   (file.size/1024/1024).toFixed(2) + " MB",
+      uploaded_by: client.name,
+    }).select().single();
+    if (row) setMyDocs(prev => [row, ...prev]);
+    setUploading(false); e.target.value="";
+  };
+
+  const grouped = DOC_CATEGORIES.map(cat => ({
+    ...cat,
+    files: myDocs.filter(d => d.category === cat.id),
+  }));
+
+  return (
+    <div style={{ padding:24, maxWidth:760 }}>
+      <SectionTitle sub="Upload your financial and compliance documents for Garima to review.">
+        My Documents
+      </SectionTitle>
+
+      {/* Upload card */}
+      <Card style={{ marginBottom:24 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
+          Upload a Document
+        </div>
+
+        {/* Category selector */}
+        <div style={{ marginBottom:14 }}>
+          <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+            letterSpacing:"0.08em", display:"block", marginBottom:8, fontFamily:F }}>
+            Document Category
+          </label>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
+            {DOC_CATEGORIES.map(cat => (
+              <button key={cat.id} onClick={() => setCategory(cat.id)}
+                style={{ padding:"7px 14px", borderRadius:20, border:`1.5px solid ${category===cat.id ? C.blue : C.border}`,
+                  background: category===cat.id ? `${C.blue}12` : "transparent",
+                  color: category===cat.id ? C.blue : C.muted,
+                  fontFamily:F, fontWeight:600, fontSize:12, cursor:"pointer" }}>
+                {cat.icon} {cat.label}
+              </button>
+            ))}
+          </div>
+          <p style={{ fontFamily:F, fontSize:12, color:C.dim, marginTop:8 }}>
+            {DOC_CATEGORIES.find(c=>c.id===category)?.desc}
+          </p>
+        </div>
+
+        {/* Drop zone */}
+        <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
+          border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
+          background:C.bg, transition:"border-color 0.2s" }}
+          onMouseEnter={e=>e.currentTarget.style.borderColor=C.blue}
+          onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
+          <input type="file" style={{ display:"none" }}
+            accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.ppt,.pptx,.zip,.jpg,.jpeg,.png"
+            onChange={handleUpload}/>
+          {uploading ? (
+            <div style={{ fontFamily:F, fontSize:14, color:C.blue }}>Uploading…</div>
+          ) : (<>
+            <div style={{ fontSize:32, marginBottom:8 }}>📤</div>
+            <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text }}>
+              Click to upload
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.dim, marginTop:4 }}>
+              PDF, Excel, Word, ZIP — max 10MB
+            </div>
+          </>)}
+        </label>
+      </Card>
+
+      {/* Files by category */}
+      {loading ? (
+        <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>Loading…</p>
+      ) : (
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          {grouped.filter(g => g.files.length > 0).length === 0 && (
+            <Card style={{ textAlign:"center", padding:32 }}>
+              <div style={{ fontSize:32, marginBottom:8 }}>📂</div>
+              <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>
+                No documents uploaded yet. Upload above to get started.
+              </div>
+            </Card>
+          )}
+          {grouped.filter(g=>g.files.length>0).map(cat => (
+            <Card key={cat.id}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>
+                {cat.icon} {cat.label} <span style={{ fontWeight:400, color:C.dim, fontSize:12 }}>({cat.files.length})</span>
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {cat.files.map((d,i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                    padding:"10px 12px", borderRadius:10, background:C.bg,
+                    border:`1px solid ${C.border}`, flexWrap:"wrap", gap:8 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <div style={{ fontSize:20 }}>📄</div>
+                      <div>
+                        <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
+                        <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
+                          {d.file_size} · {new Date(d.created_at).toLocaleDateString("en-IN")}
+                        </div>
+                      </div>
+                    </div>
+                    <a href={d.file_url} target="_blank" rel="noopener"
+                      style={{ padding:"6px 14px", borderRadius:8, border:`1px solid ${C.blue}`,
+                        color:C.blue, fontFamily:F, fontWeight:600, fontSize:12, textDecoration:"none" }}>
+                      View
+                    </a>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // My Report component — shows correct pack based on client type
 function MyReport({ client }) {
@@ -1792,6 +2025,7 @@ function getPageTitle(page, client) {
     myreport:   reportLabel,
     engagement: "Valuation Status",
     calendar:   "Book a Call",
+    mydocs:     "My Documents",
   };
   return map[page] || "Dashboard";
 }
@@ -1807,6 +2041,7 @@ function Portal({ client, onLogout }) {
     myreport:   <MyReport client={client}/>,
     engagement: <Engagement/>,
     calendar:   <Calendar/>,
+    mydocs:     <MyDocs client={client}/>,
   };
 
   return (
@@ -1819,6 +2054,7 @@ function Portal({ client, onLogout }) {
           {pages[page]}
         </main>
       </div>
+      <FloatingCalendly/>
     </div>
   );
 }
@@ -2430,23 +2666,41 @@ function AdminPanel({ admin, onLogout }) {
                     onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
                     onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
                     <input type="file" style={{ display:"none" }}
+                      accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.ppt,.pptx"
                       onChange={async (e) => {
                         const file = e.target.files[0];
                         if (!file || !selected) return;
+                        // 10MB limit
+                        if (file.size > 10 * 1024 * 1024) {
+                          alert("File is too large. Maximum size is 10MB.");
+                          e.target.value = "";
+                          return;
+                        }
                         setDocLoading(true);
-                        const path = `${selected.id}/${Date.now()}-${file.name}`;
+                        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+                        const path = `${selected.id}/${Date.now()}-${safeName}`;
                         const { error: upErr } = await supabase.storage
-                          .from("client-docs").upload(path, file);
-                        if (upErr) { alert("Upload failed: " + upErr.message); setDocLoading(false); return; }
+                          .from("client-docs").upload(path, file, { upsert: false });
+                        if (upErr) {
+                          console.error("Upload error:", upErr);
+                          alert("Upload failed: " + upErr.message + "\n\nMake sure the 'client-docs' bucket exists in Supabase Storage and is set to Public.");
+                          setDocLoading(false);
+                          e.target.value = "";
+                          return;
+                        }
                         const { data: urlData } = supabase.storage
                           .from("client-docs").getPublicUrl(path);
-                        const { data: docRow } = await supabase.from("documents").insert({
+                        const { data: docRow, error: dbErr } = await supabase.from("documents").insert({
                           client_id: selected.id,
                           name: file.name,
                           file_url: urlData.publicUrl,
                           file_size: (file.size/1024/1024).toFixed(2) + " MB",
                           uploaded_by: "garima",
                         }).select().single();
+                        if (dbErr) {
+                          console.error("DB insert error:", dbErr);
+                          alert("File uploaded but failed to save record: " + dbErr.message);
+                        }
                         if (docRow) setDocs(prev => [docRow, ...prev]);
                         setDocLoading(false);
                         e.target.value = "";
@@ -2576,4 +2830,3 @@ export default function App() {
   if (!client) return <Login onLogin={setClient}/>;
   return <Portal client={client} onLogout={handleLogout}/>;
 }
-
