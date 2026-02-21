@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+aimport { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -139,25 +139,8 @@ const PriBadge = ({ p }) => {
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
 const Logo = ({ size=28 }) => (
-  <div style={{ display:"flex", alignItems:"center", gap:9 }}>
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-      <defs>
-        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
-          <stop stopColor="#3B6FF7"/><stop offset="1" stopColor="#7C5CF5"/>
-        </linearGradient>
-      </defs>
-      <rect width="40" height="40" rx="11" fill="url(#lg)"/>
-      <rect x="8"  y="24" width="5" height="10" rx="2" fill="white" opacity="0.5"/>
-      <rect x="15" y="18" width="5" height="16" rx="2" fill="white" opacity="0.75"/>
-      <rect x="22" y="11" width="5" height="23" rx="2" fill="white"/>
-      <polyline points="29,8 35,8 35,14" stroke="white" strokeWidth="2"
-        strokeLinecap="round" strokeLinejoin="round" fill="none"/>
-      <line x1="22" y1="17" x2="35" y2="8" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-    </svg>
-    <div style={{ lineHeight:1 }}>
-      <div style={{ fontFamily:F, fontWeight:800, fontSize:size*0.65, color:C.navy, letterSpacing:"-0.02em" }}>Finzzup</div>
-      <div style={{ fontFamily:F, fontSize:8.5, color:C.muted, letterSpacing:"0.07em", marginTop:1 }}>CLIENT PORTAL</div>
-    </div>
+  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+    <img src="/logo.png" alt="Finzzup" style={{ height:size*1.4, width:"auto", objectFit:"contain" }}/>
   </div>
 );
 
@@ -227,9 +210,11 @@ function Login({ onLogin }) {
       <input value={form[fkey]}
         onChange={e => { setForm(f=>({...f,[fkey]:e.target.value})); setError(""); }}
         type={type} placeholder={placeholder}
+        autoComplete={type==="password"?"current-password":"email"}
         style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:16,
           border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-          background:C.bg, outline:"none", boxSizing:"border-box", transition:"border-color 0.2s" }}
+          background:C.bg, outline:"none", boxSizing:"border-box", transition:"border-color 0.2s",
+          WebkitTextSizeAdjust:"100%", touchAction:"manipulation" }}
         onFocus={e => e.target.style.borderColor = C.blue}
         onBlur={e  => e.target.style.borderColor = C.border}
       />
@@ -1931,6 +1916,8 @@ function AdminPanel({ admin, onLogout }) {
 
   // Engagement state
   const [engagement, setEngagement] = useState({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
+  const [docs, setDocs]           = useState([]);
+  const [docLoading, setDocLoading] = useState(false);
 
   useEffect(() => { fetchClients(); }, []);
 
@@ -1955,6 +1942,10 @@ function AdminPanel({ admin, onLogout }) {
       .select("*").eq("client_id", c.id).single();
     if (engData) setEngagement(engData);
     else setEngagement({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
+    // Load documents
+    const { data: docData } = await supabase.from("documents")
+      .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
+    setDocs(docData || []);
   };
 
   const saveKPIs = async () => {
@@ -2024,6 +2015,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"kpis",       icon:"📊", label:"Update KPIs"     },
     { id:"actions",    icon:"✅", label:"Action Items"    },
     { id:"engagement", icon:"📋", label:"Valuation"       },
+    { id:"documents",  icon:"📁", label:"Documents"       },
   ];
 
   const Input = ({ label, val, onChange, type="text", placeholder="", mono=false }) => (
@@ -2089,10 +2081,10 @@ function AdminPanel({ admin, onLogout }) {
               const c = clients.find(x => x.id===e.target.value);
               if (c) selectClient(c);
             }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, fontSize:12,
-              background:"rgba(255,255,255,0.08)", border:"1px solid rgba(255,255,255,0.15)",
+              background:"#1a2744", border:"1px solid rgba(255,255,255,0.2)",
               color:"white", fontFamily:F, outline:"none" }}>
-              <option value="">— Select client —</option>
-              {clients.map(c => <option key={c.id} value={c.id}>{c.name} ({c.client_pack})</option>)}
+              <option value="" style={{ background:"#1a2744", color:"white" }}>— Select client —</option>
+              {clients.map(c => <option key={c.id} value={c.id} style={{ background:"#1a2744", color:"white" }}>{c.name} ({c.client_pack})</option>)}
             </select>
           </div>
         )}
@@ -2413,6 +2405,108 @@ function AdminPanel({ admin, onLogout }) {
             </div>
           )}
 
+          {/* ── DOCUMENTS ── */}
+          {tab === "documents" && (
+            <div style={{ maxWidth:600 }}>
+              {!selected ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+                </Card>
+              ) : (<>
+                {/* Upload area */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>
+                    Upload Document for {selected.name}
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Upload board packs, valuation reports, or any client document. Max 10MB per file.
+                  </p>
+                  <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
+                    border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
+                    background:C.bg, transition:"border-color 0.2s" }}
+                    onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
+                    onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
+                    <input type="file" style={{ display:"none" }}
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (!file || !selected) return;
+                        setDocLoading(true);
+                        const path = `${selected.id}/${Date.now()}-${file.name}`;
+                        const { error: upErr } = await supabase.storage
+                          .from("client-docs").upload(path, file);
+                        if (upErr) { alert("Upload failed: " + upErr.message); setDocLoading(false); return; }
+                        const { data: urlData } = supabase.storage
+                          .from("client-docs").getPublicUrl(path);
+                        const { data: docRow } = await supabase.from("documents").insert({
+                          client_id: selected.id,
+                          name: file.name,
+                          file_url: urlData.publicUrl,
+                          file_size: (file.size/1024/1024).toFixed(2) + " MB",
+                          uploaded_by: "garima",
+                        }).select().single();
+                        if (docRow) setDocs(prev => [docRow, ...prev]);
+                        setDocLoading(false);
+                        e.target.value = "";
+                      }}
+                    />
+                    {docLoading ? (
+                      <div style={{ fontFamily:F, fontSize:14, color:C.blue }}>Uploading…</div>
+                    ) : (<>
+                      <div style={{ fontSize:32, marginBottom:8 }}>📤</div>
+                      <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text }}>
+                        Click to upload a file
+                      </div>
+                      <div style={{ fontFamily:F, fontSize:12, color:C.dim, marginTop:4 }}>
+                        PDF, Excel, Word — max 10MB
+                      </div>
+                    </>)}
+                  </label>
+                </Card>
+
+                {/* Document list */}
+                <Card>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
+                    Uploaded Documents ({docs.length})
+                  </div>
+                  {docs.length === 0 && (
+                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No documents uploaded yet.</p>
+                  )}
+                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                    {docs.map((d,i) => (
+                      <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                        padding:"12px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}`,
+                        flexWrap:"wrap", gap:10 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                          <div style={{ width:36, height:36, borderRadius:9, background:`${C.blue}12`,
+                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📄</div>
+                          <div>
+                            <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
+                            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
+                              {d.file_size} · {new Date(d.created_at).toLocaleDateString("en-IN")}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", gap:8 }}>
+                          <a href={d.file_url} target="_blank" rel="noopener"
+                            style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${C.blue}`,
+                              color:C.blue, fontFamily:F, fontWeight:600, fontSize:12, textDecoration:"none" }}>
+                            View
+                          </a>
+                          <button onClick={async () => {
+                            await supabase.from("documents").delete().eq("id", d.id);
+                            setDocs(prev => prev.filter(x => x.id!==d.id));
+                          }} style={{ padding:"7px 12px", borderRadius:8, border:`1px solid ${C.border}`,
+                            background:"none", color:C.red, cursor:"pointer", fontSize:13 }}>🗑</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </>)}
+            </div>
+          )}
+
         </div>
       </div>
     </div>
@@ -2480,3 +2574,4 @@ export default function App() {
   if (!client) return <Login onLogin={setClient}/>;
   return <Portal client={client} onLogout={handleLogout}/>;
 }
+
