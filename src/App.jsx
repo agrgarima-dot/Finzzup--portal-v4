@@ -158,6 +158,33 @@ const Logo = ({ size=28, showTagline=false }) => (
   </div>
 );
 
+// ─── LOGIN INPUT — defined OUTSIDE Login so it never remounts on re-render ────
+function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
+  return (
+    <div style={{ marginBottom:14 }}>
+      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+        letterSpacing:"0.08em", display:"block", marginBottom:7, fontFamily:F }}>{label}</label>
+      <input
+        value={value}
+        onChange={onChange}
+        type={type}
+        placeholder={placeholder}
+        autoComplete={type==="password" ? "current-password" : "email"}
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck="false"
+        style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:16,
+          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+          background:C.bg, outline:"none", boxSizing:"border-box",
+          transition:"border-color 0.2s", WebkitTextSizeAdjust:"100%",
+          touchAction:"manipulation" }}
+        onFocus={e => e.target.style.borderColor = C.blue}
+        onBlur={e  => e.target.style.borderColor = C.border}
+      />
+    </div>
+  );
+}
+
 // ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
 function Login({ onLogin }) {
   const [step, setStep]     = useState("code"); // "code" | "register" | "signin"
@@ -167,21 +194,32 @@ function Login({ onLogin }) {
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Check invite code against Supabase
+  // Check invite code — demo codes use local data, real codes hit Supabase
   const checkCode = async () => {
     if (!code.trim()) { setError("Please enter an invite code."); return; }
+    const upper = code.trim().toUpperCase();
     setLoading(true); setError("");
+
+    // ── Demo codes: bypass Supabase, log straight in with dummy data ──
+    if (INVITE_CODES[upper]) {
+      const demo = { ...INVITE_CODES[upper], invite_code: upper, id: upper, isDemo: true };
+      setLoading(false);
+      onLogin(demo);   // straight to Portal, no password needed
+      return;
+    }
+
+    // ── Real codes: look up in Supabase clients table ──
     const { data, error: err } = await supabase
       .from("clients")
       .select("*")
-      .eq("invite_code", code.trim().toUpperCase())
+      .eq("invite_code", upper)
       .eq("active", true)
       .single();
     setLoading(false);
     if (err || !data) { setError("Invalid invite code. Please contact garima@finzzup.com"); return; }
     setClient(data);
     setForm(f => ({ ...f, email: data.email }));
-    setStep("register");
+    setStep("register");   // real client must set a password
   };
 
   // Register new account with Supabase Auth
@@ -205,36 +243,26 @@ function Login({ onLogin }) {
   const signIn = async () => {
     if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
     setLoading(true); setError("");
+
+    // ── Demo email shortcut (shouldn't normally reach here, but just in case) ──
+    const demoMatch = Object.values(INVITE_CODES).find(d => d.email === form.email.trim().toLowerCase());
+    if (demoMatch) {
+      setLoading(false);
+      onLogin({ ...demoMatch, isDemo: true });
+      return;
+    }
+
+    // ── Real Supabase signin ──
     const { error: authErr } = await supabase.auth.signInWithPassword({
-      email: form.email, password: form.password
+      email: form.email.trim(), password: form.password
     });
     if (authErr) { setLoading(false); setError("Incorrect email or password."); return; }
-    // Fetch client record by email
     const { data, error: dbErr } = await supabase
-      .from("clients").select("*").eq("email", form.email).single();
+      .from("clients").select("*").eq("email", form.email.trim()).single();
     setLoading(false);
     if (dbErr || !data) { setError("Account not found. Please register first."); return; }
     onLogin(data);
   };
-
-  const InputField = ({ label, fkey, type="text", placeholder="" }) => (
-    <div style={{ marginBottom:14 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-        letterSpacing:"0.08em", display:"block", marginBottom:7, fontFamily:F }}>{label}</label>
-      <input value={form[fkey]}
-        onChange={e => { setForm(f=>({...f,[fkey]:e.target.value})); setError(""); }}
-        type={type} placeholder={placeholder}
-        autoComplete={type==="password"?"current-password":"email"}
-        autoCorrect="off" autoCapitalize="off" spellCheck="false"
-        style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:16,
-          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-          background:C.bg, outline:"none", boxSizing:"border-box", transition:"border-color 0.2s",
-          WebkitTextSizeAdjust:"100%", touchAction:"manipulation" }}
-        onFocus={e => e.target.style.borderColor = C.blue}
-        onBlur={e  => e.target.style.borderColor = C.border}
-      />
-    </div>
-  );
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center",
@@ -344,9 +372,9 @@ function Login({ onLogin }) {
               </div>
             </div>
             <h2 style={{ fontWeight:700, fontSize:18, color:C.text, marginBottom:20 }}>Create your account</h2>
-            <InputField label="Email"            fkey="email"    type="email"    placeholder="your@email.com" />
-            <InputField label="Password"         fkey="password" type="password" placeholder="Min 6 characters" />
-            <InputField label="Confirm Password" fkey="confirm"  type="password" placeholder="Repeat password" />
+            <LoginInput label="Email"            value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
+            <LoginInput label="Password"         value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Min 6 characters" />
+            <LoginInput label="Confirm Password" value={form.confirm}  onChange={e => { setForm(f=>({...f,confirm:e.target.value}));  setError(""); }} type="password" placeholder="Repeat password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
             <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
               borderRadius:12, border:"none", background:C.grad1, color:"white",
@@ -367,8 +395,8 @@ function Login({ onLogin }) {
             <p style={{ fontSize:13, color:C.muted, marginBottom:24, lineHeight:1.6 }}>
               Sign in to your Finzzup portal.
             </p>
-            <InputField label="Email"    fkey="email"    type="email"    placeholder="your@email.com" />
-            <InputField label="Password" fkey="password" type="password" placeholder="Your password" />
+            <LoginInput label="Email"    value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
+            <LoginInput label="Password" value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Your password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
             <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
               borderRadius:12, border:"none", background:C.grad1, color:"white",
@@ -571,7 +599,11 @@ const OVERVIEW_ENGAGEMENTS = [
   { id:3, title:"ESOP Valuation Round 2",          type:"Valuation", status:"In Review",  color:"#F59E0B" },
 ];
 
-function Overview({ client, setPage }) {
+function Overview({ client, setPage, kpis, garimaNote }) {
+  // Fall back to dummy data if no live data passed
+  const displayKpis = kpis || KPIs;
+  const displayNote = garimaNote || "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
+
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
@@ -759,7 +791,9 @@ function Overview({ client, setPage }) {
 
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
-function Dashboard({ client }) {
+function Dashboard({ client, kpis, garimaNote }) {
+  const displayKpis = kpis || KPIs;
+  const displayNote = garimaNote || "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
   return (
     <div style={{ padding:24 }}>
       {/* Welcome */}
@@ -785,13 +819,13 @@ function Dashboard({ client }) {
           📝 Note from Garima — Feb 2026
         </div>
         <p style={{ fontSize:14, color:C.text, lineHeight:1.75, fontFamily:F, margin:0 }}>
-          Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.
+          {displayNote}
         </p>
       </Card>
 
       {/* KPI Grid */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:24 }} className="kpi-grid">
-        {KPIs.map((k,i) => (
+        {displayKpis.map((k,i) => (
           <Card key={i} style={{ padding:18 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
               <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
@@ -991,8 +1025,10 @@ function CashFlow() {
 }
 
 // ─── ACTION ITEMS ─────────────────────────────────────────────────────────────
-function ActionItems() {
-  const [items, setItems] = useState(ACTIONS);
+function ActionItems({ actions: actionsProp }) {
+  const [items, setItems] = useState(actionsProp || ACTIONS);
+  // Sync if parent passes new live data after load
+  useEffect(() => { if (actionsProp) setItems(actionsProp); }, [actionsProp]);
   const toggle = id => setItems(prev => prev.map(a => a.id===id ? {...a, done:!a.done} : a));
   const pending  = items.filter(a => !a.done);
   const done     = items.filter(a => a.done);
@@ -2007,8 +2043,18 @@ function CFOPacks({ client }) {
 }
 
 // ─── VALUATION ENGAGEMENT ────────────────────────────────────────────────────
-function Engagement() {
-  const pct = (ENGAGEMENT.status / (ENGAGEMENT.stages.length - 1)) * 100;
+function Engagement({ liveData }) {
+  // Merge live data from Supabase with dummy fallback
+  const eng = liveData ? {
+    type:         liveData.type         || ENGAGEMENT.type,
+    ref:          liveData.ref_number   || ENGAGEMENT.ref,
+    status:       liveData.status       ?? ENGAGEMENT.status,
+    stages:       ENGAGEMENT.stages,
+    expectedDate: liveData.expected_date|| ENGAGEMENT.expectedDate,
+    docs:         ENGAGEMENT.docs,      // docs still from dummy until wired separately
+    garimaNote:   liveData.garima_note  || null,
+  } : ENGAGEMENT;
+  const pct = (eng.status / (eng.stages.length - 1)) * 100;
 
   return (
     <div style={{ padding:24 }}>
@@ -2022,13 +2068,13 @@ function Engagement() {
           <div>
             <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
               textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Engagement</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>{ENGAGEMENT.type}</div>
-            <div style={{ fontFamily:FM, fontSize:12, color:C.muted, marginTop:3 }}>Ref: {ENGAGEMENT.ref}</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>{eng.type}</div>
+            <div style={{ fontFamily:FM, fontSize:12, color:C.muted, marginTop:3 }}>Ref: {eng.ref}</div>
           </div>
           <div style={{ textAlign:"right" }}>
             <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
               textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Expected</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.blue }}>{ENGAGEMENT.expectedDate}</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.blue }}>{eng.expectedDate}</div>
           </div>
         </div>
 
@@ -2039,19 +2085,19 @@ function Engagement() {
               width:`${pct}%`, transition:"width 0.6s" }}/>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between" }}>
-            {ENGAGEMENT.stages.map((s,i) => (
+            {eng.stages.map((s,i) => (
               <div key={i} style={{ textAlign:"center", flex:1 }}>
                 <div style={{ width:22, height:22, borderRadius:"50%", margin:"0 auto 6px",
-                  background: i <= ENGAGEMENT.status ? C.blue : C.bg3,
-                  border: i === ENGAGEMENT.status ? `3px solid ${C.blue}` : "none",
+                  background: i <= eng.status ? C.blue : C.bg3,
+                  border: i === eng.status ? `3px solid ${C.blue}` : "none",
                   display:"flex", alignItems:"center", justifyContent:"center",
-                  boxShadow: i === ENGAGEMENT.status ? `0 0 0 4px ${C.blue}25` : "none",
+                  boxShadow: i === eng.status ? `0 0 0 4px ${C.blue}25` : "none",
                   transition:"all 0.3s" }}>
-                  {i < ENGAGEMENT.status && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
-                  {i === ENGAGEMENT.status && <span style={{ width:8, height:8, borderRadius:"50%", background:"white", display:"block" }}/>}
+                  {i < eng.status && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
+                  {i === eng.status && <span style={{ width:8, height:8, borderRadius:"50%", background:"white", display:"block" }}/>}
                 </div>
-                <div style={{ fontFamily:F, fontSize:10, color: i <= ENGAGEMENT.status ? C.blue : C.dim,
-                  fontWeight: i === ENGAGEMENT.status ? 700 : 500, lineHeight:1.3 }}>
+                <div style={{ fontFamily:F, fontSize:10, color: i <= eng.status ? C.blue : C.dim,
+                  fontWeight: i === eng.status ? 700 : 500, lineHeight:1.3 }}>
                   {s}
                 </div>
               </div>
@@ -2062,7 +2108,7 @@ function Engagement() {
         <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.blue}08`,
           border:`1px solid ${C.blue}20` }}>
           <span style={{ fontFamily:F, fontSize:13, color:C.blue, fontWeight:600 }}>
-            📌 Currently: <strong>{ENGAGEMENT.stages[ENGAGEMENT.status]}</strong> — Garima is building the DCF model. On track for {ENGAGEMENT.expectedDate}.
+            📌 Currently: <strong>{eng.stages[eng.status]}</strong> — Garima is building the DCF model. On track for {eng.expectedDate}.
           </span>
         </div>
       </Card>
@@ -2073,7 +2119,7 @@ function Engagement() {
           Document Checklist
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {ENGAGEMENT.docs.map((d,i) => (
+          {eng.docs.map((d,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
               borderRadius:10, background: d.done ? `${C.green}08` : C.bg,
               border:`1px solid ${d.done ? C.green+"25" : C.border}` }}>
@@ -2088,7 +2134,7 @@ function Engagement() {
             </div>
           ))}
         </div>
-        {ENGAGEMENT.docs.some(d => !d.done) && (
+        {eng.docs.some(d => !d.done) && (
           <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10,
             background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
@@ -2132,7 +2178,7 @@ function Calendar() {
         <div style={{ padding:"16px 20px", borderBottom:`1px solid ${C.border}`,
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>📅 Live Calendar Booking</div>
-          <a href="https://calendly.com/agrgarima" target="_blank" rel="noopener"
+          <a href="https://calendly.com/garima-finzzup" target="_blank" rel="noopener"
             style={{ fontFamily:F, fontSize:12, color:C.blue, fontWeight:600, textDecoration:"none" }}>
             Open in new tab ↗
           </a>
@@ -2399,12 +2445,22 @@ const DEMO_INVOICES = [
   { id:"INV-2026-001", date:"15 Jan 2026", due:"30 Jan 2026", service:"DCF Valuation — Series A Pre-Funding", amount:"₹65,000", status:"paid", items:[{ desc:"Valuation Report (DCF + Comps)", qty:1, unit:"₹65,000", total:"₹65,000" }] },
 ];
 
-function Invoices({ client }) {
+function Invoices({ client, liveInvoices }) {
+  // Use live data if provided (real client), else demo data
+  const allInvoices = liveInvoices && liveInvoices.length > 0 ? liveInvoices.map(inv => ({
+    id:      inv.invoice_number || inv.id,
+    date:    inv.created_at ? new Date(inv.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }) : "—",
+    due:     inv.due_date    ? new Date(inv.due_date).toLocaleDateString("en-IN",    { day:"numeric", month:"short", year:"numeric" }) : "—",
+    service: inv.service || inv.description || "Service",
+    amount:  inv.amount ? `₹${Number(inv.amount).toLocaleString("en-IN")}` : "—",
+    status:  inv.status || "unpaid",
+    items:   [{ desc: inv.description || inv.service || "Service", qty:1, unit: inv.amount ? `₹${Number(inv.amount).toLocaleString("en-IN")}` : "—", total: inv.amount ? `₹${Number(inv.amount).toLocaleString("en-IN")}` : "—" }],
+  })) : DEMO_INVOICES;
   const [view, setView] = useState("list");
   const [selected, setSelected] = useState(null);
 
-  const unpaid = DEMO_INVOICES.filter(i=>i.status==="unpaid");
-  const paid   = DEMO_INVOICES.filter(i=>i.status==="paid");
+  const unpaid = allInvoices.filter(i=>i.status==="unpaid");
+  const paid   = allInvoices.filter(i=>i.status==="paid");
 
   const InvoiceCard = ({ inv }) => {
     const isUnpaid = inv.status === "unpaid";
@@ -2817,22 +2873,73 @@ function Portal({ client, onLogout }) {
   const [page,      setPage]      = useState("overview");
   const [collapsed, setCollapsed] = useState(false);
 
+  // ── Live data state (only populated for real/non-demo clients) ──
+  const [liveKpis,       setLiveKpis]       = useState(null);
+  const [liveActions,    setLiveActions]    = useState(null);
+  const [liveEngagement, setLiveEngagement] = useState(null);
+  const [liveInvoices,   setLiveInvoices]   = useState(null);
+  const [dataLoading,    setDataLoading]    = useState(false);
+
+  const isDemo = client?.isDemo === true;
+
+  // Fetch all live data from Supabase when a real client logs in
+  useEffect(() => {
+    if (isDemo || !client?.id) return;
+    const fetchAll = async () => {
+      setDataLoading(true);
+      const [kpiRes, actionRes, engRes, invRes] = await Promise.all([
+        supabase.from("kpis").select("*").eq("client_id", client.id)
+          .order("updated_at", { ascending:false }).limit(1).single(),
+        supabase.from("action_items").select("*").eq("client_id", client.id)
+          .order("created_at", { ascending:false }),
+        supabase.from("engagements").select("*").eq("client_id", client.id).single(),
+        supabase.from("invoices").select("*").eq("client_id", client.id)
+          .order("created_at", { ascending:false }),
+      ]);
+      if (kpiRes.data)       setLiveKpis(kpiRes.data);
+      if (actionRes.data)    setLiveActions(actionRes.data);
+      if (engRes.data)       setLiveEngagement(engRes.data);
+      if (invRes.data)       setLiveInvoices(invRes.data);
+      setDataLoading(false);
+    };
+    fetchAll();
+  }, [client?.id, isDemo]);
+
+  // Build merged KPI array — live data overrides dummy labels if available
+  const resolvedKpis = (!isDemo && liveKpis) ? [
+    { label:"Revenue",      value:liveKpis.revenue      || "—", prev:"—", trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"📈" },
+    { label:"Gross Margin", value:liveKpis.gross_margin || "—", prev:"—", trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"💹" },
+    { label:"Cash Balance", value:liveKpis.cash_balance || "—", prev:"—", trend:"down", color:C.amber,  bg:"#FEF7E7", icon:"🏦" },
+    { label:"Burn Rate",    value:liveKpis.burn_rate    || "—", prev:"—", trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"🔥" },
+    { label:"Runway",       value:liveKpis.runway       || "—", prev:"—", trend:"down", color:C.pink,   bg:"#FEF0F7", icon:"⏳" },
+    { label:"ARR",          value:liveKpis.arr          || "—", prev:"—", trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"🎯" },
+  ] : KPIs;
+
+  const resolvedActions    = (!isDemo && liveActions)    ? liveActions    : ACTIONS;
+  const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
+  const resolvedGarimaNote = (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
+    : "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
+
   const pages = {
-    overview:   <Overview   client={client} setPage={setPage}/>,
-    dashboard:  <Dashboard  client={client}/>,
+    overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote}/>,
+    dashboard:  <Dashboard  client={client} kpis={resolvedKpis}/>,
     cashflow:   <CashFlow/>,
-    actions:    <ActionItems/>,
+    actions:    <ActionItems actions={resolvedActions}/>,
     myreport:   <MyReport client={client}/>,
-    engagement: <Engagement/>,
+    engagement: <Engagement liveData={resolvedEngagement}/>,
     calendar:   <Calendar/>,
     newrequest: <NewRequest client={client} setPage={setPage}/>,
-    invoices:   <Invoices   client={client}/>,
+    invoices:   <Invoices   client={client} liveInvoices={isDemo ? null : liveInvoices}/>,
     treasury:   <Treasury   client={client}/>,
     terms:      <Terms/>,
   };
 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
+      {dataLoading && !isDemo && (
+        <div style={{ position:"fixed", top:0, left:0, right:0, height:3, zIndex:9999,
+          background:C.grad1, animation:"progress 1.5s ease-in-out infinite" }}/>
+      )}
       <Sidebar page={page} setPage={setPage} client={client}
         onLogout={onLogout} collapsed={collapsed} setCollapsed={setCollapsed}/>
       <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden" }}>
@@ -2841,6 +2948,7 @@ function Portal({ client, onLogout }) {
           {pages[page]}
         </main>
       </div>
+      <style>{`@keyframes progress{0%{width:0%;left:0}50%{width:60%;left:20%}100%{width:0%;left:100%}}`}</style>
     </div>
   );
 }
@@ -3549,15 +3657,23 @@ export default function App() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user?.email) {
         if (isAdminRoute) {
-          // Check admin table
           const { data: adminData } = await supabase
             .from("admins").select("*").eq("email", session.user.email).single();
           if (adminData) setAdmin(adminData);
         } else {
-          // Check clients table
-          const { data: clientData } = await supabase
-            .from("clients").select("*").eq("email", session.user.email).single();
-          if (clientData) setClient(clientData);
+          // Check if this is a demo email — restore demo session without DB hit
+          const demoMatch = Object.entries(INVITE_CODES).find(
+            ([, d]) => d.email === session.user.email
+          );
+          if (demoMatch) {
+            const [code, demo] = demoMatch;
+            setClient({ ...demo, invite_code: code, id: code, isDemo: true });
+          } else {
+            // Real client — fetch from Supabase
+            const { data: clientData } = await supabase
+              .from("clients").select("*").eq("email", session.user.email).single();
+            if (clientData) setClient(clientData);
+          }
         }
       }
       setLoading(false);
