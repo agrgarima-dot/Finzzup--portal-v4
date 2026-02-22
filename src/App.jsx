@@ -765,7 +765,7 @@ function Overview({ client, setPage, kpis, garimaNote }) {
             <div style={{ fontFamily:F, fontSize:12, color:"#047857", marginBottom:12, lineHeight:1.6 }}>
               Chat directly with Garima on WhatsApp for quick questions about your financials or valuations.
             </div>
-            <a href="https://wa.me/966503510581" target="_blank" rel="noopener noreferrer"
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener noreferrer"
               style={{ display:"inline-flex", alignItems:"center", gap:8,
                 background:"#25D366", color:"white", borderRadius:10,
                 padding:"9px 18px", fontFamily:F, fontWeight:700, fontSize:13,
@@ -1962,7 +1962,7 @@ function BoardPacksTabbed() {
         <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
           📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
           Questions about the pack?{" "}
-          <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+          <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
         </div>
       </Card>
     </div>
@@ -2264,9 +2264,9 @@ function downloadInvoicePDF(inv, client) {
   <div class="total-val">${inv.amount}</div>
 </div>
 <div class="footer">
-  <strong>Finzzup Advisory LLP</strong> · GSTIN: [Add GSTIN] · PAN: [Add PAN]<br/>
-  Bank: [Bank Name] · A/C No: [Account Number] · IFSC: [IFSC Code]<br/>
-  To pay: transfer to the above account and WhatsApp UTR to +91 98335 85820<br/>
+  <strong>Finzzup Advisory LLP</strong> · PAN: [APJPA5308M]<br/>
+  Bank: [HDFC Bank] · A/C No: [50100452385391] · IFSC: [HDFC0001108]<br/>
+  To pay: transfer to the above account and WhatsApp UTR to +91 98335 85810<br/>
   Queries: garima@finzzup.com — This is a system-generated invoice.
 </div>
 </body></html>`;
@@ -2647,7 +2647,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
             To pay, please transfer to Garima's bank account (details on the invoice PDF) and WhatsApp the UTR to{" "}
-            <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
               style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
           </div>
         </div>
@@ -2925,7 +2925,7 @@ function MyDocuments({ client }) {
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 <strong>Need to send a large file?</strong> WhatsApp it directly to Garima at{" "}
           <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
-            style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
+            style={{ color:C.green, fontWeight:700 }}>+91 98335 85810</a>
           {" "}or email{" "}
           <a href="mailto:garima@finzzup.com" style={{ color:C.green, fontWeight:700 }}>garima@finzzup.com</a>
         </div>
@@ -3058,7 +3058,7 @@ function Treasury({ client }) {
           <Card style={{ background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
             <div style={{ fontFamily:F, fontSize:13, color:C.blue, lineHeight:1.7 }}>
               💬 <strong>Want a detailed treasury optimisation plan?</strong>{" "}
-              <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
+              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
               {" "}to discuss sweep accounts, liquid funds, and yield laddering for your cash position.
             </div>
           </Card>
