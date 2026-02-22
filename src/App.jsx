@@ -139,51 +139,11 @@ const PriBadge = ({ p }) => {
 };
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
-const Logo = ({ size=28, showTagline=false }) => (
-  <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:0 }}>
-    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-      <div style={{ width:size*1.1, height:size*1.1, borderRadius:8,
-        background:"linear-gradient(135deg,#3B6FF7,#7C5CF5)",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        fontSize:size*0.55, fontWeight:900, color:"white", flexShrink:0 }}>F</div>
-      <span style={{ fontFamily:"'DM Mono', monospace", fontWeight:700, fontSize:size*0.75,
-        color:"white", letterSpacing:"-0.02em" }}>Finzzup</span>
-    </div>
-    {showTagline && (
-      <div style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:10,
-        color:"rgba(255,255,255,0.45)", marginTop:2, letterSpacing:"0.04em" }}>
-        Build · Value · Scale
-      </div>
-    )}
+const Logo = ({ size=28 }) => (
+  <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+    <img src="/logo.png" alt="Finzzup" style={{ height:size*1.4, width:"auto", objectFit:"contain" }}/>
   </div>
 );
-
-// ─── LOGIN INPUT — defined OUTSIDE Login so it never remounts on re-render ────
-function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
-  return (
-    <div style={{ marginBottom:14 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-        letterSpacing:"0.08em", display:"block", marginBottom:7, fontFamily:F }}>{label}</label>
-      <input
-        value={value}
-        onChange={onChange}
-        type={type}
-        placeholder={placeholder}
-        autoComplete={type==="password" ? "current-password" : "email"}
-        autoCorrect="off"
-        autoCapitalize="off"
-        spellCheck="false"
-        style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:16,
-          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-          background:C.bg, outline:"none", boxSizing:"border-box",
-          transition:"border-color 0.2s", WebkitTextSizeAdjust:"100%",
-          touchAction:"manipulation" }}
-        onFocus={e => e.target.style.borderColor = C.blue}
-        onBlur={e  => e.target.style.borderColor = C.border}
-      />
-    </div>
-  );
-}
 
 // ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
 function Login({ onLogin }) {
@@ -194,32 +154,21 @@ function Login({ onLogin }) {
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Check invite code — demo codes use local data, real codes hit Supabase
+  // Check invite code against Supabase
   const checkCode = async () => {
     if (!code.trim()) { setError("Please enter an invite code."); return; }
-    const upper = code.trim().toUpperCase();
     setLoading(true); setError("");
-
-    // ── Demo codes: bypass Supabase, log straight in with dummy data ──
-    if (INVITE_CODES[upper]) {
-      const demo = { ...INVITE_CODES[upper], invite_code: upper, id: upper, isDemo: true };
-      setLoading(false);
-      onLogin(demo);   // straight to Portal, no password needed
-      return;
-    }
-
-    // ── Real codes: look up in Supabase clients table ──
     const { data, error: err } = await supabase
       .from("clients")
       .select("*")
-      .eq("invite_code", upper)
+      .eq("invite_code", code.trim().toUpperCase())
       .eq("active", true)
       .single();
     setLoading(false);
     if (err || !data) { setError("Invalid invite code. Please contact garima@finzzup.com"); return; }
     setClient(data);
     setForm(f => ({ ...f, email: data.email }));
-    setStep("register");   // real client must set a password
+    setStep("register");
   };
 
   // Register new account with Supabase Auth
@@ -243,26 +192,35 @@ function Login({ onLogin }) {
   const signIn = async () => {
     if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
     setLoading(true); setError("");
-
-    // ── Demo email shortcut (shouldn't normally reach here, but just in case) ──
-    const demoMatch = Object.values(INVITE_CODES).find(d => d.email === form.email.trim().toLowerCase());
-    if (demoMatch) {
-      setLoading(false);
-      onLogin({ ...demoMatch, isDemo: true });
-      return;
-    }
-
-    // ── Real Supabase signin ──
     const { error: authErr } = await supabase.auth.signInWithPassword({
-      email: form.email.trim(), password: form.password
+      email: form.email, password: form.password
     });
     if (authErr) { setLoading(false); setError("Incorrect email or password."); return; }
+    // Fetch client record by email
     const { data, error: dbErr } = await supabase
-      .from("clients").select("*").eq("email", form.email.trim()).single();
+      .from("clients").select("*").eq("email", form.email).single();
     setLoading(false);
     if (dbErr || !data) { setError("Account not found. Please register first."); return; }
     onLogin(data);
   };
+
+  const InputField = ({ label, fkey, type="text", placeholder="" }) => (
+    <div style={{ marginBottom:14 }}>
+      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+        letterSpacing:"0.08em", display:"block", marginBottom:7, fontFamily:F }}>{label}</label>
+      <input value={form[fkey]}
+        onChange={e => { setForm(f=>({...f,[fkey]:e.target.value})); setError(""); }}
+        type={type} placeholder={placeholder}
+        autoComplete={type==="password"?"current-password":"email"}
+        style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:16,
+          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+          background:C.bg, outline:"none", boxSizing:"border-box", transition:"border-color 0.2s",
+          WebkitTextSizeAdjust:"100%", touchAction:"manipulation" }}
+        onFocus={e => e.target.style.borderColor = C.blue}
+        onBlur={e  => e.target.style.borderColor = C.border}
+      />
+    </div>
+  );
 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center",
@@ -273,19 +231,7 @@ function Login({ onLogin }) {
 
       <div style={{ width:"100%", maxWidth:420, position:"relative" }}>
         <div style={{ textAlign:"center", marginBottom:32 }}>
-          <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:6 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{ width:44, height:44, borderRadius:12,
-                background:"linear-gradient(135deg,#3B6FF7,#7C5CF5)",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:22, fontWeight:900, color:"white" }}>F</div>
-              <span style={{ fontFamily:FM, fontWeight:700, fontSize:28,
-                color:C.text, letterSpacing:"-0.02em" }}>Finzzup</span>
-            </div>
-            <p style={{ fontSize:12, color:C.muted, margin:0, letterSpacing:"0.03em" }}>
-              Smart Finance · Trusted Insights
-            </p>
-          </div>
+          <Logo size={36}/>
           <p style={{ fontSize:13, color:C.muted, marginTop:8 }}>Secure Client Portal</p>
         </div>
 
@@ -372,9 +318,9 @@ function Login({ onLogin }) {
               </div>
             </div>
             <h2 style={{ fontWeight:700, fontSize:18, color:C.text, marginBottom:20 }}>Create your account</h2>
-            <LoginInput label="Email"            value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
-            <LoginInput label="Password"         value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Min 6 characters" />
-            <LoginInput label="Confirm Password" value={form.confirm}  onChange={e => { setForm(f=>({...f,confirm:e.target.value}));  setError(""); }} type="password" placeholder="Repeat password" />
+            <InputField label="Email"            fkey="email"    type="email"    placeholder="your@email.com" />
+            <InputField label="Password"         fkey="password" type="password" placeholder="Min 6 characters" />
+            <InputField label="Confirm Password" fkey="confirm"  type="password" placeholder="Repeat password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
             <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
               borderRadius:12, border:"none", background:C.grad1, color:"white",
@@ -395,8 +341,8 @@ function Login({ onLogin }) {
             <p style={{ fontSize:13, color:C.muted, marginBottom:24, lineHeight:1.6 }}>
               Sign in to your Finzzup portal.
             </p>
-            <LoginInput label="Email"    value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
-            <LoginInput label="Password" value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Your password" />
+            <InputField label="Email"    fkey="email"    type="email"    placeholder="your@email.com" />
+            <InputField label="Password" fkey="password" type="password" placeholder="Your password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
             <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
               borderRadius:12, border:"none", background:C.grad1, color:"white",
@@ -413,13 +359,7 @@ function Login({ onLogin }) {
 
         </Card>
         <p style={{ textAlign:"center", fontSize:11, color:C.dim, marginTop:20 }}>
-          Powered by Finzzup · garima@finzzup.com<br/>
-          <span style={{ marginTop:6, display:"block" }}>
-            <a href="#" style={{ color:C.blue, textDecoration:"none" }}>Terms & Conditions</a>
-            {" · "}
-            <a href="#" style={{ color:C.blue, textDecoration:"none" }}>Privacy Policy</a>
-            {" · "}© 2026 Finzzup Advisory LLP
-          </span>
+          Powered by Finzzup · garima@finzzup.com
         </p>
       </div>
     </div>
@@ -458,13 +398,11 @@ function getNav(client) {
   }
 
   base.push({ id:"calendar", icon:"📅", label:"Book a Call" });
-  base.push({ id:"newrequest", icon:"➕", label:"New Request" });
-  base.push({ id:"invoices", icon:"🧾", label:"Invoices", badge:2 });
-  base.push({ id:"treasury", icon:"🏦", label:"Treasury" });
   return base;
 }
 
-function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {  return (
+function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
+  return (
     <aside style={{ width:collapsed?64:220, minHeight:"100vh", background:C.navy, flexShrink:0,
       display:"flex", flexDirection:"column", transition:"width 0.25s", overflow:"hidden",
       borderRight:`1px solid rgba(255,255,255,0.06)` }}>
@@ -473,13 +411,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
       <div style={{ padding: collapsed ? "20px 0" : "22px 20px", display:"flex",
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
         borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-        {!collapsed && <Logo size={26} showTagline={true}/>}
-        {collapsed && (
-          <div style={{ width:32, height:32, borderRadius:8,
-            background:"linear-gradient(135deg,#3B6FF7,#7C5CF5)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontSize:16, fontWeight:900, color:"white" }}>F</div>
-        )}
+        {!collapsed && <Logo size={26}/>}
         <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
           cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
           {collapsed ? "→" : "←"}
@@ -507,31 +439,16 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
             transition:"all 0.15s", fontFamily:F,
           }}>
             <span style={{ fontSize:17 }}>{n.icon}</span>
-            {!collapsed && <span style={{ fontSize:13, fontWeight:600, flex:1, textAlign:"left",
+            {!collapsed && <span style={{ fontSize:13, fontWeight:600,
               color: page===n.id ? "white" : "rgba(255,255,255,0.5)" }}>
               {n.label}
             </span>}
-            {!collapsed && n.badge && (
-              <span style={{ background:C.amber, color:C.navy, borderRadius:"50%",
-                width:18, height:18, fontSize:10, fontWeight:900, display:"flex",
-                alignItems:"center", justifyContent:"center", fontFamily:F }}>
-                {n.badge}
-              </span>
-            )}
           </button>
         ))}
       </nav>
 
       {/* Logout */}
       <div style={{ padding: collapsed?"10px 0":"10px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
-        {!collapsed && (
-          <button onClick={() => setPage("terms")} style={{ display:"flex", alignItems:"center", gap:8,
-            width:"100%", padding:"8px 12px", justifyContent:"flex-start",
-            background:"none", border:"none", cursor:"pointer", borderRadius:8,
-            fontFamily:F, fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.25)", marginBottom:4 }}>
-            <span>📜</span> Terms & Privacy
-          </button>
-        )}
         <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
           width:"100%", padding: collapsed?"10px 0":"10px 12px", justifyContent:collapsed?"center":"flex-start",
           background:"none", border:"none", cursor:"pointer", borderRadius:8,
@@ -545,25 +462,15 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
 }
 
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
-function Topbar({ title, client, setPage }) {
+function Topbar({ title, client }) {
   const now = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
   return (
     <header style={{ height:58, background:C.bg2, borderBottom:`1px solid ${C.border}`,
       display:"flex", alignItems:"center", justifyContent:"space-between",
       padding:"0 24px", flexShrink:0 }}>
       <h1 style={{ fontFamily:F, fontWeight:700, fontSize:17, color:C.text, margin:0 }}>{title}</h1>
-      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
         <span style={{ fontSize:12, color:C.dim, fontFamily:F }}>{now}</span>
-        {/* Notification bell with invoice badge */}
-        <button onClick={() => setPage && setPage("invoices")}
-          style={{ position:"relative", background:"none", border:"none", cursor:"pointer",
-            width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center" }}>
-          <span style={{ fontSize:18 }}>🔔</span>
-          <span style={{ position:"absolute", top:0, right:0, width:14, height:14,
-            background:C.red, borderRadius:"50%", fontSize:8, fontWeight:900,
-            color:"white", display:"flex", alignItems:"center", justifyContent:"center",
-            fontFamily:F, border:"1.5px solid white" }}>2</span>
-        </button>
         <div style={{ width:32, height:32, borderRadius:"50%", background:C.grad1,
           display:"flex", alignItems:"center", justifyContent:"center",
           fontSize:13, fontWeight:700, color:"white", fontFamily:F }}>
@@ -599,11 +506,7 @@ const OVERVIEW_ENGAGEMENTS = [
   { id:3, title:"ESOP Valuation Round 2",          type:"Valuation", status:"In Review",  color:"#F59E0B" },
 ];
 
-function Overview({ client, setPage, kpis, garimaNote }) {
-  // Fall back to dummy data if no live data passed
-  const displayKpis = kpis || KPIs;
-  const displayNote = garimaNote || "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
-
+function Overview({ client, setPage }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
@@ -791,9 +694,7 @@ function Overview({ client, setPage, kpis, garimaNote }) {
 
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
-function Dashboard({ client, kpis, garimaNote }) {
-  const displayKpis = kpis || KPIs;
-  const displayNote = garimaNote || "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
+function Dashboard({ client }) {
   return (
     <div style={{ padding:24 }}>
       {/* Welcome */}
@@ -819,13 +720,13 @@ function Dashboard({ client, kpis, garimaNote }) {
           📝 Note from Garima — Feb 2026
         </div>
         <p style={{ fontSize:14, color:C.text, lineHeight:1.75, fontFamily:F, margin:0 }}>
-          {displayNote}
+          Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.
         </p>
       </Card>
 
       {/* KPI Grid */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:24 }} className="kpi-grid">
-        {displayKpis.map((k,i) => (
+        {KPIs.map((k,i) => (
           <Card key={i} style={{ padding:18 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
               <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
@@ -875,57 +776,6 @@ function Dashboard({ client, kpis, garimaNote }) {
         }
         @media(max-width:400px){.kpi-grid{grid-template-columns:1fr!important}}
       `}</style>
-
-      {/* Market Benchmarks / Competitor Context */}
-      <Card style={{ marginTop:20, borderTop:`3px solid ${C.purple}` }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
-          📊 Market Benchmarks — SaaS / Fintech Sector
-        </div>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
-          How your key metrics compare to sector medians (Source: public filings & industry databases)
-        </div>
-        <div style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F }}>
-            <thead>
-              <tr style={{ borderBottom:`2px solid ${C.border}` }}>
-                {["Metric","Your Value","Sector Median","Series A Benchmark","Status"].map((h,i) => (
-                  <th key={i} style={{ padding:"8px 12px", textAlign:"left", fontSize:11, fontWeight:700,
-                    color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em",
-                    whiteSpace:"nowrap" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                { metric:"ARR Growth YoY",   yours:"42%",    median:"28%",  bench:"40%+", ok:true  },
-                { metric:"Gross Margin",      yours:"41%",    median:"38%",  bench:"45%+", ok:false },
-                { metric:"Burn Multiple",     yours:"1.8x",   median:"2.1x", bench:"<1.5x",ok:false },
-                { metric:"NRR",               yours:"108%",   median:"104%", bench:">110%", ok:true  },
-                { metric:"CAC Payback",       yours:"18 mo",  median:"22 mo",bench:"<12 mo",ok:false },
-                { metric:"Revenue per FTE",   yours:"₹48L",   median:"₹42L", bench:"₹60L+", ok:true  },
-              ].map((r,i) => (
-                <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
-                  <td style={{ padding:"10px 12px", fontWeight:600, fontSize:13, color:C.text }}>{r.metric}</td>
-                  <td style={{ padding:"10px 12px", fontFamily:FM, fontSize:13, fontWeight:700, color:C.blue }}>{r.yours}</td>
-                  <td style={{ padding:"10px 12px", fontFamily:FM, fontSize:12, color:C.muted }}>{r.median}</td>
-                  <td style={{ padding:"10px 12px", fontFamily:FM, fontSize:12, color:C.muted }}>{r.bench}</td>
-                  <td style={{ padding:"10px 12px" }}>
-                    <Badge color={r.ok?C.green:C.amber} bg={r.ok?"#ECFDF5":"#FFFBEB"}>
-                      {r.ok ? "✅ Ahead" : "⚠️ Gap"}
-                    </Badge>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={{ marginTop:12, padding:"10px 14px", borderRadius:10,
-          background:`${C.purple}08`, border:`1px solid ${C.purple}20` }}>
-          <span style={{ fontFamily:F, fontSize:12, color:C.purple, fontWeight:600 }}>
-            💡 <strong>API Integration:</strong> Market data can be connected via Screener.in, Moneycontrol, or custom APIs. Contact Garima to set up live competitor benchmarking for your sector.
-          </span>
-        </div>
-      </Card>
     </div>
   );
 }
@@ -1025,10 +875,8 @@ function CashFlow() {
 }
 
 // ─── ACTION ITEMS ─────────────────────────────────────────────────────────────
-function ActionItems({ actions: actionsProp }) {
-  const [items, setItems] = useState(actionsProp || ACTIONS);
-  // Sync if parent passes new live data after load
-  useEffect(() => { if (actionsProp) setItems(actionsProp); }, [actionsProp]);
+function ActionItems() {
+  const [items, setItems] = useState(ACTIONS);
   const toggle = id => setItems(prev => prev.map(a => a.id===id ? {...a, done:!a.done} : a));
   const pending  = items.filter(a => !a.done);
   const done     = items.filter(a => a.done);
@@ -1373,62 +1221,6 @@ function MSMECFOPack({ data }) {
               </div>
               <div style={{ fontFamily:FM, fontSize:20, fontWeight:700,
                 color: m.flag ? C.red : C.teal }}>{m.value}</div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Bank Finance / Loan Readiness */}
-      <Card style={{ marginBottom:20 }}>
-        <SectionTitle sub="Readiness for working capital loans & term finance">Bank Finance Readiness</SectionTitle>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="inv-grid">
-          {[
-            { label:"DSCR",              value:"2.1x",    flag:false, note:"Banks prefer >1.5x" },
-            { label:"Debt:Equity Ratio", value:"0.8:1",   flag:false, note:"Conservative — good" },
-            { label:"Current Ratio",     value:"1.62x",   flag:false, note:"Meets bank norms" },
-            { label:"Promoter Equity",   value:"68%",     flag:false, note:"Strong skin in game" },
-            { label:"External Ratings",  value:"BBB+",    flag:false, note:"Investment grade" },
-            { label:"Overdue to Banks",  value:"None",    flag:false, note:"Clean track record" },
-          ].map((m,i) => (
-            <div key={i} style={{ padding:"12px 14px", borderRadius:12,
-              background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
-              <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:17, fontWeight:700,
-                color: m.flag ? C.red : C.teal, marginBottom:4 }}>{m.value}</div>
-              <div style={{ fontFamily:F, fontSize:11, color:m.flag ? C.red : C.green, fontWeight:600 }}>
-                {m.flag ? "⚠️ " : "✅ "}{m.note}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Due Diligence Checklist */}
-      <Card style={{ marginBottom:20 }}>
-        <SectionTitle sub="Documents required for bank loans, buyer DD, and audits">Due Diligence Checklist</SectionTitle>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {[
-            { item:"3 years audited financials (P&L, Balance Sheet, Cash Flow)", done:true  },
-            { item:"Latest GST returns — 12 months",                              done:true  },
-            { item:"Bank statements — 12 months (all accounts)",                  done:true  },
-            { item:"ITR with computation — last 3 years",                         done:true  },
-            { item:"Debtors + Creditors ageing statement",                        done:false },
-            { item:"Stock statement (valued at cost)",                            done:false },
-            { item:"Sanction letters for all existing loans",                     done:true  },
-            { item:"MIS / Management accounts — last 6 months",                  done:false },
-            { item:"Business continuity / succession plan",                       done:false },
-          ].map((d,i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:10, background:d.done ? `${C.green}08` : "#FFFBEB",
-              border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
-              <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
-                background:d.done ? C.green : C.amber,
-                display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <span style={{ color:"white", fontSize:10, fontWeight:900 }}>{d.done ? "✓" : "!"}</span>
-              </div>
-              <span style={{ fontFamily:F, fontSize:13, color:d.done ? C.text : C.amber,
-                fontWeight:d.done ? 500 : 600 }}>{d.item}</span>
-              {!d.done && <Badge color={C.amber} bg="#FFFBEB">Needed</Badge>}
             </div>
           ))}
         </div>
@@ -2043,18 +1835,8 @@ function CFOPacks({ client }) {
 }
 
 // ─── VALUATION ENGAGEMENT ────────────────────────────────────────────────────
-function Engagement({ liveData }) {
-  // Merge live data from Supabase with dummy fallback
-  const eng = liveData ? {
-    type:         liveData.type         || ENGAGEMENT.type,
-    ref:          liveData.ref_number   || ENGAGEMENT.ref,
-    status:       liveData.status       ?? ENGAGEMENT.status,
-    stages:       ENGAGEMENT.stages,
-    expectedDate: liveData.expected_date|| ENGAGEMENT.expectedDate,
-    docs:         ENGAGEMENT.docs,      // docs still from dummy until wired separately
-    garimaNote:   liveData.garima_note  || null,
-  } : ENGAGEMENT;
-  const pct = (eng.status / (eng.stages.length - 1)) * 100;
+function Engagement() {
+  const pct = (ENGAGEMENT.status / (ENGAGEMENT.stages.length - 1)) * 100;
 
   return (
     <div style={{ padding:24 }}>
@@ -2068,13 +1850,13 @@ function Engagement({ liveData }) {
           <div>
             <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
               textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Engagement</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>{eng.type}</div>
-            <div style={{ fontFamily:FM, fontSize:12, color:C.muted, marginTop:3 }}>Ref: {eng.ref}</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>{ENGAGEMENT.type}</div>
+            <div style={{ fontFamily:FM, fontSize:12, color:C.muted, marginTop:3 }}>Ref: {ENGAGEMENT.ref}</div>
           </div>
           <div style={{ textAlign:"right" }}>
             <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
               textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Expected</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.blue }}>{eng.expectedDate}</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.blue }}>{ENGAGEMENT.expectedDate}</div>
           </div>
         </div>
 
@@ -2085,19 +1867,19 @@ function Engagement({ liveData }) {
               width:`${pct}%`, transition:"width 0.6s" }}/>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between" }}>
-            {eng.stages.map((s,i) => (
+            {ENGAGEMENT.stages.map((s,i) => (
               <div key={i} style={{ textAlign:"center", flex:1 }}>
                 <div style={{ width:22, height:22, borderRadius:"50%", margin:"0 auto 6px",
-                  background: i <= eng.status ? C.blue : C.bg3,
-                  border: i === eng.status ? `3px solid ${C.blue}` : "none",
+                  background: i <= ENGAGEMENT.status ? C.blue : C.bg3,
+                  border: i === ENGAGEMENT.status ? `3px solid ${C.blue}` : "none",
                   display:"flex", alignItems:"center", justifyContent:"center",
-                  boxShadow: i === eng.status ? `0 0 0 4px ${C.blue}25` : "none",
+                  boxShadow: i === ENGAGEMENT.status ? `0 0 0 4px ${C.blue}25` : "none",
                   transition:"all 0.3s" }}>
-                  {i < eng.status && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
-                  {i === eng.status && <span style={{ width:8, height:8, borderRadius:"50%", background:"white", display:"block" }}/>}
+                  {i < ENGAGEMENT.status && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
+                  {i === ENGAGEMENT.status && <span style={{ width:8, height:8, borderRadius:"50%", background:"white", display:"block" }}/>}
                 </div>
-                <div style={{ fontFamily:F, fontSize:10, color: i <= eng.status ? C.blue : C.dim,
-                  fontWeight: i === eng.status ? 700 : 500, lineHeight:1.3 }}>
+                <div style={{ fontFamily:F, fontSize:10, color: i <= ENGAGEMENT.status ? C.blue : C.dim,
+                  fontWeight: i === ENGAGEMENT.status ? 700 : 500, lineHeight:1.3 }}>
                   {s}
                 </div>
               </div>
@@ -2108,7 +1890,7 @@ function Engagement({ liveData }) {
         <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.blue}08`,
           border:`1px solid ${C.blue}20` }}>
           <span style={{ fontFamily:F, fontSize:13, color:C.blue, fontWeight:600 }}>
-            📌 Currently: <strong>{eng.stages[eng.status]}</strong> — Garima is building the DCF model. On track for {eng.expectedDate}.
+            📌 Currently: <strong>{ENGAGEMENT.stages[ENGAGEMENT.status]}</strong> — Garima is building the DCF model. On track for {ENGAGEMENT.expectedDate}.
           </span>
         </div>
       </Card>
@@ -2119,7 +1901,7 @@ function Engagement({ liveData }) {
           Document Checklist
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {eng.docs.map((d,i) => (
+          {ENGAGEMENT.docs.map((d,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
               borderRadius:10, background: d.done ? `${C.green}08` : C.bg,
               border:`1px solid ${d.done ? C.green+"25" : C.border}` }}>
@@ -2134,7 +1916,7 @@ function Engagement({ liveData }) {
             </div>
           ))}
         </div>
-        {eng.docs.some(d => !d.done) && (
+        {ENGAGEMENT.docs.some(d => !d.done) && (
           <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10,
             background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
@@ -2173,667 +1955,29 @@ function Calendar() {
         ))}
       </div>
 
-      {/* Calendly LIVE embed */}
-      <Card style={{ padding:0, overflow:"hidden" }}>
-        <div style={{ padding:"16px 20px", borderBottom:`1px solid ${C.border}`,
-          display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>📅 Live Calendar Booking</div>
-          <a href="https://calendly.com/garima-finzzup" target="_blank" rel="noopener"
-            style={{ fontFamily:F, fontSize:12, color:C.blue, fontWeight:600, textDecoration:"none" }}>
-            Open in new tab ↗
-          </a>
+      {/* Calendly placeholder */}
+      <Card style={{ textAlign:"center", padding:40 }}>
+        <div style={{ fontSize:40, marginBottom:12 }}>📅</div>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
+          Calendly Booking
         </div>
-        <iframe
-          src="https://calendly.com/garima-finzzup"
-          width="100%"
-          height="650"
-          frameBorder="0"
-          style={{ display:"block" }}
-          title="Book a call with Garima"
-        />
-      </Card>
-      <Card style={{ padding:"12px 16px", background:`${C.blue}05`, border:`1px dashed ${C.blue}30`, marginTop:0 }}>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7 }}>
-          💡 <strong style={{ color:C.text }}>Admin setup:</strong> Replace <code style={{ background:C.bg3, padding:"2px 5px", borderRadius:4, fontFamily:FM }}>garima-finzzup</code> in the iframe src with your actual Calendly username. Find it at <a href="https://calendly.com" target="_blank" rel="noopener" style={{ color:C.blue }}>calendly.com → Share your link</a>.
+        <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:20, maxWidth:380, margin:"0 auto 20px" }}>
+          To enable live calendar booking, add your Calendly embed URL. Takes 5 minutes.
+        </p>
+        <div style={{ padding:"12px 16px", borderRadius:10, background:C.bg,
+          border:`1px solid ${C.border}`, fontFamily:FM, fontSize:12, color:C.muted,
+          textAlign:"left", marginBottom:20 }}>
+          {`// In your Calendly account, get your embed URL and replace below:`}<br/>
+          {`// <iframe src="https://calendly.com/YOUR_LINK" .../>`}
         </div>
+        <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ display:"inline-flex",
+          alignItems:"center", gap:8, padding:"11px 20px", borderRadius:10,
+          background:`${C.green}12`, border:`1.5px solid ${C.green}30`,
+          color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
+          💬 WhatsApp Garima to schedule
+        </a>
       </Card>
       <style>{`@media(max-width:500px){.cal-grid{grid-template-columns:1fr!important}}`}</style>
-    </div>
-  );
-}
-
-// ─── NEW REQUEST ──────────────────────────────────────────────────────────────
-function NewRequest({ client, setPage }) {
-  const [step, setStep]     = useState(1);
-  const [selected, setSelected] = useState(null);
-  const [form, setForm]     = useState({ name:"", company:"", email:"", phone:"", notes:"" });
-  const [submitted, setSubmitted] = useState(false);
-  const [agreed, setAgreed] = useState(false);
-
-  const SERVICES = [
-    { id:"val-starter",  name:"Valuation · Starter",       tag:"Compliance",  tagColor:C.purple, price:"₹30,000 onwards",  desc:"DCF or NAV, IBBI-signed, 5–7 days" },
-    { id:"val-pro",      name:"Valuation · Professional",  tag:"Fundraising", tagColor:C.pink,   price:"₹65,000 onwards",  desc:"Full IB-quality, peer comps, sensitivity", popular:true },
-    { id:"frac-cfo",     name:"Fractional CFO",            tag:"Ongoing",     tagColor:C.amber,  price:"₹50,000 / month",  desc:"MIS, forecasting, board packs, min. 3 months" },
-    { id:"esop-val",     name:"ESOP Valuation",            tag:"ESOP",        tagColor:C.teal,   price:"₹25,000 onwards",  desc:"409A-style, SEBI IPEV compliant" },
-    { id:"ppa",          name:"Purchase Price Allocation",  tag:"M&A",         tagColor:C.blue,   price:"₹80,000 onwards",  desc:"Ind AS 103, intangible identification" },
-    { id:"fema-fdi",     name:"FEMA / FDI Valuation",      tag:"Regulatory",  tagColor:C.red,    price:"₹40,000 onwards",  desc:"Inbound & outbound FDI compliance" },
-  ];
-
-  const handleSubmit = async () => {
-    if (!agreed) { alert("Please agree to the terms to proceed."); return; }
-    // In production: save to Supabase requests table
-    setSubmitted(true);
-  };
-
-  if (submitted) return (
-    <div style={{ padding:32, maxWidth:520 }}>
-      <Card style={{ textAlign:"center", padding:48 }}>
-        <div style={{ fontSize:56, marginBottom:16 }}>🎉</div>
-        <h2 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, marginBottom:8 }}>Request Submitted!</h2>
-        <p style={{ fontFamily:F, fontSize:14, color:C.muted, lineHeight:1.7, marginBottom:24 }}>
-          Garima will review your request and send a scoped proposal within 24 hours. You'll hear from her at <strong>{form.email || client?.email}</strong>.
-        </p>
-        <div style={{ padding:"12px 16px", borderRadius:12, background:`${C.green}0A`,
-          border:`1px solid ${C.green}25`, marginBottom:20 }}>
-          <div style={{ fontFamily:F, fontSize:13, color:C.green, fontWeight:600 }}>
-            ✅ {SERVICES.find(s=>s.id===selected)?.name}
-          </div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>
-            Expected response: within 24 hours
-          </div>
-        </div>
-        <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
-          <button onClick={() => { setStep(1); setSelected(null); setSubmitted(false); setForm({ name:"", company:"", email:"", phone:"", notes:"" }); setAgreed(false); }}
-            style={{ padding:"10px 20px", borderRadius:10, border:`1.5px solid ${C.border}`,
-              background:"none", fontFamily:F, fontWeight:600, fontSize:13, color:C.muted, cursor:"pointer" }}>
-            Make another request
-          </button>
-          <button onClick={() => setPage("overview")}
-            style={{ padding:"10px 20px", borderRadius:10, border:"none",
-              background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            Back to Overview →
-          </button>
-        </div>
-      </Card>
-    </div>
-  );
-
-  return (
-    <div style={{ padding:24, maxWidth:900 }}>
-      <SectionTitle sub="Get a scoped proposal within 24 hours.">Request a Service</SectionTitle>
-
-      {/* Stepper */}
-      <div style={{ display:"flex", alignItems:"center", gap:0, marginBottom:28, maxWidth:500 }}>
-        {[["1","Select Service"],["2","Your Details"],["3","Confirm"]].map(([n,lbl],i) => (
-          <div key={n} style={{ display:"flex", alignItems:"center", flex:i<2?1:0 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{ width:30, height:30, borderRadius:"50%",
-                background: step>parseInt(n) ? C.green : step===parseInt(n) ? C.blue : C.bg3,
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:13, fontWeight:700, color: step>=parseInt(n) ? "white" : C.muted,
-                flexShrink:0, transition:"all 0.3s" }}>
-                {step>parseInt(n) ? "✓" : n}
-              </div>
-              <span style={{ fontFamily:F, fontSize:13, fontWeight:600,
-                color: step===parseInt(n) ? C.text : C.muted, whiteSpace:"nowrap" }}>{lbl}</span>
-            </div>
-            {i < 2 && <div style={{ flex:1, height:1, background:step>i+1?C.blue:C.border, margin:"0 12px", transition:"background 0.3s" }}/>}
-          </div>
-        ))}
-      </div>
-
-      {/* Step 1: Select Service */}
-      {step === 1 && (
-        <>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="nr-grid">
-            {SERVICES.map(s => (
-              <div key={s.id} onClick={() => setSelected(s.id)}
-                style={{ position:"relative", padding:20, borderRadius:14,
-                  border:`2px solid ${selected===s.id ? C.blue : C.border}`,
-                  background: selected===s.id ? `${C.blue}06` : C.bg2,
-                  cursor:"pointer", transition:"all 0.2s",
-                  boxShadow: selected===s.id ? `0 0 0 4px ${C.blue}15` : "none" }}>
-                {s.popular && (
-                  <div style={{ position:"absolute", top:-10, right:16,
-                    background:C.grad3, color:"white", fontSize:10, fontWeight:800,
-                    padding:"3px 10px", borderRadius:100, fontFamily:F }}>Most Popular</div>
-                )}
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{s.name}</div>
-                  <Badge color={s.tagColor}>{s.tag}</Badge>
-                </div>
-                <div style={{ fontFamily:FM, fontWeight:700, fontSize:18, color:C.blue, marginBottom:4 }}>{s.price}</div>
-                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.desc}</div>
-              </div>
-            ))}
-          </div>
-          <button onClick={() => { if (!selected) { alert("Please select a service."); return; } setStep(2); }}
-            style={{ padding:"14px 32px", borderRadius:12, border:"none",
-              background: selected ? C.grad1 : C.bg3, color: selected ? "white" : C.muted,
-              fontFamily:F, fontWeight:700, fontSize:15, cursor: selected ? "pointer" : "default",
-              boxShadow: selected ? "0 6px 20px rgba(59,111,247,0.28)" : "none", transition:"all 0.2s" }}>
-            Continue →
-          </button>
-          <style>{`@media(max-width:600px){.nr-grid{grid-template-columns:1fr!important}}`}</style>
-        </>
-      )}
-
-      {/* Step 2: Your Details */}
-      {step === 2 && (
-        <div style={{ maxWidth:480 }}>
-          <Card style={{ marginBottom:16, padding:"12px 16px", background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
-            <div style={{ fontFamily:F, fontSize:13, color:C.blue, fontWeight:600 }}>
-              Selected: {SERVICES.find(s=>s.id===selected)?.name} — {SERVICES.find(s=>s.id===selected)?.price}
-            </div>
-          </Card>
-          {[
-            { key:"name",    label:"Full Name",    type:"text",  ph:"Your name",         val:client?.name||"" },
-            { key:"company", label:"Company",      type:"text",  ph:"Company name",      val:client?.company||"" },
-            { key:"email",   label:"Email",        type:"email", ph:"your@email.com",    val:client?.email||"" },
-            { key:"phone",   label:"Phone / WhatsApp", type:"tel", ph:"+91 98765 43210", val:"" },
-          ].map(f => (
-            <div key={f.key} style={{ marginBottom:14 }}>
-              <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                letterSpacing:"0.08em", display:"block", marginBottom:7, fontFamily:F }}>{f.label}</label>
-              <input value={form[f.key] || f.val}
-                onChange={e => setForm(fv=>({...fv,[f.key]:e.target.value}))}
-                type={f.type} placeholder={f.ph}
-                style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:15,
-                  border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                  background:C.bg, outline:"none", boxSizing:"border-box" }}
-                onFocus={e => e.target.style.borderColor = C.blue}
-                onBlur={e  => e.target.style.borderColor = C.border}
-              />
-            </div>
-          ))}
-          <div style={{ marginBottom:20 }}>
-            <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-              letterSpacing:"0.08em", display:"block", marginBottom:7, fontFamily:F }}>
-              Additional Notes (optional)
-            </label>
-            <textarea rows={3} value={form.notes}
-              onChange={e => setForm(f=>({...f,notes:e.target.value}))}
-              placeholder="Any specific requirements, timelines, or questions..."
-              style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:14,
-                border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
-            />
-          </div>
-          <div style={{ display:"flex", gap:10 }}>
-            <button onClick={() => setStep(1)}
-              style={{ padding:"12px 20px", borderRadius:10, border:`1px solid ${C.border}`,
-                background:"none", fontFamily:F, fontWeight:600, fontSize:14, color:C.muted, cursor:"pointer" }}>
-              ← Back
-            </button>
-            <button onClick={() => setStep(3)}
-              style={{ flex:1, padding:"13px 0", borderRadius:10, border:"none",
-                background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:15,
-                cursor:"pointer", boxShadow:"0 6px 20px rgba(59,111,247,0.28)" }}>
-              Review Request →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 3: Confirm */}
-      {step === 3 && (
-        <div style={{ maxWidth:480 }}>
-          <Card style={{ marginBottom:16 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
-              Request Summary
-            </div>
-            {[
-              ["Service",  SERVICES.find(s=>s.id===selected)?.name],
-              ["Pricing",  SERVICES.find(s=>s.id===selected)?.price],
-              ["Name",     form.name   || client?.name],
-              ["Company",  form.company|| client?.company],
-              ["Email",    form.email  || client?.email],
-              ["Phone",    form.phone  || "Not provided"],
-              form.notes ? ["Notes", form.notes] : null,
-            ].filter(Boolean).map(([k,v],i) => (
-              <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start",
-                padding:"8px 0", borderBottom:`1px solid ${C.border}`, gap:10 }}>
-                <span style={{ fontFamily:F, fontSize:12, color:C.muted, fontWeight:600, minWidth:80 }}>{k}</span>
-                <span style={{ fontFamily:F, fontSize:13, color:C.text, textAlign:"right" }}>{v}</span>
-              </div>
-            ))}
-          </Card>
-
-          {/* Terms checkbox */}
-          <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.blue}06`,
-            border:`1px solid ${C.blue}20`, marginBottom:16, display:"flex", gap:10, alignItems:"flex-start" }}>
-            <input type="checkbox" id="terms-agree" checked={agreed}
-              onChange={e => setAgreed(e.target.checked)}
-              style={{ marginTop:3, width:16, height:16, cursor:"pointer", accentColor:C.blue }}/>
-            <label htmlFor="terms-agree" style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7, cursor:"pointer" }}>
-              I agree to Finzzup's{" "}
-              <button onClick={() => setPage("terms")} style={{ background:"none", border:"none", color:C.blue, fontWeight:700, cursor:"pointer", fontFamily:F, fontSize:12, padding:0 }}>
-                Terms & Conditions
-              </button>
-              {" "}and{" "}
-              <button onClick={() => setPage("terms")} style={{ background:"none", border:"none", color:C.blue, fontWeight:700, cursor:"pointer", fontFamily:F, fontSize:12, padding:0 }}>
-                Privacy Policy
-              </button>
-              . I understand this is a request for a scoped proposal, not a confirmed engagement.
-            </label>
-          </div>
-
-          <div style={{ display:"flex", gap:10 }}>
-            <button onClick={() => setStep(2)}
-              style={{ padding:"12px 20px", borderRadius:10, border:`1px solid ${C.border}`,
-                background:"none", fontFamily:F, fontWeight:600, fontSize:14, color:C.muted, cursor:"pointer" }}>
-              ← Back
-            </button>
-            <button onClick={handleSubmit}
-              style={{ flex:1, padding:"13px 0", borderRadius:10, border:"none",
-                background: agreed ? C.grad1 : C.bg3, color: agreed ? "white" : C.muted,
-                fontFamily:F, fontWeight:700, fontSize:15, cursor: agreed ? "pointer" : "default",
-                boxShadow: agreed ? "0 6px 20px rgba(59,111,247,0.28)" : "none", transition:"all 0.2s" }}>
-              Submit Request 🚀
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── INVOICES ─────────────────────────────────────────────────────────────────
-const DEMO_INVOICES = [
-  { id:"INV-2026-003", date:"20 Feb 2026", due:"05 Mar 2026", service:"Fractional CFO — February 2026", amount:"₹50,000", status:"unpaid", items:[{ desc:"Fractional CFO Retainer (Feb 2026)", qty:1, unit:"₹50,000", total:"₹50,000" }] },
-  { id:"INV-2026-002", date:"20 Jan 2026", due:"05 Feb 2026", service:"Fractional CFO — January 2026",  amount:"₹50,000", status:"paid",   items:[{ desc:"Fractional CFO Retainer (Jan 2026)", qty:1, unit:"₹50,000", total:"₹50,000" }] },
-  { id:"INV-2026-001", date:"15 Jan 2026", due:"30 Jan 2026", service:"DCF Valuation — Series A Pre-Funding", amount:"₹65,000", status:"paid", items:[{ desc:"Valuation Report (DCF + Comps)", qty:1, unit:"₹65,000", total:"₹65,000" }] },
-];
-
-function Invoices({ client, liveInvoices }) {
-  // Use live data if provided (real client), else demo data
-  const allInvoices = liveInvoices && liveInvoices.length > 0 ? liveInvoices.map(inv => ({
-    id:      inv.invoice_number || inv.id,
-    date:    inv.created_at ? new Date(inv.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }) : "—",
-    due:     inv.due_date    ? new Date(inv.due_date).toLocaleDateString("en-IN",    { day:"numeric", month:"short", year:"numeric" }) : "—",
-    service: inv.service || inv.description || "Service",
-    amount:  inv.amount ? `₹${Number(inv.amount).toLocaleString("en-IN")}` : "—",
-    status:  inv.status || "unpaid",
-    items:   [{ desc: inv.description || inv.service || "Service", qty:1, unit: inv.amount ? `₹${Number(inv.amount).toLocaleString("en-IN")}` : "—", total: inv.amount ? `₹${Number(inv.amount).toLocaleString("en-IN")}` : "—" }],
-  })) : DEMO_INVOICES;
-  const [view, setView] = useState("list");
-  const [selected, setSelected] = useState(null);
-
-  const unpaid = allInvoices.filter(i=>i.status==="unpaid");
-  const paid   = allInvoices.filter(i=>i.status==="paid");
-
-  const InvoiceCard = ({ inv }) => {
-    const isUnpaid = inv.status === "unpaid";
-    return (
-      <div style={{ padding:"16px 18px", borderRadius:12,
-        border:`1.5px solid ${isUnpaid ? C.amber+"50" : C.border}`,
-        background: isUnpaid ? `${C.amber}05` : C.bg2,
-        display:"flex", alignItems:"center", justifyContent:"space-between",
-        flexWrap:"wrap", gap:12, marginBottom:10 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <div style={{ width:40, height:40, borderRadius:10,
-            background: isUnpaid ? `${C.amber}15` : `${C.green}15`,
-            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
-            {isUnpaid ? "⏳" : "✅"}
-          </div>
-          <div>
-            <div style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:C.muted, marginBottom:2 }}>{inv.id}</div>
-            <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text, marginBottom:2 }}>{inv.service}</div>
-            <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>
-              Issued: {inv.date} · Due: {inv.due}
-            </div>
-          </div>
-        </div>
-        <div style={{ textAlign:"right" }}>
-          <div style={{ fontFamily:FM, fontSize:20, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
-            {inv.amount}
-          </div>
-          <div style={{ display:"flex", gap:8, marginTop:8, justifyContent:"flex-end" }}>
-            <button onClick={() => { setSelected(inv); setView("detail"); }}
-              style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${C.border}`,
-                background:C.bg, fontFamily:F, fontWeight:600, fontSize:12, color:C.muted, cursor:"pointer" }}>
-              View
-            </button>
-            {isUnpaid && (
-              <button style={{ padding:"7px 14px", borderRadius:8, border:"none",
-                background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
-                Pay Now
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  if (view === "detail" && selected) return (
-    <div style={{ padding:24, maxWidth:620 }}>
-      <button onClick={() => setView("list")}
-        style={{ fontFamily:F, fontSize:13, color:C.blue, background:"none", border:"none",
-          cursor:"pointer", marginBottom:20, padding:0, fontWeight:600 }}>
-        ← Back to Invoices
-      </button>
-
-      {/* Invoice header */}
-      <div style={{ padding:"28px 32px", borderRadius:16,
-        background:"linear-gradient(135deg,#0A1128 0%,#1a2a5e 100%)",
-        color:"white", marginBottom:20, position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", right:-20, top:-20, width:120, height:120,
-          borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
-          <div>
-            <div style={{ fontFamily:FM, fontSize:11, opacity:0.5, marginBottom:4, letterSpacing:"0.08em" }}>INVOICE</div>
-            <div style={{ fontFamily:FM, fontWeight:700, fontSize:22, marginBottom:6 }}>{selected.id}</div>
-            <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>Finzzup Advisory LLP</div>
-            <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>garima@finzzup.com</div>
-          </div>
-          <div style={{ textAlign:"right" }}>
-            <Badge color={selected.status==="paid"?C.green:C.amber}
-              bg={selected.status==="paid"?"#ECFDF5":"#FFFBEB"}>
-              {selected.status==="paid" ? "✅ Paid" : "⏳ Due"}
-            </Badge>
-            <div style={{ fontFamily:F, fontSize:12, opacity:0.6, marginTop:8 }}>Issued: {selected.date}</div>
-            <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>Due: {selected.due}</div>
-          </div>
-        </div>
-      </div>
-
-      <Card style={{ marginBottom:16 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>Bill To</div>
-        <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{client?.name}</div>
-        <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>{client?.company}</div>
-        <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>{client?.email}</div>
-      </Card>
-
-      <Card style={{ marginBottom:16 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>Services</div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr auto auto auto", gap:"10px 16px",
-          fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, textTransform:"uppercase",
-          letterSpacing:"0.06em", marginBottom:10 }}>
-          <span>Description</span><span>Qty</span><span>Rate</span><span>Total</span>
-        </div>
-        {selected.items.map((item,i) => (
-          <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr auto auto auto", gap:"8px 16px",
-            alignItems:"center", padding:"10px 0", borderTop:`1px solid ${C.border}` }}>
-            <span style={{ fontFamily:F, fontSize:13, color:C.text }}>{item.desc}</span>
-            <span style={{ fontFamily:FM, fontSize:12, color:C.muted }}>{item.qty}</span>
-            <span style={{ fontFamily:FM, fontSize:12, color:C.muted }}>{item.unit}</span>
-            <span style={{ fontFamily:FM, fontSize:13, fontWeight:700, color:C.text }}>{item.total}</span>
-          </div>
-        ))}
-        <div style={{ display:"flex", justifyContent:"flex-end", padding:"14px 0 0",
-          borderTop:`2px solid ${C.border}`, marginTop:8 }}>
-          <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:C.blue }}>
-            Total: {selected.amount}
-          </div>
-        </div>
-      </Card>
-
-      {selected.status === "unpaid" && (
-        <button style={{ width:"100%", padding:"14px 0", borderRadius:12, border:"none",
-          background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:15,
-          cursor:"pointer", boxShadow:"0 6px 20px rgba(59,111,247,0.28)" }}>
-          💳 Pay {selected.amount} Now
-        </button>
-      )}
-
-      <div style={{ textAlign:"center", marginTop:14 }}>
-        <button style={{ fontFamily:F, fontSize:13, color:C.blue, background:"none", border:"none",
-          cursor:"pointer", fontWeight:600 }}>
-          ⬇️ Download PDF
-        </button>
-      </div>
-    </div>
-  );
-
-  return (
-    <div style={{ padding:24 }}>
-      <SectionTitle sub="Auto-generated invoices for your engagements.">Invoices</SectionTitle>
-
-      {/* Summary */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="inv-sum">
-        {[
-          { label:"Total Outstanding", value:"₹50,000", color:C.amber, icon:"⏳" },
-          { label:"Paid This Year",    value:"₹1,15,000",color:C.green, icon:"✅" },
-          { label:"Total Invoices",    value:"3",         color:C.blue,  icon:"📄" },
-        ].map((s,i) => (
-          <Card key={i} style={{ padding:18, textAlign:"center" }}>
-            <div style={{ fontSize:24, marginBottom:8 }}>{s.icon}</div>
-            <div style={{ fontFamily:FM, fontSize:22, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
-            <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.label}</div>
-          </Card>
-        ))}
-      </div>
-
-      {unpaid.length > 0 && (
-        <div style={{ marginBottom:20 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase",
-            letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Outstanding ({unpaid.length})</div>
-          {unpaid.map(inv => <InvoiceCard key={inv.id} inv={inv}/>)}
-        </div>
-      )}
-
-      <div>
-        <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-          letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Paid ({paid.length})</div>
-        {paid.map(inv => <InvoiceCard key={inv.id} inv={inv}/>)}
-      </div>
-
-      <style>{`@media(max-width:500px){.inv-sum{grid-template-columns:1fr!important}}`}</style>
-    </div>
-  );
-}
-
-// ─── TREASURY MANAGEMENT ─────────────────────────────────────────────────────
-function Treasury({ client }) {
-  const [tab, setTab] = useState("overview");
-
-  const TREASURY_DATA = {
-    cashPositions: [
-      { bank:"HDFC Bank — Current A/C",   balance:"₹14.2L", type:"Operating",   rate:"3.5%",  flag:false },
-      { bank:"SBI — Fixed Deposit",        balance:"₹25.0L", type:"FD (91 days)", rate:"7.1%",  flag:false },
-      { bank:"Axis Bank — Sweep Account", balance:"₹8.4L",  type:"Sweep FD",    rate:"6.8%",  flag:false },
-      { bank:"ICICI Bank — Current A/C",  balance:"₹2.8L",  type:"Reserve",     rate:"0%",    flag:true, note:"Consider sweeping to FD" },
-    ],
-    totalCash: "₹50.4L",
-    investedPct: 65,
-    yieldPA: "₹3.2L",
-    maturitySchedule: [
-      { item:"SBI FD — Tranche 1", maturity:"15 Mar 2026", amount:"₹10.0L", action:"Renew" },
-      { item:"SBI FD — Tranche 2", maturity:"28 Mar 2026", amount:"₹15.0L", action:"Redeem" },
-      { item:"Axis Sweep",         maturity:"Revolving",    amount:"₹8.4L",  action:"Auto-renew" },
-    ],
-    recommendations: [
-      { priority:"High",   text:"Renew SBI FD Tranche 1 — rates likely lower post April RBI meeting. Lock in 7.1% now." },
-      { priority:"High",   text:"Redeem SBI Tranche 2 (₹15L) to fund March advance tax outflow — avoid OD." },
-      { priority:"Medium", text:"Sweep ₹2.8L ICICI idle balance to sweep account — earn 6.8% vs 0%." },
-      { priority:"Low",    text:"Consider a 30-day liquid fund for the April surplus (₹8L projected) — yield ~7.5%." },
-    ],
-  };
-
-  return (
-    <div style={{ padding:24 }}>
-      <SectionTitle sub="Cash visibility, FD tracking, and yield optimisation.">Treasury Management</SectionTitle>
-
-      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
-        {[["overview","💰 Overview"],["maturity","📅 Maturity Schedule"],["recommendations","💡 Recommendations"]].map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
-            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
-            background: tab===id ? C.blue : C.bg2, color: tab===id ? "white" : C.muted,
-            outline:`1.5px solid ${tab===id ? C.blue : C.border}`,
-            boxShadow: tab===id ? `0 4px 14px ${C.blue}35` : "none" }}>
-            {lbl}
-          </button>
-        ))}
-      </div>
-
-      {tab === "overview" && (
-        <>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="tr-grid">
-            {[
-              { label:"Total Cash",      value:TREASURY_DATA.totalCash, icon:"💵", color:C.blue   },
-              { label:"Invested in FDs", value:`${TREASURY_DATA.investedPct}%`, icon:"📈", color:C.teal   },
-              { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,   icon:"🏦", color:C.green  },
-            ].map((s,i) => (
-              <Card key={i} style={{ padding:18 }}>
-                <div style={{ fontSize:24, marginBottom:10 }}>{s.icon}</div>
-                <div style={{ fontFamily:FM, fontSize:22, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
-                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.label}</div>
-              </Card>
-            ))}
-          </div>
-
-          <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-              Cash Positions
-            </div>
-            {TREASURY_DATA.cashPositions.map((p,i) => (
-              <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                padding:"12px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:10 }}>
-                <div>
-                  <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{p.bank}</div>
-                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>
-                    {p.type} · {p.rate} p.a.
-                  </div>
-                  {p.flag && <div style={{ fontFamily:F, fontSize:11, color:C.amber, marginTop:2, fontWeight:600 }}>
-                    ⚠️ {p.note}
-                  </div>}
-                </div>
-                <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color: p.flag ? C.amber : C.text }}>
-                  {p.balance}
-                </div>
-              </div>
-            ))}
-          </Card>
-          <style>{`.tr-grid{grid-template-columns:1fr 1fr 1fr}@media(max-width:500px){.tr-grid{grid-template-columns:1fr!important}}`}</style>
-        </>
-      )}
-
-      {tab === "maturity" && (
-        <Card>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-            FD Maturity Schedule
-          </div>
-          {TREASURY_DATA.maturitySchedule.map((m,i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              padding:"14px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:10 }}>
-              <div>
-                <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{m.item}</div>
-                <div style={{ fontFamily:FM, fontSize:11, color:C.muted, marginTop:2 }}>Matures: {m.maturity}</div>
-              </div>
-              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:C.blue }}>{m.amount}</div>
-                <Badge color={m.action==="Redeem"?C.red:C.green}>{m.action}</Badge>
-              </div>
-            </div>
-          ))}
-          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
-            <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
-              ⚠️ ₹15L matures 28 Mar — time with advance tax payment to avoid overdraft facility.
-            </span>
-          </div>
-        </Card>
-      )}
-
-      {tab === "recommendations" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-          {TREASURY_DATA.recommendations.map((r,i) => (
-            <Card key={i} style={{ padding:"14px 18px" }}>
-              <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-                <PriBadge p={r.priority}/>
-                <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{r.text}</span>
-              </div>
-            </Card>
-          ))}
-          <Card style={{ background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
-            <div style={{ fontFamily:F, fontSize:13, color:C.blue, lineHeight:1.7 }}>
-              💬 <strong>Want a detailed treasury optimisation plan?</strong>{" "}
-              <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
-              {" "}to discuss sweep accounts, liquid funds, and yield laddering for your cash position.
-            </div>
-          </Card>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── TERMS & CONDITIONS / PRIVACY ────────────────────────────────────────────
-function Terms() {
-  const [tab, setTab] = useState("terms");
-  return (
-    <div style={{ padding:24, maxWidth:720 }}>
-      <SectionTitle sub="Legal documentation for Finzzup Advisory LLP">Legal & Compliance</SectionTitle>
-
-      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-        {[["terms","📄 Terms & Conditions"],["privacy","🔒 Privacy Policy"],["copyright","© Copyright"]].map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
-            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700,
-            background: tab===id ? C.blue : C.bg2, color: tab===id ? "white" : C.muted,
-            outline:`1.5px solid ${tab===id ? C.blue : C.border}` }}>
-            {lbl}
-          </button>
-        ))}
-      </div>
-
-      {tab === "terms" && (
-        <Card style={{ lineHeight:1.8 }}>
-          <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:16 }}>Last updated: January 2026</div>
-          {[
-            { h:"1. Services", t:"Finzzup Advisory LLP ('Finzzup') provides financial advisory, valuation, and CFO services to clients. All engagements are governed by a separate Engagement Letter, which supersedes these general terms where there is any conflict." },
-            { h:"2. Proposals and Pricing", t:"All prices quoted are indicative. A formal proposal with a fixed scope and price will be sent within 24 hours of a service request. Engagements begin only upon signed acceptance of the proposal and receipt of the advance payment." },
-            { h:"3. Confidentiality", t:"Finzzup maintains strict confidentiality of all client data, financial information, and business information shared. Data is used solely for the purpose of the engagement and is never shared with third parties without explicit written consent." },
-            { h:"4. Intellectual Property", t:"All deliverables produced by Finzzup (reports, models, presentations) remain the property of the client upon full payment. Finzzup retains the right to use anonymized methodologies and frameworks for other engagements." },
-            { h:"5. Liability", t:"Finzzup's liability is limited to the fees paid for the specific engagement. Valuations and financial projections are based on information provided by the client — Finzzup is not liable for decisions made on the basis of its reports." },
-            { h:"6. Payments", t:"Invoices are payable within 15 days of issuance. Late payments attract interest at 18% per annum. Finzzup reserves the right to pause services for overdue accounts." },
-            { h:"7. Governing Law", t:"These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in Mumbai, Maharashtra." },
-          ].map((s,i) => (
-            <div key={i} style={{ marginBottom:20 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>{s.h}</div>
-              <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>{s.t}</p>
-            </div>
-          ))}
-        </Card>
-      )}
-
-      {tab === "privacy" && (
-        <Card style={{ lineHeight:1.8 }}>
-          <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:16 }}>Last updated: January 2026</div>
-          {[
-            { h:"1. Data We Collect", t:"We collect personal information (name, email, phone), company information, and financial data you share with us as part of our engagement. We also collect usage data from this portal to improve our service." },
-            { h:"2. How We Use Your Data", t:"Your data is used exclusively to deliver our advisory services, communicate with you about your engagement, and send invoices. We do not sell, rent, or share your data with third parties." },
-            { h:"3. Data Storage & Security", t:"Client data is stored securely in Supabase (SOC 2 Type 2 certified) with encryption at rest and in transit. Access is restricted to authorised Finzzup personnel only." },
-            { h:"4. Data Retention", t:"We retain client data for 7 years as required under Indian accounting and tax regulations. Upon request, we can delete non-statutory data within 30 days." },
-            { h:"5. Cookies", t:"This portal uses functional cookies only for authentication. We do not use tracking or advertising cookies." },
-            { h:"6. Your Rights", t:"You have the right to access, correct, or delete your personal data at any time. Contact garima@finzzup.com for any data-related requests." },
-            { h:"7. Contact", t:"For privacy concerns, contact: Garima Agarwal · garima@finzzup.com · Finzzup Advisory LLP, Mumbai, India." },
-          ].map((s,i) => (
-            <div key={i} style={{ marginBottom:20 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>{s.h}</div>
-              <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>{s.t}</p>
-            </div>
-          ))}
-        </Card>
-      )}
-
-      {tab === "copyright" && (
-        <Card style={{ lineHeight:1.8 }}>
-          <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>
-            © 2024–2026 Finzzup Advisory LLP. All rights reserved.
-          </div>
-          {[
-            { h:"Reports & Deliverables", t:"All valuation reports, financial models, MIS packs, board packs, and other deliverables produced by Finzzup are protected by copyright. Upon full payment, clients receive a non-exclusive licence to use the deliverables for their own business purposes." },
-            { h:"Portal Content", t:"The content, design, and functionality of this client portal are proprietary to Finzzup Advisory LLP. Unauthorised reproduction, distribution, or modification is prohibited." },
-            { h:"Trademark", t:"'Finzzup' and the Finzzup logo are trademarks of Finzzup Advisory LLP. Use of these marks without prior written consent is not permitted." },
-            { h:"Third-Party Tools", t:"This portal uses Supabase, Recharts, and Google Fonts under their respective licences. Calendly is used for scheduling under its commercial licence." },
-          ].map((s,i) => (
-            <div key={i} style={{ marginBottom:20 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>{s.h}</div>
-              <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>{s.t}</p>
-            </div>
-          ))}
-        </Card>
-      )}
     </div>
   );
 }
@@ -2854,17 +1998,13 @@ function getPageTitle(page, client) {
     : pack === "corporate" ? "Board Report"
     : "CFO Report";
   const map = {
-    overview:    "Overview",
-    dashboard:   "Dashboard",
-    cashflow:    "Cash Flow",
-    actions:     "Action Items",
-    myreport:    reportLabel,
-    engagement:  "Valuation Status",
-    calendar:    "Book a Call",
-    newrequest:  "New Request",
-    invoices:    "Invoices",
-    treasury:    "Treasury Management",
-    terms:       "Legal & Compliance",
+    overview:   "Overview",
+    dashboard:  "Dashboard",
+    cashflow:   "Cash Flow",
+    actions:    "Action Items",
+    myreport:   reportLabel,
+    engagement: "Valuation Status",
+    calendar:   "Book a Call",
   };
   return map[page] || "Dashboard";
 }
@@ -2873,82 +2013,26 @@ function Portal({ client, onLogout }) {
   const [page,      setPage]      = useState("overview");
   const [collapsed, setCollapsed] = useState(false);
 
-  // ── Live data state (only populated for real/non-demo clients) ──
-  const [liveKpis,       setLiveKpis]       = useState(null);
-  const [liveActions,    setLiveActions]    = useState(null);
-  const [liveEngagement, setLiveEngagement] = useState(null);
-  const [liveInvoices,   setLiveInvoices]   = useState(null);
-  const [dataLoading,    setDataLoading]    = useState(false);
-
-  const isDemo = client?.isDemo === true;
-
-  // Fetch all live data from Supabase when a real client logs in
-  useEffect(() => {
-    if (isDemo || !client?.id) return;
-    const fetchAll = async () => {
-      setDataLoading(true);
-      const [kpiRes, actionRes, engRes, invRes] = await Promise.all([
-        supabase.from("kpis").select("*").eq("client_id", client.id)
-          .order("updated_at", { ascending:false }).limit(1).single(),
-        supabase.from("action_items").select("*").eq("client_id", client.id)
-          .order("created_at", { ascending:false }),
-        supabase.from("engagements").select("*").eq("client_id", client.id).single(),
-        supabase.from("invoices").select("*").eq("client_id", client.id)
-          .order("created_at", { ascending:false }),
-      ]);
-      if (kpiRes.data)       setLiveKpis(kpiRes.data);
-      if (actionRes.data)    setLiveActions(actionRes.data);
-      if (engRes.data)       setLiveEngagement(engRes.data);
-      if (invRes.data)       setLiveInvoices(invRes.data);
-      setDataLoading(false);
-    };
-    fetchAll();
-  }, [client?.id, isDemo]);
-
-  // Build merged KPI array — live data overrides dummy labels if available
-  const resolvedKpis = (!isDemo && liveKpis) ? [
-    { label:"Revenue",      value:liveKpis.revenue      || "—", prev:"—", trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"📈" },
-    { label:"Gross Margin", value:liveKpis.gross_margin || "—", prev:"—", trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"💹" },
-    { label:"Cash Balance", value:liveKpis.cash_balance || "—", prev:"—", trend:"down", color:C.amber,  bg:"#FEF7E7", icon:"🏦" },
-    { label:"Burn Rate",    value:liveKpis.burn_rate    || "—", prev:"—", trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"🔥" },
-    { label:"Runway",       value:liveKpis.runway       || "—", prev:"—", trend:"down", color:C.pink,   bg:"#FEF0F7", icon:"⏳" },
-    { label:"ARR",          value:liveKpis.arr          || "—", prev:"—", trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"🎯" },
-  ] : KPIs;
-
-  const resolvedActions    = (!isDemo && liveActions)    ? liveActions    : ACTIONS;
-  const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
-  const resolvedGarimaNote = (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
-    : "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
-
   const pages = {
-    overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote}/>,
-    dashboard:  <Dashboard  client={client} kpis={resolvedKpis}/>,
+    overview:   <Overview   client={client} setPage={setPage}/>,
+    dashboard:  <Dashboard  client={client}/>,
     cashflow:   <CashFlow/>,
-    actions:    <ActionItems actions={resolvedActions}/>,
+    actions:    <ActionItems/>,
     myreport:   <MyReport client={client}/>,
-    engagement: <Engagement liveData={resolvedEngagement}/>,
+    engagement: <Engagement/>,
     calendar:   <Calendar/>,
-    newrequest: <NewRequest client={client} setPage={setPage}/>,
-    invoices:   <Invoices   client={client} liveInvoices={isDemo ? null : liveInvoices}/>,
-    treasury:   <Treasury   client={client}/>,
-    terms:      <Terms/>,
   };
 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
-      {dataLoading && !isDemo && (
-        <div style={{ position:"fixed", top:0, left:0, right:0, height:3, zIndex:9999,
-          background:C.grad1, animation:"progress 1.5s ease-in-out infinite" }}/>
-      )}
       <Sidebar page={page} setPage={setPage} client={client}
         onLogout={onLogout} collapsed={collapsed} setCollapsed={setCollapsed}/>
       <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden" }}>
-        <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}/>
+        <Topbar title={getPageTitle(page, client)} client={client}/>
         <main style={{ flex:1, overflowY:"auto" }}>
           {pages[page]}
         </main>
       </div>
-      <style>{`@keyframes progress{0%{width:0%;left:0}50%{width:60%;left:20%}100%{width:0%;left:100%}}`}</style>
     </div>
   );
 }
@@ -3657,23 +2741,15 @@ export default function App() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user?.email) {
         if (isAdminRoute) {
+          // Check admin table
           const { data: adminData } = await supabase
             .from("admins").select("*").eq("email", session.user.email).single();
           if (adminData) setAdmin(adminData);
         } else {
-          // Check if this is a demo email — restore demo session without DB hit
-          const demoMatch = Object.entries(INVITE_CODES).find(
-            ([, d]) => d.email === session.user.email
-          );
-          if (demoMatch) {
-            const [code, demo] = demoMatch;
-            setClient({ ...demo, invite_code: code, id: code, isDemo: true });
-          } else {
-            // Real client — fetch from Supabase
-            const { data: clientData } = await supabase
-              .from("clients").select("*").eq("email", session.user.email).single();
-            if (clientData) setClient(clientData);
-          }
+          // Check clients table
+          const { data: clientData } = await supabase
+            .from("clients").select("*").eq("email", session.user.email).single();
+          if (clientData) setClient(clientData);
         }
       }
       setLoading(false);
