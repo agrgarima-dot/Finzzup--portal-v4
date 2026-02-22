@@ -2132,7 +2132,7 @@ function Calendar() {
         <div style={{ padding:"16px 20px", borderBottom:`1px solid ${C.border}`,
           display:"flex", alignItems:"center", justifyContent:"space-between" }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>📅 Live Calendar Booking</div>
-          <a href="https://calendly.com/garima-finzzup" target="_blank" rel="noopener"
+          <a href="https://calendly.com/agrgarima" target="_blank" rel="noopener"
             style={{ fontFamily:F, fontSize:12, color:C.blue, fontWeight:600, textDecoration:"none" }}>
             Open in new tab ↗
           </a>
