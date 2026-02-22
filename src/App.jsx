@@ -152,7 +152,7 @@ const Logo = ({ size=28, showTagline=false }) => (
     {showTagline && (
       <div style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:10,
         color:"rgba(255,255,255,0.45)", marginTop:2, letterSpacing:"0.04em" }}>
-        Smart Finance · Trusted Insights
+        Build · Value · Scale
       </div>
     )}
   </div>
