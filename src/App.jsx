@@ -2023,7 +2023,7 @@ function CFOPacks({ client }) {
           {packType === "corporate" && <CorporateCFOPack data={data}/>}
 
           <div style={{ textAlign:"center", marginTop:8 }}>
-            <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
                 borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
@@ -2924,7 +2924,7 @@ function MyDocuments({ client }) {
       <Card style={{ marginTop:16, background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 <strong>Need to send a large file?</strong> WhatsApp it directly to Garima at{" "}
-          <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
+          <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
             style={{ color:C.green, fontWeight:700 }}>+91 98335 85810</a>
           {" "}or email{" "}
           <a href="mailto:garima@finzzup.com" style={{ color:C.green, fontWeight:700 }}>garima@finzzup.com</a>
