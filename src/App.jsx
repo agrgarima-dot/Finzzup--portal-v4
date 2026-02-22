@@ -1968,9 +1968,9 @@ function Calendar() {
           border:`1px solid ${C.border}`, fontFamily:FM, fontSize:12, color:C.muted,
           textAlign:"left", marginBottom:20 }}>
           {`// In your Calendly account, get your embed URL and replace below:`}<br/>
-          {'// <iframe src="https://calendly.com/YOUR_LINK" .../>'}
+          {`// <iframe src="https://calendly.com/YOUR_LINK" .../>`}
         </div>
-        <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ display:"inline-flex",
+        <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ display:"inline-flex",
           alignItems:"center", gap:8, padding:"11px 20px", borderRadius:10,
           background:`${C.green}12`, border:`1.5px solid ${C.green}30`,
           color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
