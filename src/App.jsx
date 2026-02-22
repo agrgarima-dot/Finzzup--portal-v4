@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabase.js";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
@@ -167,1999 +167,963 @@ const InputField = ({ label, fkey, type="text", placeholder="", form, setForm, s
   </div>
 );
 
+
+// ── NEW BRAND (from design) ───────────────────────────────────────────────────
+const B = {
+  blue:   "#2563EB",
+  purple: "#7C3AED",
+  dark:   "#0F172A",
+  mid:    "#1E293B",
+  grey:   "#64748B",
+  lgrey:  "#E2E8F0",
+  xlgrey: "#F1F5F9",
+  bg:     "#F8FAFF",
+  white:  "#FFFFFF",
+  green:  "#059669",
+  red:    "#DC2626",
+  gold:   "#F59E0B",
+};
+const Bgrad = `linear-gradient(135deg, ${B.blue} 0%, ${B.purple} 100%)`;
+
+// ── ICONS ─────────────────────────────────────────────────────────────────────
+const Icon = ({ name, size=18, color="currentColor" }) => {
+  const icons = {
+    home:     <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/>,
+    file:     <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" fill="none" stroke={color} strokeWidth="1.8"/><polyline points="14 2 14 8 20 8" fill="none" stroke={color} strokeWidth="1.8"/></>,
+    chart:    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>,
+    invoice:  <><rect x="2" y="3" width="20" height="18" rx="2" fill="none" stroke={color} strokeWidth="1.8"/><line x1="8" y1="9" x2="16" y2="9" stroke={color} strokeWidth="1.6" strokeLinecap="round"/><line x1="8" y1="13" x2="14" y2="13" stroke={color} strokeWidth="1.6" strokeLinecap="round"/></>,
+    plus:     <><line x1="12" y1="5" x2="12" y2="19" stroke={color} strokeWidth="2" strokeLinecap="round"/><line x1="5" y1="12" x2="19" y2="12" stroke={color} strokeWidth="2" strokeLinecap="round"/></>,
+    download: <><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><polyline points="7 10 12 15 17 10" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="12" y1="15" x2="12" y2="3" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    check:    <polyline points="20 6 9 17 4 12" fill="none" stroke={color} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>,
+    bell:     <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" fill="none" stroke={color} strokeWidth="1.8"/><path d="M13.73 21a2 2 0 01-3.46 0" fill="none" stroke={color} strokeWidth="1.8"/></>,
+    user:     <><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" fill="none" stroke={color} strokeWidth="1.8"/><circle cx="12" cy="7" r="4" fill="none" stroke={color} strokeWidth="1.8"/></>,
+    shield:   <path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/>,
+    logout:   <><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><polyline points="16 17 21 12 16 7" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="21" y1="12" x2="9" y2="12" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    upload:   <><polyline points="16 16 12 12 8 16" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><line x1="12" y1="12" x2="12" y2="21" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><path d="M20.39 18.39A5 5 0 0018 9h-1.26A8 8 0 103 16.3" fill="none" stroke={color} strokeWidth="1.8" strokeLinecap="round"/></>,
+    send:     <><line x1="22" y1="2" x2="11" y2="13" stroke={color} strokeWidth="1.8" strokeLinecap="round"/><polygon points="22 2 15 22 11 13 2 9 22 2" fill="none" stroke={color} strokeWidth="1.8" strokeLinejoin="round"/></>,
+    wa:       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" fill={color}/>,
+  };
+  return <svg width={size} height={size} viewBox="0 0 24 24" style={{display:"block",flexShrink:0}}>{icons[name]}</svg>;
+};
+
+// ── MINI CHARTS ───────────────────────────────────────────────────────────────
+function BLineChart({ lines, months, height=120 }) {
+  const allVals = lines.flatMap(l => l.data.filter(v => v !== null));
+  if (!allVals.length) return null;
+  const min = Math.min(...allVals) * 0.85;
+  const max = Math.max(...allVals) * 1.05;
+  const H = height;
+  const toY = v => H - ((v - min) / (max - min)) * H;
+  const toX = (i, total) => (i / (total - 1)) * 100;
+  return (
+    <svg width="100%" height={H} viewBox={`0 0 100 ${H}`} preserveAspectRatio="none" style={{overflow:"visible"}}>
+      {lines.map((line, li) => {
+        const pts = line.data.map((v,i) => v !== null ? [toX(i, line.data.length), toY(v)] : null).filter(Boolean);
+        if (!pts.length) return null;
+        const d = pts.map((p,i) => `${i===0?'M':'L'}${p[0]},${p[1]}`).join(' ');
+        return (
+          <g key={li}>
+            {line.fill && <path d={`${d} L${pts[pts.length-1][0]},${H} L${pts[0][0]},${H} Z`} fill={line.color} opacity={0.08}/>}
+            <path d={d} fill="none" stroke={line.color} strokeWidth="0.8" strokeDasharray={line.dash?"2,1.5":undefined} strokeLinecap="round" strokeLinejoin="round"/>
+            {pts.map((p,i) => <circle key={i} cx={p[0]} cy={p[1]} r="0.9" fill={line.color}/>)}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function BBarChart({ data, height=80 }) {
+  if (!data || !data.length) return null;
+  const max = Math.max(...data);
+  return (
+    <div style={{display:"flex",alignItems:"flex-end",gap:4,height}}>
+      {data.map((v,i) => (
+        <div key={i} style={{flex:1,borderRadius:4,
+          background: i===data.length-1 ? Bgrad : `${B.blue}22`,
+          height:`${(v/max)*100}%`, minHeight:4}}/>
+      ))}
+    </div>
+  );
+}
+
+// ── BADGE ─────────────────────────────────────────────────────────────────────
+function BBadge({ type }) {
+  const map = {
+    green:      { bg:"#F0FDF4", color:B.green,  text:"Completed" },
+    blue:       { bg:"#EFF6FF", color:B.blue,   text:"Active"    },
+    gold:       { bg:"#FFFBEB", color:B.gold,   text:"In Review" },
+    Paid:       { bg:"#F0FDF4", color:B.green,  text:"Paid"      },
+    Pending:    { bg:"#FFFBEB", color:B.gold,   text:"Pending"   },
+    Draft:      { bg:"#F5F3FF", color:B.purple, text:"Draft"     },
+    Final:      { bg:"#F0FDF4", color:B.green,  text:"Final"     },
+    Completed:  { bg:"#F0FDF4", color:B.green,  text:"Completed" },
+    Active:     { bg:"#EFF6FF", color:B.blue,   text:"Active"    },
+    "In Review":{ bg:"#FFFBEB", color:B.gold,   text:"In Review" },
+  };
+  const s = map[type] || { bg:"#EFF6FF", color:B.blue, text:type };
+  return (
+    <span style={{display:"inline-flex",alignItems:"center",gap:5,padding:"3px 9px",borderRadius:100,background:s.bg,color:s.color,fontSize:11,fontWeight:700}}>
+      <span style={{width:5,height:5,borderRadius:"50%",background:s.color,flexShrink:0}}/>
+      {s.text}
+    </span>
+  );
+}
+
+// ── CARD ──────────────────────────────────────────────────────────────────────
+function BCard({ children, style={}, hover=true }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div onMouseEnter={()=>hover&&setHov(true)} onMouseLeave={()=>setHov(false)} style={{
+      background:B.white, border:`1px solid ${hov?`${B.blue}33`:B.lgrey}`,
+      borderRadius:16, padding:20, transition:"all 0.22s",
+      boxShadow:hov?`0 8px 32px ${B.blue}12`:"none", ...style,
+    }}>{children}</div>
+  );
+}
+
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
 function Login({ onLogin }) {
-  const [step, setStep]     = useState("code"); // "code" | "register" | "signin"
+  const [step, setStep]     = useState("signin"); // "signin" | "register" | "code"
   const [code, setCode]     = useState("");
-  const [client, setClient] = useState(null);
-  const [form, setForm]     = useState({ email:"", password:"", confirm:"" });
+  const [inviteClient, setInviteClient] = useState(null);
+  const [form, setForm]     = useState({ name:"", email:"", password:"" });
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Check invite code against Supabase
+  // Step 1: Validate invite code
   const checkCode = async () => {
-    if (!code.trim()) { setError("Please enter an invite code."); return; }
+    if (!code.trim()) return;
     setLoading(true); setError("");
     const { data, error: err } = await supabase
-      .from("clients")
-      .select("*")
-      .eq("invite_code", code.trim().toUpperCase())
-      .eq("active", true)
-      .single();
+      .from("clients").select("*").eq("invite_code", code.trim().toUpperCase()).single();
     setLoading(false);
-    if (err || !data) { setError("Invalid invite code. Please contact garima@finzzup.com"); return; }
-    setClient(data);
-    setForm(f => ({ ...f, email: data.email }));
-    setStep("register");
+    if (err || !data) { setError("Invalid invite code. Contact Garima for access."); return; }
+    if (data.auth_user_id) { setStep("signin"); setForm(f=>({...f,email:data.email})); }
+    else { setInviteClient(data); setStep("register"); }
   };
 
-  // Register new account with Supabase Auth
+  // Register new user
   const register = async () => {
-    if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
-    if (form.password.length < 6)      { setError("Password must be at least 6 characters."); return; }
-    if (form.password !== form.confirm) { setError("Passwords don't match."); return; }
+    if (!form.name || !form.email || !form.password) { setError("Please fill all fields."); return; }
     setLoading(true); setError("");
     const { data: authData, error: authErr } = await supabase.auth.signUp({
-      email: form.email,
-      password: form.password,
-      options: { data: { client_id: client.id, invite_code: client.invite_code } }
+      email: form.email, password: form.password,
+      options: { data: { client_id: inviteClient.id, invite_code: inviteClient.invite_code } }
     });
+    if (authErr) { setLoading(false); setError(authErr.message); return; }
+    await supabase.from("clients").update({ auth_user_id: authData.user?.id, name: form.name }).eq("id", inviteClient.id);
+    const { data: clientData } = await supabase.from("clients").select("*").eq("id", inviteClient.id).single();
     setLoading(false);
-    if (authErr) { setError(authErr.message); return; }
-    // Account created — log them straight in
-    onLogin(client);
+    if (clientData) onLogin(clientData);
   };
 
-  // Sign in existing account
+  // Sign in existing user
   const signIn = async () => {
-    if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
+    if (!form.email || !form.password) { setError("Please fill all fields."); return; }
     setLoading(true); setError("");
-    const { error: authErr } = await supabase.auth.signInWithPassword({
-      email: form.email, password: form.password
-    });
-    if (authErr) { setLoading(false); setError("Incorrect email or password."); return; }
-    // Fetch client record by email
-    const { data, error: dbErr } = await supabase
-      .from("clients").select("*").eq("email", form.email).single();
+    const { error: authErr } = await supabase.auth.signInWithPassword({ email:form.email, password:form.password });
+    if (authErr) { setLoading(false); setError("Invalid credentials."); return; }
+    const { data, error: dbErr } = await supabase.from("clients").select("*").eq("email", form.email).single();
     setLoading(false);
-    if (dbErr || !data) { setError("Account not found. Please register first."); return; }
+    if (dbErr || !data) { setError("Account not found."); return; }
     onLogin(data);
   };
 
-  return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center",
-      justifyContent:"center", padding:20, fontFamily:F }}>
-      <div style={{ position:"fixed", inset:0, pointerEvents:"none",
-        background:`radial-gradient(ellipse 60% 50% at 20% 30%, rgba(59,111,247,0.07) 0%, transparent 60%),
-                   radial-gradient(ellipse 40% 40% at 80% 70%, rgba(124,92,245,0.06) 0%, transparent 60%)` }}/>
+  const inputStyle = {width:"100%",padding:"10px 14px",borderRadius:10,border:"1.5px solid #334155",background:"#0F172A",color:B.white,fontSize:14,outline:"none",boxSizing:"border-box",fontFamily:"'DM Sans','Plus Jakarta Sans',sans-serif"};
 
-      <div style={{ width:"100%", maxWidth:420, position:"relative" }}>
-        <div style={{ textAlign:"center", marginBottom:32 }}>
-          <Logo size={36}/>
-          <p style={{ fontSize:13, color:C.muted, marginTop:8 }}>Secure Client Portal</p>
+  return (
+    <div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center",background:B.dark,fontFamily:"'DM Sans','Plus Jakarta Sans',sans-serif",position:"relative",overflow:"hidden"}}>
+      <div style={{position:"absolute",top:-100,right:-100,width:400,height:400,borderRadius:"50%",background:`radial-gradient(circle,${B.purple}22 0%,transparent 65%)`,pointerEvents:"none"}}/>
+      <div style={{position:"absolute",bottom:-80,left:-80,width:300,height:300,borderRadius:"50%",background:`radial-gradient(circle,${B.blue}18 0%,transparent 65%)`,pointerEvents:"none"}}/>
+
+      <div style={{width:"100%",maxWidth:420,padding:24,position:"relative",zIndex:2}}>
+        {/* Logo */}
+        <div style={{textAlign:"center",marginBottom:36}}>
+          <div style={{width:56,height:56,borderRadius:16,background:Bgrad,display:"flex",alignItems:"center",justifyContent:"center",margin:"0 auto 16px",boxShadow:`0 8px 24px ${B.purple}44`}}>
+            <Icon name="shield" size={26} color="white"/>
+          </div>
+          <div style={{fontFamily:"'DM Sans',sans-serif",fontSize:22,color:B.white,fontWeight:700}}>Garima Agarwal</div>
+          <div style={{fontSize:12,color:"#64748B",marginTop:4}}>CA · IBBI Registered Valuer</div>
         </div>
 
-        <Card style={{ padding:32 }}>
-
-          {/* ── STEP 1: Enter invite code ── */}
-          {step === "code" && <>
-            <h2 style={{ fontWeight:700, fontSize:20, color:C.text, marginBottom:6, textAlign:"center" }}>
-              Welcome
-            </h2>
-            <p style={{ fontSize:13, color:C.muted, textAlign:"center", marginBottom:24, lineHeight:1.6 }}>
-              New client? Enter your invite code to register.<br/>
-              Already have an account?{" "}
-              <button onClick={() => setStep("signin")}
-                style={{ background:"none", border:"none", color:C.blue, fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:F }}>
-                Sign in here
-              </button>
-            </p>
-
-            <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-              letterSpacing:"0.08em", display:"block", marginBottom:8, fontFamily:F }}>
-              Invite Code
-            </label>
-            <input value={code}
-              onChange={e => { setCode(e.target.value.toUpperCase()); setError(""); }}
-              onKeyDown={e => e.key === "Enter" && checkCode()}
-              placeholder="e.g. NEXO2026"
-              style={{ width:"100%", padding:"13px 15px", borderRadius:10, fontSize:16,
-                border:`1.5px solid ${error ? C.red : C.border}`, fontFamily:FM,
-                fontWeight:600, letterSpacing:"0.1em", color:C.text, background:C.bg,
-                outline:"none", boxSizing:"border-box", textTransform:"uppercase",
-                textAlign:"center", transition:"border-color 0.2s" }}
-              onFocus={e => e.target.style.borderColor = C.blue}
-              onBlur={e  => e.target.style.borderColor = error ? C.red : C.border}
-            />
-            {error && <p style={{ color:C.red, fontSize:12, marginTop:8, textAlign:"center" }}>{error}</p>}
-
-            <button onClick={checkCode} disabled={loading} style={{ width:"100%", marginTop:16, padding:14,
-              borderRadius:12, border:"none", background:C.grad1, color:"white",
-              fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
-              boxShadow:"0 6px 20px rgba(59,111,247,0.28)", touchAction:"manipulation" }}>
-              {loading ? "Checking…" : "Continue →"}
-            </button>
-
-            <p style={{ textAlign:"center", fontSize:12, color:C.dim, marginTop:20 }}>
-              Don't have a code?{" "}
-              <a href="mailto:garima@finzzup.com" style={{ color:C.blue, fontWeight:600 }}>
-                Email garima@finzzup.com
-              </a>
-            </p>
-
-            {/* Demo accounts */}
-            <div style={{ marginTop:20, padding:"14px 16px", borderRadius:12,
-              background:`${C.blue}0A`, border:`1px solid ${C.blue}20` }}>
-              <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>🔍 Try a demo account</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                {[
-                  { code:"DEMO-STARTUP", label:"Startup / CFO Client", icon:"🚀", color:C.blue   },
-                  { code:"DEMO-MSME",    label:"MSME Client",           icon:"🏢", color:C.teal   },
-                  { code:"DEMO-CORP",    label:"Corporate Client",       icon:"🏦", color:C.purple },
-                ].map(d => (
-                  <button key={d.code} onClick={() => setCode(d.code)}
-                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                      padding:"9px 12px", borderRadius:9, border:`1px solid ${d.color}25`,
-                      background:`${d.color}08`, cursor:"pointer", fontFamily:F, width:"100%",
-                      touchAction:"manipulation" }}>
-                    <span style={{ fontSize:13, color:C.text, fontWeight:600 }}>{d.icon} {d.label}</span>
-                    <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:d.color }}>{d.code}</span>
-                  </button>
-                ))}
-              </div>
+        <div style={{background:"#1E293B",borderRadius:20,padding:32,border:"1px solid #334155"}}>
+          {step === "code" && (<>
+            <div style={{fontSize:20,fontWeight:700,color:B.white,marginBottom:4}}>Welcome</div>
+            <div style={{fontSize:13,color:"#64748B",marginBottom:28}}>Enter your invite code to access the portal</div>
+            <div style={{marginBottom:16}}>
+              <label style={{display:"block",fontSize:11,fontWeight:700,color:"#94A3B8",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:6}}>Invite Code</label>
+              <input value={code} onChange={e=>setCode(e.target.value)} onKeyDown={e=>e.key==="Enter"&&checkCode()} placeholder="e.g. NXPY-2026" style={{...inputStyle,textTransform:"uppercase",letterSpacing:"0.1em",fontSize:16}}/>
             </div>
-          </>}
-
-          {/* ── STEP 2: Register ── */}
-          {step === "register" && <>
-            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24,
-              padding:"12px 14px", borderRadius:12, background:`${C.green}0A`, border:`1px solid ${C.green}25` }}>
-              <span style={{ fontSize:22 }}>✅</span>
-              <div>
-                <div style={{ fontSize:13, fontWeight:700, color:C.text }}>Code accepted!</div>
-                <div style={{ fontSize:12, color:C.muted }}>{client?.company}</div>
-              </div>
+            {error && <div style={{fontSize:12,color:B.red,marginBottom:12}}>{error}</div>}
+            <button onClick={checkCode} style={{width:"100%",padding:12,borderRadius:12,border:"none",background:loading?"#334155":Bgrad,color:B.white,fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:loading?"none":`0 6px 20px ${B.purple}44`}}>
+              {loading?"Checking…":"Continue →"}
+            </button>
+            <div style={{marginTop:16,textAlign:"center"}}>
+              <span style={{fontSize:12,color:"#475569"}}>Already registered? </span>
+              <span onClick={()=>setStep("signin")} style={{fontSize:12,color:B.blue,cursor:"pointer",fontWeight:600}}>Sign In</span>
             </div>
-            <h2 style={{ fontWeight:700, fontSize:18, color:C.text, marginBottom:20 }}>Create your account</h2>
-            <InputField label="Email"            fkey="email"    type="email"    placeholder="your@email.com"   form={form} setForm={setForm} setError={setError}/>
-            <InputField label="Password"         fkey="password" type="password" placeholder="Min 6 characters" form={form} setForm={setForm} setError={setError}/>
-            <InputField label="Confirm Password" fkey="confirm"  type="password" placeholder="Repeat password"  form={form} setForm={setForm} setError={setError}/>
-            {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-            <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
-              borderRadius:12, border:"none", background:C.grad1, color:"white",
-              fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
-              boxShadow:"0 6px 20px rgba(59,111,247,0.28)", touchAction:"manipulation" }}>
-              {loading ? "Creating account…" : "Create Account →"}
-            </button>
-            <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:12, borderRadius:12, border:`1px solid ${C.border}`,
-              background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
-              ← Back
-            </button>
-          </>}
+          </>)}
 
-          {/* ── STEP 3: Sign in (returning client) ── */}
-          {step === "signin" && <>
-            <h2 style={{ fontWeight:700, fontSize:20, color:C.text, marginBottom:6 }}>Welcome back</h2>
-            <p style={{ fontSize:13, color:C.muted, marginBottom:24, lineHeight:1.6 }}>
-              Sign in to your Finzzup portal.
-            </p>
-            <InputField label="Email"    fkey="email"    type="email"    placeholder="your@email.com" form={form} setForm={setForm} setError={setError}/>
-            <InputField label="Password" fkey="password" type="password" placeholder="Your password"  form={form} setForm={setForm} setError={setError}/>
-            {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-            <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
-              borderRadius:12, border:"none", background:C.grad1, color:"white",
-              fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
-              boxShadow:"0 6px 20px rgba(59,111,247,0.28)", touchAction:"manipulation" }}>
-              {loading ? "Signing in…" : "Sign In →"}
+          {step === "register" && (<>
+            <div style={{fontSize:20,fontWeight:700,color:B.white,marginBottom:4}}>Create Account</div>
+            <div style={{fontSize:13,color:"#64748B",marginBottom:28}}>Set up your portal access for {inviteClient?.company}</div>
+            {[{label:"Your Name",key:"name",type:"text",ph:"e.g. Arjun Sharma"},{label:"Email",key:"email",type:"email",ph:inviteClient?.email||"you@company.com"},{label:"Password",key:"password",type:"password",ph:"Min 8 characters"}].map(f=>(
+              <div key={f.key} style={{marginBottom:14}}>
+                <label style={{display:"block",fontSize:11,fontWeight:700,color:"#94A3B8",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:6}}>{f.label}</label>
+                <input value={form[f.key]} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&register()} type={f.type} placeholder={f.ph} style={inputStyle}/>
+              </div>
+            ))}
+            {error && <div style={{fontSize:12,color:B.red,marginBottom:12}}>{error}</div>}
+            <button onClick={register} style={{width:"100%",padding:12,borderRadius:12,border:"none",background:loading?"#334155":Bgrad,color:B.white,fontWeight:700,fontSize:14,cursor:"pointer"}}>
+              {loading?"Creating account…":"Create Account →"}
             </button>
-            <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:12, borderRadius:12, border:`1px solid ${C.border}`,
-              background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
-              ← New client? Enter invite code
-            </button>
-          </>}
+            <div style={{marginTop:12,textAlign:"center"}}><span onClick={()=>setStep("code")} style={{fontSize:12,color:"#475569",cursor:"pointer"}}>← Back</span></div>
+          </>)}
 
-        </Card>
-        <p style={{ textAlign:"center", fontSize:11, color:C.dim, marginTop:20 }}>
-          Powered by Finzzup · garima@finzzup.com
-        </p>
+          {step === "signin" && (<>
+            <div style={{fontSize:20,fontWeight:700,color:B.white,marginBottom:4}}>Welcome back</div>
+            <div style={{fontSize:13,color:"#64748B",marginBottom:28}}>Sign in to your client portal</div>
+            {[{label:"Email",key:"email",type:"email",ph:"you@company.com"},{label:"Password",key:"password",type:"password",ph:"••••••••"}].map(f=>(
+              <div key={f.key} style={{marginBottom:14}}>
+                <label style={{display:"block",fontSize:11,fontWeight:700,color:"#94A3B8",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:6}}>{f.label}</label>
+                <input value={form[f.key]} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&signIn()} type={f.type} placeholder={f.ph} style={inputStyle}/>
+              </div>
+            ))}
+            {error && <div style={{fontSize:12,color:B.red,marginBottom:12}}>{error}</div>}
+            <button onClick={signIn} style={{width:"100%",padding:12,borderRadius:12,border:"none",background:loading?"#334155":Bgrad,color:B.white,fontWeight:700,fontSize:14,cursor:"pointer",boxShadow:loading?"none":`0 6px 20px ${B.purple}44`}}>
+              {loading?"Signing in…":"Sign In →"}
+            </button>
+            <div style={{marginTop:16,textAlign:"center"}}>
+              <span style={{fontSize:12,color:"#475569"}}>New client? </span>
+              <span onClick={()=>setStep("code")} style={{fontSize:12,color:B.blue,cursor:"pointer",fontWeight:600}}>Use Invite Code</span>
+            </div>
+          </>)}
+        </div>
       </div>
     </div>
   );
 }
 
-// ─── SIDEBAR ──────────────────────────────────────────────────────────────────
-// Dynamic nav based on client pack type
-function getNav(client) {
-  const pack = client?.client_pack || "startup";
-  const type = client?.type || "both";
-
-  const base = [
-    { id:"dashboard", icon:"📊", label:"Dashboard" },
-  ];
-
-  // CFO/financial items — shown for cfo + both
-  if (type === "cfo" || type === "both") {
-    base.push({ id:"cashflow", icon:"💰", label:"Cash Flow" });
-    base.push({ id:"actions",  icon:"✅", label:"Action Items" });
-  }
-
-  // My Reports — label changes by pack type
-  const reportLabel = pack === "msme" ? "MSME Report"
-    : pack === "corporate" ? "Board Report"
-    : "CFO Report";
-  const reportIcon = pack === "msme" ? "🏢"
-    : pack === "corporate" ? "🏦"
-    : "📊";
-  base.push({ id:"myreport", icon:reportIcon, label:reportLabel });
-
-  // Valuation — shown for valuation + both
-  if (type === "valuation" || type === "both") {
-    base.push({ id:"engagement", icon:"📋", label:"Valuation Status" });
-  }
-
-  base.push({ id:"calendar", icon:"📅", label:"Book a Call" });
-  base.push({ id:"mydocs",  icon:"📁", label:"My Documents" });
-  return base;
-}
-
-function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
-  return (
-    <aside style={{ width:collapsed?64:220, minHeight:"100vh", background:C.navy, flexShrink:0,
-      display:"flex", flexDirection:"column", transition:"width 0.25s", overflow:"hidden",
-      borderRight:`1px solid rgba(255,255,255,0.06)` }}>
-
-      {/* Logo */}
-      <div style={{ padding: collapsed ? "20px 0" : "22px 20px", display:"flex",
-        alignItems:"center", justifyContent:collapsed?"center":"space-between",
-        borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-        {!collapsed && <Logo size={26}/>}
-        <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
-          cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
-          {collapsed ? "→" : "←"}
-        </button>
-      </div>
-
-      {/* Client info */}
-      {!collapsed && (
-        <div style={{ padding:"14px 16px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", marginBottom:2, fontFamily:F }}>Logged in as</div>
-          <div style={{ fontSize:13, fontWeight:700, color:"white", fontFamily:F }}>{client.name}</div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:F }}>{client.company}</div>
-        </div>
-      )}
-
-      {/* Nav */}
-      <nav style={{ flex:1, padding:"10px 0", overflowY:"auto" }}>
-        {getNav(client).map(n => (
-          <button key={n.id} onClick={() => setPage(n.id)} style={{
-            display:"flex", alignItems:"center", gap:10,
-            width:"100%", padding: collapsed ? "12px 0" : "11px 16px",
-            justifyContent: collapsed ? "center" : "flex-start",
-            background: page===n.id ? "rgba(59,111,247,0.18)" : "transparent",
-            border:"none", cursor:"pointer", borderLeft: page===n.id ? `3px solid ${C.blue}` : "3px solid transparent",
-            transition:"all 0.15s", fontFamily:F,
-          }}>
-            <span style={{ fontSize:17 }}>{n.icon}</span>
-            {!collapsed && <span style={{ fontSize:13, fontWeight:600,
-              color: page===n.id ? "white" : "rgba(255,255,255,0.5)" }}>
-              {n.label}
-            </span>}
-          </button>
-        ))}
-      </nav>
-
-      {/* Logout */}
-      <div style={{ padding: collapsed?"10px 0":"10px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
-        <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
-          width:"100%", padding: collapsed?"10px 0":"10px 12px", justifyContent:collapsed?"center":"flex-start",
-          background:"none", border:"none", cursor:"pointer", borderRadius:8,
-          fontFamily:F, fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
-          <span>🚪</span>
-          {!collapsed && "Sign Out"}
-        </button>
-      </div>
-    </aside>
-  );
-}
-
-// ─── TOPBAR ───────────────────────────────────────────────────────────────────
-function Topbar({ title, client }) {
-  const now = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
-  return (
-    <header style={{ height:58, background:C.bg2, borderBottom:`1px solid ${C.border}`,
-      display:"flex", alignItems:"center", justifyContent:"space-between",
-      padding:"0 24px", flexShrink:0 }}>
-      <h1 style={{ fontFamily:F, fontWeight:700, fontSize:17, color:C.text, margin:0 }}>{title}</h1>
-      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-        <span style={{ fontSize:12, color:C.dim, fontFamily:F }}>{now}</span>
-        <div style={{ width:32, height:32, borderRadius:"50%", background:C.grad1,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:13, fontWeight:700, color:"white", fontFamily:F }}>
-          {client.name[0]}
-        </div>
-      </div>
-    </header>
-  );
-}
-
-// ─── DASHBOARD ────────────────────────────────────────────────────────────────
-function Dashboard({ client }) {
-  const [data, setData] = useState(null);
+// ── OVERVIEW (live data) ───────────────────────────────────────────────────────
+function Overview({ client, setTab }) {
+  const [analytics, setAnalytics] = useState(null);
+  const [engagements, setEngagements] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.from("client_analytics")
-      .select("*").eq("client_id", client.id)
-      .order("updated_at", { ascending:false }).limit(1).single()
-      .then(({ data: d }) => { setData(d); setLoading(false); });
+    const fetchAll = async () => {
+      const [{ data: an }, { data: en }] = await Promise.all([
+        supabase.from("client_analytics").select("*").eq("client_id", client.id)
+          .order("updated_at",{ascending:false}).limit(1).single(),
+        supabase.from("engagements").select("*").eq("client_id", client.id),
+      ]);
+      setAnalytics(an || null);
+      setEngagements(en || []);
+      setLoading(false);
+    };
+    fetchAll();
   }, [client.id]);
 
-  const KPI_META = [
-    { key:"revenue",      label:"Revenue",      icon:"📈", color:C.blue,   bg:"#EEF3FE" },
-    { key:"gross_margin", label:"Gross Margin", icon:"💹", color:C.teal,   bg:"#E6FAF7" },
-    { key:"cash_balance", label:"Cash Balance", icon:"🏦", color:C.amber,  bg:"#FEF7E7" },
-    { key:"burn_rate",    label:"Burn Rate",    icon:"🔥", color:C.purple, bg:"#F3EFFF" },
-    { key:"runway",       label:"Runway",       icon:"⏳", color:C.pink,   bg:"#FEF0F7" },
-    { key:"arr",          label:"ARR",          icon:"🎯", color:C.green,  bg:"#E8FAF3" },
-  ];
+  // Parse cashflow for mini chart
+  let cfData = [];
+  try { if (analytics?.cashflow_data) cfData = JSON.parse(analytics.cashflow_data).map(r=>r.actual||r.forecast||0).filter(Boolean); } catch(e) {}
+  let revData = [];
+  try { if (analytics?.pl_data) { const pl = JSON.parse(analytics.pl_data); const rev = pl.find(r=>r.item?.toLowerCase().includes("revenue")); if(rev?.amount) revData = []; } } catch(e) {}
+
+  const statusBadge = (s) => {
+    if (!s) return "blue";
+    const sl = s.toLowerCase();
+    if (sl.includes("complet")) return "green";
+    if (sl.includes("active") || sl.includes("ongoing")) return "blue";
+    return "gold";
+  };
+
+  const avatarInitials = (name) => name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2) || "??";
 
   return (
-    <div style={{ padding:24 }}>
-      {/* Welcome */}
-      <div style={{ marginBottom:24, padding:"20px 24px", borderRadius:16,
-        background:C.grad1, color:"white", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", right:-20, top:-20, width:140, height:140,
-          borderRadius:"50%", background:"rgba(255,255,255,0.06)" }}/>
-        <div style={{ position:"relative" }}>
-          <div style={{ fontFamily:F, fontSize:11, fontWeight:700, opacity:0.75, letterSpacing:"0.08em", marginBottom:4 }}>
-            WELCOME BACK
-          </div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:22, marginBottom:4 }}>{client.name}</div>
-          <div style={{ fontFamily:F, fontSize:13, opacity:0.75 }}>
-            {client.company}{data?.month ? ` · Updated: ${data.month}` : ""}
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+      {/* Welcome banner */}
+      <div style={{borderRadius:20,padding:28,background:Bgrad,position:"relative",overflow:"hidden"}}>
+        <div style={{position:"absolute",top:-40,right:-40,width:200,height:200,borderRadius:"50%",background:"rgba(255,255,255,0.05)"}}/>
+        <div style={{position:"absolute",bottom:-30,right:60,width:120,height:120,borderRadius:"50%",background:"rgba(255,255,255,0.04)"}}/>
+        <div style={{position:"relative",zIndex:1}}>
+          <div style={{fontSize:13,color:"rgba(255,255,255,0.7)",marginBottom:4,fontWeight:500}}>Good morning,</div>
+          <div style={{fontSize:22,fontWeight:700,color:B.white,marginBottom:2}}>{client.name}</div>
+          <div style={{fontSize:13,color:"rgba(255,255,255,0.65)"}}>{client.company}</div>
+          <div style={{display:"inline-flex",alignItems:"center",gap:6,marginTop:14,padding:"6px 14px",borderRadius:100,background:"rgba(255,255,255,0.15)",fontSize:12,fontWeight:600,color:B.white}}>
+            <span style={{width:6,height:6,borderRadius:"50%",background:"#4ADE80"}}/>
+            {engagements.some(e=>e.status?.toLowerCase()==="active"||e.status===1||e.status===2||e.status===3)
+              ? "Active Engagement" : "Client Portal"} · {client.client_pack ? client.client_pack.charAt(0).toUpperCase()+client.client_pack.slice(1)+" Pack" : "Finzzup Client"}
           </div>
         </div>
       </div>
 
-      {loading ? (
-        <Card style={{ textAlign:"center", padding:40 }}>
-          <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Loading your dashboard…</div>
-        </Card>
-      ) : !data ? (
-        <Card style={{ textAlign:"center", padding:40, borderLeft:`3px solid ${C.amber}` }}>
-          <div style={{ fontSize:28, marginBottom:12 }}>📊</div>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>Dashboard being prepared</div>
-          <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>Garima is setting up your analytics. Check back soon.</div>
-        </Card>
-      ) : (<>
-        {/* Garima note */}
-        {data.garima_note && (
-          <Card style={{ marginBottom:24, borderLeft:`3px solid ${C.blue}` }}>
-            <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
-              letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
-              📝 Note from Garima{data.month ? ` — ${data.month}` : ""}
-            </div>
-            <p style={{ fontSize:14, color:C.text, lineHeight:1.75, fontFamily:F, margin:0 }}>
-              {data.garima_note}
-            </p>
-          </Card>
-        )}
+      {/* KPI row — from live analytics */}
+      {analytics && (
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:14}} className="bkpi-grid">
+          {[
+            {label:"Monthly Revenue", val:analytics.revenue, prev:analytics.revenue_prev},
+            {label:"ARR",             val:analytics.arr,     prev:analytics.arr_prev},
+            {label:"Cash Balance",    val:analytics.cash_balance, prev:analytics.cash_balance_prev},
+          ].filter(k=>k.val).map((k,i) => (
+            <BCard key={i} style={{padding:18}}>
+              <div style={{fontSize:11,color:B.grey,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>{k.label}</div>
+              <div style={{fontSize:22,fontWeight:700,color:B.dark,marginBottom:4}}>{k.val}</div>
+              {k.prev && <div style={{fontSize:12,fontWeight:600,color:B.grey}}>Prev: {k.prev}</div>}
+            </BCard>
+          ))}
+        </div>
+      )}
 
-        {/* KPI Grid */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:24 }} className="kpi-grid">
-          {KPI_META.map((k,i) => {
-            const val = data[k.key]; const prev = data[k.key+"_prev"];
-            if (!val) return null;
-            return (
-              <Card key={i} style={{ padding:18 }}>
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-                  <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
-                    display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>
-                    {k.icon}
+      {/* Garima note */}
+      {analytics?.garima_note && (
+        <BCard style={{padding:20,borderLeft:`3px solid ${B.blue}`}}>
+          <div style={{fontSize:11,fontWeight:700,color:B.blue,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>
+            📝 Note from Garima{analytics.month ? ` — ${analytics.month}` : ""}
+          </div>
+          <p style={{fontSize:14,color:B.dark,lineHeight:1.75,margin:0}}>{analytics.garima_note}</p>
+        </BCard>
+      )}
+
+      {/* Charts row */}
+      {cfData.length > 0 && (
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14}}>
+          <BCard style={{padding:20}}>
+            <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:4}}>Cash Flow</div>
+            <div style={{fontSize:11,color:B.grey,marginBottom:14}}>Monthly net (₹ Lakhs)</div>
+            <BBarChart data={cfData} height={90}/>
+          </BCard>
+          <BCard style={{padding:20}}>
+            <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:4}}>Trend</div>
+            <div style={{fontSize:11,color:B.grey,marginBottom:14}}>Cash flow movement</div>
+            <BLineChart lines={[{data:cfData,color:B.blue,fill:true}]} height={90}/>
+          </BCard>
+        </div>
+      )}
+
+      {/* Engagements + Actions */}
+      <div style={{display:"grid",gridTemplateColumns:"1.4fr 1fr",gap:14}} className="beng-grid">
+        <BCard style={{padding:20}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16}}>
+            <div style={{fontSize:13,fontWeight:700,color:B.dark}}>My Engagements</div>
+            <button onClick={()=>setTab("inquiry")} style={{fontSize:12,fontWeight:600,color:B.blue,background:"none",border:"none",cursor:"pointer",padding:0}}>+ New</button>
+          </div>
+          {loading ? (
+            <div style={{fontSize:13,color:B.grey,textAlign:"center",padding:20}}>Loading…</div>
+          ) : engagements.length === 0 ? (
+            <div style={{fontSize:13,color:B.grey,textAlign:"center",padding:20}}>No engagements yet. <span style={{color:B.blue,cursor:"pointer"}} onClick={()=>setTab("inquiry")}>Request one →</span></div>
+          ) : (
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {engagements.map(e => (
+                <div key={e.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 12px",borderRadius:10,background:B.bg,cursor:"pointer"}}>
+                  <div>
+                    <div style={{fontSize:12,fontWeight:700,color:B.dark,marginBottom:2}}>{e.type}</div>
+                    <div style={{fontSize:11,color:B.grey}}>{e.ref_number ? `${e.ref_number} · ` : ""}{e.expected_date || ""}</div>
                   </div>
-                  {prev && <span style={{ fontSize:11, fontWeight:700, color:C.muted,
-                    background:C.bg3, padding:"3px 8px", borderRadius:100, fontFamily:F }}>
-                    Prev: {prev}
-                  </span>}
+                  <BBadge type={["Docs Requested","Docs Received","Analysis","Draft Ready","Revision","Final Signed"][e.status||0]}/>
                 </div>
-                <div style={{ fontFamily:FM, fontWeight:600, fontSize:22, color:k.color, marginBottom:2 }}>{val}</div>
-                <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text }}>{k.label}</div>
-              </Card>
+              ))}
+            </div>
+          )}
+        </BCard>
+
+        <div style={{display:"flex",flexDirection:"column",gap:14}}>
+          <BCard style={{padding:18}}>
+            <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:14}}>Quick Actions</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {[
+                {label:"Request Service",  icon:"plus",    tab:"inquiry",  bg:Bgrad,   tc:"white"},
+                {label:"View Documents",   icon:"file",    tab:"docs",     bg:B.bg,    tc:B.dark},
+                {label:"CFO Dashboard",    icon:"chart",   tab:"cfo",      bg:B.bg,    tc:B.dark},
+                {label:"Upload Documents", icon:"upload",  tab:"docs",     bg:B.bg,    tc:B.dark},
+              ].map((a,i) => (
+                <button key={i} onClick={()=>setTab(a.tab)} style={{display:"flex",alignItems:"center",gap:10,padding:"10px 14px",borderRadius:10,border:"none",background:a.bg,color:a.tc,cursor:"pointer",fontWeight:600,fontSize:13,textAlign:"left",boxShadow:a.bg===Bgrad?`0 4px 14px ${B.purple}33`:"none",fontFamily:"inherit"}}>
+                  <Icon name={a.icon} size={15} color={a.tc}/> {a.label}
+                </button>
+              ))}
+            </div>
+          </BCard>
+
+          <BCard style={{padding:18,background:B.dark,borderColor:B.dark}} hover={false}>
+            <div style={{fontSize:12,fontWeight:700,color:B.white,marginBottom:8}}>Need help?</div>
+            <div style={{fontSize:11,color:"#64748B",marginBottom:14,lineHeight:1.6}}>Chat directly with Garima on WhatsApp for quick questions.</div>
+            <a href="https://wa.me/966503510581" target="_blank" rel="noopener"
+              style={{display:"flex",alignItems:"center",justifyContent:"center",gap:8,padding:"9px",borderRadius:10,background:"#22C55E",color:B.white,fontWeight:700,fontSize:12,textDecoration:"none"}}>
+              <Icon name="wa" size={14} color="white"/> WhatsApp Garima
+            </a>
+          </BCard>
+        </div>
+      </div>
+
+      <style>{`
+        @media(max-width:640px){
+          .bkpi-grid{grid-template-columns:1fr 1fr!important}
+          .beng-grid{grid-template-columns:1fr!important}
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ── CFO DASHBOARD (live data) ─────────────────────────────────────────────────
+function CFODashboard({ client }) {
+  const [analytics, setAnalytics] = useState(null);
+  const [actions, setActions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAll = async () => {
+      const [{ data: an }, { data: ac }] = await Promise.all([
+        supabase.from("client_analytics").select("*").eq("client_id",client.id).order("updated_at",{ascending:false}).limit(1).single(),
+        supabase.from("action_items").select("*").eq("client_id",client.id).order("created_at",{ascending:false}),
+      ]);
+      setAnalytics(an||null);
+      setActions(ac||[]);
+      setLoading(false);
+    };
+    fetchAll();
+  }, [client.id]);
+
+  let cfRows = [];
+  try { if (analytics?.cashflow_data) cfRows = JSON.parse(analytics.cashflow_data); } catch(e) {}
+  let plRows = [];
+  try { if (analytics?.pl_data) plRows = JSON.parse(analytics.pl_data); } catch(e) {}
+
+  const kpiFields = [
+    {key:"revenue",label:"Monthly Revenue"},{key:"gross_margin",label:"Gross Margin"},
+    {key:"burn_rate",label:"Burn Rate"},{key:"runway",label:"Runway"},
+    {key:"arr",label:"ARR"},{key:"cash_balance",label:"Cash Balance"},
+  ];
+
+  const toggleAction = async (id, done) => {
+    await supabase.from("action_items").update({done:!done}).eq("id",id);
+    setActions(p=>p.map(a=>a.id===id?{...a,done:!done}:a));
+  };
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+      <div>
+        <div style={{fontSize:20,fontWeight:700,color:B.dark}}>CFO Dashboard</div>
+        <div style={{fontSize:13,color:B.grey,marginTop:3}}>{analytics?.month ? `Updated: ${analytics.month}` : "Your financial overview"}</div>
+      </div>
+
+      {loading ? (
+        <BCard style={{textAlign:"center",padding:40}}><div style={{color:B.grey}}>Loading dashboard…</div></BCard>
+      ) : !analytics ? (
+        <BCard style={{textAlign:"center",padding:40,borderLeft:`3px solid ${B.gold}`}}>
+          <div style={{fontSize:28,marginBottom:12}}>📊</div>
+          <div style={{fontSize:14,fontWeight:700,color:B.dark,marginBottom:6}}>Dashboard being prepared</div>
+          <div style={{fontSize:13,color:B.grey}}>Garima is setting up your financial analytics. Check back soon.</div>
+        </BCard>
+      ) : (<>
+        {/* KPI Grid */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12}} className="bkpi-grid">
+          {kpiFields.map((k,i) => {
+            const val = analytics[k.key]; if (!val) return null;
+            const prev = analytics[k.key+"_prev"];
+            return (
+              <BCard key={i} style={{padding:16}}>
+                <div style={{fontSize:11,color:B.grey,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:8}}>{k.label}</div>
+                <div style={{fontSize:22,fontWeight:700,color:B.dark,marginBottom:4}}>{val}</div>
+                {prev && <div style={{fontSize:12,color:B.grey}}>Prev: {prev}</div>}
+              </BCard>
             );
           }).filter(Boolean)}
         </div>
 
-        {/* P&L Summary */}
-        {data.pl_data && (() => {
-          try {
-            const pl = JSON.parse(data.pl_data);
-            if (!pl.length) return null;
-            return (
-              <Card style={{ marginBottom:20 }}>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>📊 P&L Summary</div>
-                <div style={{ overflowX:"auto" }}>
-                  <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
-                    <thead>
-                      <tr>
-                        {["Line Item","Amount","vs Last Month"].map(h => (
-                          <th key={h} style={{ textAlign:"left", padding:"8px 12px", fontSize:11,
-                            fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em",
-                            borderBottom:`1px solid ${C.border}` }}>{h}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {pl.map((row, i) => (
-                        <tr key={i} style={{ background: i%2===0 ? "transparent" : C.bg }}>
-                          <td style={{ padding:"9px 12px", color:C.text, fontWeight:row.bold?700:400 }}>{row.item}</td>
-                          <td style={{ padding:"9px 12px", color:row.highlight?C.blue:C.text, fontFamily:FM, fontWeight:600 }}>{row.amount}</td>
-                          <td style={{ padding:"9px 12px", color: row.change?.startsWith("+") ? C.green : row.change?.startsWith("-") ? C.red : C.dim, fontSize:12, fontWeight:600 }}>{row.change || "—"}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+        {/* Charts */}
+        {cfRows.length > 0 && (
+          <div style={{display:"grid",gridTemplateColumns:"1.3fr 1fr",gap:14}}>
+            <BCard style={{padding:20}}>
+              <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:2}}>Cash Flow — Actual vs Forecast</div>
+              <div style={{fontSize:11,color:B.grey,marginBottom:16}}>₹ Lakhs</div>
+              <BLineChart
+                lines={[
+                  {data:cfRows.map(r=>r.actual), color:B.blue, fill:true},
+                  {data:cfRows.map(r=>r.forecast), color:B.purple, fill:false, dash:true},
+                ]}
+                height={130}
+              />
+              <div style={{display:"flex",justifyContent:"space-between",marginTop:8}}>
+                {cfRows.map((r,i) => <span key={i} style={{fontSize:10,color:B.grey,flex:1,textAlign:"center"}}>{r.month}</span>)}
+              </div>
+            </BCard>
+            <BCard style={{padding:20}}>
+              <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:2}}>Cash Flow Bars</div>
+              <div style={{fontSize:11,color:B.grey,marginBottom:16}}>Monthly actual (₹ Lakhs)</div>
+              <BBarChart data={cfRows.map(r=>r.actual||r.forecast||0)} height={100}/>
+              {analytics.cashflow_note && (
+                <div style={{marginTop:14,padding:"10px 12px",borderRadius:9,background:"#F5F3FF",border:`1px solid ${B.purple}22`,fontSize:11,color:B.mid,lineHeight:1.6}}>
+                  <strong style={{color:B.purple}}>Analysis:</strong> {analytics.cashflow_note}
                 </div>
-              </Card>
-            );
-          } catch(e) { return null; }
-        })()}
-
-        {/* Ageing */}
-        {data.aging_data && (() => {
-          try {
-            const ag = JSON.parse(data.aging_data);
-            if (!ag.length) return null;
-            return (
-              <Card style={{ marginBottom:20 }}>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>⏰ Debtor Ageing</div>
-                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                  {ag.map((row, i) => {
-                    const max = Math.max(...ag.map(r => parseFloat(r.amount)||0));
-                    const pct = max ? ((parseFloat(row.amount)||0) / max) * 100 : 0;
-                    const col = i===0 ? C.green : i===1 ? C.amber : i===2 ? C.orange||"#F97316" : C.red;
-                    return (
-                      <div key={i} style={{ display:"flex", alignItems:"center", gap:12 }}>
-                        <div style={{ width:90, fontFamily:F, fontSize:12, color:C.muted, flexShrink:0 }}>{row.bucket}</div>
-                        <div style={{ flex:1, height:8, borderRadius:4, background:C.bg3 }}>
-                          <div style={{ height:"100%", borderRadius:4, width:`${pct}%`, background:col, transition:"width 0.8s" }}/>
-                        </div>
-                        <div style={{ width:70, textAlign:"right", fontFamily:FM, fontSize:13, fontWeight:700, color:col }}>{row.amount}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-                {data.aging_note && <div style={{ marginTop:14, fontFamily:F, fontSize:13, color:C.amber }}>{data.aging_note}</div>}
-              </Card>
-            );
-          } catch(e) { return null; }
-        })()}
-
-        {/* Cashflow mini chart */}
-        {data.cashflow_data && (() => {
-          try {
-            const cf = JSON.parse(data.cashflow_data);
-            if (!cf.length) return null;
-            return (
-              <Card style={{ marginBottom:20 }}>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>💰 Cash Flow</div>
-                <div style={{ height:200 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={cf} margin={{ top:5, right:10, left:0, bottom:0 }}>
-                      <defs>
-                        <linearGradient id="cfga" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%"  stopColor={C.blue} stopOpacity={0.15}/>
-                          <stop offset="95%" stopColor={C.blue} stopOpacity={0}/>
-                        </linearGradient>
-                        <linearGradient id="cfgf" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%"  stopColor={C.purple} stopOpacity={0.15}/>
-                          <stop offset="95%" stopColor={C.purple} stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
-                      <XAxis dataKey="month" tick={{ fontFamily:F, fontSize:11, fill:C.dim }} axisLine={false} tickLine={false}/>
-                      <YAxis tick={{ fontFamily:FM, fontSize:10, fill:C.dim }} axisLine={false} tickLine={false} width={44}/>
-                      <Tooltip/>
-                      <Area type="monotone" dataKey="actual" stroke={C.blue} strokeWidth={2} fill="url(#cfga)" connectNulls={false} dot={{ fill:C.blue, r:3 }}/>
-                      <Area type="monotone" dataKey="forecast" stroke={C.purple} strokeWidth={2} fill="url(#cfgf)" strokeDasharray="5 5" connectNulls={false} dot={{ fill:C.purple, r:3 }}/>
-                    </AreaChart>
-                  </ResponsiveContainer>
-                </div>
-                {data.cashflow_note && (
-                  <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10,
-                    background:`${C.amber}08`, border:`1px solid ${C.amber}20` }}>
-                    <span style={{ fontFamily:F, fontSize:13, color:C.amber }}>{data.cashflow_note}</span>
-                  </div>
-                )}
-              </Card>
-            );
-          } catch(e) { return null; }
-        })()}
-
-        {/* Quick links */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }} className="quick-grid">
-          {[
-            { icon:"📁", label:"Latest Report",    sub:"Board packs & reports", color:C.purple },
-            { icon:"✅", label:"Action Items",     sub:"From Garima",            color:C.red    },
-            { icon:"📋", label:"Valuation Status", sub:"Track your engagement",  color:C.teal   },
-          ].map((q,i) => (
-            <Card key={i} style={{ padding:16, cursor:"pointer" }}>
-              <div style={{ fontSize:22, marginBottom:8 }}>{q.icon}</div>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:3 }}>{q.label}</div>
-              <div style={{ fontFamily:F, fontSize:11, color:q.color, fontWeight:600 }}>{q.sub}</div>
-            </Card>
-          ))}
-        </div>
-      </>)}
-
-      <style>{`
-        @media(max-width:640px){
-          .kpi-grid{grid-template-columns:1fr 1fr!important}
-          .quick-grid{grid-template-columns:1fr!important}
-        }
-        @media(max-width:400px){.kpi-grid{grid-template-columns:1fr!important}}
-      `}</style>
-    </div>
-  );
-}
-
-// ─── CASH FLOW ────────────────────────────────────────────────────────────────
-function CashFlow({ client }) {
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    supabase.from("client_analytics")
-      .select("cashflow_data,cashflow_note,month").eq("client_id", client.id)
-      .order("updated_at",{ascending:false}).limit(1).single()
-      .then(({ data:d }) => { setData(d); setLoading(false); });
-  }, [client.id]);
-
-  let cf = [];
-  try { if (data?.cashflow_data) cf = JSON.parse(data.cashflow_data); } catch(e) {}
-
-  return (
-    <div style={{ padding:24 }}>
-      <SectionTitle>Cash Flow — Monthly View</SectionTitle>
-      {loading ? (
-        <Card style={{ textAlign:"center", padding:32 }}><div style={{ fontFamily:F, color:C.muted }}>Loading…</div></Card>
-      ) : cf.length === 0 ? (
-        <Card style={{ textAlign:"center", padding:40 }}>
-          <div style={{ fontSize:28, marginBottom:10 }}>💰</div>
-          <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Cash flow data not yet available. Garima will update this soon.</div>
-        </Card>
-      ) : (<>
-        <Card style={{ marginBottom:20 }}>
-          <div style={{ display:"flex", gap:16, marginBottom:20 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-              <div style={{ width:12, height:12, borderRadius:3, background:C.blue }}/><span style={{ fontSize:12, color:C.muted, fontFamily:F }}>Actual</span>
-            </div>
-            <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-              <div style={{ width:12, height:12, borderRadius:3, background:C.purple, opacity:0.6 }}/><span style={{ fontSize:12, color:C.muted, fontFamily:F }}>Forecast</span>
-            </div>
-          </div>
-          <div style={{ height:260 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cf} margin={{ top:5, right:10, left:0, bottom:0 }}>
-                <defs>
-                  <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor={C.blue}   stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor={C.blue}   stopOpacity={0}/>
-                  </linearGradient>
-                  <linearGradient id="gf" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor={C.purple} stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor={C.purple} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
-                <XAxis dataKey="month" tick={{ fontFamily:F, fontSize:11, fill:C.dim }} axisLine={false} tickLine={false}/>
-                <YAxis tick={{ fontFamily:FM, fontSize:10, fill:C.dim }} axisLine={false} tickLine={false} width={48}/>
-                <Tooltip/>
-                <Area type="monotone" dataKey="actual"   stroke={C.blue}   strokeWidth={2} fill="url(#ga)" connectNulls={false} dot={{ fill:C.blue, r:3 }}/>
-                <Area type="monotone" dataKey="forecast" stroke={C.purple} strokeWidth={2} fill="url(#gf)" strokeDasharray="5 5" connectNulls={false} dot={{ fill:C.purple, r:3 }}/>
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-        {data?.cashflow_note && (
-          <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
-            <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase",
-              letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>⚠️ Garima's Analysis</div>
-            <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>{data.cashflow_note}</p>
-          </Card>
-        )}
-      </>)}
-    </div>
-  );
-}
-
-// ─── ACTION ITEMS ─────────────────────────────────────────────────────────────
-function ActionItems({ client }) {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    supabase.from("action_items").select("*").eq("client_id", client.id)
-      .order("created_at",{ascending:false})
-      .then(({ data }) => { setItems(data || []); setLoading(false); });
-  }, [client.id]);
-
-  const toggle = async (id, done) => {
-    await supabase.from("action_items").update({ done: !done }).eq("id", id);
-    setItems(prev => prev.map(a => a.id===id ? {...a, done:!done} : a));
-  };
-
-  const pending = items.filter(a => !a.done);
-  const done_   = items.filter(a => a.done);
-
-  return (
-    <div style={{ padding:24 }}>
-      <SectionTitle sub={`${pending.length} pending · ${done_.length} completed`}>
-        Action Items from Garima
-      </SectionTitle>
-
-      {loading ? (
-        <Card style={{ textAlign:"center", padding:32 }}><div style={{ fontFamily:F, color:C.muted }}>Loading…</div></Card>
-      ) : items.length === 0 ? (
-        <Card style={{ textAlign:"center", padding:40 }}>
-          <div style={{ fontSize:28, marginBottom:10 }}>✅</div>
-          <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>No action items yet. Garima will add them here.</div>
-        </Card>
-      ) : (<>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20, textAlign:"center" }}>
-          {[{label:"Pending",n:pending.length,c:C.red,bg:"#FEF2F2"},{label:"Done",n:done_.length,c:C.green,bg:"#ECFDF5"}].map((s,i) => (
-            <Card key={i} style={{ padding:16 }}>
-              <div style={{ fontFamily:FM, fontSize:32, fontWeight:700, color:s.c }}>{s.n}</div>
-              <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{s.label}</div>
-            </Card>
-          ))}
-        </div>
-        {pending.length > 0 && (
-          <div style={{ marginBottom:24 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-              letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Pending</div>
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {pending.map(a => (
-                <Card key={a.id} style={{ padding:"14px 16px" }}>
-                  <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
-                    <button onClick={() => toggle(a.id, a.done)} style={{ width:20, height:20, borderRadius:6,
-                      border:`2px solid ${C.border}`, background:"white", cursor:"pointer",
-                      flexShrink:0, marginTop:1, touchAction:"manipulation" }}/>
-                    <div style={{ flex:1 }}>
-                      <p style={{ fontFamily:F, fontSize:14, color:C.text, margin:"0 0 6px", lineHeight:1.5 }}>{a.text}</p>
-                      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                        <PriBadge p={a.priority}/>
-                        {a.month && <span style={{ fontSize:11, color:C.dim, fontFamily:F }}>{a.month}</span>}
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
+              )}
+            </BCard>
           </div>
         )}
-        {done_.length > 0 && (
-          <div>
-            <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-              letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Completed</div>
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {done_.map(a => (
-                <Card key={a.id} style={{ padding:"14px 16px", opacity:0.6 }}>
-                  <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
-                    <div style={{ width:20, height:20, borderRadius:6, background:C.green,
-                      display:"flex", alignItems:"center", justifyContent:"center",
-                      flexShrink:0, marginTop:1, cursor:"pointer" }}
-                      onClick={() => toggle(a.id, a.done)}>
-                      <span style={{ color:"white", fontSize:11, fontWeight:900 }}>✓</span>
-                    </div>
-                    <p style={{ fontFamily:F, fontSize:14, color:C.muted, margin:0, textDecoration:"line-through", lineHeight:1.5 }}>{a.text}</p>
-                  </div>
-                </Card>
-              ))}
+
+        {/* P&L table */}
+        {plRows.length > 0 && (
+          <BCard style={{padding:20}}>
+            <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:16}}>P&L Statement</div>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:13}}>
+                <thead>
+                  <tr>{["Line Item","Amount","MoM Change"].map(h=><th key={h} style={{textAlign:"left",padding:"8px 12px",fontSize:11,fontWeight:700,color:B.grey,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`1px solid ${B.lgrey}`}}>{h}</th>)}</tr>
+                </thead>
+                <tbody>
+                  {plRows.map((row,i)=>(
+                    <tr key={i} style={{background:i%2===0?"transparent":B.xlgrey}}>
+                      <td style={{padding:"9px 12px",color:B.dark,fontWeight:row.bold?700:400}}>{row.item}</td>
+                      <td style={{padding:"9px 12px",color:row.highlight?B.blue:B.dark,fontWeight:600}}>{row.amount||"—"}</td>
+                      <td style={{padding:"9px 12px",color:row.change?.startsWith("+")?B.green:row.change?.startsWith("-")?B.red:B.grey,fontSize:12,fontWeight:600}}>{row.change||"—"}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
-          </div>
+          </BCard>
         )}
-      </>)}
-    </div>
-  );
-}
 
-// ─── SMART CFO PACKS ─────────────────────────────────────────────────────────
-
-const CFO_PACK_DATA = {
-  startup: {
-    label: "Startup Pack",
-    icon: "🚀",
-    color: C.blue,
-    bg: "#EEF3FE",
-    grad: "linear-gradient(135deg,#3B6FF7,#7C5CF5)",
-    tagline: "Fundraise-ready financials for your next round",
-    fundraiseScore: 72,
-    fundraiseBreakdown: [
-      { label:"Revenue Growth",          score:85, comment:"Strong 42% YoY — above Series A median" },
-      { label:"Gross Margin",            score:78, comment:"41% is healthy; target 45%+ before raise" },
-      { label:"Runway",                  score:55, comment:"4.4 months — tight; raise in next 60 days" },
-      { label:"Financial Documentation", score:70, comment:"3yr P&L ready; projections need refresh" },
-      { label:"Unit Economics",          score:72, comment:"CAC/LTV ratio needs improvement" },
-    ],
-    investorMetrics: [
-      { label:"ARR",          value:"₹6.2 Cr",  flag:false, note:"Good for Series A" },
-      { label:"MoM Growth",   value:"6%",        flag:false, note:"Consistent" },
-      { label:"Burn Multiple",value:"1.8x",      flag:true,  note:"Target <1.5x before raise" },
-      { label:"CAC Payback",  value:"18 mo",     flag:true,  note:"Investors prefer <12 mo" },
-      { label:"NRR",          value:"108%",      flag:false, note:"Healthy retention" },
-      { label:"Gross Margin", value:"41%",       flag:false, note:"On track" },
-    ],
-    dueDiligence: [
-      { item:"Audited financials (3 years)",              done:true  },
-      { item:"5-year projections with assumptions",       done:true  },
-      { item:"Cap table (fully diluted)",                 done:true  },
-      { item:"MIS pack — last 6 months",                  done:false },
-      { item:"Unit economics — cohort analysis",          done:false },
-      { item:"Board resolutions for previous fundraises", done:true  },
-      { item:"ESOP scheme document",                      done:false },
-      { item:"Shareholder agreement (all investors)",     done:true  },
-    ],
-    boardPacks: BOARD_PACKS,
-    garimaNote: "Your ARR growth is the strongest part of your story — lean into it. The burn multiple at 1.8x will get questions from institutional investors. I'd recommend showing a clear path to 1.2x by month 9. Let's work on the unit economics narrative before you start investor conversations.",
-  },
-  msme: {
-    label: "MSME Pack",
-    icon: "🏭",
-    color: C.teal,
-    bg: "#E6FAF7",
-    grad: "linear-gradient(135deg,#0CB8A4,#3B6FF7)",
-    tagline: "Cash flow health and working capital intelligence",
-    cashHealth: 68,
-    cashBreakdown: [
-      { label:"Cash Conversion Cycle",  score:55, comment:"42 days — reduce debtor days to improve" },
-      { label:"Working Capital Ratio",  score:72, comment:"1.6x — adequate but watch March dip" },
-      { label:"Debtor Days",            score:58, comment:"38 days — target <30 for your sector" },
-      { label:"Creditor Days",          score:80, comment:"52 days — well managed" },
-      { label:"Inventory Turnover",     score:75, comment:"6.2x — good for FMCG segment" },
-    ],
-    workingCapital: [
-      { label:"Current Ratio",       value:"1.62x", flag:false, note:"Healthy (>1.5)" },
-      { label:"Quick Ratio",         value:"1.18x", flag:false, note:"Adequate" },
-      { label:"Debtor Days",         value:"38 days",flag:true, note:"Target <30" },
-      { label:"Creditor Days",       value:"52 days",flag:false,note:"Well managed" },
-      { label:"Inventory Days",      value:"24 days",flag:false,note:"Lean" },
-      { label:"Cash Conversion",     value:"10 days",flag:false,note:"Good" },
-    ],
-    growth: [
-      { label:"Revenue Growth YoY",   value:"22%",    flag:false, note:"Sector avg: 18%" },
-      { label:"EBITDA Margin",        value:"14.2%",  flag:false, note:"Healthy" },
-      { label:"Gross Margin Trend",   value:"▲ +2pp", flag:false, note:"Improving" },
-      { label:"Debtor Concentration", value:"High",   flag:true,  note:"Top 3 = 64% of AR" },
-    ],
-    boardPacks: BOARD_PACKS,
-    garimaNote: "Working capital is healthy overall but the debtor concentration is a risk — if your top client delays, it cascades into a cash crunch. I've flagged this as the priority item for next month. Creditor days are well managed; keep that discipline. Focus for Q1: reduce debtor days from 38 to 30.",
-  },
-  corporate: {
-    label: "Corporate Pack",
-    icon: "🏢",
-    color: C.purple,
-    bg: "#F3EFFF",
-    grad: "linear-gradient(135deg,#7C5CF5,#E8509A)",
-    tagline: "IPO readiness, compliance flags & Ind AS health check",
-    ipoScore: 58,
-    ipoBreakdown: [
-      { label:"Revenue Scale",              score:75, comment:"₹85 Cr — approaching IPO threshold" },
-      { label:"Profitability Track Record", score:60, comment:"EBITDA positive 2yr; need 3yr PAT" },
-      { label:"Governance & Board",         score:55, comment:"Independent director appointment pending" },
-      { label:"Ind AS Compliance",          score:65, comment:"Ind AS 116 and 109 need attention" },
-      { label:"Audit Quality",              score:72, comment:"Big 4 auditor — positive signal" },
-    ],
-    complianceFlags: [
-      { flag:"Ind AS 116 — Lease Accounting",      severity:"High",   detail:"Operating leases not yet restated under IFRS 16 equivalent." },
-      { flag:"Ind AS 109 — Financial Instruments", severity:"High",   detail:"ECL provisioning not computed for trade receivables." },
-      { flag:"Related Party Disclosures",           severity:"Medium", detail:"2 transactions in FY24 may require enhanced disclosure." },
-      { flag:"Independent Director",                severity:"Medium", detail:"Board needs 1 additional independent director for LODR." },
-      { flag:"CSR Compliance",                      severity:"Low",    detail:"CSR spend at 1.8% vs required 2% — minor shortfall." },
-    ],
-    indAS: [
-      { standard:"Ind AS 36 — Impairment",    status:"Compliant",    note:"Tested annually" },
-      { standard:"Ind AS 116 — Leases",        status:"Action Needed",note:"Restatement required" },
-      { standard:"Ind AS 109 — Fin Instruments",status:"Action Needed",note:"ECL model needed" },
-      { standard:"Ind AS 113 — Fair Value",    status:"Compliant",    note:"Mark-to-market current" },
-      { standard:"Ind AS 21 — Foreign Ops",    status:"Compliant",    note:"USD invoices hedged" },
-    ],
-    boardPacks: BOARD_PACKS,
-    garimaNote: "The IPO readiness score of 58 is a starting point — the two Ind AS gaps (116 and 109) are solvable in 2–3 months with a focused project. The governance gap is easier but takes longer (6+ months for a qualified independent director). I'd recommend starting the Ind AS restatement work immediately so it's done before you engage investment bankers.",
-  },
-};
-
-function ScoreGauge({ score, color, size=100 }) {
-  const r = (size/2) - 8;
-  const circ = 2 * Math.PI * r;
-  const dash = (score / 100) * circ;
-  return (
-    <div style={{ position:"relative", width:size, height:size, display:"inline-block" }}>
-      <svg width={size} height={size} style={{ transform:"rotate(-90deg)" }}>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E2E7F0" strokeWidth={8}/>
-        <circle cx={size/2} cy={size/2} r={r} fill="none" stroke={color} strokeWidth={8}
-          strokeDasharray={`${dash} ${circ}`} strokeLinecap="round"
-          style={{ transition:"stroke-dasharray 1s ease" }}/>
-      </svg>
-      <div style={{ position:"absolute", inset:0, display:"flex", flexDirection:"column",
-        alignItems:"center", justifyContent:"center" }}>
-        <span style={{ fontFamily:FM, fontSize:size*0.22, fontWeight:700, color, lineHeight:1 }}>{score}</span>
-        <span style={{ fontFamily:F, fontSize:size*0.1, color:C.dim, marginTop:2 }}>/100</span>
-      </div>
-    </div>
-  );
-}
-
-function StartupCFOPack({ data, client }) {
-  return (
-    <>
-      {/* Fundraise Readiness Score */}
-      <Card style={{ marginBottom:20 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          flexWrap:"wrap", gap:20, marginBottom:20 }}>
-          <div>
-            <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
-              letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Fundraise Readiness Score</div>
-            <h3 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, margin:"0 0 4px" }}>
-              Overall: {data.fundraiseScore}/100
-            </h3>
-            <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
-              {data.fundraiseScore >= 75 ? "✅ Series A ready" : data.fundraiseScore >= 55 ? "⚠️ Almost there — a few gaps to close" : "🔴 Significant prep needed"}
-            </p>
-          </div>
-          <ScoreGauge score={data.fundraiseScore} color={C.blue} size={100}/>
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {data.fundraiseBreakdown.map((item, i) => (
-            <div key={i} style={{ display:"grid", gridTemplateColumns:"140px 1fr auto", gap:12, alignItems:"center" }}>
-              <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-              <div style={{ height:6, borderRadius:3, background:C.bg3, flex:1 }}>
-                <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
-                  background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
-                  transition:"width 0.8s ease" }}/>
-              </div>
-              <span style={{ fontFamily:FM, fontSize:11, color:C.muted, minWidth:28, textAlign:"right" }}>{item.score}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Investor Metrics */}
-      <Card style={{ marginBottom:20 }}>
-        <SectionTitle sub="Key metrics investors will ask about in your data room">Investor Metrics</SectionTitle>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
-          {data.investorMetrics.map((m, i) => (
-            <div key={i} style={{ padding:"14px 14px", borderRadius:12,
-              background: m.flag ? "#FEF2F2" : C.bg,
-              border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
-              <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:18, fontWeight:700,
-                color: m.flag ? C.red : C.blue, marginBottom:4 }}>{m.value}</div>
-              <div style={{ fontFamily:F, fontSize:11,
-                color: m.flag ? C.red : C.green, fontWeight:600 }}>
-                {m.flag ? "⚠️ " : "✅ "}{m.note}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Due Diligence Checklist */}
-      <Card style={{ marginBottom:20 }}>
-        <SectionTitle sub="Documents investors will request in due diligence">Financial DD Checklist</SectionTitle>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {data.dueDiligence.map((d, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:10, background:d.done ? `${C.green}08` : "#FFFBEB",
-              border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
-              <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
-                background:d.done ? C.green : C.amber,
-                display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <span style={{ color:"white", fontSize:10, fontWeight:900 }}>{d.done ? "✓" : "!"}</span>
-              </div>
-              <span style={{ fontFamily:F, fontSize:13, color:d.done ? C.text : C.amber,
-                fontWeight:d.done ? 500 : 600 }}>{d.item}</span>
-              {!d.done && <Badge color={C.amber} bg="#FFFBEB">Needed</Badge>}
-            </div>
-          ))}
-        </div>
-      </Card>
-    </>
-  );
-}
-
-function MSMECFOPack({ data }) {
-  return (
-    <>
-      {/* Cash Health Score */}
-      <Card style={{ marginBottom:20 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          flexWrap:"wrap", gap:20, marginBottom:20 }}>
-          <div>
-            <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase",
-              letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Cash Flow Health Score</div>
-            <h3 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, margin:"0 0 4px" }}>
-              Overall: {data.cashHealth}/100
-            </h3>
-            <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
-              {data.cashHealth >= 75 ? "✅ Strong working capital position" : "⚠️ A few areas to tighten up"}
-            </p>
-          </div>
-          <ScoreGauge score={data.cashHealth} color={C.teal} size={100}/>
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {data.cashBreakdown.map((item, i) => (
-            <div key={i} style={{ display:"grid", gridTemplateColumns:"160px 1fr auto", gap:12, alignItems:"center" }}>
-              <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-              <div style={{ height:6, borderRadius:3, background:C.bg3 }}>
-                <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
-                  background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
-                  transition:"width 0.8s ease" }}/>
-              </div>
-              <span style={{ fontFamily:FM, fontSize:11, color:C.muted, minWidth:28, textAlign:"right" }}>{item.score}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Working Capital */}
-      <Card style={{ marginBottom:20 }}>
-        <SectionTitle sub="Working capital ratios vs benchmarks">Working Capital Metrics</SectionTitle>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
-          {data.workingCapital.map((m, i) => (
-            <div key={i} style={{ padding:"14px 14px", borderRadius:12,
-              background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
-              <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:18, fontWeight:700,
-                color: m.flag ? C.red : C.teal, marginBottom:4 }}>{m.value}</div>
-              <div style={{ fontFamily:F, fontSize:11, color:m.flag ? C.red : C.green, fontWeight:600 }}>
-                {m.flag ? "⚠️ " : "✅ "}{m.note}
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Growth Metrics */}
-      <Card style={{ marginBottom:20 }}>
-        <SectionTitle sub="Growth and profitability indicators">Growth Metrics</SectionTitle>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-          {data.growth.map((m, i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:12,
-              background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}`,
-              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div>
-                <div style={{ fontFamily:F, fontSize:12, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
-                <div style={{ fontFamily:F, fontSize:11, color:m.flag ? C.red : C.green, fontWeight:600 }}>
-                  {m.flag ? "⚠️ " : "✅ "}{m.note}
-                </div>
-              </div>
-              <div style={{ fontFamily:FM, fontSize:20, fontWeight:700,
-                color: m.flag ? C.red : C.teal }}>{m.value}</div>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </>
-  );
-}
-
-function CorporateCFOPack({ data }) {
-  const sevColor = { High:C.red, Medium:C.amber, Low:C.green };
-  const sevBg    = { High:"#FEF2F2", Medium:"#FFFBEB", Low:"#ECFDF5" };
-  const statusColor = { "Compliant":C.green, "Action Needed":C.red, "Monitor":C.amber };
-
-  return (
-    <>
-      {/* IPO Readiness Score */}
-      <Card style={{ marginBottom:20 }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          flexWrap:"wrap", gap:20, marginBottom:20 }}>
-          <div>
-            <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
-              letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>IPO Readiness Score</div>
-            <h3 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, margin:"0 0 4px" }}>
-              Preliminary: {data.ipoScore}/100
-            </h3>
-            <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
-              {data.ipoScore >= 75 ? "✅ Strong IPO foundation" : data.ipoScore >= 55 ? "⚠️ Targeted prep required" : "🔴 Significant gaps to address"}
-            </p>
-          </div>
-          <ScoreGauge score={data.ipoScore} color={C.purple} size={100}/>
-        </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {data.ipoBreakdown.map((item, i) => (
-            <div key={i} style={{ display:"grid", gridTemplateColumns:"180px 1fr auto", gap:12, alignItems:"center" }}>
-              <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-              <div style={{ height:6, borderRadius:3, background:C.bg3 }}>
-                <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
-                  background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
-                  transition:"width 0.8s ease" }}/>
-              </div>
-              <span style={{ fontFamily:FM, fontSize:11, color:C.muted, minWidth:28, textAlign:"right" }}>{item.score}</span>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Compliance Flags */}
-      <Card style={{ marginBottom:20 }}>
-        <SectionTitle sub="Issues requiring attention before IPO or auditor review">Compliance Flags</SectionTitle>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {data.complianceFlags.map((f, i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:12,
-              background:sevBg[f.severity], border:`1px solid ${sevColor[f.severity]}30` }}>
-              <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                flexWrap:"wrap", gap:8, marginBottom:6 }}>
-                <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{f.flag}</span>
-                <Badge color={sevColor[f.severity]} bg={sevBg[f.severity]}>{f.severity}</Badge>
-              </div>
-              <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0, lineHeight:1.6 }}>{f.detail}</p>
-            </div>
-          ))}
-        </div>
-      </Card>
-
-      {/* Ind AS Health Check */}
-      <Card style={{ marginBottom:20 }}>
-        <SectionTitle sub="Status of key Ind AS standards for your entity">Ind AS Health Check</SectionTitle>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {data.indAS.map((s, i) => (
-            <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              flexWrap:"wrap", gap:10, padding:"11px 14px", borderRadius:10,
-              background: s.status==="Action Needed" ? "#FEF2F2" : C.bg,
-              border:`1px solid ${s.status==="Action Needed" ? C.red+"30" : C.border}` }}>
-              <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{s.standard}</span>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>{s.note}</span>
-                <Badge color={statusColor[s.status]||C.green}>{s.status}</Badge>
-              </div>
-            </div>
-          ))}
-        </div>
-      </Card>
-    </>
-  );
-}
-
-// ─── BOARD PACKS — MSME / CORPORATE / CFO TABBED ────────────────────────────
-
-const ARCHIVE = [
-  { name:"February 2026", date:"20 Feb 2026", size:"2.4 MB", new:true  },
-  { name:"January 2026",  date:"22 Jan 2026", size:"2.1 MB", new:false },
-  { name:"December 2025", date:"19 Dec 2025", size:"1.9 MB", new:false },
-];
-
-function ArchiveRow({ p, label }) {
-  return (
-    <Card style={{ padding:"14px 18px" }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:38, height:38, borderRadius:10, background:p.new?`${C.blue}12`:`${C.muted}0A`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📄</div>
-          <div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, display:"flex", alignItems:"center", gap:7 }}>
-              {label} — {p.name} {p.new && <Badge color={C.blue}>New</Badge>}
-            </div>
-            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{p.date} · {p.size}</div>
-          </div>
-        </div>
-        <button style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.blue}`, background:p.new?C.blue:"transparent", color:p.new?"white":C.blue, fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer", touchAction:"manipulation" }}>↓ Download</button>
-      </div>
-    </Card>
-  );
-}
-
-const StatRow = ({ label, value, pct, trend, sub }) => (
-  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:8 }}>
-    <div>
-      <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{label}</div>
-      {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{sub}</div>}
-    </div>
-    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-      <span style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:C.text }}>{value}</span>
-      {pct && <span style={{ fontSize:11, fontWeight:700, color:trend==="up"?C.green:C.red, background:trend==="up"?"#ECFDF5":"#FEF2F2", padding:"2px 8px", borderRadius:100, fontFamily:F }}>{trend==="up"?"▲":"▼"} {pct}</span>}
-    </div>
-  </div>
-);
-
-const AgeingTable = ({ title, rows, color }) => (
-  <div style={{ marginBottom:20 }}>
-    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color, marginBottom:10 }}>{title}</div>
-    <div style={{ overflowX:"auto" }}>
-      <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
-        <thead>
-          <tr style={{ background:C.bg3 }}>
-            {["Party","0–30 days","31–60 days","61–90 days","90+ days","Total","% of total"].map(h => (
-              <th key={h} style={{ padding:"8px 10px", textAlign:h==="Party"?"left":"right", color:C.muted, fontWeight:700, fontSize:11, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}` }}>{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r,i) => (
-            <tr key={i} style={{ background:i%2===0?C.bg2:C.bg }}>
-              {r.map((cell,j) => (
-                <td key={j} style={{ padding:"9px 10px", textAlign:j===0?"left":"right", color:j===4?C.red:j===5?C.text:C.muted, fontWeight:j===5||j===0?600:400, borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{cell}</td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  </div>
-);
-
-const COMPLIANCE_DATES = [
-  { due:"07 Mar", item:"TDS Payment — Feb deductions",       status:"upcoming", owner:"Accounts" },
-  { due:"10 Mar", item:"ESI Contribution — Feb",             status:"upcoming", owner:"HR/Accounts" },
-  { due:"15 Mar", item:"Advance Tax — 4th Instalment",       status:"due-soon", owner:"Finance" },
-  { due:"20 Mar", item:"GSTR-3B Filing — Feb",               status:"due-soon", owner:"GST Consultant" },
-  { due:"25 Mar", item:"GSTR-1 Filing — Feb",                status:"upcoming", owner:"GST Consultant" },
-  { due:"31 Mar", item:"FY Close — Reconcile all accounts",  status:"critical", owner:"Garima" },
-  { due:"07 Apr", item:"TDS Payment — Mar deductions",       status:"upcoming", owner:"Accounts" },
-  { due:"30 Apr", item:"TDS Returns Q4 (Form 24Q/26Q)",      status:"upcoming", owner:"CA" },
-];
-
-function MSMEPackContent() {
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>P&L Summary — February 2026</div>
-        <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>vs January 2026 and Feb 2025</div>
-        {[
-          { label:"Revenue",            value:"₹84.2L", pct:"6.1%",  trend:"up",   sub:"vs ₹79.4L last month" },
-          { label:"Cost of Goods Sold", value:"₹49.7L", pct:"4.2%",  trend:"down", sub:"58.9% of revenue (was 60.4%)" },
-          { label:"Gross Profit",       value:"₹34.5L", pct:"41.0%", trend:"up",   sub:"GP margin improved +1.4pp" },
-          { label:"Operating Expenses", value:"₹19.8L", pct:"3.1%",  trend:"down", sub:"23.5% of revenue" },
-          { label:"EBITDA",             value:"₹14.7L", pct:"17.5%", trend:"up",   sub:"EBITDA margin 17.5% (was 15.2%)" },
-          { label:"Net Profit",         value:"₹10.2L", pct:"12.1%", trend:"up",   sub:"Net margin 12.1% (was 10.3%)" },
-        ].map((r,i) => <StatRow key={i} {...r}/>)}
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Working Capital Analysis</div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="wc-g">
-          {[
-            { label:"Debtors (AR)",   value:"₹38.4L", days:"46 days", color:C.blue   },
-            { label:"Creditors (AP)", value:"₹22.1L", days:"31 days", color:C.purple },
-            { label:"Inventory",      value:"₹15.8L", days:"22 days", color:C.teal   },
-          ].map((w,i) => (
-            <div key={i} style={{ padding:"14px 10px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}`, textAlign:"center" }}>
-              <div style={{ fontFamily:FM, fontSize:20, fontWeight:700, color:w.color }}>{w.value}</div>
-              <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
-              <div style={{ fontFamily:F, fontSize:11, color:w.color, marginTop:2 }}>{w.days}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
-          <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>⚠️ Cash Conversion Cycle: 37 days (AR 46 − AP 31 + Inventory 22). Target: below 30 days.</span>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Ageing Analysis</div>
-        <AgeingTable title="Receivables (Debtors)" color={C.blue} rows={[
-          ["Client A — Retail",  "₹8.2L","₹4.1L","₹2.0L","—",     "₹14.3L","37.2%"],
-          ["Client B — Exports", "₹6.5L","₹3.2L","—",    "₹4.8L", "₹14.5L","37.8%"],
-          ["Client C — SME",     "₹4.1L","₹2.2L","₹1.5L","—",     "₹7.8L", "20.3%"],
-          ["Others",             "₹1.8L","—",    "—",    "—",     "₹1.8L", "4.7%" ],
-          ["Total",              "₹20.6L","₹9.5L","₹3.5L","₹4.8L","₹38.4L","100%" ],
-        ]}/>
-        <AgeingTable title="Payables (Creditors)" color={C.purple} rows={[
-          ["Supplier X — Raw Material","₹9.2L","₹3.4L","—",    "—","₹12.6L","57.0%"],
-          ["Supplier Y — Packaging",   "₹4.8L","₹2.1L","₹1.2L","—","₹8.1L", "36.7%"],
-          ["Others",                   "₹1.4L","—",    "—",    "—","₹1.4L", "6.3%" ],
-          ["Total",                    "₹15.4L","₹5.5L","₹1.2L","—","₹22.1L","100%" ],
-        ]}/>
-        <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.red}08`, border:`1px solid ${C.red}25` }}>
-          <span style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:600 }}>🔴 ₹4.8L from Client B is 90+ days overdue. Follow-up required immediately — risk of bad debt.</span>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Cash Flow & Runway</div>
-        {[
-          { label:"Opening Cash Balance",   value:"₹26.4L", sub:"1 Feb 2026" },
-          { label:"Cash Inflows (Feb)",      value:"+₹81.8L",sub:"Collections from clients" },
-          { label:"Cash Outflows (Feb)",     value:"−₹82.1L",sub:"COGS + opex + taxes" },
-          { label:"Closing Cash Balance",    value:"₹26.1L", sub:"28 Feb 2026" },
-          { label:"Monthly Burn Rate",       value:"₹48L",   pct:"7.7%", trend:"up",   sub:"Improved from ₹52L" },
-          { label:"Cash Runway",             value:"4.4 mo", pct:"12%",  trend:"down", sub:"Based on current burn" },
-        ].map((r,i) => <StatRow key={i} {...r}/>)}
-        <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
-          <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>⚠️ Runway below 6 months. March advance tax (₹32L) will reduce cash further.</span>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>GST & Compliance Status</div>
-        {[
-          { item:"GSTR-1 (Jan)",                  due:"11 Feb", status:"done"     },
-          { item:"GSTR-3B (Jan)",                 due:"20 Feb", status:"done"     },
-          { item:"TDS Payment (Jan deductions)",  due:"07 Feb", status:"done"     },
-          { item:"PF & ESI (Jan)",                due:"15 Feb", status:"done"     },
-          { item:"GSTR-1 (Feb)",                  due:"11 Mar", status:"upcoming" },
-          { item:"GSTR-3B (Feb)",                 due:"20 Mar", status:"due-soon" },
-          { item:"Advance Tax Q4",                due:"15 Mar", status:"due-soon" },
-        ].map((g,i) => {
-          const [c,bg,lbl] = g.status==="done"?[C.green,"#ECFDF5","Filed ✓"]:g.status==="due-soon"?[C.red,"#FEF2F2","Due Soon"]:[C.amber,"#FFFBEB","Upcoming"];
-          return (
-            <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:8 }}>
-              <div>
-                <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:500 }}>{g.item}</span>
-                <span style={{ fontFamily:F, fontSize:11, color:C.dim, marginLeft:8 }}>Due: {g.due}</span>
-              </div>
-              <Badge color={c} bg={bg}>{lbl}</Badge>
-            </div>
-          );
-        })}
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>📅 Compliance Due Date Calendar — March 2026</div>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {COMPLIANCE_DATES.map((c,i) => {
-            const [col,bg] = c.status==="critical"?[C.red,"#FEF2F2"]:c.status==="due-soon"?[C.amber,"#FFFBEB"]:[C.blue,"#EEF3FE"];
-            return (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", borderRadius:10, background:bg, border:`1px solid ${col}22` }}>
-                <div style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:col, minWidth:52, whiteSpace:"nowrap" }}>{c.due}</div>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{c.item}</div>
-                  <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:1 }}>Owner: {c.owner}</div>
-                </div>
-                {c.status==="critical" && <Badge color={C.red} bg="#FEF2F2">Critical</Badge>}
-                {c.status==="due-soon" && <Badge color={C.amber} bg="#FFFBEB">Soon</Badge>}
-              </div>
-            );
-          })}
-        </div>
-      </Card>
-
-      <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items from Garima — March 2026</div>
-        {[
-          { p:"High",   t:"Follow up Client B on ₹4.8L overdue — escalate if no response by 5 Mar" },
-          { p:"High",   t:"Arrange ₹32L for advance tax by 15 March — do not miss this" },
-          { p:"Medium", t:"Negotiate extended credit with Supplier X (push from 30 to 45 days)" },
-          { p:"Medium", t:"Review and cut discretionary opex by 10% — details shared separately" },
-          { p:"Low",    t:"Begin FY close reconciliation checklist — target completion by 25 March" },
-        ].map((a,i,arr) => (
-          <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", alignItems:"flex-start" }}>
-            <PriBadge p={a.p}/>
-            <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{a.t}</span>
-          </div>
-        ))}
-      </Card>
-
-      <div>
-        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Previous MSME Packs</div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
-        </div>
-      </div>
-      <style>{`.wc-g{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-g{grid-template-columns:1fr!important}}`}</style>
-    </div>
-  );
-}
-
-function CorporatePackContent() {
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Board-Ready P&L — February 2026</div>
-        <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>Actuals vs Budget vs Prior Year</div>
-        <div style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
-            <thead>
-              <tr style={{ background:C.navy }}>
-                {["","Actual Feb","Budget Feb","Variance","% Var","PY Feb","YoY %"].map((h,i) => (
-                  <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"right", color:"white", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Revenue",            "₹842L","₹810L","+₹32L","+4.0%","₹720L","+16.9%"],
-                ["COGS",               "₹497L","₹490L","−₹7L", "−1.4%","₹446L","+11.4%"],
-                ["Gross Profit",       "₹345L","₹320L","+₹25L","+7.8%","₹274L","+25.9%"],
-                ["GP Margin",          "41.0%","39.5%","+1.5pp","",    "38.1%","+2.9pp"],
-                ["Operating Expenses", "₹198L","₹205L","+₹7L", "+3.4%","₹185L","+7.0%"],
-                ["EBITDA",             "₹147L","₹115L","+₹32L","+27.8%","₹89L","+65.2%"],
-                ["EBITDA Margin",      "17.5%","14.2%","+3.3pp","",    "12.4%","+5.1pp"],
-                ["EBIT",               "₹129L","₹97L", "+₹32L","+33.0%","₹73L","+76.7%"],
-                ["Finance Costs",      "₹22L", "₹22L", "—",    "—",   "₹24L", "−8.3%"],
-                ["PBT",                "₹107L","₹75L", "+₹32L","+42.7%","₹49L","+118.4%"],
-                ["PAT",                "₹81L", "₹56L", "+₹25L","+44.6%","₹37L","+118.9%"],
-              ].map((r,i) => {
-                const bold = ["Revenue","Gross Profit","EBITDA","PAT"].includes(r[0]);
+        {/* Action Items */}
+        {actions.length > 0 && (
+          <BCard style={{padding:20}}>
+            <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:4}}>Action Items</div>
+            <div style={{fontSize:11,color:B.grey,marginBottom:14}}>From Garima</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10}}>
+              {actions.map((a,i)=>{
+                const pCol = a.priority==="High"?B.red:a.priority==="Medium"?B.gold:B.green;
                 return (
-                  <tr key={i} style={{ background:i%2===0?C.bg2:C.bg }}>
-                    {r.map((cell,j) => (
-                      <td key={j} style={{ padding:"9px 12px", textAlign:j===0?"left":"right",
-                        fontWeight:bold||j===0?700:400, fontSize:12, color:
-                          j===3?(cell.startsWith("+")?C.green:cell==="—"?C.dim:C.red):
-                          j===4?(cell.startsWith("+")?C.green:cell===""?C.dim:C.red):
-                          j===5?C.muted:C.text,
-                        borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap",
-                        background:bold?`${C.blue}06`:undefined }}>{cell}</td>
-                    ))}
-                  </tr>
+                  <div key={i} style={{display:"flex",gap:10,alignItems:"flex-start",padding:"9px 10px",borderRadius:9,background:B.bg,opacity:a.done?0.5:1}}>
+                    <button onClick={()=>toggleAction(a.id,a.done)} style={{width:18,height:18,borderRadius:5,border:`2px solid ${a.done?B.green:B.lgrey}`,background:a.done?B.green:"white",cursor:"pointer",flexShrink:0,marginTop:1,display:"flex",alignItems:"center",justifyContent:"center"}}>
+                      {a.done && <span style={{color:"white",fontSize:9,fontWeight:800}}>✓</span>}
+                    </button>
+                    {a.priority && <span style={{fontSize:9,fontWeight:700,color:pCol,background:`${pCol}18`,padding:"2px 7px",borderRadius:100,flexShrink:0,marginTop:2}}>{a.priority}</span>}
+                    <span style={{fontSize:12,color:B.mid,lineHeight:1.5,textDecoration:a.done?"line-through":"none"}}>{a.text}</span>
+                  </div>
                 );
               })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>EBITDA Bridge — Jan to Feb 2026</div>
-        {[
-          { label:"January EBITDA",  value:"₹115L", delta:"",      color:C.navy,   base:true  },
-          { label:"+ Revenue growth",value:"+₹26L", delta:"+22.6%",color:C.green,  base:false },
-          { label:"− COGS increase", value:"−₹8L",  delta:"",      color:C.red,    base:false },
-          { label:"+ Opex savings",  value:"+₹7L",  delta:"3.4%",  color:C.green,  base:false },
-          { label:"− Misc one-offs", value:"−₹1L",  delta:"",      color:C.red,    base:false },
-          { label:"February EBITDA", value:"₹139L", delta:"+20.9%",color:C.blue,   base:true  },
-        ].map((b,i) => (
-          <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"11px 14px", borderRadius:10, margin:"2px 0", background:b.base?`${b.color}12`:C.bg, border:b.base?`1px solid ${b.color}30`:`1px solid ${C.border}` }}>
-            <span style={{ fontFamily:F, fontSize:13, color:b.base?b.color:C.muted, fontWeight:b.base?700:500 }}>{b.label}</span>
-            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-              {b.delta && <span style={{ fontFamily:F, fontSize:11, color:b.color, fontWeight:700 }}>{b.delta}</span>}
-              <span style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:b.base?b.color:C.text }}>{b.value}</span>
             </div>
-          </div>
-        ))}
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Cash Flow Forecast — Q1 FY27 (Mar–May 2026)</div>
-        <div style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
-            <thead>
-              <tr style={{ background:C.bg3 }}>
-                {["","March","April","May","Q1 Total"].map((h,i) => (
-                  <th key={i} style={{ padding:"9px 12px", textAlign:i===0?"left":"right", color:C.muted, fontWeight:700, fontSize:11, borderBottom:`1px solid ${C.border}` }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Opening Cash",       "₹261L","₹143L","₹137L","₹261L"],
-                ["Operating Inflows",  "₹818L","₹880L","₹920L","₹2,618L"],
-                ["Operating Outflows", "−₹821L","−₹790L","−₹810L","−₹2,421L"],
-                ["Capex",              "—",   "−₹45L","—",    "−₹45L"],
-                ["Debt Repayment",     "−₹83L","−₹83L","−₹83L","−₹249L"],
-                ["Tax Payment",        "−₹32L","—",   "—",    "−₹32L"],
-                ["Closing Cash",       "₹143L","₹105L","₹164L","₹122L"],
-              ].map((r,i) => (
-                <tr key={i} style={{ background:i%2===0?C.bg2:C.bg }}>
-                  {r.map((cell,j) => (
-                    <td key={j} style={{ padding:"9px 12px", textAlign:j===0?"left":"right", fontWeight:["Opening Cash","Closing Cash"].includes(r[0])||j===0?700:400, color:C.text, borderBottom:`1px solid ${C.border}`, background:r[0]==="Closing Cash"?`${C.blue}06`:undefined }}>{cell}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10, background:`${C.red}08`, border:`1px solid ${C.red}25` }}>
-          <span style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:600 }}>⚠️ March closing cash ₹143L — lowest in 12 months. No discretionary capex in March.</span>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Key Risks & Mitigants</div>
-        {[
-          { risk:"Client B collection (₹4.8L overdue 90+ days)", impact:"High",   mitigant:"Legal notice issued. Board authorised write-off if unpaid by 31 Mar.", c:C.red    },
-          { risk:"March cash dip below ₹150L",                   impact:"Medium", mitigant:"CC limit of ₹50L available with HDFC. Not drawn — emergency buffer.",  c:C.amber  },
-          { risk:"GST notice on FY24 ITC claims",                 impact:"Medium", mitigant:"CA response submitted. Hearing 12 March. Provision made.",              c:C.amber  },
-          { risk:"Revenue concentration — Client A = 37%",        impact:"Low",    mitigant:"3 new accounts in pipeline. Target <25% by Q2.",                        c:C.green  },
-        ].map((r,i) => (
-          <div key={i} style={{ padding:"12px 14px", borderRadius:10, marginBottom:10, background:`${r.c}06`, border:`1px solid ${r.c}22` }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6, flexWrap:"wrap", gap:8 }}>
-              <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text }}>{r.risk}</span>
-              <Badge color={r.impact==="High"?C.red:r.impact==="Medium"?C.amber:C.green} bg={r.impact==="High"?"#FEF2F2":r.impact==="Medium"?"#FFFBEB":"#ECFDF5"}>{r.impact} Impact</Badge>
-            </div>
-            <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0, lineHeight:1.6 }}><strong style={{ color:C.text }}>Mitigant:</strong> {r.mitigant}</p>
-          </div>
-        ))}
-      </Card>
-
-      <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Board Decisions Required</div>
-        {[
-          { p:"High",   t:"Approve write-off of Client B receivable (₹4.8L) if not recovered by 31 March" },
-          { p:"High",   t:"Approve Q1 FY27 budget — revised upward given Feb outperformance" },
-          { p:"Medium", t:"Authorise April capex of ₹45L for production equipment" },
-          { p:"Medium", t:"Review and approve FY24 GST response filed by CA — board sign-off needed" },
-        ].map((a,i,arr) => (
-          <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", alignItems:"flex-start" }}>
-            <PriBadge p={a.p}/>
-            <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{a.t}</span>
-          </div>
-        ))}
-      </Card>
-
-      <div>
-        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Previous Corporate Packs</div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="Corporate Pack"/>)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CFOPackContent() {
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>📝 Note from Garima — Feb 2026</div>
-        <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
-          Strong month — revenue up 6.1%, EBITDA margin at 17.5% (best in 12 months). The concern is March cash: advance tax + debt repayment + delayed Client B collection creates a tight window. Mitigation plan is in place. Two decisions need board attention before 10 March.
-        </p>
-      </Card>
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>KPI Snapshot — February 2026</div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }} className="cfok-g">
-          {KPIs.map((k,i) => (
-            <div key={i} style={{ padding:"14px 10px", borderRadius:12, background:k.bg, textAlign:"center" }}>
-              <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:k.color }}>{k.value}</div>
-              <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:4 }}>{k.label}</div>
-              <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:C.red, marginTop:2 }}>{k.trend==="up"?"▲":"▼"} vs {k.prev}</div>
-            </div>
-          ))}
-        </div>
-        <style>{`.cfok-g{grid-template-columns:repeat(3,1fr)!important}@media(max-width:480px){.cfok-g{grid-template-columns:1fr 1fr!important}}`}</style>
-      </Card>
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>P&L at a Glance</div>
-        {[
-          { label:"Revenue",      value:"₹842L", pct:"6.1%",  trend:"up", sub:"MoM growth" },
-          { label:"Gross Profit", value:"₹345L", pct:"41.0%", trend:"up", sub:"GP margin" },
-          { label:"EBITDA",       value:"₹147L", pct:"17.5%", trend:"up", sub:"Best in 12 months" },
-          { label:"Net Profit",   value:"₹102L", pct:"12.1%", trend:"up", sub:"Net margin" },
-        ].map((r,i) => <StatRow key={i} {...r}/>)}
-      </Card>
-      <Card style={{ borderLeft:`3px solid ${C.green}` }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items — March 2026</div>
-        {ACTIONS.map((a,i,arr) => (
-          <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", alignItems:"flex-start", opacity:a.done?0.5:1 }}>
-            <div style={{ width:18, height:18, borderRadius:5, background:a.done?C.green:C.bg3, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>
-              {a.done && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
-            </div>
-            <div style={{ flex:1, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
-              <span style={{ fontFamily:F, fontSize:13, color:a.done?C.dim:C.text, textDecoration:a.done?"line-through":"none", lineHeight:1.5 }}>{a.text}</span>
-              <PriBadge p={a.priority}/>
-            </div>
-          </div>
-        ))}
-      </Card>
-      <div>
-        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Previous CFO Packs</div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="CFO Pack"/>)}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function BoardPacksTabbed() {
-  const [tab, setTab] = useState("msme");
-  const tabs = [
-    { id:"msme",      label:"MSME Pack",     icon:"🏢", color:C.blue   },
-    { id:"corporate", label:"Corporate Pack", icon:"🏦", color:C.purple },
-    { id:"cfo",       label:"CFO Pack",       icon:"📊", color:C.teal   },
-  ];
-  const content = { msme:<MSMEPackContent/>, corporate:<CorporatePackContent/>, cfo:<CFOPackContent/> };
-  return (
-    <div>
-      <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:20 }}>
-        Monthly packs prepared by Garima — updated by the 20th of each month.
-      </div>
-      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{ padding:"10px 18px", borderRadius:100, border:"none", cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s", background:tab===t.id?t.color:C.bg2, color:tab===t.id?"white":C.muted, outline:`1.5px solid ${tab===t.id?t.color:C.border}`, boxShadow:tab===t.id?`0 4px 14px ${t.color}35`:"none", touchAction:"manipulation" }}>
-            {t.icon} {t.label}
-          </button>
-        ))}
-      </div>
-      {content[tab]}
-      <Card style={{ marginTop:24, background:`${C.blue}06`, borderColor:`${C.blue}20` }}>
-        <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
-          📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
-          Questions about the pack?{" "}
-          <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
-        </div>
-      </Card>
-    </div>
-  );
-}
-
-// ─── CFO PACKS (existing component) ──────────────────────────────────────────
-function CFOPacks({ client }) {
-  const packType  = client.client_pack || client.clientPack || "startup";
-  const [tab, setTab] = useState("pack"); // "pack" | "boardpacks"
-  const [liveData, setLiveData] = useState(null);
-  const staticData = CFO_PACK_DATA[packType] || CFO_PACK_DATA["startup"];
-
-  useEffect(() => {
-    supabase.from("client_analytics").select("cfo_data").eq("client_id", client.id)
-      .order("updated_at",{ascending:false}).limit(1).single()
-      .then(({ data: d }) => {
-        if (!d?.cfo_data) return;
-        try { setLiveData(JSON.parse(d.cfo_data)); } catch(e) {}
-      });
-  }, [client.id]);
-
-  // Merge live data over static defaults — live wins
-  const data = liveData ? {
-    ...staticData,
-    fundraiseScore: liveData.score ?? staticData.fundraiseScore,
-    cashHealth:     liveData.score ?? staticData.cashHealth,
-    ipoScore:       liveData.score ?? staticData.ipoScore,
-    fundraiseBreakdown: liveData.breakdown?.length ? liveData.breakdown.map(b=>({...b})) : staticData.fundraiseBreakdown,
-    cashBreakdown:      liveData.breakdown?.length ? liveData.breakdown : staticData.cashBreakdown,
-    ipoBreakdown:       liveData.breakdown?.length ? liveData.breakdown : staticData.ipoBreakdown,
-    investorMetrics:    liveData.metrics?.length ? liveData.metrics : staticData.investorMetrics,
-    workingCapital:     liveData.metrics?.length ? liveData.metrics : staticData.workingCapital,
-    complianceFlags:    liveData.metrics?.length ? liveData.metrics.map(m=>({flag:m.label,severity:m.flag?"High":"Low",detail:m.note})) : staticData.complianceFlags,
-    garimaNote: liveData.garimaNote || staticData.garimaNote,
-  } : staticData;
-
-  return (
-    <div style={{ padding:24 }}>
-      {/* Header */}
-      <div style={{ marginBottom:20 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:4 }}>
-          <div style={{ width:40, height:40, borderRadius:12, background:data.grad,
-            display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>
-            {data.icon}
-          </div>
-          <div>
-            <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>{data.label}</h2>
-            <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0 }}>{data.tagline}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Tabs */}
-      <div style={{ display:"flex", gap:8, marginBottom:20 }}>
-        {[["pack","📊 Smart Analysis"],["boardpacks","📁 Board Packs"]].map(([id, label]) => (
-          <button key={id} onClick={() => setTab(id)} style={{
-            padding:"9px 18px", borderRadius:100, border:"none", cursor:"pointer",
-            fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
-            background: tab===id ? data.color : C.bg3,
-            color: tab===id ? "white" : C.muted,
-            boxShadow: tab===id ? `0 4px 14px ${data.color}35` : "none",
-            touchAction:"manipulation",
-          }}>{label}</button>
-        ))}
-      </div>
-
-      {tab === "pack" && (
-        <>
-          {/* Garima's note */}
-          <Card style={{ marginBottom:20, borderLeft:`3px solid ${data.color}` }}>
-            <div style={{ fontSize:11, fontWeight:700, color:data.color, textTransform:"uppercase",
-              letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
-              📝 Garima's Analysis — Feb 2026
-            </div>
-            <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
-              {data.garimaNote}
-            </p>
-          </Card>
-
-          {packType === "startup"   && <StartupCFOPack   data={data} client={client}/>}
-          {packType === "msme"      && <MSMECFOPack      data={data}/>}
-          {packType === "corporate" && <CorporateCFOPack data={data}/>}
-
-          <div style={{ textAlign:"center", marginTop:8 }}>
-            <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
-              style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
-                borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
-                color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
-              💬 Discuss this pack with Garima
-            </a>
-          </div>
-        </>
-      )}
-
-      {tab === "boardpacks" && <BoardPacksTabbed/>}
-
-      <style>{`
-        @media(max-width:600px){.inv-grid{grid-template-columns:1fr 1fr!important}}
-        @media(max-width:400px){.inv-grid{grid-template-columns:1fr!important}}
-      `}</style>
-    </div>
-  );
-}
-
-// ─── VALUATION ENGAGEMENT ────────────────────────────────────────────────────
-function Engagement({ client }) {
-  const [eng, setEng] = useState(null);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    supabase.from("engagements").select("*").eq("client_id", client.id).single()
-      .then(({ data }) => { setEng(data); setLoading(false); });
-  }, [client.id]);
-
-  const stages = ["Docs Requested","Docs Received","Analysis","Draft Ready","Revision","Final Signed"];
-  const pct = eng ? (eng.status / (stages.length - 1)) * 100 : 0;
-
-  return (
-    <div style={{ padding:24 }}>
-      <SectionTitle sub="Live status of your valuation engagement.">Valuation Status</SectionTitle>
-      {loading ? (
-        <Card style={{ textAlign:"center", padding:32 }}><div style={{ fontFamily:F, color:C.muted }}>Loading…</div></Card>
-      ) : !eng ? (
-        <Card style={{ textAlign:"center", padding:40 }}>
-          <div style={{ fontSize:28, marginBottom:10 }}>📋</div>
-          <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Valuation engagement details will appear here once set up by Garima.</div>
-        </Card>
-      ) : (<>
-        <Card style={{ marginBottom:20 }}>
-          <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
-            <div>
-              <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Engagement</div>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>{eng.type}</div>
-              {eng.ref_number && <div style={{ fontFamily:FM, fontSize:12, color:C.muted, marginTop:3 }}>Ref: {eng.ref_number}</div>}
-            </div>
-            {eng.expected_date && <div style={{ textAlign:"right" }}>
-              <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Expected</div>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.blue }}>{eng.expected_date}</div>
-            </div>}
-          </div>
-          <div style={{ position:"relative", marginBottom:24 }}>
-            <div style={{ height:6, borderRadius:3, background:C.bg3, marginBottom:24 }}>
-              <div style={{ height:"100%", borderRadius:3, background:C.grad1, width:`${pct}%`, transition:"width 0.6s" }}/>
-            </div>
-            <div style={{ display:"flex", justifyContent:"space-between" }}>
-              {stages.map((s,i) => (
-                <div key={i} style={{ textAlign:"center", flex:1 }}>
-                  <div style={{ width:22, height:22, borderRadius:"50%", margin:"0 auto 6px",
-                    background: i <= eng.status ? C.blue : C.bg3,
-                    border: i === eng.status ? `3px solid ${C.blue}` : "none",
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    boxShadow: i === eng.status ? `0 0 0 4px ${C.blue}25` : "none" }}>
-                    {i < eng.status && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
-                    {i === eng.status && <span style={{ width:8, height:8, borderRadius:"50%", background:"white", display:"block" }}/>}
-                  </div>
-                  <div style={{ fontFamily:F, fontSize:10, color: i <= eng.status ? C.blue : C.dim,
-                    fontWeight: i === eng.status ? 700 : 500, lineHeight:1.3 }}>{s}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.blue}08`, border:`1px solid ${C.blue}20` }}>
-            <span style={{ fontFamily:F, fontSize:13, color:C.blue, fontWeight:600 }}>
-              📌 Currently: <strong>{stages[eng.status]}</strong>
-              {eng.garima_note ? ` — ${eng.garima_note}` : ""}
-            </span>
-          </div>
-        </Card>
+          </BCard>
+        )}
       </>)}
+
+      <style>{`.bkpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}@media(max-width:640px){.bkpi-grid{grid-template-columns:1fr 1fr!important}}`}</style>
     </div>
   );
 }
 
-// ─── CALENDAR ────────────────────────────────────────────────────────────────
-// ─── CALENDLY CONFIG — change this one line to your Calendly URL ──────────────
-const CALENDLY_URL = "https://calendly.com/agrgarima?embed_domain=finzzup&embed_type=Inline";
-
-// Floating "Book a Call" button shown on every portal page
-const FloatingCalendly = () => {
-  const [open, setOpen] = useState(false);
-  return (
-    <>
-      {/* Floating button */}
-      <button onClick={() => setOpen(true)}
-        style={{ position:"fixed", bottom:24, right:24, zIndex:999,
-          display:"flex", alignItems:"center", gap:8,
-          padding:"11px 18px", borderRadius:50, border:"none",
-          background:C.grad1, color:"white", fontFamily:F, fontWeight:700,
-          fontSize:13, cursor:"pointer", boxShadow:"0 4px 20px rgba(59,111,247,0.4)",
-          touchAction:"manipulation" }}>
-        📅 Book a Call
-      </button>
-
-      {/* Modal overlay */}
-      {open && (
-        <div onClick={() => setOpen(false)}
-          style={{ position:"fixed", inset:0, zIndex:1000,
-            background:"rgba(10,17,40,0.6)", display:"flex",
-            alignItems:"center", justifyContent:"center", padding:16 }}>
-          <div onClick={e => e.stopPropagation()}
-            style={{ width:"100%", maxWidth:720, background:"white",
-              borderRadius:20, overflow:"hidden", boxShadow:"0 20px 60px rgba(0,0,0,0.3)",
-              display:"flex", flexDirection:"column" }}>
-            {/* Modal header */}
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              padding:"16px 20px", borderBottom:`1px solid ${C.border}` }}>
-              <div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>Book a Call with Garima</div>
-                <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>30-min Valuation Query · 60-min CFO Strategy</div>
-              </div>
-              <button onClick={() => setOpen(false)}
-                style={{ background:"none", border:"none", fontSize:20,
-                  cursor:"pointer", color:C.muted, lineHeight:1, padding:4 }}>✕</button>
-            </div>
-            {/* Calendly iframe */}
-            <iframe
-              src={CALENDLY_URL}
-              width="100%"
-              height="520"
-              frameBorder="0"
-              title="Book a call with Garima"
-              style={{ display:"block" }}
-            />
-          </div>
-        </div>
-      )}
-    </>
-  );
-};
-
-function Calendar() {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{ padding:24 }}>
-      <SectionTitle sub="Book a 30-min or 60-min call with Garima directly.">
-        Book a Call
-      </SectionTitle>
-
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:24 }} className="cal-grid">
-        {[
-          { icon:"⚡", title:"30-min Valuation Query", desc:"Questions about your report, methodology, or UDIN.", color:C.blue },
-          { icon:"🧠", title:"60-min CFO Strategy Call", desc:"Monthly review, cash flow planning, board prep.", color:C.purple },
-        ].map((t,i) => (
-          <Card key={i} style={{ padding:20, borderTop:`3px solid ${t.color}` }}>
-            <div style={{ fontSize:28, marginBottom:12 }}>{t.icon}</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>{t.title}</div>
-            <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.6, marginBottom:16 }}>{t.desc}</p>
-            <a href={CALENDLY_URL} target="_blank" rel="noopener"
-              style={{ display:"block", width:"100%", padding:"11px 0", borderRadius:10, border:"none",
-                background:t.color, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
-                cursor:"pointer", textAlign:"center", textDecoration:"none", boxSizing:"border-box" }}>
-              Book this →
-            </a>
-          </Card>
-        ))}
-      </div>
-
-      {/* Embedded Calendly */}
-      <Card style={{ padding:0, overflow:"hidden" }}>
-        <iframe
-          src={CALENDLY_URL}
-          width="100%"
-          height="620"
-          frameBorder="0"
-          title="Calendly booking"
-          style={{ display:"block" }}
-        />
-      </Card>
-
-      <style>{`@media(max-width:500px){.cal-grid{grid-template-columns:1fr!important}}`}</style>
-    </div>
-  );
-}
-
-// ─── CLIENT DOCUMENT UPLOAD ──────────────────────────────────────────────────
-// Clients upload their own docs here; admin sees them in the Documents tab
-const DOC_CATEGORIES = [
-  { id:"financials",   label:"Financial Statements",  icon:"📊", desc:"P&L, Balance Sheet, Trial Balance (audited or provisional)" },
-  { id:"itr",          label:"ITR / Tax Returns",      icon:"🧾", desc:"Last 2-3 years ITR and computation" },
-  { id:"projections",  label:"Business Projections",   icon:"📈", desc:"5-year financial model or projections" },
-  { id:"captable",     label:"Cap Table / Debt",       icon:"💼", desc:"Shareholding pattern, debt schedule, term sheets" },
-  { id:"compliance",   label:"Compliance & Legal",     icon:"⚖️",  desc:"MCA filings, GST returns, FEMA docs, agreements" },
-  { id:"other",        label:"Other Documents",        icon:"📎", desc:"Any other document relevant to your engagement" },
-];
-
-function MyDocs({ client }) {
-  const [myDocs, setMyDocs]   = useState([]);
-  const [loading, setLoading] = useState(true);
+// ── DOCUMENTS (live) ──────────────────────────────────────────────────────────
+function Documents({ client }) {
+  const [docs, setDocs] = useState([]);
+  const [myUploads, setMyUploads] = useState([]);
   const [uploading, setUploading] = useState(false);
-  const [category, setCategory]   = useState("financials");
+  const [toast, setToast] = useState(null);
+  const fileRef = useRef(null);
 
   useEffect(() => {
-    if (!client?.id) return;
-    supabase.from("client_uploads")
-      .select("*").eq("client_id", client.id)
-      .order("created_at", { ascending:false })
-      .then(({ data }) => { setMyDocs(data || []); setLoading(false); });
-  }, [client?.id]);
+    const load = async () => {
+      const [{ data: d }, { data: u }] = await Promise.all([
+        supabase.from("documents").select("*").eq("client_id", client.id).order("created_at",{ascending:false}),
+        supabase.from("client_uploads").select("*").eq("client_id", client.id).order("created_at",{ascending:false}),
+      ]);
+      setDocs(d||[]);
+      setMyUploads(u||[]);
+    };
+    load();
+  }, [client.id]);
 
-  const handleUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (file.size > 10 * 1024 * 1024) { alert("Max file size is 10MB."); e.target.value=""; return; }
+  const uploadFile = async (file, category="general") => {
     setUploading(true);
-    const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-    const path = `client-uploads/${client.id}/${Date.now()}-${safeName}`;
-    const { error: upErr } = await supabase.storage.from("client-docs").upload(path, file, { upsert:false });
-    if (upErr) {
-      alert("Upload failed: " + upErr.message);
-      setUploading(false); e.target.value=""; return;
-    }
-    const { data: urlData } = supabase.storage.from("client-docs").getPublicUrl(path);
-    const { data: row, error: dbErr } = await supabase.from("client_uploads").insert({
-      client_id:   client.id,
-      name:        file.name,
-      category,
-      file_url:    urlData.publicUrl,
-      file_size:   (file.size/1024/1024).toFixed(2) + " MB",
-      uploaded_by: client.name,
-    }).select().single();
-    if (dbErr) {
-      alert("File uploaded to storage but failed to save record: " + dbErr.message + "\n\nMake sure the client_uploads table exists in Supabase.");
-      setUploading(false); e.target.value=""; return;
-    }
-    if (row) setMyDocs(prev => [row, ...prev]);
-    setUploading(false); e.target.value="";
+    const path = `${client.id}/${Date.now()}_${file.name}`;
+    const { error: upErr } = await supabase.storage.from("client-docs").upload(path, file);
+    if (!upErr) {
+      const { data: { publicUrl } } = supabase.storage.from("client-docs").getPublicUrl(path);
+      const { data: rec } = await supabase.from("client_uploads").insert({
+        client_id: client.id, file_name: file.name, file_url: publicUrl, category, uploaded_by: "client"
+      }).select().single();
+      if (rec) setMyUploads(p=>[rec,...p]);
+      setToast(`✅ ${file.name} uploaded!`);
+    } else { setToast("❌ Upload failed. Try again."); }
+    setUploading(false);
+    setTimeout(()=>setToast(null), 3000);
   };
 
-  const grouped = DOC_CATEGORIES.map(cat => ({
-    ...cat,
-    files: myDocs.filter(d => d.category === cat.id),
-  }));
+  const typeColor = (name) => {
+    const ext = name?.split(".").pop()?.toUpperCase() || "FILE";
+    return ext === "PDF" ? {bg:"#FEF2F2",color:B.red,label:"PDF"} : ext === "XLSX" || ext === "XLS" ? {bg:"#F0FDF4",color:B.green,label:"XLS"} : {bg:B.xlgrey,color:B.grey,label:ext};
+  };
 
   return (
-    <div style={{ padding:24, maxWidth:760 }}>
-      <SectionTitle sub="Upload your financial and compliance documents for Garima to review.">
-        My Documents
-      </SectionTitle>
+    <div style={{display:"flex",flexDirection:"column",gap:20,position:"relative"}}>
+      {toast && <div style={{position:"fixed",bottom:28,right:28,padding:"12px 20px",borderRadius:12,background:B.dark,color:B.white,fontSize:13,fontWeight:600,boxShadow:"0 8px 24px rgba(0,0,0,0.3)",zIndex:999}}>{toast}</div>}
 
-      {/* Upload card */}
-      <Card style={{ marginBottom:24 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-          Upload a Document
-        </div>
+      <div>
+        <div style={{fontSize:20,fontWeight:700,color:B.dark}}>Documents</div>
+        <div style={{fontSize:13,color:B.grey,marginTop:3}}>Reports from Garima · Upload your documents</div>
+      </div>
 
-        {/* Category selector */}
-        <div style={{ marginBottom:14 }}>
-          <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-            letterSpacing:"0.08em", display:"block", marginBottom:8, fontFamily:F }}>
-            Document Category
-          </label>
-          <div style={{ display:"flex", flexWrap:"wrap", gap:8 }}>
-            {DOC_CATEGORIES.map(cat => (
-              <button key={cat.id} onClick={() => setCategory(cat.id)}
-                style={{ padding:"7px 14px", borderRadius:20, border:`1.5px solid ${category===cat.id ? C.blue : C.border}`,
-                  background: category===cat.id ? `${C.blue}12` : "transparent",
-                  color: category===cat.id ? C.blue : C.muted,
-                  fontFamily:F, fontWeight:600, fontSize:12, cursor:"pointer" }}>
-                {cat.icon} {cat.label}
-              </button>
-            ))}
+      {/* From Garima */}
+      <BCard style={{padding:20}}>
+        <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:14}}>📁 From Garima</div>
+        {docs.length === 0 ? (
+          <div style={{fontSize:13,color:B.grey,textAlign:"center",padding:20}}>No documents yet. Garima will upload reports here.</div>
+        ) : (
+          <div style={{display:"flex",flexDirection:"column",gap:0,borderRadius:10,overflow:"hidden",border:`1px solid ${B.lgrey}`}}>
+            {docs.map((d,i)=>{
+              const ti = typeColor(d.file_name||d.name||"");
+              return (
+                <div key={d.id} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 16px",borderBottom:i<docs.length-1?`1px solid ${B.lgrey}`:"none",background:B.white}}
+                  onMouseEnter={e=>e.currentTarget.style.background=B.bg}
+                  onMouseLeave={e=>e.currentTarget.style.background=B.white}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <div style={{width:36,height:36,borderRadius:8,background:ti.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:9,fontWeight:800,color:ti.color,flexShrink:0}}>{ti.label}</div>
+                    <div>
+                      <div style={{fontSize:13,fontWeight:600,color:B.dark}}>{d.file_name||d.name||"Document"}</div>
+                      <div style={{fontSize:11,color:B.grey}}>{d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short",year:"numeric"}) : ""}</div>
+                    </div>
+                  </div>
+                  {d.file_url && (
+                    <a href={d.file_url} target="_blank" rel="noopener" style={{display:"flex",alignItems:"center",gap:6,padding:"6px 12px",borderRadius:8,border:`1.5px solid ${B.lgrey}`,background:B.white,color:B.dark,fontSize:12,fontWeight:600,textDecoration:"none"}}>
+                      <Icon name="download" size={13} color={B.grey}/> View
+                    </a>
+                  )}
+                </div>
+              );
+            })}
           </div>
-          <p style={{ fontFamily:F, fontSize:12, color:C.dim, marginTop:8 }}>
-            {DOC_CATEGORIES.find(c=>c.id===category)?.desc}
-          </p>
+        )}
+      </BCard>
+
+      {/* Upload zone */}
+      <BCard style={{padding:20}}>
+        <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:14}}>📤 Upload Your Documents</div>
+        <div
+          onClick={()=>!uploading&&fileRef.current?.click()}
+          onDragOver={e=>{e.preventDefault();e.currentTarget.style.borderColor=B.blue;e.currentTarget.style.background="#EFF6FF";}}
+          onDragLeave={e=>{e.currentTarget.style.borderColor=B.lgrey;e.currentTarget.style.background=B.xlgrey;}}
+          onDrop={e=>{e.preventDefault();e.currentTarget.style.borderColor=B.lgrey;e.currentTarget.style.background=B.xlgrey;const f=e.dataTransfer.files[0];if(f)uploadFile(f);}}
+          style={{border:`2px dashed ${B.lgrey}`,borderRadius:12,padding:32,textAlign:"center",cursor:"pointer",background:B.xlgrey,transition:"all 0.2s",marginBottom:16}}>
+          <input ref={fileRef} type="file" style={{display:"none"}} onChange={e=>e.target.files[0]&&uploadFile(e.target.files[0])}/>
+          <div style={{fontSize:28,marginBottom:8}}>📎</div>
+          <div style={{fontSize:13,fontWeight:600,color:B.dark,marginBottom:4}}>{uploading?"Uploading…":"Drop files here or click to upload"}</div>
+          <div style={{fontSize:11,color:B.grey}}>PDF, Excel, Word — any format accepted</div>
         </div>
 
-        {/* Drop zone */}
-        <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
-          border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
-          background:C.bg, transition:"border-color 0.2s" }}
-          onMouseEnter={e=>e.currentTarget.style.borderColor=C.blue}
-          onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-          <input type="file" style={{ display:"none" }}
-            accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,.ppt,.pptx,.zip,.jpg,.jpeg,.png"
-            onChange={handleUpload}/>
-          {uploading ? (
-            <div style={{ fontFamily:F, fontSize:14, color:C.blue }}>Uploading…</div>
-          ) : (<>
-            <div style={{ fontSize:32, marginBottom:8 }}>📤</div>
-            <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text }}>
-              Click to upload
-            </div>
-            <div style={{ fontFamily:F, fontSize:12, color:C.dim, marginTop:4 }}>
-              PDF, Excel, Word, ZIP — max 10MB
-            </div>
-          </>)}
-        </label>
-      </Card>
-
-      {/* Files by category */}
-      {loading ? (
-        <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>Loading…</p>
-      ) : (
-        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-          {grouped.filter(g => g.files.length > 0).length === 0 && (
-            <Card style={{ textAlign:"center", padding:32 }}>
-              <div style={{ fontSize:32, marginBottom:8 }}>📂</div>
-              <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>
-                No documents uploaded yet. Upload above to get started.
-              </div>
-            </Card>
-          )}
-          {grouped.filter(g=>g.files.length>0).map(cat => (
-            <Card key={cat.id}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>
-                {cat.icon} {cat.label} <span style={{ fontWeight:400, color:C.dim, fontSize:12 }}>({cat.files.length})</span>
-              </div>
-              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-                {cat.files.map((d,i) => (
-                  <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                    padding:"10px 12px", borderRadius:10, background:C.bg,
-                    border:`1px solid ${C.border}`, flexWrap:"wrap", gap:8 }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <div style={{ fontSize:20 }}>📄</div>
+        {myUploads.length > 0 && (
+          <div>
+            <div style={{fontSize:12,fontWeight:700,color:B.grey,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:10}}>Your Uploads</div>
+            <div style={{display:"flex",flexDirection:"column",gap:8}}>
+              {myUploads.map((u,i)=>{
+                const ti = typeColor(u.file_name||"");
+                return (
+                  <div key={i} style={{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"10px 12px",borderRadius:10,background:B.bg}}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:30,height:30,borderRadius:7,background:ti.bg,display:"flex",alignItems:"center",justifyContent:"center",fontSize:8,fontWeight:800,color:ti.color,flexShrink:0}}>{ti.label}</div>
                       <div>
-                        <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
-                        <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
-                          {d.file_size} · {new Date(d.created_at).toLocaleDateString("en-IN")}
-                        </div>
+                        <div style={{fontSize:12,fontWeight:600,color:B.dark}}>{u.file_name}</div>
+                        <div style={{fontSize:11,color:B.grey}}>{u.category||"General"} · {u.created_at?new Date(u.created_at).toLocaleDateString("en-IN",{day:"2-digit",month:"short"}):""}</div>
                       </div>
                     </div>
-                    <a href={d.file_url} target="_blank" rel="noopener"
-                      style={{ padding:"6px 14px", borderRadius:8, border:`1px solid ${C.blue}`,
-                        color:C.blue, fontFamily:F, fontWeight:600, fontSize:12, textDecoration:"none" }}>
-                      View
-                    </a>
+                    {u.file_url && <a href={u.file_url} target="_blank" rel="noopener" style={{fontSize:11,color:B.blue,fontWeight:600,textDecoration:"none"}}>View</a>}
                   </div>
-                ))}
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </BCard>
+    </div>
+  );
+}
+
+// ── INQUIRY ───────────────────────────────────────────────────────────────────
+function Inquiry({ client }) {
+  const [step, setStep] = useState(1);
+  const [service, setService] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [form, setForm] = useState({ purpose:"", deadline:"", revenue:"", notes:"" });
+
+  const services = [
+    {id:"val-starter",  name:"Valuation · Starter",       price:"₹30,000 onwards", desc:"DCF or NAV, IBBI-signed, 5–7 days", tag:"Compliance"},
+    {id:"val-pro",      name:"Valuation · Professional",  price:"₹65,000 onwards", desc:"Full IB-quality, peer comps, sensitivity", tag:"Fundraising", hot:true},
+    {id:"cfo",          name:"Fractional CFO",            price:"₹50,000 / month",  desc:"MIS, forecasting, board packs, min. 3 months", tag:"Ongoing"},
+    {id:"esop",         name:"ESOP Valuation",            price:"₹25,000 onwards", desc:"409A-style, SEBI IPEV compliant", tag:"ESOP"},
+    {id:"ppa",          name:"Purchase Price Allocation", price:"₹80,000 onwards", desc:"Ind AS 103, intangible identification", tag:"M&A"},
+    {id:"fema",         name:"FEMA / FDI Valuation",      price:"₹40,000 onwards", desc:"Inbound & outbound FDI compliance", tag:"Regulatory"},
+  ];
+
+  if (submitted) return (
+    <div style={{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:400,gap:18,textAlign:"center"}}>
+      <div style={{width:72,height:72,borderRadius:"50%",background:"#F0FDF4",display:"flex",alignItems:"center",justifyContent:"center"}}>
+        <Icon name="check" size={32} color={B.green}/>
+      </div>
+      <div style={{fontSize:22,fontWeight:700,color:B.dark}}>Request Submitted!</div>
+      <div style={{fontSize:14,color:B.grey,maxWidth:360,lineHeight:1.7}}>Garima will review and send a proposal to <strong>{client.email}</strong> within 24 hours.</div>
+      <button onClick={()=>{setSubmitted(false);setStep(1);setService("");}} style={{padding:"10px 24px",borderRadius:10,border:"none",background:Bgrad,color:B.white,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+        Submit Another Request
+      </button>
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+      <div>
+        <div style={{fontSize:20,fontWeight:700,color:B.dark}}>Request a Service</div>
+        <div style={{fontSize:13,color:B.grey,marginTop:3}}>Get a scoped proposal within 24 hours.</div>
+      </div>
+
+      {/* Step indicator */}
+      <div style={{display:"flex",alignItems:"center",gap:0}}>
+        {["Select Service","Your Details","Confirm"].map((s,i)=>(
+          <div key={i} style={{display:"flex",alignItems:"center",flex:i<2?1:"auto"}}>
+            <div style={{display:"flex",alignItems:"center",gap:8}}>
+              <div style={{width:28,height:28,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,background:step>i+1?B.green:step===i+1?Bgrad:B.lgrey,color:step>=i+1?B.white:B.grey}}>
+                {step>i+1?"✓":i+1}
               </div>
-            </Card>
-          ))}
+              <span style={{fontSize:12,fontWeight:600,color:step===i+1?B.dark:B.grey}}>{s}</span>
+            </div>
+            {i<2&&<div style={{flex:1,height:2,background:step>i+1?B.green:B.lgrey,margin:"0 12px"}}/>}
+          </div>
+        ))}
+      </div>
+
+      {step===1 && (
+        <div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+            {services.map(s=>(
+              <div key={s.id} onClick={()=>setService(s.id)} style={{padding:18,borderRadius:14,cursor:"pointer",position:"relative",border:`2px solid ${service===s.id?B.blue:B.lgrey}`,background:service===s.id?"#EFF6FF":B.white,transition:"all 0.18s"}}>
+                {s.hot&&<div style={{position:"absolute",top:-10,right:12,background:Bgrad,color:B.white,fontSize:10,fontWeight:700,padding:"2px 10px",borderRadius:100}}>Most Popular</div>}
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6}}>
+                  <div style={{fontSize:13,fontWeight:700,color:B.dark}}>{s.name}</div>
+                  <span style={{fontSize:10,fontWeight:700,color:B.purple,background:"#F5F3FF",padding:"2px 8px",borderRadius:100}}>{s.tag}</span>
+                </div>
+                <div style={{fontSize:16,fontWeight:700,color:B.blue,marginBottom:4}}>{s.price}</div>
+                <div style={{fontSize:11,color:B.grey,lineHeight:1.5}}>{s.desc}</div>
+              </div>
+            ))}
+          </div>
+          <button onClick={()=>service&&setStep(2)} style={{marginTop:20,padding:"12px 28px",borderRadius:12,border:"none",background:service?Bgrad:"#E2E8F0",color:service?B.white:B.grey,fontWeight:700,fontSize:14,cursor:service?"pointer":"default",fontFamily:"inherit"}}>
+            Continue →
+          </button>
         </div>
+      )}
+
+      {step===2 && (
+        <BCard style={{padding:24}}>
+          <div style={{fontSize:14,fontWeight:700,color:B.dark,marginBottom:18}}>Tell me about your requirement</div>
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:14,marginBottom:14}}>
+            {[{label:"Purpose",key:"purpose",ph:"e.g. Section 56(2)(viib) for Series A"},{label:"Deadline",key:"deadline",ph:"e.g. 28 Feb 2026"},{label:"Last Audited Revenue",key:"revenue",ph:"e.g. ₹4.2 Crore"},{label:"Special Requirements",key:"notes",ph:"e.g. Expedited delivery needed"}].map(f=>(
+              <div key={f.key}>
+                <label style={{display:"block",fontSize:11,fontWeight:700,color:B.dark,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:6}}>{f.label}</label>
+                <input value={form[f.key]} onChange={e=>setForm({...form,[f.key]:e.target.value})} placeholder={f.ph} style={{width:"100%",padding:"9px 12px",borderRadius:9,border:`1.5px solid ${B.lgrey}`,fontSize:13,background:B.bg,outline:"none",boxSizing:"border-box",fontFamily:"inherit",color:B.dark}}/>
+              </div>
+            ))}
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setStep(1)} style={{padding:"10px 20px",borderRadius:10,border:`1.5px solid ${B.lgrey}`,background:B.white,color:B.dark,fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>← Back</button>
+            <button onClick={()=>setStep(3)} style={{padding:"10px 24px",borderRadius:10,border:"none",background:Bgrad,color:B.white,fontWeight:700,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>Review Request →</button>
+          </div>
+        </BCard>
+      )}
+
+      {step===3 && (
+        <BCard style={{padding:24}}>
+          <div style={{fontSize:14,fontWeight:700,color:B.dark,marginBottom:18}}>Confirm Your Request</div>
+          <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:22}}>
+            {[["Service",services.find(s=>s.id===service)?.name],["Estimated Fee",services.find(s=>s.id===service)?.price],["Purpose",form.purpose||"—"],["Deadline",form.deadline||"—"]].map(([k,v])=>(
+              <div key={k} style={{display:"flex",justifyContent:"space-between",padding:"9px 12px",borderRadius:9,background:B.bg,fontSize:13}}>
+                <span style={{color:B.grey,fontWeight:600}}>{k}</span>
+                <span style={{color:B.dark,fontWeight:700}}>{v}</span>
+              </div>
+            ))}
+          </div>
+          <div style={{padding:"12px 14px",borderRadius:10,background:"#EFF6FF",border:`1px solid ${B.blue}22`,fontSize:12,color:B.mid,marginBottom:18,lineHeight:1.6}}>
+            💳 <strong>No payment required now.</strong> Garima will review and send a scoped proposal to your email within 24 hours.
+          </div>
+          <div style={{display:"flex",gap:10}}>
+            <button onClick={()=>setStep(2)} style={{padding:"10px 20px",borderRadius:10,border:`1.5px solid ${B.lgrey}`,background:B.white,color:B.dark,fontWeight:600,fontSize:13,cursor:"pointer",fontFamily:"inherit"}}>← Edit</button>
+            <button onClick={()=>setSubmitted(true)} style={{padding:"10px 28px",borderRadius:10,border:"none",background:Bgrad,color:B.white,fontWeight:700,fontSize:13,cursor:"pointer",boxShadow:`0 4px 14px ${B.purple}33`,fontFamily:"inherit"}}>Submit Request →</button>
+          </div>
+        </BCard>
       )}
     </div>
   );
 }
 
-// My Report component — shows correct pack based on client type
-function MyReport({ client }) {
-  const pack = client?.client_pack || "startup";
-  if (pack === "msme")      return <MSMEPackContent/>;
-  if (pack === "corporate") return <CorporatePackContent/>;
-  return <CFOPackContent/>;  // startup / default
-}
-
-function getPageTitle(page, client) {
-  const pack = client?.client_pack || "startup";
-  const reportLabel = pack === "msme" ? "MSME Report"
-    : pack === "corporate" ? "Board Report"
-    : "CFO Report";
-  const map = {
-    dashboard:  "Dashboard",
-    cashflow:   "Cash Flow",
-    actions:    "Action Items",
-    myreport:   reportLabel,
-    engagement: "Valuation Status",
-    calendar:   "Book a Call",
-    mydocs:     "My Documents",
-  };
-  return map[page] || "Dashboard";
-}
+// ── PORTAL SHELL ──────────────────────────────────────────────────────────────
+const NAV = [
+  {id:"overview", label:"Overview",      icon:"home"},
+  {id:"inquiry",  label:"New Request",   icon:"plus"},
+  {id:"docs",     label:"Documents",     icon:"file"},
+  {id:"cfo",      label:"CFO Dashboard", icon:"chart"},
+];
 
 function Portal({ client, onLogout }) {
-  const [page,      setPage]      = useState("dashboard");
-  const [collapsed, setCollapsed] = useState(false);
+  const [tab, setTab]   = useState("overview");
+  const [notif, setNotif] = useState(true);
+  const [mobile, setMobile] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const check = () => setMobile(window.innerWidth < 768);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const pages = {
-    dashboard:  <Dashboard  client={client}/>,
-    cashflow:   <CashFlow client={client}/>,
-    actions:    <ActionItems client={client}/>,
-    myreport:   <MyReport client={client}/>,
-    engagement: <Engagement client={client}/>,
-    calendar:   <Calendar/>,
-    mydocs:     <MyDocs client={client}/>,
+    overview: <Overview client={client} setTab={setTab}/>,
+    inquiry:  <Inquiry client={client}/>,
+    docs:     <Documents client={client}/>,
+    cfo:      <CFODashboard client={client}/>,
+    profile:  <PortalProfile client={client}/>,
   };
 
-  return (
-    <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
-      <Sidebar page={page} setPage={setPage} client={client}
-        onLogout={onLogout} collapsed={collapsed} setCollapsed={setCollapsed}/>
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden" }}>
-        <Topbar title={getPageTitle(page, client)} client={client}/>
-        <main style={{ flex:1, overflowY:"auto" }}>
-          {pages[page]}
-        </main>
+  const avatarInitials = (name) => name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"??";
+
+  const SidebarContent = () => (
+    <div style={{width:240,flexShrink:0,background:B.dark,height:"100vh",position:"fixed",left:0,top:0,display:"flex",flexDirection:"column",zIndex:mobile?200:10,transform:mobile&&!menuOpen?"translateX(-100%)":"translateX(0)",transition:"transform 0.28s ease"}}>
+      {/* Logo */}
+      <div style={{padding:"24px 20px 20px",borderBottom:"1px solid #1E293B"}}>
+        <div style={{display:"flex",alignItems:"center",gap:12}}>
+          <div style={{width:36,height:36,borderRadius:10,background:Bgrad,display:"flex",alignItems:"center",justifyContent:"center"}}>
+            <Icon name="shield" size={18} color="white"/>
+          </div>
+          <div>
+            <div style={{fontFamily:"'DM Sans',sans-serif",fontWeight:700,fontSize:14,color:B.white,lineHeight:1}}>Garima Agarwal</div>
+            <div style={{fontSize:10,color:"#475569",marginTop:2}}>Client Portal</div>
+          </div>
+        </div>
       </div>
-      <FloatingCalendly/>
+
+      {/* Client identity */}
+      <div style={{padding:"14px 20px",borderBottom:"1px solid #1E293B"}}>
+        <div style={{display:"flex",alignItems:"center",gap:10}}>
+          <div style={{width:32,height:32,borderRadius:"50%",background:Bgrad,display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,color:B.white,flexShrink:0}}>
+            {avatarInitials(client.name)}
+          </div>
+          <div style={{overflow:"hidden"}}>
+            <div style={{fontSize:12,fontWeight:700,color:B.white,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{client.name}</div>
+            <div style={{fontSize:10,color:"#475569",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{client.company}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Nav items */}
+      <nav style={{flex:1,padding:"12px 10px",overflowY:"auto"}}>
+        {NAV.map(n => {
+          const active = tab===n.id;
+          return (
+            <button key={n.id} onClick={()=>{setTab(n.id);setMenuOpen(false);}} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"10px 12px",borderRadius:10,border:"none",background:active?"rgba(37,99,235,0.15)":"transparent",color:active?B.white:"#64748B",fontWeight:active?700:500,fontSize:13,cursor:"pointer",marginBottom:2,fontFamily:"inherit",textAlign:"left",transition:"all 0.18s"}}
+              onMouseEnter={e=>!active&&(e.currentTarget.style.background="rgba(255,255,255,0.05)")}
+              onMouseLeave={e=>!active&&(e.currentTarget.style.background="transparent")}>
+              <div style={{width:28,height:28,borderRadius:8,background:active?Bgrad:"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                <Icon name={n.icon} size={14} color={active?B.white:"#64748B"}/>
+              </div>
+              {n.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Bottom */}
+      <div style={{padding:"10px 10px 20px",borderTop:"1px solid #1E293B"}}>
+        <button onClick={()=>{setTab("profile");setMenuOpen(false);}} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,border:"none",background:"transparent",color:"#64748B",fontSize:13,cursor:"pointer",fontFamily:"inherit",marginBottom:4}}
+          onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"}
+          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+          <Icon name="user" size={15} color="#64748B"/> Profile
+        </button>
+        <button onClick={onLogout} style={{width:"100%",display:"flex",alignItems:"center",gap:10,padding:"9px 12px",borderRadius:10,border:"none",background:"transparent",color:"#64748B",fontSize:13,cursor:"pointer",fontFamily:"inherit"}}
+          onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,0.05)"}
+          onMouseLeave={e=>e.currentTarget.style.background="transparent"}>
+          <Icon name="logout" size={15} color="#64748B"/> Sign Out
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{display:"flex",minHeight:"100vh",background:B.bg,fontFamily:"'DM Sans','Plus Jakarta Sans','Inter',sans-serif"}}>
+      <SidebarContent/>
+      {mobile&&menuOpen&&<div onClick={()=>setMenuOpen(false)} style={{position:"fixed",inset:0,background:"rgba(0,0,0,0.5)",zIndex:199}}/>}
+
+      <div style={{marginLeft:mobile?0:240,flex:1,minWidth:0}}>
+        {/* Topbar */}
+        <div style={{position:"sticky",top:0,zIndex:10,background:"rgba(248,250,255,0.95)",backdropFilter:"blur(16px)",borderBottom:`1px solid ${B.lgrey}`,padding:"0 24px",height:56,display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            {mobile&&<button onClick={()=>setMenuOpen(true)} style={{background:"none",border:"none",cursor:"pointer",padding:4,display:"flex",flexDirection:"column",gap:4}}>
+              {[0,1,2].map(i=><div key={i} style={{width:20,height:2,background:B.dark,borderRadius:2}}/>)}
+            </button>}
+            <div style={{fontSize:14,fontWeight:700,color:B.dark}}>
+              {NAV.find(n=>n.id===tab)?.label || "Profile"}
+            </div>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:12}}>
+            <button onClick={()=>setNotif(false)} style={{position:"relative",width:36,height:36,borderRadius:10,border:`1.5px solid ${B.lgrey}`,background:B.white,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center"}}>
+              <Icon name="bell" size={16} color={B.grey}/>
+              {notif&&<span style={{position:"absolute",top:6,right:6,width:7,height:7,borderRadius:"50%",background:B.red,border:`2px solid ${B.bg}`}}/>}
+            </button>
+            <div style={{width:32,height:32,borderRadius:"50%",background:Bgrad,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:700,color:B.white,cursor:"pointer"}}
+              onClick={()=>setTab("profile")}>
+              {avatarInitials(client.name)}
+            </div>
+          </div>
+        </div>
+
+        {/* Page content */}
+        <div style={{padding:24,maxWidth:1100,margin:"0 auto"}}>
+          {pages[tab] || pages.overview}
+        </div>
+      </div>
     </div>
   );
 }
+
+// ── PORTAL PROFILE ────────────────────────────────────────────────────────────
+function PortalProfile({ client }) {
+  const avatarInitials = (name) => name?.split(" ").map(w=>w[0]).join("").toUpperCase().slice(0,2)||"??";
+  return (
+    <div style={{display:"flex",flexDirection:"column",gap:20}}>
+      <BCard style={{padding:24}}>
+        <div style={{display:"flex",alignItems:"center",gap:20,marginBottom:24}}>
+          <div style={{width:72,height:72,borderRadius:"50%",background:Bgrad,display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:700,color:B.white,flexShrink:0}}>
+            {avatarInitials(client.name)}
+          </div>
+          <div>
+            <div style={{fontSize:20,fontWeight:700,color:B.dark}}>{client.name}</div>
+            <div style={{fontSize:14,color:B.grey,marginTop:2}}>{client.company}</div>
+            <div style={{fontSize:12,color:B.blue,marginTop:4}}>{client.email}</div>
+          </div>
+        </div>
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12}}>
+          {[["Plan",client.client_pack||"Standard"],["Invite Code",client.invite_code||"—"],["Status",client.active?"Active":"Inactive"]].map(([k,v])=>(
+            <div key={k} style={{padding:"12px 14px",borderRadius:10,background:B.bg,border:`1px solid ${B.lgrey}`}}>
+              <div style={{fontSize:11,color:B.grey,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",marginBottom:4}}>{k}</div>
+              <div style={{fontSize:14,fontWeight:700,color:B.dark}}>{v}</div>
+            </div>
+          ))}
+        </div>
+      </BCard>
+      <BCard style={{padding:20}}>
+        <div style={{fontSize:13,fontWeight:700,color:B.dark,marginBottom:14}}>Your Advisor</div>
+        <div style={{display:"flex",alignItems:"center",gap:16,padding:16,borderRadius:12,background:B.bg,border:`1px solid ${B.lgrey}`}}>
+          <div style={{width:52,height:52,borderRadius:"50%",background:Bgrad,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:B.white,flexShrink:0}}>GA</div>
+          <div style={{flex:1}}>
+            <div style={{fontSize:14,fontWeight:700,color:B.dark}}>Garima Agarwal</div>
+            <div style={{fontSize:12,color:B.grey,marginTop:1}}>CA · IBBI Registered Valuer · IBBI/RV/14/2022/15038</div>
+          </div>
+          <a href="https://wa.me/966503510581" target="_blank" rel="noopener"
+            style={{display:"flex",alignItems:"center",gap:6,padding:"8px 14px",borderRadius:9,background:"#22C55E",color:B.white,fontWeight:700,fontSize:12,textDecoration:"none"}}>
+            <Icon name="wa" size={13} color="white"/> Chat
+          </a>
+        </div>
+      </BCard>
+    </div>
+  );
+}
+
+
 
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
 
@@ -3391,4 +2355,3 @@ export default function App() {
   if (!client) return <Login onLogin={setClient}/>;
   return <Portal client={client} onLogout={handleLogout}/>;
 }
-
