@@ -765,7 +765,7 @@ function Overview({ client, setPage, kpis, garimaNote }) {
             <div style={{ fontFamily:F, fontSize:12, color:"#047857", marginBottom:12, lineHeight:1.6 }}>
               Chat directly with Garima on WhatsApp for quick questions about your financials or valuations.
             </div>
-            <a href="https://wa.me/966503510581" target="_blank" rel="noopener noreferrer"
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener noreferrer"
               style={{ display:"inline-flex", alignItems:"center", gap:8,
                 background:"#25D366", color:"white", borderRadius:10,
                 padding:"9px 18px", fontFamily:F, fontWeight:700, fontSize:13,
@@ -2153,7 +2153,6 @@ function Calendar() {
         Book a Call
       </SectionTitle>
 
-      {/* Call type cards */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:24 }} className="cal-grid">
         <Card style={{ padding:20, borderTop:`3px solid ${C.blue}`,
           outline: activeEmbed==="30min" ? `2px solid ${C.blue}` : "none",
@@ -2198,7 +2197,6 @@ function Calendar() {
         </Card>
       </div>
 
-      {/* Live Calendly embed — switches based on selected type */}
       <Card style={{ padding:0, overflow:"hidden" }}>
         <div style={{ padding:"14px 20px", borderBottom:`1px solid ${C.border}`,
           display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
@@ -2238,7 +2236,6 @@ function Calendar() {
     </div>
   );
 }
-
 // ─── DOWNLOAD UTILITIES ───────────────────────────────────────────────────────
 function downloadInvoicePDF(inv, client) {
   const html = `<!DOCTYPE html>
