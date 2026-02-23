@@ -2173,7 +2173,7 @@ function Calendar() {
           </Card>
         </a>
 
-        <a href="https://calendly.com/agrgarima/60min" target="_blank" rel="noopener"
+        <a href="https://calendly.com/agrgarima/cfo-strategy-call" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
           <Card style={{ padding:24, borderTop:`3px solid ${C.purple}`, cursor:"pointer",
             transition:"box-shadow 0.2s" }}
