@@ -1586,7 +1586,31 @@ const COMPLIANCE_DATES = [
 ];
 
 function MSMEPackContent({ reportData }) {
+  const [tab, setTab] = useState("monthly");
+  const tabs = [
+    { id:"monthly",  icon:"📊", label:"Monthly Report"   },
+    { id:"cash",     icon:"💰", label:"Cash Health Score" },
+    { id:"packs",    icon:"📁", label:"Previous Packs"    },
+  ];
+  const data = CFO_PACK_DATA["msme"];
+
   return (
+    <div>
+      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding:"9px 18px", borderRadius:100, border:"none", cursor:"pointer",
+            fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
+            background: tab===t.id ? C.teal : C.bg2,
+            color: tab===t.id ? "white" : C.muted,
+            outline: `1.5px solid ${tab===t.id ? C.teal : C.border}`,
+            boxShadow: tab===t.id ? `0 4px 14px ${C.teal}35` : "none",
+            touchAction:"manipulation",
+          }}>{t.icon} {t.label}</button>
+        ))}
+      </div>
+
+      {tab === "monthly" && (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
       <Card>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>P&L Summary — February 2026</div>
@@ -1722,13 +1746,72 @@ function MSMEPackContent({ reportData }) {
           {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
         </div>
       </div>
-      <style>{`.wc-g{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-g{grid-template-columns:1fr!important}}`}</style>
+
+        <style>{`.wc-g{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-g{grid-template-columns:1fr!important}}`}</style>
+      </div>
+      )}
+
+      {tab === "cash" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <MSMECFOPack data={data} reportData={reportData}/>
+          <div style={{ textAlign:"center" }}>
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+              style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
+                borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
+              💬 Discuss cash health with Garima
+            </a>
+          </div>
+        </div>
+      )}
+
+      {tab === "packs" && (
+        <div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
+            Monthly packs prepared by Garima — updated by the 20th of each month.
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
+          </div>
+          <Card style={{ marginTop:20, background:`${C.teal}06`, borderColor:`${C.teal}20` }}>
+            <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
+              📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
+              Questions?{" "}
+              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
 
 function CorporatePackContent({ reportData }) {
+  const [tab, setTab] = useState("monthly");
+  const tabs = [
+    { id:"monthly", icon:"📊", label:"Monthly Report"    },
+    { id:"ipo",     icon:"🏦", label:"IPO Readiness"     },
+    { id:"packs",   icon:"📁", label:"Previous Packs"    },
+  ];
+  const data = CFO_PACK_DATA["corporate"];
+
   return (
+    <div>
+      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding:"9px 18px", borderRadius:100, border:"none", cursor:"pointer",
+            fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
+            background: tab===t.id ? C.purple : C.bg2,
+            color: tab===t.id ? "white" : C.muted,
+            outline: `1.5px solid ${tab===t.id ? C.purple : C.border}`,
+            boxShadow: tab===t.id ? `0 4px 14px ${C.purple}35` : "none",
+            touchAction:"manipulation",
+          }}>{t.icon} {t.label}</button>
+        ))}
+      </div>
+
+      {tab === "monthly" && (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
       <Card>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Board-Ready P&L — February 2026</div>
@@ -1864,67 +1947,151 @@ function CorporatePackContent({ reportData }) {
         ))}
       </Card>
 
-      <div>
-        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Previous Corporate Packs</div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="Corporate Pack"/>)}
+
+      )}
+
+      {tab === "ipo" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <CorporateCFOPack data={data} reportData={reportData}/>
+          <div style={{ textAlign:"center" }}>
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+              style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
+                borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
+              💬 Discuss IPO readiness with Garima
+            </a>
+          </div>
         </div>
-      </div>
+      )}
+
+      {tab === "packs" && (
+        <div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
+            Monthly board packs prepared by Garima — updated by the 20th of each month.
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="Corporate Pack"/>)}
+          </div>
+          <Card style={{ marginTop:20, background:`${C.purple}06`, borderColor:`${C.purple}20` }}>
+            <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
+              📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
+              Questions?{" "}
+              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
 
 function CFOPackContent({ reportData, client }) {
+  const [tab, setTab] = useState("monthly");
+  const tabs = [
+    { id:"monthly",    icon:"📊", label:"Monthly Report"      },
+    { id:"fundraise",  icon:"🎯", label:"Fundraise Readiness" },
+    { id:"boardpacks", icon:"📁", label:"Board Packs"         },
+  ];
+  const data = CFO_PACK_DATA["startup"];
+
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>📝 Note from Garima</div>
-        <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
-          {reportData?.packNote || "Strong month — revenue up 6.1%, EBITDA margin at 17.5% (best in 12 months). The concern is March cash: advance tax + debt repayment + delayed Client B collection creates a tight window. Two decisions need board attention before 10 March."}
-        </p>
-      </Card>
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>KPI Snapshot — February 2026</div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }} className="cfok-g">
-          {(reportData?.prevKpis ? KPIs.map((k,i) => ({...k})) : KPIs).map((k,i) => (
-            <div key={i} style={{ padding:"14px 10px", borderRadius:12, background:k.bg, textAlign:"center" }}>
-              <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:k.color }}>{k.value}</div>
-              <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:4 }}>{k.label}</div>
-              <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:C.red, marginTop:2 }}>{k.trend==="up"?"▲":"▼"} vs {k.prev}</div>
-            </div>
-          ))}
-        </div>
-        <style>{`.cfok-g{grid-template-columns:repeat(3,1fr)!important}@media(max-width:480px){.cfok-g{grid-template-columns:1fr 1fr!important}}`}</style>
-      </Card>
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>P&L at a Glance</div>
-        {[
-          { label:"Revenue",      value:"₹842L", pct:"6.1%",  trend:"up", sub:"MoM growth" },
-          { label:"Gross Profit", value:"₹345L", pct:"41.0%", trend:"up", sub:"GP margin" },
-          { label:"EBITDA",       value:"₹147L", pct:"17.5%", trend:"up", sub:"Best in 12 months" },
-          { label:"Net Profit",   value:"₹102L", pct:"12.1%", trend:"up", sub:"Net margin" },
-        ].map((r,i) => <StatRow key={i} {...r}/>)}
-      </Card>
-      <Card style={{ borderLeft:`3px solid ${C.green}` }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items — March 2026</div>
-        {(reportData?.checklist || ACTIONS).map((a,i,arr) => (
-          <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", alignItems:"flex-start", opacity:a.done?0.5:1 }}>
-            <div style={{ width:18, height:18, borderRadius:5, background:a.done?C.green:C.bg3, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>
-              {a.done && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
-            </div>
-            <div style={{ flex:1, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
-              <span style={{ fontFamily:F, fontSize:13, color:a.done?C.dim:C.text, textDecoration:a.done?"line-through":"none", lineHeight:1.5 }}>{a.text}</span>
-              <PriBadge p={a.priority}/>
-            </div>
-          </div>
+    <div>
+      {/* Tab bar */}
+      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => setTab(t.id)} style={{
+            padding:"9px 18px", borderRadius:100, border:"none", cursor:"pointer",
+            fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
+            background: tab===t.id ? C.blue : C.bg2,
+            color: tab===t.id ? "white" : C.muted,
+            outline: `1.5px solid ${tab===t.id ? C.blue : C.border}`,
+            boxShadow: tab===t.id ? `0 4px 14px ${C.blue}35` : "none",
+            touchAction:"manipulation",
+          }}>{t.icon} {t.label}</button>
         ))}
-      </Card>
-      <div>
-        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Previous CFO Packs</div>
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="CFO Pack"/>)}
-        </div>
       </div>
+
+      {/* Monthly Report tab */}
+      {tab === "monthly" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>📝 Note from Garima</div>
+            <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
+              {reportData?.packNote || "Strong month — revenue up 6.1%, EBITDA margin at 17.5% (best in 12 months). The concern is March cash: advance tax + debt repayment + delayed Client B collection creates a tight window. Two decisions need board attention before 10 March."}
+            </p>
+          </Card>
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>KPI Snapshot</div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }} className="cfok-g">
+              {KPIs.map((k,i) => (
+                <div key={i} style={{ padding:"14px 10px", borderRadius:12, background:k.bg, textAlign:"center" }}>
+                  <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:k.color }}>{k.value}</div>
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:4 }}>{k.label}</div>
+                  <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:C.red, marginTop:2 }}>{k.trend==="up"?"▲":"▼"} vs {k.prev}</div>
+                </div>
+              ))}
+            </div>
+            <style>{`.cfok-g{grid-template-columns:repeat(3,1fr)!important}@media(max-width:480px){.cfok-g{grid-template-columns:1fr 1fr!important}}`}</style>
+          </Card>
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>P&L at a Glance</div>
+            {[
+              { label:"Revenue",      value:"₹842L", pct:"6.1%",  trend:"up", sub:"MoM growth" },
+              { label:"Gross Profit", value:"₹345L", pct:"41.0%", trend:"up", sub:"GP margin" },
+              { label:"EBITDA",       value:"₹147L", pct:"17.5%", trend:"up", sub:"Best in 12 months" },
+              { label:"Net Profit",   value:"₹102L", pct:"12.1%", trend:"up", sub:"Net margin" },
+            ].map((r,i) => <StatRow key={i} {...r}/>)}
+          </Card>
+          <Card style={{ borderLeft:`3px solid ${C.green}` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items</div>
+            {ACTIONS.map((a,i,arr) => (
+              <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", alignItems:"flex-start", opacity:a.done?0.5:1 }}>
+                <div style={{ width:18, height:18, borderRadius:5, background:a.done?C.green:C.bg3, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>
+                  {a.done && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
+                </div>
+                <div style={{ flex:1, display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:6 }}>
+                  <span style={{ fontFamily:F, fontSize:13, color:a.done?C.dim:C.text, textDecoration:a.done?"line-through":"none", lineHeight:1.5 }}>{a.text}</span>
+                  <PriBadge p={a.priority}/>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
+      {/* Fundraise Readiness tab */}
+      {tab === "fundraise" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <StartupCFOPack data={data} client={client} reportData={reportData}/>
+          <div style={{ textAlign:"center" }}>
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+              style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
+                borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
+              💬 Discuss your fundraise readiness with Garima
+            </a>
+          </div>
+        </div>
+      )}
+
+      {/* Board Packs tab */}
+      {tab === "boardpacks" && (
+        <div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
+            Monthly packs prepared by Garima — updated by the 20th of each month.
+          </div>
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="CFO Pack"/>)}
+          </div>
+          <Card style={{ marginTop:20, background:`${C.blue}06`, borderColor:`${C.blue}20` }}>
+            <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
+              📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
+              Questions?{" "}
+              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
@@ -1954,7 +2121,7 @@ function BoardPacksTabbed() {
         <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
           📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
           Questions about the pack?{" "}
-          <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+          <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
         </div>
       </Card>
     </div>
@@ -2015,7 +2182,7 @@ function CFOPacks({ client, reportData }) {
           {packType === "corporate" && <CorporateCFOPack data={data} reportData={reportData}/>}
 
           <div style={{ textAlign:"center", marginTop:8 }}>
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+            <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
                 borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
@@ -2222,7 +2389,7 @@ function Calendar() {
         background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 Can't find a slot? WhatsApp Garima directly at{" "}
-          <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+          <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
             style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
         </div>
       </div>
@@ -2675,7 +2842,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
             To pay, please transfer to Garima's bank account (details on the invoice PDF) and WhatsApp the UTR to{" "}
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+            <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
               style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
           </div>
         </div>
@@ -2952,7 +3119,7 @@ function MyDocuments({ client }) {
       <Card style={{ marginTop:16, background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 <strong>Need to send a large file?</strong> WhatsApp it directly to Garima at{" "}
-          <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+          <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
             style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
           {" "}or email{" "}
           <a href="mailto:garima@finzzup.com" style={{ color:C.green, fontWeight:700 }}>garima@finzzup.com</a>
@@ -3086,7 +3253,7 @@ function Treasury({ client }) {
           <Card style={{ background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
             <div style={{ fontFamily:F, fontSize:13, color:C.blue, lineHeight:1.7 }}>
               💬 <strong>Want a detailed treasury optimisation plan?</strong>{" "}
-              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
+              <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
               {" "}to discuss sweep accounts, liquid funds, and yield laddering for your cash position.
             </div>
           </Card>
