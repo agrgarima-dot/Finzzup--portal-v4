@@ -1948,6 +1948,7 @@ function CorporatePackContent({ reportData }) {
       </Card>
 
 
+        </div>
       )}
 
       {tab === "ipo" && (
@@ -2121,7 +2122,7 @@ function BoardPacksTabbed() {
         <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
           📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
           Questions about the pack?{" "}
-          <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+          <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
         </div>
       </Card>
     </div>
@@ -2182,7 +2183,7 @@ function CFOPacks({ client, reportData }) {
           {packType === "corporate" && <CorporateCFOPack data={data} reportData={reportData}/>}
 
           <div style={{ textAlign:"center", marginTop:8 }}>
-            <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
                 borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
@@ -2389,7 +2390,7 @@ function Calendar() {
         background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 Can't find a slot? WhatsApp Garima directly at{" "}
-          <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
+          <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
             style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
         </div>
       </div>
@@ -2842,7 +2843,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
             To pay, please transfer to Garima's bank account (details on the invoice PDF) and WhatsApp the UTR to{" "}
-            <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
               style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
           </div>
         </div>
@@ -3119,7 +3120,7 @@ function MyDocuments({ client }) {
       <Card style={{ marginTop:16, background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 <strong>Need to send a large file?</strong> WhatsApp it directly to Garima at{" "}
-          <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
+          <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
             style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
           {" "}or email{" "}
           <a href="mailto:garima@finzzup.com" style={{ color:C.green, fontWeight:700 }}>garima@finzzup.com</a>
@@ -3253,7 +3254,7 @@ function Treasury({ client }) {
           <Card style={{ background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
             <div style={{ fontFamily:F, fontSize:13, color:C.blue, lineHeight:1.7 }}>
               💬 <strong>Want a detailed treasury optimisation plan?</strong>{" "}
-              <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
+              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
               {" "}to discuss sweep accounts, liquid funds, and yield laddering for your cash position.
             </div>
           </Card>
