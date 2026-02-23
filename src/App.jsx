@@ -30,6 +30,7 @@ const C = {
 };
 const F  = "'Plus Jakarta Sans', sans-serif";
 const FM = "'DM Mono', monospace";
+const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
 
 // ─── INVITE CODES → client data ──────────────────────────────────────────────
 // 🔧 When you connect Supabase, replace this with a DB lookup
@@ -1589,6 +1590,7 @@ function MSMEPackContent({ reportData }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
     { id:"monthly",  icon:"📊", label:"Monthly Report"   },
+    { id:"variance", icon:"📉", label:"Variance Analysis"  },
     { id:"cash",     icon:"💰", label:"Cash Health Score" },
     { id:"packs",    icon:"📁", label:"Previous Packs"    },
   ];
@@ -1751,11 +1753,72 @@ function MSMEPackContent({ reportData }) {
       </div>
       )}
 
+      {tab === "variance" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Budget vs Actual vs Prior Year — February 2026</div>
+            <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>All figures in ₹L</div>
+            <div style={{ overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
+                <thead>
+                  <tr style={{ background:C.navy }}>
+                    {["P&L Line","Budget","Actual","Var ₹","Var %","PY Feb","YoY %"].map((h,i) => (
+                      <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"right", color:"white", fontWeight:700, fontSize:12, whiteSpace:"nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { m:"Revenue",       bud:79.4, act:84.2, py:74.1, favBud:true, favPY:true },
+                    { m:"COGS",          bud:48.1, act:49.7, py:45.8, favBud:false,favPY:false },
+                    { m:"Gross Profit",  bud:31.3, act:34.5, py:28.3, favBud:true, favPY:true },
+                    { m:"Operating Exp", bud:20.4, act:19.8, py:18.9, favBud:true, favPY:false },
+                    { m:"EBITDA",        bud:12.1, act:14.7, py:11.2, favBud:true, favPY:true },
+                    { m:"Net Profit",    bud:8.4,  act:10.2, py:7.6,  favBud:true, favPY:true },
+                  ].map((r,i) => {
+                    const varBud = (r.act - r.bud).toFixed(1);
+                    const varBudPct = ((r.act - r.bud)/r.bud*100).toFixed(1)+"%";
+                    const varPY = ((r.act - r.py)/r.py*100).toFixed(1)+"%";
+                    return (
+                      <tr key={i} style={{ background:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
+                        <td style={{ padding:"10px 12px", fontWeight:600, color:C.text }}>{r.m}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.bud}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontWeight:700, fontFamily:FM }}>{r.act}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favBud?C.green:C.red }}>{r.favBud?"+":""}{varBud}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favBud?C.green:C.red }}>{r.favBud?"+":""}{varBudPct}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.py}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favPY?C.green:C.red }}>{r.favPY?"+":""}{varPY}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+          <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>📝 Variance Commentary</div>
+            {[
+              { item:"Revenue ₹4.8L above budget (+6.0%)", note:"Strong secondary sales from existing customers. New distributor onboarded in Pune contributing ₹2.1L.", c:C.green },
+              { item:"COGS ₹1.6L over budget", note:"Raw material price increase of ~3.2% not captured in budget. Need to renegotiate with Supplier X or pass through in Q1 pricing.", c:C.red },
+              { item:"EBITDA ₹2.6L above budget — margin 17.5% vs 15.2% budgeted", note:"Operating leverage kicking in as revenue scales. Sustaining this requires holding opex flat in March.", c:C.green },
+            ].map((v,i) => (
+              <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<2?`1px solid ${C.border}`:"none" }}>
+                <div style={{ width:8, height:8, borderRadius:100, background:v.c, flexShrink:0, marginTop:6 }}/>
+                <div>
+                  <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
+                  <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
       {tab === "cash" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           <MSMECFOPack data={data} reportData={reportData}/>
           <div style={{ textAlign:"center" }}>
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+            <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
                 borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
@@ -1777,7 +1840,7 @@ function MSMEPackContent({ reportData }) {
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
               📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
               Questions?{" "}
-              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
             </div>
           </Card>
         </div>
@@ -1790,6 +1853,7 @@ function CorporatePackContent({ reportData }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
     { id:"monthly", icon:"📊", label:"Monthly Report"    },
+    { id:"variance",icon:"📉", label:"Variance Analysis"  },
     { id:"ipo",     icon:"🏦", label:"IPO Readiness"     },
     { id:"packs",   icon:"📁", label:"Previous Packs"    },
   ];
@@ -1951,11 +2015,86 @@ function CorporatePackContent({ reportData }) {
         </div>
       )}
 
+      {tab === "variance" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Board-Ready Variance Analysis — February 2026</div>
+            <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>Actuals vs Budget vs Prior Year (₹Cr)</div>
+            <div style={{ overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
+                <thead>
+                  <tr style={{ background:C.navy }}>
+                    {["","Act Feb","Bud Feb","Var ₹","Var %","PY Feb","YoY %","Status"].map((h,i) => (
+                      <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"right", color:"white", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { m:"Revenue",          act:84.2, bud:79.4, py:74.1, favBud:true,  favPY:true  },
+                    { m:"Cost of Sales",    act:49.7, bud:48.1, py:45.8, favBud:false, favPY:false },
+                    { m:"Gross Profit",     act:34.5, bud:31.3, py:28.3, favBud:true,  favPY:true  },
+                    { m:"GP Margin %",      act:"41%",bud:"39%",py:"38%",favBud:true,  favPY:true, noCalc:true },
+                    { m:"EBITDA",           act:14.7, bud:12.1, py:11.2, favBud:true,  favPY:true  },
+                    { m:"EBITDA Margin %",  act:"17.5%",bud:"15.2%",py:"15.1%",favBud:true,favPY:true,noCalc:true },
+                    { m:"Depreciation",     act:3.2,  bud:3.1,  py:2.8,  favBud:false, favPY:false },
+                    { m:"EBIT",             act:11.5, bud:9.0,  py:8.4,  favBud:true,  favPY:true  },
+                    { m:"Finance Costs",    act:1.8,  bud:2.0,  py:2.1,  favBud:true,  favPY:true  },
+                    { m:"PBT",              act:9.7,  bud:7.0,  py:6.3,  favBud:true,  favPY:true  },
+                    { m:"Tax",              act:2.4,  bud:1.8,  py:1.6,  favBud:false, favPY:false },
+                    { m:"PAT",              act:7.3,  bud:5.2,  py:4.7,  favBud:true,  favPY:true  },
+                  ].map((r,i) => {
+                    const av = parseFloat(r.act), bv = parseFloat(r.bud), pv = parseFloat(r.py);
+                    const varBud = r.noCalc ? "—" : (av-bv).toFixed(1);
+                    const varBudPct = r.noCalc ? "—" : ((av-bv)/bv*100).toFixed(1)+"%";
+                    const varPY = r.noCalc ? "—" : ((av-pv)/pv*100).toFixed(1)+"%";
+                    const isBold = ["Gross Profit","EBITDA","PAT"].includes(r.m);
+                    return (
+                      <tr key={i} style={{ background:isBold?`${C.blue}06`:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
+                        <td style={{ padding:"10px 12px", fontWeight:isBold?700:500, color:C.text }}>{r.m}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontWeight:isBold?700:400, fontFamily:FM }}>{r.act}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.bud}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favBud?C.green:C.red }}>{r.noCalc?"—":(r.favBud?"+":"")+varBud}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favBud?C.green:C.red }}>{r.noCalc?"—":(r.favBud?"+":"")+varBudPct}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.py}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favPY?C.green:C.red }}>{r.noCalc?"—":(r.favPY?"+":"")+varPY}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right" }}>
+                          <span style={{ padding:"3px 8px", borderRadius:100, fontSize:10, fontWeight:700,
+                            background:r.favBud?`${C.green}15`:`${C.red}15`, color:r.favBud?C.green:C.red }}>
+                            {r.favBud?"▲ Fav":"▼ Unfav"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+          <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>📝 Board Commentary</div>
+            {[
+              { item:"Revenue ₹4.8Cr above budget (+6.0%); +₹10.1Cr YoY (+13.6%)", note:"Outperformance driven by Q4 order book pull-forward and new institutional account. Sustainable if pipeline converts — 3 proposals worth ₹28Cr outstanding.", c:C.green },
+              { item:"PAT ₹2.1Cr above budget — Net margin 8.7% vs 6.5% budgeted", note:"Finance cost savings (lower utilisation of CC facility) + operating leverage. Management to review whether to re-invest or declare interim dividend.", c:C.green },
+              { item:"Cost of Sales 1.6% above budget — margin pressure to watch", note:"Input cost inflation (steel, packaging) not fully passed through. Pricing review recommended for Q1 FY27. Finance team modelling break-even scenarios.", c:C.amber },
+            ].map((v,i) => (
+              <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<2?`1px solid ${C.border}`:"none" }}>
+                <div style={{ width:8, height:8, borderRadius:100, background:v.c, flexShrink:0, marginTop:6 }}/>
+                <div>
+                  <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
+                  <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
       {tab === "ipo" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           <CorporateCFOPack data={data} reportData={reportData}/>
           <div style={{ textAlign:"center" }}>
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+            <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
                 borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
@@ -1977,7 +2116,7 @@ function CorporatePackContent({ reportData }) {
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
               📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
               Questions?{" "}
-              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
             </div>
           </Card>
         </div>
@@ -1990,6 +2129,7 @@ function CFOPackContent({ reportData, client }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
     { id:"monthly",    icon:"📊", label:"Monthly Report"      },
+    { id:"variance",   icon:"📉", label:"Variance Analysis"   },
     { id:"fundraise",  icon:"🎯", label:"Fundraise Readiness" },
     { id:"boardpacks", icon:"📁", label:"Board Packs"         },
   ];
@@ -2061,11 +2201,79 @@ function CFOPackContent({ reportData, client }) {
       )}
 
       {/* Fundraise Readiness tab */}
+      {tab === "variance" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Budget vs Actual — February 2026</div>
+            <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>All figures in ₹L unless stated</div>
+            <div style={{ overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
+                <thead>
+                  <tr style={{ background:C.navy }}>
+                    {["Metric","Budget","Actual","Variance","Var %","Status"].map((h,i) => (
+                      <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"right", color:"white", fontWeight:700, fontSize:12, whiteSpace:"nowrap" }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { m:"Revenue",         bud:"790", act:"842", fav:true  },
+                    { m:"Gross Profit",    bud:"316", act:"345", fav:true  },
+                    { m:"Gross Margin %",  bud:"40%", act:"41%", fav:true, noCalc:true },
+                    { m:"Operating Exp",   bud:"210", act:"198", fav:true  },
+                    { m:"EBITDA",          bud:"130", act:"147", fav:true  },
+                    { m:"EBITDA Margin %", bud:"16%", act:"17.5%",fav:true, noCalc:true },
+                    { m:"Burn Rate",       bud:"52L/mo",act:"48L/mo",fav:true, noCalc:true },
+                    { m:"Cash Balance",    bud:"2.4Cr",act:"2.1Cr",fav:false, noCalc:true },
+                    { m:"Headcount Cost",  bud:"95",  act:"88",  fav:true  },
+                  ].map((r,i) => {
+                    const bv = parseFloat(r.bud), av = parseFloat(r.act);
+                    const varVal = r.noCalc ? "—" : (av - bv).toFixed(1);
+                    const varPct = r.noCalc ? "—" : ((av - bv)/bv*100).toFixed(1)+"%";
+                    return (
+                      <tr key={i} style={{ background:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
+                        <td style={{ padding:"10px 12px", fontWeight:600, color:C.text }}>{r.m}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.bud}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.text, fontWeight:700, fontFamily:FM }}>{r.act}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.fav?C.green:C.red }}>{varVal}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.fav?C.green:C.red }}>{varPct}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right" }}>
+                          <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700,
+                            background:r.fav?`${C.green}15`:`${C.red}15`, color:r.fav?C.green:C.red }}>
+                            {r.fav?"✅ Fav":"⚠️ Unfav"}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+          <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>📝 Variance Commentary</div>
+            {[
+              { item:"Revenue ₹52L above budget", note:"Driven by early renewal from Client A (+₹38L) and new logo added in mid-Feb (+₹14L). March pipeline looks equally strong.", c:C.green },
+              { item:"Headcount costs ₹7L under budget", note:"2 open roles not yet filled — saving budget but creating capacity risk in engineering. Hiring to resume in March.", c:C.green },
+              { item:"Cash balance ₹0.3Cr below budget", note:"Advance vendor payments pulled forward from March. Temporary — will normalise by end of March.", c:C.amber },
+            ].map((v,i) => (
+              <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<2?`1px solid ${C.border}`:"none" }}>
+                <div style={{ width:8, height:8, borderRadius:100, background:v.c, flexShrink:0, marginTop:6 }}/>
+                <div>
+                  <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
+                  <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>
+                </div>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
       {tab === "fundraise" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           <StartupCFOPack data={data} client={client} reportData={reportData}/>
           <div style={{ textAlign:"center" }}>
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+            <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
                 borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
@@ -2088,7 +2296,7 @@ function CFOPackContent({ reportData, client }) {
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
               📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
               Questions?{" "}
-              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
             </div>
           </Card>
         </div>
@@ -2122,7 +2330,7 @@ function BoardPacksTabbed() {
         <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
           📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
           Questions about the pack?{" "}
-          <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+          <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
         </div>
       </Card>
     </div>
@@ -2183,7 +2391,7 @@ function CFOPacks({ client, reportData }) {
           {packType === "corporate" && <CorporateCFOPack data={data} reportData={reportData}/>}
 
           <div style={{ textAlign:"center", marginTop:8 }}>
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+            <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
                 borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
@@ -2390,7 +2598,7 @@ function Calendar() {
         background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 Can't find a slot? WhatsApp Garima directly at{" "}
-          <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+          <a href={WA} target="_blank" rel="noopener"
             style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
         </div>
       </div>
@@ -2843,7 +3051,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
             To pay, please transfer to Garima's bank account (details on the invoice PDF) and WhatsApp the UTR to{" "}
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+            <a href={WA} target="_blank" rel="noopener"
               style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
           </div>
         </div>
@@ -3120,7 +3328,7 @@ function MyDocuments({ client }) {
       <Card style={{ marginTop:16, background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 <strong>Need to send a large file?</strong> WhatsApp it directly to Garima at{" "}
-          <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+          <a href={WA} target="_blank" rel="noopener"
             style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
           {" "}or email{" "}
           <a href="mailto:garima@finzzup.com" style={{ color:C.green, fontWeight:700 }}>garima@finzzup.com</a>
@@ -3254,7 +3462,7 @@ function Treasury({ client }) {
           <Card style={{ background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
             <div style={{ fontFamily:F, fontSize:13, color:C.blue, lineHeight:1.7 }}>
               💬 <strong>Want a detailed treasury optimisation plan?</strong>{" "}
-              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
+              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
               {" "}to discuss sweep accounts, liquid funds, and yield laddering for your cash position.
             </div>
           </Card>
