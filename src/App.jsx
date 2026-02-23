@@ -765,7 +765,7 @@ function Overview({ client, setPage, kpis, garimaNote }) {
             <div style={{ fontFamily:F, fontSize:12, color:"#047857", marginBottom:12, lineHeight:1.6 }}>
               Chat directly with Garima on WhatsApp for quick questions about your financials or valuations.
             </div>
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener noreferrer"
+            <a href="https://wa.me/966503510581" target="_blank" rel="noopener noreferrer"
               style={{ display:"inline-flex", alignItems:"center", gap:8,
                 background:"#25D366", color:"white", borderRadius:10,
                 padding:"9px 18px", fontFamily:F, fontWeight:700, fontSize:13,
@@ -792,7 +792,7 @@ function Overview({ client, setPage, kpis, garimaNote }) {
 
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
-function Dashboard({ client, kpis, garimaNote }) {
+function Dashboard({ client, kpis, garimaNote, reportData }) {
   const displayKpis = kpis || KPIs;
   const displayNote = garimaNote || "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
   return (
@@ -817,9 +817,9 @@ function Dashboard({ client, kpis, garimaNote }) {
       <Card style={{ marginBottom:24, borderLeft:`3px solid ${C.blue}` }}>
         <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
           letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
-          📝 Note from Garima — Feb 2026
+          📝 Note from Garima
         </div>
-        <p style={{ fontSize:14, color:C.text, lineHeight:1.75, fontFamily:F, margin:0 }}>
+        <p style={{ fontSize:14, color:C.text, lineHeight:1.75, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
           {displayNote}
         </p>
       </Card>
@@ -897,14 +897,14 @@ function Dashboard({ client, kpis, garimaNote }) {
               </tr>
             </thead>
             <tbody>
-              {[
+              {(reportData?.benchmarks && reportData.benchmarks.some(b=>b.yours) ? reportData.benchmarks : [
                 { metric:"ARR Growth YoY",   yours:"42%",    median:"28%",  bench:"40%+", ok:true  },
                 { metric:"Gross Margin",      yours:"41%",    median:"38%",  bench:"45%+", ok:false },
                 { metric:"Burn Multiple",     yours:"1.8x",   median:"2.1x", bench:"<1.5x",ok:false },
                 { metric:"NRR",               yours:"108%",   median:"104%", bench:">110%", ok:true  },
                 { metric:"CAC Payback",       yours:"18 mo",  median:"22 mo",bench:"<12 mo",ok:false },
                 { metric:"Revenue per FTE",   yours:"₹48L",   median:"₹42L", bench:"₹60L+", ok:true  },
-              ].map((r,i) => (
+              ]).map((r,i) => (
                 <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
                   <td style={{ padding:"10px 12px", fontWeight:600, fontSize:13, color:C.text }}>{r.metric}</td>
                   <td style={{ padding:"10px 12px", fontFamily:FM, fontSize:13, fontWeight:700, color:C.blue }}>{r.yours}</td>
@@ -932,7 +932,7 @@ function Dashboard({ client, kpis, garimaNote }) {
 }
 
 // ─── CASH FLOW ────────────────────────────────────────────────────────────────
-function CashFlow() {
+function CashFlow({ reportData }) {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     const d = payload[0];
@@ -968,7 +968,17 @@ function CashFlow() {
 
         <div style={{ height:260 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={CASHFLOW} margin={{ top:5, right:10, left:0, bottom:0 }}>
+            <AreaChart data={(() => {
+              const cf = reportData?.cashflow;
+              if (cf && cf.some(r => r.actual || r.forecast)) {
+                return cf.map(r => ({
+                  month: r.month,
+                  value: r.actual ? parseFloat(r.actual) || null : null,
+                  forecast: r.forecast ? parseFloat(r.forecast) || null : null,
+                }));
+              }
+              return CASHFLOW;
+            })()} margin={{ top:5, right:10, left:0, bottom:0 }}>
               <defs>
                 <linearGradient id="ga" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%"  stopColor={C.blue}   stopOpacity={0.15}/>
@@ -996,30 +1006,12 @@ function CashFlow() {
       <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
         <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase",
           letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
-          ⚠️ Garima's Analysis — March Watch
+          📝 Garima's Cash Flow Analysis
         </div>
-        <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:"0 0 12px" }}>
-          March forecast shows a dip to ₹175L — lowest in 6 months. This is driven by:
+        <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
+          {reportData?.packNote ||
+            "March forecast shows a dip to ₹175L — lowest in 6 months. This is driven by advance tax payment due 15 March (~₹32L outflow), delayed collection from Client B (₹45L pushed to April), and quarterly vendor payments coinciding. April–May outlook is positive. Hold off on discretionary capex until April."}
         </p>
-        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {[
-            ["Advance tax payment due 15 March", "~₹32L outflow"],
-            ["Delayed collection from Client B (payment expected April)", "₹45L pushed out"],
-            ["Quarterly vendor payments coinciding", "₹18L"],
-          ].map(([reason, impact], i) => (
-            <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-              padding:"9px 12px", borderRadius:8, background:C.bg }}>
-              <span style={{ fontSize:13, color:C.muted, fontFamily:F }}>{reason}</span>
-              <span style={{ fontSize:12, fontWeight:700, color:C.red, fontFamily:FM, whiteSpace:"nowrap", marginLeft:10 }}>{impact}</span>
-            </div>
-          ))}
-        </div>
-        <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10,
-          background:`${C.green}0A`, border:`1px solid ${C.green}20` }}>
-          <span style={{ fontSize:13, fontWeight:600, color:C.green, fontFamily:F }}>
-            ✅ April–May outlook is positive. Hold off on discretionary capex until April.
-          </span>
-        </div>
       </Card>
     </div>
   );
@@ -1228,7 +1220,7 @@ function ScoreGauge({ score, color, size=100 }) {
   );
 }
 
-function StartupCFOPack({ data, client }) {
+function StartupCFOPack({ data, client, reportData }) {
   return (
     <>
       {/* Fundraise Readiness Score */}
@@ -1239,16 +1231,16 @@ function StartupCFOPack({ data, client }) {
             <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Fundraise Readiness Score</div>
             <h3 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, margin:"0 0 4px" }}>
-              Overall: {data.fundraiseScore}/100
+              Overall: {reportData?.score || data.fundraiseScore}/100
             </h3>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
-              {data.fundraiseScore >= 75 ? "✅ Series A ready" : data.fundraiseScore >= 55 ? "⚠️ Almost there — a few gaps to close" : "🔴 Significant prep needed"}
+              {(parseInt(reportData?.score)||data.fundraiseScore) >= 75 ? "✅ Series A ready" : (parseInt(reportData?.score)||data.fundraiseScore) >= 55 ? "⚠️ Almost there — a few gaps to close" : "🔴 Significant prep needed"}
             </p>
           </div>
-          <ScoreGauge score={data.fundraiseScore} color={C.blue} size={100}/>
+          <ScoreGauge score={parseInt(reportData?.score)||data.fundraiseScore} color={C.blue} size={100}/>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {data.fundraiseBreakdown.map((item, i) => (
+          {(reportData?.scoreBreakdown?.some(s=>s.score) ? reportData.scoreBreakdown : data.fundraiseBreakdown).map((item, i) => (
             <div key={i} style={{ display:"grid", gridTemplateColumns:"140px 1fr auto", gap:12, alignItems:"center" }}>
               <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
               <div style={{ height:6, borderRadius:3, background:C.bg3, flex:1 }}>
@@ -1266,7 +1258,7 @@ function StartupCFOPack({ data, client }) {
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Key metrics investors will ask about in your data room">Investor Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
-          {data.investorMetrics.map((m, i) => (
+          {(reportData?.metrics?.some(m=>m.value) ? reportData.metrics : data.investorMetrics).map((m, i) => (
             <div key={i} style={{ padding:"14px 14px", borderRadius:12,
               background: m.flag ? "#FEF2F2" : C.bg,
               border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
@@ -1286,7 +1278,7 @@ function StartupCFOPack({ data, client }) {
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Documents investors will request in due diligence">Financial DD Checklist</SectionTitle>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {data.dueDiligence.map((d, i) => (
+          {(reportData?.checklist?.length ? reportData.checklist : data.dueDiligence).map((d, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
               borderRadius:10, background:d.done ? `${C.green}08` : "#FFFBEB",
               border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
@@ -1306,7 +1298,7 @@ function StartupCFOPack({ data, client }) {
   );
 }
 
-function MSMECFOPack({ data }) {
+function MSMECFOPack({ data, reportData }) {
   return (
     <>
       {/* Cash Health Score */}
@@ -1317,16 +1309,16 @@ function MSMECFOPack({ data }) {
             <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Cash Flow Health Score</div>
             <h3 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, margin:"0 0 4px" }}>
-              Overall: {data.cashHealth}/100
+              Overall: {reportData?.score || data.cashHealth}/100
             </h3>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
-              {data.cashHealth >= 75 ? "✅ Strong working capital position" : "⚠️ A few areas to tighten up"}
+              {(parseInt(reportData?.score)||data.cashHealth) >= 75 ? "✅ Strong working capital position" : "⚠️ A few areas to tighten up"}
             </p>
           </div>
-          <ScoreGauge score={data.cashHealth} color={C.teal} size={100}/>
+          <ScoreGauge score={parseInt(reportData?.score)||data.cashHealth} color={C.teal} size={100}/>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {data.cashBreakdown.map((item, i) => (
+          {(reportData?.scoreBreakdown?.some(s=>s.score) ? reportData.scoreBreakdown : data.cashBreakdown).map((item, i) => (
             <div key={i} style={{ display:"grid", gridTemplateColumns:"160px 1fr auto", gap:12, alignItems:"center" }}>
               <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
               <div style={{ height:6, borderRadius:3, background:C.bg3 }}>
@@ -1344,7 +1336,7 @@ function MSMECFOPack({ data }) {
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Working capital ratios vs benchmarks">Working Capital Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
-          {data.workingCapital.map((m, i) => (
+          {(reportData?.metrics?.some(m=>m.value) ? reportData.metrics : data.workingCapital).map((m, i) => (
             <div key={i} style={{ padding:"14px 14px", borderRadius:12,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
@@ -1438,7 +1430,7 @@ function MSMECFOPack({ data }) {
   );
 }
 
-function CorporateCFOPack({ data }) {
+function CorporateCFOPack({ data, reportData }) {
   const sevColor = { High:C.red, Medium:C.amber, Low:C.green };
   const sevBg    = { High:"#FEF2F2", Medium:"#FFFBEB", Low:"#ECFDF5" };
   const statusColor = { "Compliant":C.green, "Action Needed":C.red, "Monitor":C.amber };
@@ -1459,10 +1451,10 @@ function CorporateCFOPack({ data }) {
               {data.ipoScore >= 75 ? "✅ Strong IPO foundation" : data.ipoScore >= 55 ? "⚠️ Targeted prep required" : "🔴 Significant gaps to address"}
             </p>
           </div>
-          <ScoreGauge score={data.ipoScore} color={C.purple} size={100}/>
+          <ScoreGauge score={parseInt(reportData?.score)||data.ipoScore} color={C.purple} size={100}/>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {data.ipoBreakdown.map((item, i) => (
+          {(reportData?.scoreBreakdown?.some(s=>s.score) ? reportData.scoreBreakdown : data.ipoBreakdown).map((item, i) => (
             <div key={i} style={{ display:"grid", gridTemplateColumns:"180px 1fr auto", gap:12, alignItems:"center" }}>
               <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
               <div style={{ height:6, borderRadius:3, background:C.bg3 }}>
@@ -1593,7 +1585,7 @@ const COMPLIANCE_DATES = [
   { due:"30 Apr", item:"TDS Returns Q4 (Form 24Q/26Q)",      status:"upcoming", owner:"CA" },
 ];
 
-function MSMEPackContent() {
+function MSMEPackContent({ reportData }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
       <Card>
@@ -1735,7 +1727,7 @@ function MSMEPackContent() {
   );
 }
 
-function CorporatePackContent() {
+function CorporatePackContent({ reportData }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
       <Card>
@@ -1882,19 +1874,19 @@ function CorporatePackContent() {
   );
 }
 
-function CFOPackContent() {
+function CFOPackContent({ reportData, client }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
       <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>📝 Note from Garima — Feb 2026</div>
-        <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
-          Strong month — revenue up 6.1%, EBITDA margin at 17.5% (best in 12 months). The concern is March cash: advance tax + debt repayment + delayed Client B collection creates a tight window. Mitigation plan is in place. Two decisions need board attention before 10 March.
+        <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>📝 Note from Garima</div>
+        <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
+          {reportData?.packNote || "Strong month — revenue up 6.1%, EBITDA margin at 17.5% (best in 12 months). The concern is March cash: advance tax + debt repayment + delayed Client B collection creates a tight window. Two decisions need board attention before 10 March."}
         </p>
       </Card>
       <Card>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>KPI Snapshot — February 2026</div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }} className="cfok-g">
-          {KPIs.map((k,i) => (
+          {(reportData?.prevKpis ? KPIs.map((k,i) => ({...k})) : KPIs).map((k,i) => (
             <div key={i} style={{ padding:"14px 10px", borderRadius:12, background:k.bg, textAlign:"center" }}>
               <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:k.color }}>{k.value}</div>
               <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:4 }}>{k.label}</div>
@@ -1915,7 +1907,7 @@ function CFOPackContent() {
       </Card>
       <Card style={{ borderLeft:`3px solid ${C.green}` }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items — March 2026</div>
-        {ACTIONS.map((a,i,arr) => (
+        {(reportData?.checklist || ACTIONS).map((a,i,arr) => (
           <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", alignItems:"flex-start", opacity:a.done?0.5:1 }}>
             <div style={{ width:18, height:18, borderRadius:5, background:a.done?C.green:C.bg3, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 }}>
               {a.done && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
@@ -1962,7 +1954,7 @@ function BoardPacksTabbed() {
         <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
           📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
           Questions about the pack?{" "}
-          <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+          <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
         </div>
       </Card>
     </div>
@@ -1970,7 +1962,7 @@ function BoardPacksTabbed() {
 }
 
 // ─── CFO PACKS (existing component) ──────────────────────────────────────────
-function CFOPacks({ client }) {
+function CFOPacks({ client, reportData }) {
   const packType  = client.clientPack || "startup";
   const data      = CFO_PACK_DATA[packType];
   const [tab, setTab] = useState("pack"); // "pack" | "boardpacks"
@@ -2013,17 +2005,17 @@ function CFOPacks({ client }) {
               letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
               📝 Garima's Analysis — Feb 2026
             </div>
-            <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
-              {data.garimaNote}
+            <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
+              {reportData?.packNote || data.garimaNote}
             </p>
           </Card>
 
-          {packType === "startup"   && <StartupCFOPack   data={data} client={client}/>}
-          {packType === "msme"      && <MSMECFOPack      data={data}/>}
-          {packType === "corporate" && <CorporateCFOPack data={data}/>}
+          {packType === "startup"   && <StartupCFOPack   data={data} client={client} reportData={reportData}/>}
+          {packType === "msme"      && <MSMECFOPack      data={data} reportData={reportData}/>}
+          {packType === "corporate" && <CorporateCFOPack data={data} reportData={reportData}/>}
 
           <div style={{ textAlign:"center", marginTop:8 }}>
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+            <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
                 borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
@@ -2150,54 +2142,98 @@ function Engagement({ liveData }) {
 
 // ─── CALENDAR ────────────────────────────────────────────────────────────────
 function Calendar() {
+  const [activeEmbed, setActiveEmbed] = React.useState("30min");
+  const urls = {
+    "30min": "https://calendly.com/agrgarima/30min",
+    "60min": "https://calendly.com/agrgarima/60min",
+  };
   return (
     <div style={{ padding:24 }}>
-      <SectionTitle sub="Book a 30-min or 60-min call with Garima directly.">
+      <SectionTitle sub="Book a 30-min Valuation call or 60-min CFO Strategy session with Garima.">
         Book a Call
       </SectionTitle>
 
+      {/* Call type cards */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:24 }} className="cal-grid">
-        {[
-          { icon:"⚡", title:"30-min Valuation Query", desc:"Questions about your report, methodology, or UDIN.", color:C.blue,   bg:`${C.blue}0A` },
-          { icon:"🧠", title:"60-min CFO Strategy Call",  desc:"Monthly review, cash flow planning, board prep.", color:C.purple, bg:`${C.purple}0A` },
-        ].map((t,i) => (
-          <Card key={i} style={{ padding:20, borderTop:`3px solid ${t.color}` }}>
-            <div style={{ fontSize:28, marginBottom:12 }}>{t.icon}</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>{t.title}</div>
-            <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.6, marginBottom:16 }}>{t.desc}</p>
-            <button style={{ width:"100%", padding:"11px 0", borderRadius:10, border:"none",
-              background:t.color, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
-              cursor:"pointer", touchAction:"manipulation" }}>
-              Book this →
-            </button>
-          </Card>
-        ))}
+        <Card style={{ padding:20, borderTop:`3px solid ${C.blue}`,
+          outline: activeEmbed==="30min" ? `2px solid ${C.blue}` : "none",
+          cursor:"pointer" }}
+          onClick={() => setActiveEmbed("30min")}>
+          <div style={{ fontSize:28, marginBottom:12 }}>⚡</div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>
+            30-min Valuation Call
+          </div>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.6, marginBottom:16 }}>
+            Questions about your valuation report, methodology, UDIN, or Section 56(2)(viib) compliance.
+          </p>
+          <a href="https://calendly.com/agrgarima/30min" target="_blank" rel="noopener"
+            style={{ display:"block", width:"100%", padding:"11px 0", borderRadius:10, border:"none",
+              background: activeEmbed==="30min" ? C.blue : C.bg3,
+              color: activeEmbed==="30min" ? "white" : C.muted,
+              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer",
+              textAlign:"center", textDecoration:"none", boxSizing:"border-box" }}>
+            Book 30-min →
+          </a>
+        </Card>
+
+        <Card style={{ padding:20, borderTop:`3px solid ${C.purple}`,
+          outline: activeEmbed==="60min" ? `2px solid ${C.purple}` : "none",
+          cursor:"pointer" }}
+          onClick={() => setActiveEmbed("60min")}>
+          <div style={{ fontSize:28, marginBottom:12 }}>🧠</div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>
+            60-min CFO Strategy Call
+          </div>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.6, marginBottom:16 }}>
+            Monthly CFO review, cash flow planning, investor prep, board pack walkthrough.
+          </p>
+          <a href="https://calendly.com/agrgarima/60min" target="_blank" rel="noopener"
+            style={{ display:"block", width:"100%", padding:"11px 0", borderRadius:10, border:"none",
+              background: activeEmbed==="60min" ? C.purple : C.bg3,
+              color: activeEmbed==="60min" ? "white" : C.muted,
+              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer",
+              textAlign:"center", textDecoration:"none", boxSizing:"border-box" }}>
+            Book 60-min →
+          </a>
+        </Card>
       </div>
 
-      {/* Calendly LIVE embed */}
+      {/* Live Calendly embed — switches based on selected type */}
       <Card style={{ padding:0, overflow:"hidden" }}>
-        <div style={{ padding:"16px 20px", borderBottom:`1px solid ${C.border}`,
-          display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>📅 Live Calendar Booking</div>
-          <a href="https://calendly.com/garima-finzzup" target="_blank" rel="noopener"
+        <div style={{ padding:"14px 20px", borderBottom:`1px solid ${C.border}`,
+          display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>📅 Live Booking</div>
+            <div style={{ padding:"3px 10px", borderRadius:100, fontFamily:F, fontSize:11, fontWeight:700,
+              background: activeEmbed==="30min" ? `${C.blue}15` : `${C.purple}15`,
+              color: activeEmbed==="30min" ? C.blue : C.purple }}>
+              {activeEmbed==="30min" ? "30-min Valuation" : "60-min CFO Strategy"}
+            </div>
+          </div>
+          <a href={urls[activeEmbed]} target="_blank" rel="noopener"
             style={{ fontFamily:F, fontSize:12, color:C.blue, fontWeight:600, textDecoration:"none" }}>
             Open in new tab ↗
           </a>
         </div>
         <iframe
-          src="https://calendly.com/garima-finzzup"
+          key={activeEmbed}
+          src={urls[activeEmbed]}
           width="100%"
-          height="650"
+          height="700"
           frameBorder="0"
           style={{ display:"block" }}
-          title="Book a call with Garima"
+          title={`Book a ${activeEmbed==="30min"?"30-min Valuation":"60-min CFO Strategy"} call with Garima`}
         />
       </Card>
-      <Card style={{ padding:"12px 16px", background:`${C.blue}05`, border:`1px dashed ${C.blue}30`, marginTop:0 }}>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7 }}>
-          💡 <strong style={{ color:C.text }}>Admin setup:</strong> Replace <code style={{ background:C.bg3, padding:"2px 5px", borderRadius:4, fontFamily:FM }}>garima-finzzup</code> in the iframe src with your actual Calendly username. Find it at <a href="https://calendly.com" target="_blank" rel="noopener" style={{ color:C.blue }}>calendly.com → Share your link</a>.
+
+      <div style={{ marginTop:14, padding:"12px 16px", borderRadius:12,
+        background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
+        <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
+          💬 Can't find a slot? WhatsApp Garima directly at{" "}
+          <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
+            style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
         </div>
-      </Card>
+      </div>
       <style>{`@media(max-width:500px){.cal-grid{grid-template-columns:1fr!important}}`}</style>
     </div>
   );
@@ -2264,9 +2300,9 @@ function downloadInvoicePDF(inv, client) {
   <div class="total-val">${inv.amount}</div>
 </div>
 <div class="footer">
-  <strong>Finzzup Advisory LLP</strong> · PAN: [APJPA5308M]<br/>
-  Bank: [HDFC Bank] · A/C No: [50100452385391] · IFSC: [HDFC0001108]<br/>
-  To pay: transfer to the above account and WhatsApp UTR to +91 98335 85810<br/>
+  <strong>Finzzup Advisory LLP</strong> · GSTIN: [Add GSTIN] · PAN: [Add PAN]<br/>
+  Bank: [Bank Name] · A/C No: [Account Number] · IFSC: [IFSC Code]<br/>
+  To pay: transfer to the above account and WhatsApp UTR to +91 98335 85820<br/>
   Queries: garima@finzzup.com — This is a system-generated invoice.
 </div>
 </body></html>`;
@@ -2647,7 +2683,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
             To pay, please transfer to Garima's bank account (details on the invoice PDF) and WhatsApp the UTR to{" "}
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
+            <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
               style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
           </div>
         </div>
@@ -2924,8 +2960,8 @@ function MyDocuments({ client }) {
       <Card style={{ marginTop:16, background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 <strong>Need to send a large file?</strong> WhatsApp it directly to Garima at{" "}
-          <a href="https://wa.me/919833585810" target="_blank" rel="noopener"
-            style={{ color:C.green, fontWeight:700 }}>+91 98335 85810</a>
+          <a href="https://wa.me/919833585820" target="_blank" rel="noopener"
+            style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
           {" "}or email{" "}
           <a href="mailto:garima@finzzup.com" style={{ color:C.green, fontWeight:700 }}>garima@finzzup.com</a>
         </div>
@@ -3058,7 +3094,7 @@ function Treasury({ client }) {
           <Card style={{ background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
             <div style={{ fontFamily:F, fontSize:13, color:C.blue, lineHeight:1.7 }}>
               💬 <strong>Want a detailed treasury optimisation plan?</strong>{" "}
-              <a href="https://wa.me/919833585810" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
+              <a href="https://wa.me/919833585820" target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
               {" "}to discuss sweep accounts, liquid funds, and yield laddering for your cash position.
             </div>
           </Card>
@@ -3151,11 +3187,11 @@ function Terms() {
 // ─── PORTAL SHELL ─────────────────────────────────────────────────────────────
 
 // My Report component — shows correct pack based on client type
-function MyReport({ client }) {
+function MyReport({ client, reportData }) {
   const pack = client?.client_pack || "startup";
-  if (pack === "msme")      return <MSMEPackContent/>;
-  if (pack === "corporate") return <CorporatePackContent/>;
-  return <CFOPackContent/>;  // startup / default
+  if (pack === "msme")      return <MSMEPackContent      reportData={reportData}/>;
+  if (pack === "corporate") return <CorporatePackContent reportData={reportData}/>;
+  return <CFOPackContent reportData={reportData} client={client}/>;
 }
 
 function getPageTitle(page, client) {
@@ -3185,11 +3221,12 @@ function Portal({ client, onLogout }) {
   const [collapsed, setCollapsed] = useState(false);
 
   // ── Live data state (only populated for real/non-demo clients) ──
-  const [liveKpis,       setLiveKpis]       = useState(null);
-  const [liveActions,    setLiveActions]    = useState(null);
-  const [liveEngagement, setLiveEngagement] = useState(null);
-  const [liveInvoices,   setLiveInvoices]   = useState(null);
-  const [dataLoading,    setDataLoading]    = useState(false);
+  const [liveKpis,        setLiveKpis]        = useState(null);
+  const [liveActions,     setLiveActions]     = useState(null);
+  const [liveEngagement,  setLiveEngagement]  = useState(null);
+  const [liveInvoices,    setLiveInvoices]    = useState(null);
+  const [liveReportData,  setLiveReportData]  = useState(null);
+  const [dataLoading,     setDataLoading]     = useState(false);
 
   const isDemo = client?.isDemo === true;
 
@@ -3198,7 +3235,7 @@ function Portal({ client, onLogout }) {
     if (isDemo || !client?.id) return;
     const fetchAll = async () => {
       setDataLoading(true);
-      const [kpiRes, actionRes, engRes, invRes] = await Promise.all([
+      const [kpiRes, actionRes, engRes, invRes, rdRes] = await Promise.all([
         supabase.from("kpis").select("*").eq("client_id", client.id)
           .order("updated_at", { ascending:false }).limit(1).single(),
         supabase.from("action_items").select("*").eq("client_id", client.id)
@@ -3206,37 +3243,41 @@ function Portal({ client, onLogout }) {
         supabase.from("engagements").select("*").eq("client_id", client.id).single(),
         supabase.from("invoices").select("*").eq("client_id", client.id)
           .order("created_at", { ascending:false }),
+        supabase.from("report_data").select("*").eq("client_id", client.id).single(),
       ]);
-      if (kpiRes.data)       setLiveKpis(kpiRes.data);
-      if (actionRes.data)    setLiveActions(actionRes.data);
-      if (engRes.data)       setLiveEngagement(engRes.data);
-      if (invRes.data)       setLiveInvoices(invRes.data);
+      if (kpiRes.data)    setLiveKpis(kpiRes.data);
+      if (actionRes.data) setLiveActions(actionRes.data);
+      if (engRes.data)    setLiveEngagement(engRes.data);
+      if (invRes.data)    setLiveInvoices(invRes.data);
+      if (rdRes.data?.data) { try { setLiveReportData(JSON.parse(rdRes.data.data)); } catch(e){} }
       setDataLoading(false);
     };
     fetchAll();
   }, [client?.id, isDemo]);
 
-  // Build merged KPI array — live data overrides dummy labels if available
+  // Build merged KPI array — live data + prev values from report_data
+  const prevK = liveReportData?.prevKpis || {};
   const resolvedKpis = (!isDemo && liveKpis) ? [
-    { label:"Revenue",      value:liveKpis.revenue      || "—", prev:"—", trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"📈" },
-    { label:"Gross Margin", value:liveKpis.gross_margin || "—", prev:"—", trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"💹" },
-    { label:"Cash Balance", value:liveKpis.cash_balance || "—", prev:"—", trend:"down", color:C.amber,  bg:"#FEF7E7", icon:"🏦" },
-    { label:"Burn Rate",    value:liveKpis.burn_rate    || "—", prev:"—", trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"🔥" },
-    { label:"Runway",       value:liveKpis.runway       || "—", prev:"—", trend:"down", color:C.pink,   bg:"#FEF0F7", icon:"⏳" },
-    { label:"ARR",          value:liveKpis.arr          || "—", prev:"—", trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"🎯" },
+    { label:"Revenue",      value:liveKpis.revenue      ||"—", prev:prevK.revenue      ||"—", trend: prevK.revenue      ?"up":"up",   color:C.blue,   bg:"#EEF3FE", icon:"📈" },
+    { label:"Gross Margin", value:liveKpis.gross_margin ||"—", prev:prevK.gross_margin ||"—", trend: prevK.gross_margin ?"up":"up",   color:C.teal,   bg:"#E6FAF7", icon:"💹" },
+    { label:"Cash Balance", value:liveKpis.cash_balance ||"—", prev:prevK.cash_balance ||"—", trend: prevK.cash_balance ?"down":"down",color:C.amber,  bg:"#FEF7E7", icon:"🏦" },
+    { label:"Burn Rate",    value:liveKpis.burn_rate    ||"—", prev:prevK.burn_rate    ||"—", trend: prevK.burn_rate    ?"up":"up",   color:C.purple, bg:"#F3EFFF", icon:"🔥" },
+    { label:"Runway",       value:liveKpis.runway       ||"—", prev:prevK.runway       ||"—", trend: prevK.runway       ?"down":"down",color:C.pink,   bg:"#FEF0F7", icon:"⏳" },
+    { label:"ARR",          value:liveKpis.arr          ||"—", prev:prevK.arr          ||"—", trend: prevK.arr          ?"up":"up",   color:C.green,  bg:"#E8FAF3", icon:"🎯" },
   ] : KPIs;
 
   const resolvedActions    = (!isDemo && liveActions)    ? liveActions    : ACTIONS;
   const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
+  const resolvedReportData = (!isDemo && liveReportData) ? liveReportData : null;
   const resolvedGarimaNote = (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
     : "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
 
   const pages = {
     overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote}/>,
-    dashboard:  <Dashboard  client={client} kpis={resolvedKpis}/>,
-    cashflow:   <CashFlow/>,
+    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData}/>,
+    cashflow:   <CashFlow   reportData={resolvedReportData}/>,
     actions:    <ActionItems actions={resolvedActions}/>,
-    myreport:   <MyReport client={client}/>,
+    myreport:   <MyReport   client={client} reportData={resolvedReportData}/>,
     engagement: <Engagement liveData={resolvedEngagement}/>,
     calendar:   <Calendar/>,
     newrequest: <NewRequest client={client} setPage={setPage}/>,
@@ -3363,6 +3404,110 @@ function AdminPanel({ admin, onLogout }) {
   const [docs, setDocs]           = useState([]);
   const [docLoading, setDocLoading] = useState(false);
 
+  // Invoice state
+  const [invoices,    setInvoices]    = useState([]);
+  const [newInvoice,  setNewInvoice]  = useState({
+    invoice_number:"", description:"", amount:"", due_date:"", status:"unpaid"
+  });
+
+  // Report data state — cash flow, prev KPIs, pack scores, benchmarks, checklists
+  const [reportData, setReportData] = useState(null);
+  const defaultReportData = (pack) => ({
+    // Cash flow — 6 actual + 3 forecast months
+    cashflow: [
+      { month:"Sep", actual:"", forecast:"" },
+      { month:"Oct", actual:"", forecast:"" },
+      { month:"Nov", actual:"", forecast:"" },
+      { month:"Dec", actual:"", forecast:"" },
+      { month:"Jan", actual:"", forecast:"" },
+      { month:"Feb", actual:"", forecast:"" },
+      { month:"Mar", actual:"", forecast:"" },
+      { month:"Apr", actual:"", forecast:"" },
+      { month:"May", actual:"", forecast:"" },
+    ],
+    // Previous month KPI values (for trend arrows)
+    prevKpis: { revenue:"", gross_margin:"", cash_balance:"", burn_rate:"", runway:"", arr:"" },
+    // Pack-specific scores
+    score: "",          // fundraise / cash health / ipo score (0-100)
+    scoreBreakdown: pack === "startup" ? [
+      { label:"Revenue Growth",          score:"", comment:"" },
+      { label:"Gross Margin",            score:"", comment:"" },
+      { label:"Runway",                  score:"", comment:"" },
+      { label:"Financial Documentation", score:"", comment:"" },
+      { label:"Unit Economics",          score:"", comment:"" },
+    ] : pack === "msme" ? [
+      { label:"Cash Conversion Cycle",  score:"", comment:"" },
+      { label:"Working Capital Ratio",  score:"", comment:"" },
+      { label:"Debtor Days",            score:"", comment:"" },
+      { label:"Creditor Days",          score:"", comment:"" },
+      { label:"Inventory Turnover",     score:"", comment:"" },
+    ] : [
+      { label:"Revenue Scale",              score:"", comment:"" },
+      { label:"Profitability Track Record", score:"", comment:"" },
+      { label:"Governance & Board",         score:"", comment:"" },
+      { label:"Ind AS Compliance",          score:"", comment:"" },
+      { label:"Audit Quality",              score:"", comment:"" },
+    ],
+    // Investor/working capital metrics
+    metrics: pack === "startup" ? [
+      { label:"ARR",           value:"", flag:false, note:"" },
+      { label:"MoM Growth",    value:"", flag:false, note:"" },
+      { label:"Burn Multiple", value:"", flag:false, note:"" },
+      { label:"CAC Payback",   value:"", flag:false, note:"" },
+      { label:"NRR",           value:"", flag:false, note:"" },
+      { label:"Gross Margin",  value:"", flag:false, note:"" },
+    ] : pack === "msme" ? [
+      { label:"Current Ratio",   value:"", flag:false, note:"" },
+      { label:"Quick Ratio",     value:"", flag:false, note:"" },
+      { label:"Debtor Days",     value:"", flag:false, note:"" },
+      { label:"Creditor Days",   value:"", flag:false, note:"" },
+      { label:"Inventory Days",  value:"", flag:false, note:"" },
+      { label:"Cash Conversion", value:"", flag:false, note:"" },
+    ] : [
+      { label:"Revenue",         value:"", flag:false, note:"" },
+      { label:"EBITDA Margin",   value:"", flag:false, note:"" },
+      { label:"PAT",             value:"", flag:false, note:"" },
+      { label:"Debt/Equity",     value:"", flag:false, note:"" },
+      { label:"ROE",             value:"", flag:false, note:"" },
+      { label:"Current Ratio",   value:"", flag:false, note:"" },
+    ],
+    // Due diligence checklist (startup) / compliance flags (corporate)
+    checklist: pack === "startup" ? [
+      { item:"Audited financials (3 years)",              done:false },
+      { item:"5-year projections with assumptions",       done:false },
+      { item:"Cap table (fully diluted)",                 done:false },
+      { item:"MIS pack — last 6 months",                  done:false },
+      { item:"Unit economics — cohort analysis",          done:false },
+      { item:"Board resolutions for previous fundraises", done:false },
+      { item:"ESOP scheme document",                      done:false },
+      { item:"Shareholder agreement (all investors)",     done:false },
+    ] : pack === "msme" ? [
+      { item:"3-year audited financials",                 done:false },
+      { item:"GST returns last 12 months",                done:false },
+      { item:"Bank statements last 12 months",            done:false },
+      { item:"Debtor/creditor ageing report",             done:false },
+      { item:"Inventory valuation certificate",           done:false },
+      { item:"Loan sanction letters",                     done:false },
+    ] : [
+      { item:"Ind AS 116 — Lease restatement",            done:false },
+      { item:"Ind AS 109 — ECL provisioning",             done:false },
+      { item:"Related party disclosure review",           done:false },
+      { item:"Independent director appointment",          done:false },
+      { item:"CSR spend reconciliation",                  done:false },
+      { item:"LODR compliance checklist",                 done:false },
+    ],
+    // Market benchmarks
+    benchmarks: [
+      { metric:"ARR Growth YoY",   yours:"", median:"", bench:"", ok:true  },
+      { metric:"Gross Margin",     yours:"", median:"", bench:"", ok:true  },
+      { metric:"Burn Multiple",    yours:"", median:"", bench:"", ok:true  },
+      { metric:"NRR",              yours:"", median:"", bench:"", ok:true  },
+      { metric:"CAC Payback",      yours:"", median:"", bench:"", ok:false },
+      { metric:"Revenue per FTE",  yours:"", median:"", bench:"", ok:true  },
+    ],
+    packNote: "",
+  });
+
   useEffect(() => { fetchClients(); }, []);
 
   const fetchClients = async () => {
@@ -3390,6 +3535,15 @@ function AdminPanel({ admin, onLogout }) {
     const { data: docData } = await supabase.from("documents")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setDocs(docData || []);
+    // Load invoices
+    const { data: invData } = await supabase.from("invoices")
+      .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
+    setInvoices(invData || []);
+    // Load report data
+    const { data: rdData } = await supabase.from("report_data")
+      .select("*").eq("client_id", c.id).single();
+    if (rdData?.data) setReportData(JSON.parse(rdData.data));
+    else setReportData(defaultReportData(c.client_pack || "startup"));
   };
 
   const saveKPIs = async () => {
@@ -3438,6 +3592,52 @@ function AdminPanel({ admin, onLogout }) {
     setTimeout(() => setSaved(false), 2500);
   };
 
+  const saveReportData = async () => {
+    if (!selected || !reportData) return;
+    setLoading(true);
+    const payload = { client_id: selected.id, data: JSON.stringify(reportData), updated_at: new Date().toISOString() };
+    // Check if exists first
+    const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).single();
+    if (existing?.id) {
+      await supabase.from("report_data").update(payload).eq("id", existing.id);
+    } else {
+      await supabase.from("report_data").insert(payload);
+    }
+    setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
+  };
+
+  const addInvoice = async () => {
+    if (!selected || !newInvoice.invoice_number || !newInvoice.amount) return;
+    setLoading(true);
+    const { data } = await supabase.from("invoices").insert({
+      ...newInvoice, client_id: selected.id
+    }).select().single();
+    if (data) setInvoices(prev => [data, ...prev]);
+    setNewInvoice({ invoice_number:"", description:"", amount:"", due_date:"", status:"unpaid" });
+    setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
+  };
+
+  const deleteInvoice = async (id) => {
+    if (!window.confirm("Delete this invoice?")) return;
+    await supabase.from("invoices").delete().eq("id", id);
+    setInvoices(prev => prev.filter(x => x.id !== id));
+  };
+
+  const markInvoicePaid = async (inv) => {
+    const newStatus = inv.status === "paid" ? "unpaid" : "paid";
+    await supabase.from("invoices").update({
+      status: newStatus,
+      paid_at: newStatus === "paid" ? new Date().toISOString() : null
+    }).eq("id", inv.id);
+    setInvoices(prev => prev.map(x => x.id===inv.id ? {...x, status:newStatus} : x));
+  };
+
+  const toggleClientActive = async (c) => {
+    await supabase.from("clients").update({ active: !c.active }).eq("id", c.id);
+    setClients(prev => prev.map(x => x.id===c.id ? {...x, active:!x.active} : x));
+    if (selected?.id === c.id) setSelected(s => ({...s, active:!s.active}));
+  };
+
   const createClient = async () => {
     if (!newClient.name || !newClient.email || !newClient.invite_code) return;
     const { data, error } = await supabase.from("clients").insert(newClient).select().single();
@@ -3459,6 +3659,8 @@ function AdminPanel({ admin, onLogout }) {
     { id:"kpis",       icon:"📊", label:"Update KPIs"     },
     { id:"actions",    icon:"✅", label:"Action Items"    },
     { id:"engagement", icon:"📋", label:"Valuation"       },
+    { id:"invoices",   icon:"🧾", label:"Invoices"        },
+    { id:"reportdata", icon:"📈", label:"Report Data"     },
     { id:"documents",  icon:"📁", label:"Documents"       },
   ];
 
@@ -3598,9 +3800,13 @@ function AdminPanel({ admin, onLogout }) {
                         <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.amber }}>
                           {c.invite_code}
                         </div>
-                        <div style={{ fontSize:11, color:c.active?C.green:C.red, fontWeight:700, fontFamily:F }}>
-                          {c.active ? "● Active" : "● Inactive"}
-                        </div>
+                        <button onClick={e => { e.stopPropagation(); toggleClientActive(c); }}
+                          style={{ padding:"4px 12px", borderRadius:100, border:"none", cursor:"pointer",
+                            fontFamily:F, fontSize:11, fontWeight:700,
+                            background: c.active ? `${C.green}15` : `${C.red}15`,
+                            color: c.active ? C.green : C.red }}>
+                          {c.active ? "● Active" : "● Inactive"} — toggle
+                        </button>
                       </div>
                     </div>
                   </Card>
@@ -3846,6 +4052,354 @@ function AdminPanel({ admin, onLogout }) {
                   <SaveBtn onClick={saveEngagement}/>
                 </Card>
               )}
+            </div>
+          )}
+
+          {/* ── INVOICES ── */}
+          {tab === "invoices" && (
+            <div style={{ maxWidth:620 }}>
+              {!selected ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+                </Card>
+              ) : (<>
+                {/* Create new invoice */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
+                    Create Invoice for {selected.name}
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    <Input label="Invoice Number" val={newInvoice.invoice_number}
+                      onChange={v=>setNewInvoice(i=>({...i,invoice_number:v}))}
+                      placeholder="e.g. INV-2026-001" mono/>
+                    <Input label="Amount (₹)" val={newInvoice.amount}
+                      onChange={v=>setNewInvoice(i=>({...i,amount:v}))}
+                      placeholder="e.g. ₹50,000"/>
+                  </div>
+                  <Input label="Description" val={newInvoice.description}
+                    onChange={v=>setNewInvoice(i=>({...i,description:v}))}
+                    placeholder="e.g. CFO Retainer — March 2026"/>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    <Input label="Due Date" val={newInvoice.due_date}
+                      onChange={v=>setNewInvoice(i=>({...i,due_date:v}))}
+                      placeholder="e.g. 31 Mar 2026"/>
+                    <Select label="Status" val={newInvoice.status}
+                      onChange={v=>setNewInvoice(i=>({...i,status:v}))}
+                      options={[{value:"unpaid",label:"Unpaid"},{value:"paid",label:"Paid"}]}/>
+                  </div>
+                  <SaveBtn onClick={addInvoice} label="+ Create Invoice"/>
+                </Card>
+
+                {/* Invoice list */}
+                <Card>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
+                    All Invoices ({invoices.length})
+                  </div>
+                  {invoices.length === 0 && (
+                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No invoices yet for this client.</p>
+                  )}
+                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+                    {invoices.map(inv => (
+                      <div key={inv.id} style={{ padding:"14px 16px", borderRadius:12,
+                        border:`1px solid ${inv.status==="paid" ? C.green+"30" : C.amber+"30"}`,
+                        background: inv.status==="paid" ? `${C.green}04` : `${C.amber}04` }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+                          <div>
+                            <div style={{ fontFamily:FM, fontSize:13, fontWeight:700, color:C.text }}>
+                              {inv.invoice_number}
+                            </div>
+                            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:3 }}>
+                              {inv.description}
+                            </div>
+                            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:3 }}>
+                              Due: {inv.due_date || "—"}
+                              {inv.paid_at && ` · Paid: ${new Date(inv.paid_at).toLocaleDateString("en-IN")}`}
+                            </div>
+                          </div>
+                          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8 }}>
+                            <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:C.text }}>
+                              {inv.amount}
+                            </div>
+                            <div style={{ display:"flex", gap:8 }}>
+                              <button onClick={() => markInvoicePaid(inv)}
+                                style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer",
+                                  fontFamily:F, fontSize:11, fontWeight:700,
+                                  background: inv.status==="paid" ? `${C.green}15` : `${C.amber}15`,
+                                  color: inv.status==="paid" ? C.green : C.amber }}>
+                                {inv.status==="paid" ? "✓ Paid" : "Mark Paid"}
+                              </button>
+                              <button onClick={() => deleteInvoice(inv.id)}
+                                style={{ padding:"5px 10px", borderRadius:8, border:`1px solid ${C.border}`,
+                                  background:"none", color:C.red, cursor:"pointer", fontSize:13 }}>
+                                🗑
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </>)}
+            </div>
+          )}
+
+          {/* ── REPORT DATA ── */}
+          {tab === "reportdata" && (
+            <div style={{ maxWidth:680 }}>
+              {!selected || !reportData ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+                </Card>
+              ) : (<>
+
+                {/* ── CASH FLOW DATA ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    📊 Cash Flow Chart Data
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Enter values in ₹L (lakhs). Actual = past months. Forecast = future months. Leave blank to skip.
+                  </p>
+                  <div style={{ overflowX:"auto" }}>
+                    <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F }}>
+                      <thead>
+                        <tr style={{ borderBottom:`2px solid ${C.border}` }}>
+                          {["Month","Actual (₹L)","Forecast (₹L)"].map((h,i) => (
+                            <th key={i} style={{ padding:"8px 10px", textAlign:"left", fontSize:11,
+                              fontWeight:700, color:C.muted, textTransform:"uppercase" }}>{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(reportData.cashflow || []).map((row, i) => (
+                          <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
+                            <td style={{ padding:"8px 10px", fontFamily:FM, fontSize:13, fontWeight:700, color:C.text, width:80 }}>
+                              {row.month}
+                            </td>
+                            <td style={{ padding:"6px 10px" }}>
+                              <input value={row.actual} onChange={e => {
+                                const cf = [...reportData.cashflow];
+                                cf[i] = {...cf[i], actual: e.target.value};
+                                setReportData(r => ({...r, cashflow: cf}));
+                              }} placeholder="e.g. 220"
+                                style={{ width:"100%", padding:"7px 10px", borderRadius:8, fontSize:13,
+                                  border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.blue,
+                                  background:"#F0F4FF", outline:"none", boxSizing:"border-box" }}/>
+                            </td>
+                            <td style={{ padding:"6px 10px" }}>
+                              <input value={row.forecast} onChange={e => {
+                                const cf = [...reportData.cashflow];
+                                cf[i] = {...cf[i], forecast: e.target.value};
+                                setReportData(r => ({...r, cashflow: cf}));
+                              }} placeholder="e.g. 195"
+                                style={{ width:"100%", padding:"7px 10px", borderRadius:8, fontSize:13,
+                                  border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.purple,
+                                  background:"#F5F0FF", outline:"none", boxSizing:"border-box" }}/>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+
+                {/* ── PREVIOUS MONTH KPIs ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    📈 Previous Month KPI Values
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    These show as "Prev: ..." under each KPI card — used to calculate trend arrows (▲▼).
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    {[
+                      { label:"Prev Revenue",       key:"revenue"      },
+                      { label:"Prev Gross Margin",  key:"gross_margin" },
+                      { label:"Prev Cash Balance",  key:"cash_balance" },
+                      { label:"Prev Burn Rate",     key:"burn_rate"    },
+                      { label:"Prev Runway",        key:"runway"       },
+                      { label:"Prev ARR",           key:"arr"          },
+                    ].map(f => (
+                      <Input key={f.key} label={f.label}
+                        val={reportData.prevKpis?.[f.key] || ""}
+                        onChange={v => setReportData(r => ({...r, prevKpis:{...r.prevKpis,[f.key]:v}}))}
+                        placeholder="e.g. ₹7.9 Cr" mono/>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* ── PACK SCORE ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    🎯 {selected.client_pack === "startup" ? "Fundraise" : selected.client_pack === "msme" ? "Cash Health" : "IPO Readiness"} Score
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Overall score (0–100) shown as the big gauge on the client's report page.
+                  </p>
+                  <Input label="Overall Score (0-100)" val={reportData.score || ""}
+                    onChange={v => setReportData(r => ({...r, score:v}))}
+                    placeholder="e.g. 72" mono/>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10, marginTop:4 }}>
+                    Score Breakdown
+                  </div>
+                  {(reportData.scoreBreakdown || []).map((item, i) => (
+                    <div key={i} style={{ marginBottom:12, padding:"12px 14px", borderRadius:10,
+                      background:C.bg, border:`1px solid ${C.border}` }}>
+                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>
+                        {item.label}
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10 }}>
+                        <input value={item.score} onChange={e => {
+                          const sb = [...reportData.scoreBreakdown];
+                          sb[i] = {...sb[i], score: e.target.value};
+                          setReportData(r => ({...r, scoreBreakdown: sb}));
+                        }} placeholder="Score 0-100"
+                          style={{ padding:"8px 10px", borderRadius:8, fontSize:13, border:`1.5px solid ${C.border}`,
+                            fontFamily:FM, color:C.blue, background:"#F0F4FF", outline:"none", boxSizing:"border-box" }}/>
+                        <input value={item.comment} onChange={e => {
+                          const sb = [...reportData.scoreBreakdown];
+                          sb[i] = {...sb[i], comment: e.target.value};
+                          setReportData(r => ({...r, scoreBreakdown: sb}));
+                        }} placeholder="Comment shown to client..."
+                          style={{ padding:"8px 10px", borderRadius:8, fontSize:13, border:`1.5px solid ${C.border}`,
+                            fontFamily:F, color:C.text, background:C.bg, outline:"none", boxSizing:"border-box" }}/>
+                      </div>
+                    </div>
+                  ))}
+                </Card>
+
+                {/* ── KEY METRICS ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    📋 Key Metrics Table
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Investor metrics / working capital ratios shown in the client's pack.
+                  </p>
+                  {(reportData.metrics || []).map((m, i) => (
+                    <div key={i} style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr auto", gap:8,
+                      alignItems:"center", marginBottom:8, padding:"8px 12px", borderRadius:10,
+                      background:C.bg, border:`1px solid ${C.border}` }}>
+                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.muted }}>{m.label}</div>
+                      <input value={m.value} onChange={e => {
+                        const ms = [...reportData.metrics];
+                        ms[i] = {...ms[i], value: e.target.value};
+                        setReportData(r => ({...r, metrics: ms}));
+                      }} placeholder="Value"
+                        style={{ padding:"7px 10px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`,
+                          fontFamily:FM, color:C.blue, background:"#F0F4FF", outline:"none", boxSizing:"border-box" }}/>
+                      <input value={m.note} onChange={e => {
+                        const ms = [...reportData.metrics];
+                        ms[i] = {...ms[i], note: e.target.value};
+                        setReportData(r => ({...r, metrics: ms}));
+                      }} placeholder="Note..."
+                        style={{ padding:"7px 10px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`,
+                          fontFamily:F, color:C.text, background:C.bg, outline:"none", boxSizing:"border-box" }}/>
+                      <button onClick={() => {
+                        const ms = [...reportData.metrics];
+                        ms[i] = {...ms[i], flag: !ms[i].flag};
+                        setReportData(r => ({...r, metrics: ms}));
+                      }} style={{ padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
+                        background: m.flag ? `${C.red}15` : `${C.green}15`,
+                        color: m.flag ? C.red : C.green, fontSize:12, fontWeight:700, fontFamily:F, whiteSpace:"nowrap" }}>
+                        {m.flag ? "⚠️ Flag" : "✅ OK"}
+                      </button>
+                    </div>
+                  ))}
+                </Card>
+
+                {/* ── CHECKLIST ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    ✅ {selected.client_pack === "corporate" ? "Compliance Checklist" : "Due Diligence Checklist"}
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Tick items as the client completes/provides them. Shown on their report page.
+                  </p>
+                  {(reportData.checklist || []).map((item, i) => (
+                    <div key={i} onClick={() => {
+                      const cl = [...reportData.checklist];
+                      cl[i] = {...cl[i], done: !cl[i].done};
+                      setReportData(r => ({...r, checklist: cl}));
+                    }} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
+                      borderRadius:10, marginBottom:8, cursor:"pointer",
+                      background: item.done ? `${C.green}06` : C.bg,
+                      border:`1px solid ${item.done ? C.green+"25" : C.border}` }}>
+                      <div style={{ width:22, height:22, borderRadius:6, flexShrink:0,
+                        background: item.done ? C.green : C.bg3, border:`2px solid ${item.done ? C.green : C.border}`,
+                        display:"flex", alignItems:"center", justifyContent:"center" }}>
+                        {item.done && <span style={{ color:"white", fontSize:11, fontWeight:900 }}>✓</span>}
+                      </div>
+                      <div style={{ fontFamily:F, fontSize:13, color: item.done ? C.dim : C.text,
+                        textDecoration: item.done ? "line-through" : "none" }}>
+                        {item.item}
+                      </div>
+                    </div>
+                  ))}
+                </Card>
+
+                {/* ── MARKET BENCHMARKS ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    📊 Market Benchmarks
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Shown in the market benchmarks table on the client's dashboard.
+                  </p>
+                  {(reportData.benchmarks || []).map((b, i) => (
+                    <div key={i} style={{ marginBottom:10, padding:"10px 14px", borderRadius:10,
+                      background:C.bg, border:`1px solid ${C.border}` }}>
+                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{b.metric}</div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr auto", gap:8 }}>
+                        {[
+                          { key:"yours", placeholder:"Your value", color:"#F0F4FF", fc:C.blue },
+                          { key:"median", placeholder:"Sector median", color:C.bg, fc:C.text },
+                          { key:"bench", placeholder:"Benchmark", color:C.bg, fc:C.text },
+                        ].map(col => (
+                          <input key={col.key} value={b[col.key]} onChange={e => {
+                            const bm = [...reportData.benchmarks];
+                            bm[i] = {...bm[i], [col.key]: e.target.value};
+                            setReportData(r => ({...r, benchmarks: bm}));
+                          }} placeholder={col.placeholder}
+                            style={{ padding:"7px 10px", borderRadius:8, fontSize:12,
+                              border:`1.5px solid ${C.border}`, fontFamily:FM, color:col.fc,
+                              background:col.color, outline:"none", boxSizing:"border-box" }}/>
+                        ))}
+                        <button onClick={() => {
+                          const bm = [...reportData.benchmarks];
+                          bm[i] = {...bm[i], ok: !bm[i].ok};
+                          setReportData(r => ({...r, benchmarks: bm}));
+                        }} style={{ padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
+                          background: b.ok ? `${C.green}15` : `${C.amber}15`,
+                          color: b.ok ? C.green : C.amber, fontSize:11, fontWeight:700, fontFamily:F }}>
+                          {b.ok ? "✅ Ahead" : "⚠️ Gap"}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </Card>
+
+                {/* ── PACK NOTE ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:8 }}>
+                    💬 Garima's Pack Note
+                  </div>
+                  <textarea value={reportData.packNote || ""} rows={5}
+                    onChange={e => setReportData(r => ({...r, packNote: e.target.value}))}
+                    placeholder="Write your analysis note for the client's report page (fundraise strategy, cash health commentary, IPO readiness note)..."
+                    style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+                      border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                      background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
+                    onFocus={e => e.target.style.borderColor = C.amber}
+                    onBlur={e  => e.target.style.borderColor = C.border}
+                  />
+                </Card>
+
+                <SaveBtn onClick={saveReportData} label="Save All Report Data"/>
+              </>)}
             </div>
           )}
 
