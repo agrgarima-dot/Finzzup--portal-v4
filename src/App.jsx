@@ -765,7 +765,7 @@ function Overview({ client, setPage, kpis, garimaNote }) {
             <div style={{ fontFamily:F, fontSize:12, color:"#047857", marginBottom:12, lineHeight:1.6 }}>
               Chat directly with Garima on WhatsApp for quick questions about your financials or valuations.
             </div>
-            <a href="https://wa.me/919833585810" target="_blank" rel="noopener noreferrer"
+            <a href="https://wa.me/966503510581" target="_blank" rel="noopener noreferrer"
               style={{ display:"inline-flex", alignItems:"center", gap:8,
                 background:"#25D366", color:"white", borderRadius:10,
                 padding:"9px 18px", fontFamily:F, fontWeight:700, fontSize:13,
@@ -2142,89 +2142,83 @@ function Engagement({ liveData }) {
 
 // ─── CALENDAR ────────────────────────────────────────────────────────────────
 function Calendar() {
-  const [activeEmbed, setActiveEmbed] = React.useState("30min");
-  const urls = {
-    "30min": "https://calendly.com/agrgarima/30min",
-    "60min": "https://calendly.com/agrgarima/60min",
-  };
   return (
     <div style={{ padding:24 }}>
       <SectionTitle sub="Book a 30-min Valuation call or 60-min CFO Strategy session with Garima.">
         Book a Call
       </SectionTitle>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:24 }} className="cal-grid">
-        <Card style={{ padding:20, borderTop:`3px solid ${C.blue}`,
-          outline: activeEmbed==="30min" ? `2px solid ${C.blue}` : "none",
-          cursor:"pointer" }}
-          onClick={() => setActiveEmbed("30min")}>
-          <div style={{ fontSize:28, marginBottom:12 }}>⚡</div>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>
-            30-min Valuation Call
-          </div>
-          <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.6, marginBottom:16 }}>
-            Questions about your valuation report, methodology, UDIN, or Section 56(2)(viib) compliance.
-          </p>
-          <a href="https://calendly.com/agrgarima/30min" target="_blank" rel="noopener"
-            style={{ display:"block", width:"100%", padding:"11px 0", borderRadius:10, border:"none",
-              background: activeEmbed==="30min" ? C.blue : C.bg3,
-              color: activeEmbed==="30min" ? "white" : C.muted,
-              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer",
-              textAlign:"center", textDecoration:"none", boxSizing:"border-box" }}>
-            Book 30-min →
-          </a>
-        </Card>
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:20 }} className="cal-grid">
+        <a href="https://calendly.com/agrgarima/30min" target="_blank" rel="noopener"
+          style={{ textDecoration:"none" }}>
+          <Card style={{ padding:24, borderTop:`3px solid ${C.blue}`, cursor:"pointer",
+            transition:"box-shadow 0.2s" }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(59,111,247,0.15)"}
+            onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
+            <div style={{ fontSize:32, marginBottom:14 }}>⚡</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
+              30-min Valuation Call
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:20 }}>
+              Questions about your valuation report, methodology, UDIN, or Section 56(2)(viib) compliance.
+            </p>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"12px 16px", borderRadius:10, background:C.blue }}>
+              <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"white" }}>Book 30-min</span>
+              <span style={{ color:"white", fontSize:16 }}>→</span>
+            </div>
+            <div style={{ marginTop:8, fontFamily:F, fontSize:11, color:C.dim, textAlign:"center" }}>
+              Opens Calendly in a new tab
+            </div>
+          </Card>
+        </a>
 
-        <Card style={{ padding:20, borderTop:`3px solid ${C.purple}`,
-          outline: activeEmbed==="60min" ? `2px solid ${C.purple}` : "none",
-          cursor:"pointer" }}
-          onClick={() => setActiveEmbed("60min")}>
-          <div style={{ fontSize:28, marginBottom:12 }}>🧠</div>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>
-            60-min CFO Strategy Call
-          </div>
-          <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.6, marginBottom:16 }}>
-            Monthly CFO review, cash flow planning, investor prep, board pack walkthrough.
-          </p>
-          <a href="https://calendly.com/agrgarima/60min" target="_blank" rel="noopener"
-            style={{ display:"block", width:"100%", padding:"11px 0", borderRadius:10, border:"none",
-              background: activeEmbed==="60min" ? C.purple : C.bg3,
-              color: activeEmbed==="60min" ? "white" : C.muted,
-              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer",
-              textAlign:"center", textDecoration:"none", boxSizing:"border-box" }}>
-            Book 60-min →
-          </a>
-        </Card>
+        <a href="https://calendly.com/agrgarima/60min" target="_blank" rel="noopener"
+          style={{ textDecoration:"none" }}>
+          <Card style={{ padding:24, borderTop:`3px solid ${C.purple}`, cursor:"pointer",
+            transition:"box-shadow 0.2s" }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(124,92,245,0.15)"}
+            onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
+            <div style={{ fontSize:32, marginBottom:14 }}>🧠</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
+              60-min CFO Strategy Call
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:20 }}>
+              Monthly CFO review, cash flow planning, investor prep, board pack walkthrough.
+            </p>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"12px 16px", borderRadius:10, background:C.purple }}>
+              <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"white" }}>Book 60-min</span>
+              <span style={{ color:"white", fontSize:16 }}>→</span>
+            </div>
+            <div style={{ marginTop:8, fontFamily:F, fontSize:11, color:C.dim, textAlign:"center" }}>
+              Opens Calendly in a new tab
+            </div>
+          </Card>
+        </a>
       </div>
 
-      <Card style={{ padding:0, overflow:"hidden" }}>
-        <div style={{ padding:"14px 20px", borderBottom:`1px solid ${C.border}`,
-          display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>📅 Live Booking</div>
-            <div style={{ padding:"3px 10px", borderRadius:100, fontFamily:F, fontSize:11, fontWeight:700,
-              background: activeEmbed==="30min" ? `${C.blue}15` : `${C.purple}15`,
-              color: activeEmbed==="30min" ? C.blue : C.purple }}>
-              {activeEmbed==="30min" ? "30-min Valuation" : "60-min CFO Strategy"}
-            </div>
-          </div>
-          <a href={urls[activeEmbed]} target="_blank" rel="noopener"
-            style={{ fontFamily:F, fontSize:12, color:C.blue, fontWeight:600, textDecoration:"none" }}>
-            Open in new tab ↗
-          </a>
+      <Card style={{ marginBottom:16 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+          📋 What to expect
         </div>
-        <iframe
-          key={activeEmbed}
-          src={urls[activeEmbed]}
-          width="100%"
-          height="700"
-          frameBorder="0"
-          style={{ display:"block" }}
-          title={`Book a ${activeEmbed==="30min"?"30-min Valuation":"60-min CFO Strategy"} call with Garima`}
-        />
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {[
+            { icon:"⚡", title:"30-min Valuation", desc:"Best for: UDIN queries, valuation report review, methodology questions, Section 56 compliance." },
+            { icon:"🧠", title:"60-min CFO Strategy", desc:"Best for: Monthly review, fundraise prep, cash flow planning, board pack walkthrough, investor narrative." },
+          ].map((item, i) => (
+            <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px", borderRadius:10, background:C.bg }}>
+              <span style={{ fontSize:20 }}>{item.icon}</span>
+              <div>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:3 }}>{item.title}</div>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{item.desc}</div>
+              </div>
+            </div>
+          ))}
+        </div>
       </Card>
 
-      <div style={{ marginTop:14, padding:"12px 16px", borderRadius:12,
+      <div style={{ padding:"12px 16px", borderRadius:12,
         background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 Can't find a slot? WhatsApp Garima directly at{" "}
@@ -2236,6 +2230,7 @@ function Calendar() {
     </div>
   );
 }
+
 // ─── DOWNLOAD UTILITIES ───────────────────────────────────────────────────────
 function downloadInvoicePDF(inv, client) {
   const html = `<!DOCTYPE html>
