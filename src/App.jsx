@@ -55,8 +55,8 @@ const INVITE_CODES = {
   "DEMO-CORP": {
     name: "Anita Desai", company: "Horizon Manufacturing Ltd (Corporate)",
     type: "both", clientPack: "corporate", email: "demo-corp@finzzup.com",
-  };
-  
+  },
+};
 
 // ─── DEMO DATA ────────────────────────────────────────────────────────────────
 const KPIs = [
@@ -1198,6 +1198,7 @@ const CFO_PACK_DATA = {
     boardPacks: BOARD_PACKS,
     garimaNote: "The IPO readiness score of 58 is a starting point — the two Ind AS gaps (116 and 109) are solvable in 2–3 months with a focused project. The governance gap is easier but takes longer (6+ months for a qualified independent director). I'd recommend starting the Ind AS restatement work immediately so it's done before you engage investment bankers.",
   },
+};
 
 function ScoreGauge({ score, color, size=100 }) {
   const r = (size/2) - 8;
@@ -1848,7 +1849,7 @@ function MSMEPackContent({ reportData }) {
   );
 }
 
-function CorporatePackContent({ reportData, client }) {
+function CorporatePackContent({ reportData }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
     { id:"monthly", icon:"📊", label:"Monthly Report"    },
@@ -2174,20 +2175,13 @@ function CFOPackContent({ reportData, client }) {
             <style>{`.cfok-g{grid-template-columns:repeat(3,1fr)!important}@media(max-width:480px){.cfok-g{grid-template-columns:1fr 1fr!important}}`}</style>
           </Card>
           <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-              P&L at a Glance{reportData?.pl?.monthLabel ? ` — ${reportData.pl.monthLabel}` : ""}
-            </div>
-            {(reportData?.pl?.revenue?.value ? [
-              { label:"Revenue",      ...reportData.pl.revenue   },
-              { label:"Gross Profit", ...reportData.pl.gp        },
-              { label:"EBITDA",       ...reportData.pl.ebitda    },
-              { label:"Net Profit",   ...reportData.pl.netprofit },
-            ] : [
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>P&L at a Glance</div>
+            {[
               { label:"Revenue",      value:"₹842L", pct:"6.1%",  trend:"up", sub:"MoM growth" },
               { label:"Gross Profit", value:"₹345L", pct:"41.0%", trend:"up", sub:"GP margin" },
               { label:"EBITDA",       value:"₹147L", pct:"17.5%", trend:"up", sub:"Best in 12 months" },
               { label:"Net Profit",   value:"₹102L", pct:"12.1%", trend:"up", sub:"Net margin" },
-            ]).map((r,i) => <StatRow key={i} {...r}/>)}
+            ].map((r,i) => <StatRow key={i} {...r}/>)}
           </Card>
           <Card style={{ borderLeft:`3px solid ${C.green}` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items</div>
@@ -2258,13 +2252,11 @@ function CFOPackContent({ reportData, client }) {
           </Card>
           <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>📝 Variance Commentary</div>
-            {(reportData?.varianceCommentary?.some(c=>c) ? reportData.varianceCommentary.filter(c=>c).map((c,i) => ({
-              item: c.split(' — ')[0] || c, note: c.split(' — ')[1] || "", c: i===2?C.amber:C.green
-            })) : [
+            {[
               { item:"Revenue ₹52L above budget", note:"Driven by early renewal from Client A (+₹38L) and new logo added in mid-Feb (+₹14L). March pipeline looks equally strong.", c:C.green },
               { item:"Headcount costs ₹7L under budget", note:"2 open roles not yet filled — saving budget but creating capacity risk in engineering. Hiring to resume in March.", c:C.green },
               { item:"Cash balance ₹0.3Cr below budget", note:"Advance vendor payments pulled forward from March. Temporary — will normalise by end of March.", c:C.amber },
-            ]).map((v,i) => (
+            ].map((v,i) => (
               <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<2?`1px solid ${C.border}`:"none" }}>
                 <div style={{ width:8, height:8, borderRadius:100, background:v.c, flexShrink:0, marginTop:6 }}/>
                 <div>
@@ -2348,7 +2340,6 @@ function BoardPacksTabbed() {
 // ─── CFO PACKS (existing component) ──────────────────────────────────────────
 function CFOPacks({ client, reportData }) {
   const packType  = client.clientPack || "startup";
-  
   const data      = CFO_PACK_DATA[packType];
   const [tab, setTab] = useState("pack"); // "pack" | "boardpacks"
 
@@ -3567,7 +3558,7 @@ function Terms() {
 function MyReport({ client, reportData }) {
   const pack = client?.client_pack || "startup";
   if (pack === "msme")      return <MSMEPackContent      reportData={reportData}/>;
-  if (pack === "corporate") return <CorporatePackContent reportData={reportData} client={client}/>;
+  if (pack === "corporate") return <CorporatePackContent reportData={reportData}/>;
   return <CFOPackContent reportData={reportData} client={client}/>;
 }
 
@@ -3883,23 +3874,6 @@ function AdminPanel({ admin, onLogout }) {
       { metric:"Revenue per FTE",  yours:"", median:"", bench:"", ok:true  },
     ],
     packNote: "",
-    // P&L actuals (shown in Monthly Report tab)
-    pl: {
-      monthLabel: "",
-      revenue:    { value:"", pct:"", trend:"up",  sub:"" },
-      gp:         { value:"", pct:"", trend:"up",  sub:"" },
-      ebitda:     { value:"", pct:"", trend:"up",  sub:"" },
-      netprofit:  { value:"", pct:"", trend:"up",  sub:"" },
-    },
-    // Variance analysis (Budget vs Actual)
-    variance: [
-      { m:"Revenue",      bud:"", act:"", fav:true  },
-      { m:"Gross Profit", bud:"", act:"", fav:true  },
-      { m:"EBITDA",       bud:"", act:"", fav:true  },
-      { m:"Net Profit",   bud:"", act:"", fav:true  },
-      { m:"Opex",         bud:"", act:"", fav:true  },
-    ],
-    varianceCommentary: ["","",""],
   });
 
   useEffect(() => { fetchClients(); }, []);
@@ -4790,111 +4764,6 @@ function AdminPanel({ admin, onLogout }) {
                     onFocus={e => e.target.style.borderColor = C.amber}
                     onBlur={e  => e.target.style.borderColor = C.border}
                   />
-                </Card>
-
-                {/* ── P&L AT A GLANCE ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    📄 P&L at a Glance
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    These numbers appear in the Monthly Report tab. Enter the month label and P&L rows.
-                  </p>
-                  <Input label="Month Label" val={reportData.pl?.monthLabel || ""}
-                    onChange={v => setReportData(r => ({...r, pl:{...(r.pl||{}), monthLabel:v}}))}
-                    placeholder="e.g. February 2026"/>
-                  <div style={{ marginTop:12, display:"flex", flexDirection:"column", gap:10 }}>
-                    {[
-                      { key:"revenue",   label:"Revenue"    },
-                      { key:"gp",        label:"Gross Profit"},
-                      { key:"ebitda",    label:"EBITDA"     },
-                      { key:"netprofit", label:"Net Profit" },
-                    ].map(row => (
-                      <div key={row.key} style={{ padding:"10px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
-                        <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, marginBottom:8 }}>{row.label}</div>
-                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr auto", gap:8 }}>
-                          <input value={reportData.pl?.[row.key]?.value || ""} placeholder="Value e.g. ₹12.3 Cr"
-                            onChange={e => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), value:e.target.value}}}))}
-                            style={{ padding:"7px 10px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.blue, background:"#F0F4FF", outline:"none", boxSizing:"border-box" }}/>
-                          <input value={reportData.pl?.[row.key]?.pct || ""} placeholder="% e.g. 34.2%"
-                            onChange={e => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), pct:e.target.value}}}))}
-                            style={{ padding:"7px 10px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.teal, background:"#E6FAF7", outline:"none", boxSizing:"border-box" }}/>
-                          <input value={reportData.pl?.[row.key]?.sub || ""} placeholder="Note e.g. Best in 12 months"
-                            onChange={e => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), sub:e.target.value}}}))}
-                            style={{ padding:"7px 10px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", boxSizing:"border-box" }}/>
-                          <button onClick={() => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), trend: r.pl?.[row.key]?.trend==="up"?"down":"up"}}}))}
-                            style={{ padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer", fontWeight:700, fontSize:13,
-                              background: (reportData.pl?.[row.key]?.trend||"up")==="up" ? `${C.green}15` : `${C.red}15`,
-                              color: (reportData.pl?.[row.key]?.trend||"up")==="up" ? C.green : C.red }}>
-                            {(reportData.pl?.[row.key]?.trend||"up")==="up" ? "▲ Up" : "▼ Down"}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-
-                {/* ── VARIANCE ANALYSIS ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    📉 Variance Analysis (Budget vs Actual)
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Shown in the Variance Analysis tab. Enter budget and actual — variance % is auto-calculated on the portal.
-                  </p>
-                  <div style={{ overflowX:"auto" }}>
-                    <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F }}>
-                      <thead>
-                        <tr style={{ borderBottom:`2px solid ${C.border}` }}>
-                          {["P&L Line","Budget","Actual","Favourable?"].map((h,i) => (
-                            <th key={i} style={{ padding:"8px 10px", textAlign:"left", fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase" }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(reportData.variance || []).map((row, i) => (
-                          <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
-                            <td style={{ padding:"8px 10px", fontFamily:F, fontSize:13, fontWeight:700, color:C.text, whiteSpace:"nowrap" }}>{row.m}</td>
-                            <td style={{ padding:"6px 8px" }}>
-                              <input value={row.bud} placeholder="Budget"
-                                onChange={e => { const v=[...reportData.variance]; v[i]={...v[i],bud:e.target.value}; setReportData(r=>({...r,variance:v})); }}
-                                style={{ width:"100%", padding:"7px 10px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.muted, background:C.bg, outline:"none", boxSizing:"border-box" }}/>
-                            </td>
-                            <td style={{ padding:"6px 8px" }}>
-                              <input value={row.act} placeholder="Actual"
-                                onChange={e => { const v=[...reportData.variance]; v[i]={...v[i],act:e.target.value}; setReportData(r=>({...r,variance:v})); }}
-                                style={{ width:"100%", padding:"7px 10px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.blue, background:"#F0F4FF", outline:"none", boxSizing:"border-box" }}/>
-                            </td>
-                            <td style={{ padding:"6px 8px" }}>
-                              <button onClick={() => { const v=[...reportData.variance]; v[i]={...v[i],fav:!v[i].fav}; setReportData(r=>({...r,variance:v})); }}
-                                style={{ padding:"7px 14px", borderRadius:8, border:"none", cursor:"pointer", fontWeight:700, fontSize:12,
-                                  background: row.fav ? `${C.green}15` : `${C.red}15`,
-                                  color: row.fav ? C.green : C.red }}>
-                                {row.fav ? "✅ Fav" : "⚠️ Unfav"}
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                  <div style={{ marginTop:16 }}>
-                    <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:10 }}>
-                      Variance Commentary (3 key points)
-                    </div>
-                    {[0,1,2].map(i => (
-                      <div key={i} style={{ display:"flex", gap:8, marginBottom:8, alignItems:"flex-start" }}>
-                        <div style={{ width:20, height:20, borderRadius:100, background:i===0?C.green:i===1?C.green:C.amber,
-                          flexShrink:0, marginTop:8, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                          <span style={{ color:"white", fontSize:9, fontWeight:900 }}>{i+1}</span>
-                        </div>
-                        <input value={(reportData.varianceCommentary||[])[i]||""} placeholder={`Commentary point ${i+1}...`}
-                          onChange={e => { const vc=[...(reportData.varianceCommentary||["","",""])]; vc[i]=e.target.value; setReportData(r=>({...r,varianceCommentary:vc})); }}
-                          style={{ flex:1, padding:"8px 12px", borderRadius:8, fontSize:13, border:`1.5px solid ${C.border}`,
-                            fontFamily:F, color:C.text, background:C.bg, outline:"none", boxSizing:"border-box" }}/>
-                      </div>
-                    ))}
-                  </div>
                 </Card>
 
                 <SaveBtn onClick={saveReportData} label="Save All Report Data"/>
