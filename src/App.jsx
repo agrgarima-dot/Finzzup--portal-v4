@@ -73,36 +73,6 @@ const KPIs = [
   { label:"ARR",          value:"₹6.2 Cr",  prev:"₹5.4 Cr",  trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"🎯" },
 ];
 
-// ── Integro Finserv real KPIs (FY2025 actuals, Rs in '000s) ─────────────────
-const INTEGRO_KPIS = [
-  { label:"Revenue FY25",   value:"₹12.3 Cr", prev:"₹7.5 Cr",  trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"📈" },
-  { label:"PAT",            value:"₹4.2 Cr",  prev:"₹1.8 Cr",  trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"💹" },
-  { label:"Cash Balance",   value:"₹1.8 Cr",  prev:"₹1.1 Cr",  trend:"up",   color:C.amber,  bg:"#FEF7E7", icon:"🏦" },
-  { label:"Total Assets",   value:"₹38.9 Cr", prev:"₹10.4 Cr", trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"🏛️" },
-  { label:"NPA (Gross)",    value:"₹24.0 L",  prev:"₹39.5 L",  trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"📊" },
-  { label:"Debt/Equity",    value:"3.0x",     prev:"0.8x",     trend:"down", color:C.red,    bg:"#FEF2F2", icon:"⚠️" },
-];
-
-const INTEGRO_ACTIONS = [
-  { id:1, text:"Prepare refinancing plan for ₹230L NCDs due 31 May 2026 — urgent", priority:"High",   done:false },
-  { id:2, text:"Increase NPA provisioning coverage from 25% to minimum 50% — RBI expectation", priority:"High",   done:false },
-  { id:3, text:"Board ratification of all related party transactions for FY25", priority:"Medium", done:false },
-  { id:4, text:"Review liquidity buffer — cash ₹1.8Cr is thin relative to ₹39Cr balance sheet", priority:"Medium", done:false },
-  { id:5, text:"File audited financials with ROC before due date", priority:"Low",    done:true  },
-];
-
-const INTEGRO_CASHFLOW = [
-  { month:"Sep", value:145, forecast:null },
-  { month:"Oct", value:162, forecast:null },
-  { month:"Nov", value:178, forecast:null },
-  { month:"Dec", value:155, forecast:null },
-  { month:"Jan", value:190, forecast:null },
-  { month:"Feb", value:180, forecast:null },
-  { month:"Mar", value:null, forecast:160 },
-  { month:"Apr", value:null, forecast:175 },
-  { month:"May", value:null, forecast:140 },
-];
-
 const CASHFLOW = [
   { month:"Sep", value:210, forecast:null },
   { month:"Oct", value:185, forecast:null },
@@ -3715,11 +3685,9 @@ function Portal({ client, onLogout }) {
     { label:"Burn Rate",    value:liveKpis.burn_rate    ||"—", prev:prevK.burn_rate    ||"—", trend: prevK.burn_rate    ?"up":"up",   color:C.purple, bg:"#F3EFFF", icon:"🔥" },
     { label:"Runway",       value:liveKpis.runway       ||"—", prev:prevK.runway       ||"—", trend: prevK.runway       ?"down":"down",color:C.pink,   bg:"#FEF0F7", icon:"⏳" },
     { label:"ARR",          value:liveKpis.arr          ||"—", prev:prevK.arr          ||"—", trend: prevK.arr          ?"up":"up",   color:C.green,  bg:"#E8FAF3", icon:"🎯" },
-  ] : isIntegro ? INTEGRO_KPIS : KPIs;
+  ] : KPIs;
 
-  const isIntegro = client?.invite_code === "INTEGRO2026";
-  const resolvedActions    = isIntegro ? INTEGRO_ACTIONS
-    : (!isDemo && liveActions)    ? liveActions    : ACTIONS;
+  const resolvedActions    = (!isDemo && liveActions)    ? liveActions    : ACTIONS;
   const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
   const resolvedReportData = (!isDemo && liveReportData) ? liveReportData : null;
   const resolvedGarimaNote = isIntegro
