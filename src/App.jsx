@@ -55,13 +55,8 @@ const INVITE_CODES = {
   "DEMO-CORP": {
     name: "Anita Desai", company: "Horizon Manufacturing Ltd (Corporate)",
     type: "both", clientPack: "corporate", email: "demo-corp@finzzup.com",
-  },
-  // ── Integro Finserv — real client demo ──
-  "INTEGRO2026": {
-    name: "Radhakrishnan Iyer", company: "Integro Finserv Private Limited",
-    type: "cfo", clientPack: "corporate", email: "radhakrishnan@integrofinserv.in",
-  },
-};
+  };
+  
 
 // ─── DEMO DATA ────────────────────────────────────────────────────────────────
 const KPIs = [
@@ -1203,40 +1198,6 @@ const CFO_PACK_DATA = {
     boardPacks: BOARD_PACKS,
     garimaNote: "The IPO readiness score of 58 is a starting point — the two Ind AS gaps (116 and 109) are solvable in 2–3 months with a focused project. The governance gap is easier but takes longer (6+ months for a qualified independent director). I'd recommend starting the Ind AS restatement work immediately so it's done before you engage investment bankers.",
   },
-  // ── Integro Finserv — real client data (FY2025 actuals) ─────────────────────
-  integro: {
-    label: "Corporate Pack — Integro Finserv",
-    icon: "🏦",
-    color: C.purple,
-    bg: "#F3EFFF",
-    grad: "linear-gradient(135deg,#7C5CF5,#E8509A)",
-    tagline: "NBFC advisory — NPA resolution & financial governance",
-    ipoScore: 52,
-    ipoBreakdown: [
-      { label:"Revenue Scale",              score:60, comment:"₹12.3 Cr — growing fast but pre-IPO scale" },
-      { label:"Profitability Track Record", score:72, comment:"PAT ₹4.2 Cr, 136% YoY growth — strong" },
-      { label:"Governance & Board",         score:65, comment:"6 directors; related party transactions need tighter disclosure" },
-      { label:"RBI Compliance",             score:55, comment:"NBFC prudential norms — NPA provisioning needs review" },
-      { label:"Leverage Management",        score:42, comment:"Debt/Equity 3.0x — high; NCD redemption risk in May 2026" },
-    ],
-    complianceFlags: [
-      { flag:"NCD Redemption — May 2026",         severity:"High",   detail:"₹230L NCDs due 31st May 2026. Refinancing or repayment plan needed urgently." },
-      { flag:"NPA Provisioning Adequacy",          severity:"High",   detail:"Gross NPA ₹24.01L. Provision ₹6.0L — coverage ratio only 25%. RBI expects higher." },
-      { flag:"Related Party Transactions",         severity:"Medium", detail:"Significant RPTs with directors and promoter entities. Enhanced board disclosure needed." },
-      { flag:"Leverage Ratio — Debt/Equity 3.0x",  severity:"Medium", detail:"Total borrowings ₹2.58Cr vs equity ₹82.2L. Approaching RBI leverage limits for NBFCs." },
-      { flag:"Cash Liquidity",                     severity:"Medium", detail:"Cash ₹1.8 Cr against balance sheet of ₹39 Cr. Liquidity buffer is thin." },
-    ],
-    indAS: [
-      { standard:"RBI Prudential Norms — NPA",    status:"Review Needed", note:"Provisioning coverage at 25% — needs increase" },
-      { standard:"AS 18 — Related Parties",        status:"Action Needed",  note:"RPT disclosures require board ratification" },
-      { standard:"AS 15 — Employee Benefits",      status:"Compliant",      note:"Gratuity provisioned via actuary" },
-      { standard:"AS 22 — Deferred Tax",           status:"Compliant",      note:"DTL recognised correctly" },
-      { standard:"Master Direction — NBFC",        status:"Compliant",      note:"CoR valid; compliant with layering norms" },
-    ],
-    boardPacks: BOARD_PACKS,
-    garimaNote: "Integro has had an exceptional FY25 — revenue up 63%, PAT up 136%. The concern now is the other side of that growth: ₹2.58Cr in borrowings, an NCD redemption due May 2026, and a thin cash buffer of ₹1.8Cr. The board needs to make two decisions immediately: refinancing plan for May NCDs and a credible plan to improve NPA provisioning coverage to at least 50%. These are not optional — they are RBI expectations.",
-  },
-};
 
 function ScoreGauge({ score, color, size=100 }) {
   const r = (size/2) - 8;
@@ -1895,8 +1856,7 @@ function CorporatePackContent({ reportData, client }) {
     { id:"ipo",     icon:"🏦", label:"IPO Readiness"     },
     { id:"packs",   icon:"📁", label:"Previous Packs"    },
   ];
-  const isIntegro = client?.invite_code === "INTEGRO2026";
-  const data = isIntegro ? CFO_PACK_DATA["integro"] : CFO_PACK_DATA["corporate"];
+  const data = CFO_PACK_DATA["corporate"];
 
   return (
     <div>
@@ -2197,10 +2157,7 @@ function CFOPackContent({ reportData, client }) {
           <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>📝 Note from Garima</div>
             <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
-              {reportData?.packNote || (isIntegro
-              ? "FY25 closed exceptionally — Revenue ₹12.3Cr (+63%), PAT ₹4.2Cr (+136%). Total assets grew to ₹38.9Cr, driven by aggressive NPA pool acquisitions. Key concern for FY26: NCD redemption of ₹230L due 31 May 2026 and thin cash buffer of ₹1.8Cr relative to balance sheet size. Board action required on both items before end of March."
-              : "Strong month — revenue up 6.1%, EBITDA margin at 17.5% (best in 12 months). The concern is March cash: advance tax + debt repayment + delayed Client B collection creates a tight window. Two decisions need board attention before 10 March."
-            )}
+              {reportData?.packNote || "Strong month — revenue up 6.1%, EBITDA margin at 17.5% (best in 12 months). The concern is March cash: advance tax + debt repayment + delayed Client B collection creates a tight window. Two decisions need board attention before 10 March."}
             </p>
           </Card>
           <Card>
@@ -2391,9 +2348,8 @@ function BoardPacksTabbed() {
 // ─── CFO PACKS (existing component) ──────────────────────────────────────────
 function CFOPacks({ client, reportData }) {
   const packType  = client.clientPack || "startup";
-  // Use integro-specific data if this is the Integro client
-  const dataKey   = client.invite_code === "INTEGRO2026" ? "integro" : packType;
-  const data      = CFO_PACK_DATA[dataKey] || CFO_PACK_DATA[packType];
+  
+  const data      = CFO_PACK_DATA[packType];
   const [tab, setTab] = useState("pack"); // "pack" | "boardpacks"
 
   return (
@@ -3690,9 +3646,7 @@ function Portal({ client, onLogout }) {
   const resolvedActions    = (!isDemo && liveActions)    ? liveActions    : ACTIONS;
   const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
   const resolvedReportData = (!isDemo && liveReportData) ? liveReportData : null;
-  const resolvedGarimaNote = isIntegro
-    ? "FY25 has been exceptional — revenue up 63%, PAT up 136%. The immediate priority is the NCD redemption due May 2026 (₹230L). We need a refinancing plan on the table before the board meeting. I've also flagged NPA provisioning — at 25% coverage we are below RBI expectations. Let's discuss both items this week."
-    : (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
+  const resolvedGarimaNote = (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
     : "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
 
   const pages = {
