@@ -785,7 +785,7 @@ function Overview({ client, setPage, kpis, garimaNote }) {
             <div style={{ fontFamily:F, fontSize:12, color:"#047857", marginBottom:12, lineHeight:1.6 }}>
               Chat directly with Garima on WhatsApp for quick questions about your financials or valuations.
             </div>
-            <a href="https://wa.me/966503510581" target="_blank" rel="noopener noreferrer"
+            <a href="https://wa.me/919833585810" target="_blank" rel="noopener noreferrer"
               style={{ display:"inline-flex", alignItems:"center", gap:8,
                 background:"#25D366", color:"white", borderRadius:10,
                 padding:"9px 18px", fontFamily:F, fontWeight:700, fontSize:13,
