@@ -2621,7 +2621,7 @@ function Calendar() {
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 Can't find a slot? WhatsApp Garima directly at{" "}
           <a href={WA} target="_blank" rel="noopener"
-            style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
+            style={{ color:C.green, fontWeight:700 }}>+91 98335 85810</a>
         </div>
       </div>
       <style>{`@media(max-width:500px){.cal-grid{grid-template-columns:1fr!important}}`}</style>
