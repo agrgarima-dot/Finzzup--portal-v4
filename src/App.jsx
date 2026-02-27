@@ -145,7 +145,7 @@ const PriBadge = ({ p }) => {
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
 const Logo = ({ size=32, darkText=false, showTagline=false }) => {
   const lime = "#5B4FDB";
-  const iconBg = "#111827";
+  const iconBg = "white";
   const textColor = darkText ? "#111827" : "white";
   const s = (size/32)*40;
   return (
@@ -296,10 +296,10 @@ function Login({ onLogin }) {
               <svg width={44} height={44} viewBox="0 0 40 40" fill="none">
                 <rect width="40" height="40" rx="10" fill="#5B4FDB"/>
                 <text x="50%" y="58%" dominantBaseline="middle" textAnchor="middle"
-                  style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800, fontSize:22, fill:C.navy }}>
+                  style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800, fontSize:22, fill:"white" }}>
                   F
                 </text>
-                <circle cx="30" cy="10" r="5" fill={C.navy}/>
+                <circle cx="30" cy="10" r="5" fill="white"/>
                 <circle cx="32" cy="10" r="2" fill="#5B4FDB"/>
               </svg>
               <span style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800,
@@ -3701,19 +3701,28 @@ function Portal({ client, onLogout }) {
 // ─── ADMIN PANEL ──────────────────────────────────────────────────────────────
 
 // ─── ADMIN SHARED COMPONENTS (defined outside to prevent focus loss on re-render) ─
-const AdminInput = ({ label, val, onChange, type="text", placeholder="", mono=false, C, F, FM }) => (
-  <div style={{ marginBottom:12 }}>
-    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
-    <input value={val} onChange={e => onChange(e.target.value)} type={type} placeholder={placeholder}
-      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-        border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
-        background:C.bg, outline:"none", boxSizing:"border-box" }}
-      onFocus={e => e.target.style.borderColor = C.amber}
-      onBlur={e  => e.target.style.borderColor = C.border}
-    />
-  </div>
-);
+function AdminInput({ label, val, onChange, type="text", placeholder="", mono=false, C, F, FM }) {
+  const [local, setLocal] = React.useState(val ?? "");
+  // Sync if parent resets (e.g. client switch)
+  React.useEffect(() => { setLocal(val ?? ""); }, [val]);
+  return (
+    <div style={{ marginBottom:12 }}>
+      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+        letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
+      <input
+        value={local}
+        type={type}
+        placeholder={placeholder}
+        onChange={e => setLocal(e.target.value)}
+        onBlur={e => { onChange(local); e.target.style.borderColor = C.border; }}
+        onFocus={e => e.target.style.borderColor = C.amber}
+        style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+          border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
+          background:C.bg, outline:"none", boxSizing:"border-box" }}
+      />
+    </div>
+  );
+}
 const AdminSelect = ({ label, val, onChange, options, C, F }) => (
   <div style={{ marginBottom:12 }}>
     <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
@@ -3734,6 +3743,24 @@ const AdminSaveBtn = ({ onClick, loading, saved, label="Save Changes", F }) => (
     {loading ? "Saving…" : saved ? "✅ Saved!" : label}
   </button>
 );
+
+// ─── INLINE INPUT — for table cells, commits on blur only ─────────────────────
+function InlineInput({ value, onCommit, placeholder="", style={} }) {
+  const [local, setLocal] = React.useState(value ?? "");
+  React.useEffect(() => { setLocal(value ?? ""); }, [value]);
+  return (
+    <input
+      value={local}
+      onChange={e => setLocal(e.target.value)}
+      onBlur={() => onCommit(local)}
+      placeholder={placeholder}
+      style={{ padding:"6px 8px", borderRadius:7, fontSize:12, border:"1.5px solid #E5E7EB",
+        fontFamily:"'DM Mono',monospace", color:"#111827", background:"#F9FAFB",
+        outline:"none", width:"100%", boxSizing:"border-box", ...style }}
+      onFocus={e => e.target.style.borderColor="#D97706"}
+    />
+  );
+}
 
 function AdminLogin({ onLogin }) {
   const [form, setForm] = useState({ email:"", password:"" });
@@ -4130,10 +4157,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"documents",  icon:"📁", label:"Documents"       },
   ];
 
-  // Wrappers around module-level components — prevents focus loss on re-render
-  const Input   = (props) => <AdminInput   {...props} C={C} F={F} FM={FM}/>;
-  const Select  = (props) => <AdminSelect  {...props} C={C} F={F}/>;
-  const SaveBtn = (props) => <AdminSaveBtn {...props} loading={loading} saved={saved} F={F}/>;
+  // Stable component references — prevents remount/focus-loss on every render
 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
@@ -4267,12 +4291,12 @@ function AdminPanel({ admin, onLogout }) {
               <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:20 }}>
                 New Client Details
               </div>
-              <Input label="Client Name"    val={newClient.name}    onChange={v=>setNewClient(c=>({...c,name:v}))}    placeholder="e.g. Ravi Sharma" />
-              <Input label="Company"        val={newClient.company} onChange={v=>setNewClient(c=>({...c,company:v}))} placeholder="e.g. Sharma Textiles Pvt Ltd" />
-              <Input label="Email"          val={newClient.email}   onChange={v=>setNewClient(c=>({...c,email:v}))}   type="email" placeholder="client@company.com" />
+              <AdminInput C={C} F={F} FM={FM} label="Client Name"    val={newClient.name}    onChange={v=>setNewClient(c=>({...c,name:v}))}    placeholder="e.g. Ravi Sharma" />
+              <AdminInput C={C} F={F} FM={FM} label="Company"        val={newClient.company} onChange={v=>setNewClient(c=>({...c,company:v}))} placeholder="e.g. Sharma Textiles Pvt Ltd" />
+              <AdminInput C={C} F={F} FM={FM} label="Email"          val={newClient.email}   onChange={v=>setNewClient(c=>({...c,email:v}))}   type="email" placeholder="client@company.com" />
               <div style={{ display:"flex", gap:10, alignItems:"flex-end" }}>
                 <div style={{ flex:1 }}>
-                  <Input label="Invite Code" val={newClient.invite_code}
+                  <AdminInput C={C} F={F} FM={FM} label="Invite Code" val={newClient.invite_code}
                     onChange={v=>setNewClient(c=>({...c,invite_code:v.toUpperCase()}))}
                     placeholder="e.g. SHAR2026" mono={true} />
                 </div>
@@ -4282,14 +4306,14 @@ function AdminPanel({ admin, onLogout }) {
                   Auto-generate
                 </button>
               </div>
-              <Select label="Pack Type" val={newClient.client_pack}
+              <AdminSelect C={C} F={F} label="Pack Type" val={newClient.client_pack}
                 onChange={v=>setNewClient(c=>({...c,client_pack:v}))}
                 options={[
                   {value:"startup",   label:"Startup / CFO Pack"},
                   {value:"msme",      label:"MSME Pack"},
                   {value:"corporate", label:"Corporate Pack"},
                 ]}/>
-              <Select label="Service Type" val={newClient.type}
+              <AdminSelect C={C} F={F} label="Service Type" val={newClient.type}
                 onChange={v=>setNewClient(c=>({...c,type:v}))}
                 options={[
                   {value:"both",      label:"CFO + Valuation"},
@@ -4329,7 +4353,7 @@ function AdminPanel({ admin, onLogout }) {
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20 }}>
                     These numbers appear on the client's dashboard instantly after saving.
                   </p>
-                  <Input label="Month" val={kpis.month} onChange={v=>setKpis(k=>({...k,month:v}))} placeholder="e.g. February 2026" />
+                  <AdminInput C={C} F={F} FM={FM} label="Month" val={kpis.month} onChange={v=>setKpis(k=>({...k,month:v}))} placeholder="e.g. February 2026" />
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }} className="kpi-edit-grid">
                     {[
                       { label:"Revenue",      key:"revenue",      placeholder:"e.g. ₹8.4 Cr"  },
@@ -4339,7 +4363,7 @@ function AdminPanel({ admin, onLogout }) {
                       { label:"Runway",       key:"runway",       placeholder:"e.g. 4.4 months"},
                       { label:"ARR",          key:"arr",          placeholder:"e.g. ₹6.2 Cr"  },
                     ].map(f => (
-                      <Input key={f.key} label={f.label} val={kpis[f.key]||""}
+                      <AdminInput C={C} F={F} FM={FM} key={f.key} label={f.label} val={kpis[f.key]||""}
                         onChange={v=>setKpis(k=>({...k,[f.key]:v}))} placeholder={f.placeholder} mono />
                     ))}
                   </div>
@@ -4357,7 +4381,7 @@ function AdminPanel({ admin, onLogout }) {
                       onBlur={e  => e.target.style.borderColor = C.border}
                     />
                   </div>
-                  <SaveBtn onClick={saveKPIs}/>
+                  <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveKPIs}/>
                 </Card>
               )}
               <style>{`.kpi-edit-grid{grid-template-columns:1fr 1fr!important}@media(max-width:480px){.kpi-edit-grid{grid-template-columns:1fr!important}}`}</style>
@@ -4387,9 +4411,9 @@ function AdminPanel({ admin, onLogout }) {
                         background:C.bg, outline:"none", boxSizing:"border-box" }}/>
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <Select label="Priority" val={newAction.priority} onChange={v=>setNewAction(a=>({...a,priority:v}))}
+                    <AdminSelect C={C} F={F} label="Priority" val={newAction.priority} onChange={v=>setNewAction(a=>({...a,priority:v}))}
                       options={[{value:"High",label:"High"},{value:"Medium",label:"Medium"},{value:"Low",label:"Low"}]}/>
-                    <Input label="Month" val={newAction.month} onChange={v=>setNewAction(a=>({...a,month:v}))} placeholder="e.g. March 2026"/>
+                    <AdminInput C={C} F={F} FM={FM} label="Month" val={newAction.month} onChange={v=>setNewAction(a=>({...a,month:v}))} placeholder="e.g. March 2026"/>
                   </div>
                   <button onClick={addAction} style={{ padding:"10px 20px", borderRadius:10,
                     border:"none", background:C.grad1, color:"white", fontFamily:F,
@@ -4445,13 +4469,13 @@ function AdminPanel({ admin, onLogout }) {
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:20 }}>
                     Valuation Engagement — {selected.name}
                   </div>
-                  <Input label="Engagement Type" val={engagement.type||""}
+                  <AdminInput C={C} F={F} FM={FM} label="Engagement Type" val={engagement.type||""}
                     onChange={v=>setEngagement(e=>({...e,type:v}))}
                     placeholder="e.g. DCF Valuation — Section 56(2)(viib)"/>
-                  <Input label="Reference Number" val={engagement.ref_number||""}
+                  <AdminInput C={C} F={F} FM={FM} label="Reference Number" val={engagement.ref_number||""}
                     onChange={v=>setEngagement(e=>({...e,ref_number:v}))}
                     placeholder="e.g. VAL-240216" mono/>
-                  <Input label="Expected Date" val={engagement.expected_date||""}
+                  <AdminInput C={C} F={F} FM={FM} label="Expected Date" val={engagement.expected_date||""}
                     onChange={v=>setEngagement(e=>({...e,expected_date:v}))}
                     placeholder="e.g. 28 Feb 2026"/>
                   <div style={{ marginBottom:12 }}>
@@ -4484,7 +4508,7 @@ function AdminPanel({ admin, onLogout }) {
                         border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                         background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}/>
                   </div>
-                  <SaveBtn onClick={saveEngagement}/>
+                  <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveEngagement}/>
                 </Card>
               )}
             </div>
@@ -4505,25 +4529,25 @@ function AdminPanel({ admin, onLogout }) {
                     Create Invoice for {selected.name}
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <Input label="Invoice Number" val={newInvoice.invoice_number}
+                    <AdminInput C={C} F={F} FM={FM} label="Invoice Number" val={newInvoice.invoice_number}
                       onChange={v=>setNewInvoice(i=>({...i,invoice_number:v}))}
                       placeholder="e.g. INV-2026-001" mono/>
-                    <Input label="Amount (₹)" val={newInvoice.amount}
+                    <AdminInput C={C} F={F} FM={FM} label="Amount (₹)" val={newInvoice.amount}
                       onChange={v=>setNewInvoice(i=>({...i,amount:v}))}
                       placeholder="e.g. ₹50,000"/>
                   </div>
-                  <Input label="Description" val={newInvoice.description}
+                  <AdminInput C={C} F={F} FM={FM} label="Description" val={newInvoice.description}
                     onChange={v=>setNewInvoice(i=>({...i,description:v}))}
                     placeholder="e.g. CFO Retainer — March 2026"/>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <Input label="Due Date" val={newInvoice.due_date}
+                    <AdminInput C={C} F={F} FM={FM} label="Due Date" val={newInvoice.due_date}
                       onChange={v=>setNewInvoice(i=>({...i,due_date:v}))}
                       placeholder="e.g. 31 Mar 2026"/>
-                    <Select label="Status" val={newInvoice.status}
+                    <AdminSelect C={C} F={F} label="Status" val={newInvoice.status}
                       onChange={v=>setNewInvoice(i=>({...i,status:v}))}
                       options={[{value:"unpaid",label:"Unpaid"},{value:"paid",label:"Paid"}]}/>
                   </div>
-                  <SaveBtn onClick={addInvoice} label="+ Create Invoice"/>
+                  <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={addInvoice} label="+ Create Invoice"/>
                 </Card>
 
                 {/* Invoice list */}
@@ -4596,7 +4620,7 @@ function AdminPanel({ admin, onLogout }) {
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
                     Shown as "KPI Snapshot — <strong>[Month]</strong>" and "Last updated by Garima: <strong>[Month]</strong>" on the portal.
                   </p>
-                  <Input label="Month Label" val={reportData.monthLabel || ""}
+                  <AdminInput C={C} F={F} FM={FM} label="Month Label" val={reportData.monthLabel || ""}
                     onChange={v => setReportData(r => ({...r, monthLabel:v}))}
                     placeholder="e.g. February 2026"/>
                 </Card>
@@ -4616,7 +4640,7 @@ function AdminPanel({ admin, onLogout }) {
                       { label:"Prev Runway",        key:"runway",       placeholder:"e.g. 5.0 months"  },
                       { label:"Prev ARR",           key:"arr",          placeholder:"e.g. ₹5.4 Cr"    },
                     ].map(f => (
-                      <Input key={f.key} label={f.label}
+                      <AdminInput C={C} F={F} FM={FM} key={f.key} label={f.label}
                         val={reportData.prevKpis?.[f.key] || ""}
                         onChange={v => setReportData(r => ({...r, prevKpis:{...(r.prevKpis||{}),[f.key]:v}}))}
                         placeholder={f.placeholder} mono/>
@@ -4656,19 +4680,14 @@ function AdminPanel({ admin, onLogout }) {
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:row.bold?700:500,
                         color:row.dim?C.dim:C.text, fontStyle:row.dim?"italic":"normal",
                         display:"flex", alignItems:"center" }}>{row.label}</div>
-                      <input value={reportData.pl?.[row.key]?.actual || ""}
-                        onChange={e => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), actual:e.target.value}}}))}
+                      <InlineInput value={reportData.pl?.[row.key]?.actual || ""}
+                        onCommit={v => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), actual:v}}}))}
                         placeholder={row.placeholder}
-                        style={{ padding:"8px 10px", borderRadius:8, fontSize:13, border:`1.5px solid ${C.border}`,
-                          fontFamily:FM, fontWeight:row.bold?700:400, color:C.text,
-                          background:row.bold?"#F0F4FF":C.bg, outline:"none", boxSizing:"border-box" }}
-                        onFocus={e=>e.target.style.borderColor=C.amber} onBlur={e=>e.target.style.borderColor=C.border}/>
-                      <input value={reportData.pl?.[row.key]?.prev || ""}
-                        onChange={e => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), prev:e.target.value}}}))}
+                        style={{ fontFamily:FM, fontWeight:row.bold?700:400, color:C.text, background:row.bold?"#F0F4FF":C.bg }}/>
+                      <InlineInput value={reportData.pl?.[row.key]?.prev || ""}
+                        onCommit={v => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), prev:v}}}))}
                         placeholder="prev month"
-                        style={{ padding:"8px 10px", borderRadius:8, fontSize:13, border:`1.5px solid ${C.border}`,
-                          fontFamily:FM, color:C.muted, background:C.bg, outline:"none", boxSizing:"border-box" }}
-                        onFocus={e=>e.target.style.borderColor=C.amber} onBlur={e=>e.target.style.borderColor=C.border}/>
+                        style={{ fontFamily:FM, color:C.muted, background:C.bg }}/>
                     </div>
                   ))}
                 </Card>
@@ -4700,20 +4719,16 @@ function AdminPanel({ admin, onLogout }) {
                             <tr key={i} style={{ background:isBold?`${C.blue}06`:i%2===0?"#FFFFFF":C.bg, borderBottom:`1px solid ${C.border}` }}>
                               <td style={{ padding:"10px 12px", fontWeight:isBold?700:500, fontSize:13, color:C.text }}>{row.metric}</td>
                               <td style={{ padding:"6px 8px" }}>
-                                <input value={row.budget}
-                                  onChange={e => { const v=[...reportData.variance]; v[i]={...v[i],budget:e.target.value}; setReportData(r=>({...r,variance:v})); }}
+                                <InlineInput value={row.budget}
+                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],budget:v}; setReportData(r=>({...r,variance:arr})); }}
                                   placeholder="budget"
-                                  style={{ width:"100%", padding:"6px 8px", borderRadius:7, fontSize:12, textAlign:"right",
-                                    border:`1px solid ${C.border}`, fontFamily:FM, color:C.muted, background:C.bg, outline:"none" }}
-                                  onFocus={e=>e.target.style.borderColor=C.amber} onBlur={e=>e.target.style.borderColor=C.border}/>
+                                  style={{ textAlign:"right", color:C.muted, background:C.bg }}/>
                               </td>
                               <td style={{ padding:"6px 8px" }}>
-                                <input value={row.actual}
-                                  onChange={e => { const v=[...reportData.variance]; v[i]={...v[i],actual:e.target.value}; setReportData(r=>({...r,variance:v})); }}
+                                <InlineInput value={row.actual}
+                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],actual:v}; setReportData(r=>({...r,variance:arr})); }}
                                   placeholder="actual"
-                                  style={{ width:"100%", padding:"6px 8px", borderRadius:7, fontSize:12, textAlign:"right",
-                                    border:`1px solid ${C.border}`, fontFamily:FM, fontWeight:700, color:C.text, background:"#F0F4FF", outline:"none" }}
-                                  onFocus={e=>e.target.style.borderColor=C.amber} onBlur={e=>e.target.style.borderColor=C.border}/>
+                                  style={{ textAlign:"right", fontWeight:700, color:C.text, background:"#F0F4FF" }}/>
                               </td>
                               <td style={{ padding:"10px 12px", textAlign:"center", fontFamily:FM, fontSize:12, fontWeight:600,
                                 color:varNum==="—"?C.dim:row.fav?C.green:C.red }}>
@@ -4743,21 +4758,17 @@ function AdminPanel({ admin, onLogout }) {
                         <div style={{ fontFamily:F, fontSize:13, color:C.muted, fontWeight:700, paddingTop:24 }}>{i+1}.</div>
                         <div>
                           <label style={{ fontSize:10, fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:5, fontFamily:F }}>Heading</label>
-                          <input value={row.item}
-                            onChange={e => { const v=[...reportData.varianceCommentary]; v[i]={...v[i],item:e.target.value}; setReportData(r=>({...r,varianceCommentary:v})); }}
+                          <InlineInput value={row.item}
+                            onCommit={v => { const arr=[...reportData.varianceCommentary]; arr[i]={...arr[i],item:v}; setReportData(r=>({...r,varianceCommentary:arr})); }}
                             placeholder="e.g. Revenue beat"
-                            style={{ width:"100%", padding:"8px 10px", borderRadius:8, fontSize:13, border:`1.5px solid ${C.border}`,
-                              fontFamily:F, color:C.text, background:C.bg, outline:"none" }}
-                            onFocus={e=>e.target.style.borderColor=C.amber} onBlur={e=>e.target.style.borderColor=C.border}/>
+                            style={{ fontSize:13, fontFamily:F, color:C.text, background:C.bg }}/>
                         </div>
                         <div>
                           <label style={{ fontSize:10, fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:5, fontFamily:F }}>Commentary</label>
-                          <input value={row.note}
-                            onChange={e => { const v=[...reportData.varianceCommentary]; v[i]={...v[i],note:e.target.value}; setReportData(r=>({...r,varianceCommentary:v})); }}
+                          <InlineInput value={row.note}
+                            onCommit={v => { const arr=[...reportData.varianceCommentary]; arr[i]={...arr[i],note:v}; setReportData(r=>({...r,varianceCommentary:arr})); }}
                             placeholder="e.g. New contracts signed in Feb drove +6.1% MoM"
-                            style={{ width:"100%", padding:"8px 10px", borderRadius:8, fontSize:13, border:`1.5px solid ${C.border}`,
-                              fontFamily:F, color:C.text, background:C.bg, outline:"none" }}
-                            onFocus={e=>e.target.style.borderColor=C.amber} onBlur={e=>e.target.style.borderColor=C.border}/>
+                            style={{ fontSize:13, fontFamily:F, color:C.text, background:C.bg }}/>
                         </div>
                         <div style={{ paddingTop:22 }}>
                           <button onClick={() => { const v=[...reportData.varianceCommentary]; v[i]={...v[i],favorable:!v[i].favorable}; setReportData(r=>({...r,varianceCommentary:v})); }}
@@ -4794,13 +4805,10 @@ function AdminPanel({ admin, onLogout }) {
                           <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
                             <td style={{ padding:"8px 10px", fontFamily:FM, fontSize:13, fontWeight:700, color:C.text, width:80 }}>{row.month}</td>
                             <td style={{ padding:"6px 10px" }}>
-                              <input value={row.actual} onChange={e => {
-                                const cf=[...reportData.cashflow]; cf[i]={...cf[i],actual:e.target.value};
-                                setReportData(r=>({...r,cashflow:cf}));
-                              }} placeholder="e.g. 220"
-                                style={{ width:"100%", padding:"7px 10px", borderRadius:8, fontSize:13,
-                                  border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.blue,
-                                  background:"#F0F4FF", outline:"none", boxSizing:"border-box" }}/>
+                              <InlineInput value={row.actual}
+                                onCommit={v => { const cf=[...reportData.cashflow]; cf[i]={...cf[i],actual:v}; setReportData(r=>({...r,cashflow:cf})); }}
+                                placeholder="e.g. 220"
+                                style={{ color:C.blue, background:"#EFF6FF" }}/>
                             </td>
                             <td style={{ padding:"6px 10px" }}>
                               <input value={row.forecast} onChange={e => {
@@ -4826,25 +4834,19 @@ function AdminPanel({ admin, onLogout }) {
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Overall score (0–100) shown as the big gauge on the client's report page.
                   </p>
-                  <Input label="Overall Score (0-100)" val={reportData.score || ""}
+                  <AdminInput C={C} F={F} FM={FM} label="Overall Score (0-100)" val={reportData.score || ""}
                     onChange={v => setReportData(r=>({...r,score:v}))} placeholder="e.g. 72" mono/>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10, marginTop:4 }}>Score Breakdown</div>
                   {(reportData.scoreBreakdown || []).map((item, i) => (
                     <div key={i} style={{ marginBottom:12, padding:"12px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{item.label}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10 }}>
-                        <input value={item.score} onChange={e => {
-                          const sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],score:e.target.value};
-                          setReportData(r=>({...r,scoreBreakdown:sb}));
-                        }} placeholder="Score 0-100"
-                          style={{ padding:"8px 10px", borderRadius:8, fontSize:13, border:`1.5px solid ${C.border}`,
-                            fontFamily:FM, color:C.blue, background:"#F0F4FF", outline:"none", boxSizing:"border-box" }}/>
-                        <input value={item.comment} onChange={e => {
-                          const sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],comment:e.target.value};
-                          setReportData(r=>({...r,scoreBreakdown:sb}));
-                        }} placeholder="Comment shown to client..."
-                          style={{ padding:"8px 10px", borderRadius:8, fontSize:13, border:`1.5px solid ${C.border}`,
-                            fontFamily:F, color:C.text, background:C.bg, outline:"none", boxSizing:"border-box" }}/>
+                        <InlineInput value={item.score}
+                          onCommit={v => { const sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],score:v}; setReportData(r=>({...r,scoreBreakdown:sb})); }}
+                          placeholder="Score 0-100" style={{ fontFamily:FM, color:C.blue, background:"#F0F4FF" }}/>
+                        <InlineInput value={item.comment}
+                          onCommit={v => { const sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],comment:v}; setReportData(r=>({...r,scoreBreakdown:sb})); }}
+                          placeholder="Comment shown to client..." style={{ fontFamily:F, color:C.text, background:C.bg }}/>
                       </div>
                     </div>
                   ))}
@@ -4861,18 +4863,12 @@ function AdminPanel({ admin, onLogout }) {
                       alignItems:"center", marginBottom:8, padding:"8px 12px", borderRadius:10,
                       background:C.bg, border:`1px solid ${C.border}` }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.muted }}>{m.label}</div>
-                      <input value={m.value} onChange={e => {
-                        const ms=[...reportData.metrics]; ms[i]={...ms[i],value:e.target.value};
-                        setReportData(r=>({...r,metrics:ms}));
-                      }} placeholder="Value"
-                        style={{ padding:"7px 10px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`,
-                          fontFamily:FM, color:C.blue, background:"#F0F4FF", outline:"none", boxSizing:"border-box" }}/>
-                      <input value={m.note} onChange={e => {
-                        const ms=[...reportData.metrics]; ms[i]={...ms[i],note:e.target.value};
-                        setReportData(r=>({...r,metrics:ms}));
-                      }} placeholder="Note..."
-                        style={{ padding:"7px 10px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`,
-                          fontFamily:F, color:C.text, background:C.bg, outline:"none", boxSizing:"border-box" }}/>
+                      <InlineInput value={m.value}
+                        onCommit={v => { const ms=[...reportData.metrics]; ms[i]={...ms[i],value:v}; setReportData(r=>({...r,metrics:ms})); }}
+                        placeholder="Value" style={{ fontFamily:FM, color:C.blue, background:"#F0F4FF" }}/>
+                      <InlineInput value={m.note}
+                        onCommit={v => { const ms=[...reportData.metrics]; ms[i]={...ms[i],note:v}; setReportData(r=>({...r,metrics:ms})); }}
+                        placeholder="Note..." style={{ fontFamily:F, color:C.text, background:C.bg }}/>
                       <button onClick={() => {
                         const ms=[...reportData.metrics]; ms[i]={...ms[i],flag:!ms[i].flag};
                         setReportData(r=>({...r,metrics:ms}));
@@ -4927,13 +4923,10 @@ function AdminPanel({ admin, onLogout }) {
                           { key:"median", placeholder:"Sector median",  color:C.bg,     fc:C.text },
                           { key:"bench",  placeholder:"Benchmark",      color:C.bg,     fc:C.text },
                         ].map(col => (
-                          <input key={col.key} value={b[col.key]} onChange={e => {
-                            const bm=[...reportData.benchmarks]; bm[i]={...bm[i],[col.key]:e.target.value};
-                            setReportData(r=>({...r,benchmarks:bm}));
-                          }} placeholder={col.placeholder}
-                            style={{ padding:"7px 10px", borderRadius:8, fontSize:12,
-                              border:`1.5px solid ${C.border}`, fontFamily:FM, color:col.fc,
-                              background:col.color, outline:"none", boxSizing:"border-box" }}/>
+                          <InlineInput key={col.key} value={b[col.key]}
+                            onCommit={v => { const bm=[...reportData.benchmarks]; bm[i]={...bm[i],[col.key]:v}; setReportData(r=>({...r,benchmarks:bm})); }}
+                            placeholder={col.placeholder}
+                            style={{ fontFamily:FM, color:col.fc, background:col.color }}/>
                         ))}
                         <button onClick={() => {
                           const bm=[...reportData.benchmarks]; bm[i]={...bm[i],ok:!bm[i].ok};
@@ -4952,7 +4945,7 @@ function AdminPanel({ admin, onLogout }) {
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:8 }}>💬 Garima's Pack Note</div>
                   <textarea value={reportData.packNote || ""} rows={5}
-                    onChange={e => setReportData(r=>({...r,packNote:e.target.value}))}
+                    onChange={e => setReportData(r=>({...r,packNote:e.target.value}))} /* controlled - textarea is fine */
                     placeholder="Write your analysis note for the client's report page..."
                     style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
                       border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
@@ -4961,7 +4954,7 @@ function AdminPanel({ admin, onLogout }) {
                     onBlur={e=>e.target.style.borderColor=C.border}/>
                 </Card>
 
-                <SaveBtn onClick={saveReportData} label="Save All Report Data"/>
+                <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>
               </>)}
             </div>
           )}
