@@ -140,19 +140,28 @@ const PriBadge = ({ p }) => {
 };
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
-const Logo = ({ size=28, showTagline=false }) => (
+const Logo = ({ size=28, showTagline=false, darkText=false }) => (
   <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:0 }}>
-    <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-      <div style={{ width:size*1.1, height:size*1.1, borderRadius:8,
-        background:"linear-gradient(135deg,#3B6FF7,#7C5CF5)",
+    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+      <div style={{ width:size*1.15, height:size*1.15, borderRadius:size*0.22,
+        background:"linear-gradient(145deg,#7C5CF5,#6B4FE0)",
         display:"flex", alignItems:"center", justifyContent:"center",
-        fontSize:size*0.55, fontWeight:900, color:"white", flexShrink:0 }}>F</div>
-      <span style={{ fontFamily:"'DM Mono', monospace", fontWeight:700, fontSize:size*0.75,
-        color:"white", letterSpacing:"-0.02em" }}>Finzzup</span>
+        flexShrink:0, position:"relative",
+        boxShadow:"0 2px 8px rgba(124,92,245,0.35)" }}>
+        <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:900,
+          fontSize:size*0.58, color:"white", lineHeight:1, letterSpacing:"-0.02em" }}>F</span>
+        <span style={{ position:"absolute", top:size*0.07, right:size*0.1,
+          fontSize:size*0.22, fontWeight:900, color:"rgba(255,255,255,0.9)",
+          fontFamily:"'Plus Jakarta Sans', sans-serif", lineHeight:1 }}>°</span>
+      </div>
+      <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800,
+        fontSize:size*0.85, letterSpacing:"-0.03em",
+        color: darkText ? "#0F1A38" : "white" }}>Finzzup</span>
     </div>
     {showTagline && (
       <div style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:10,
-        color:"rgba(255,255,255,0.45)", marginTop:2, letterSpacing:"0.04em" }}>
+        color: darkText ? "#6B7DB3" : "rgba(255,255,255,0.45)",
+        marginTop:2, letterSpacing:"0.04em" }}>
         Smart Finance · Trusted Insights
       </div>
     )}
@@ -275,13 +284,20 @@ function Login({ onLogin }) {
       <div style={{ width:"100%", maxWidth:420, position:"relative" }}>
         <div style={{ textAlign:"center", marginBottom:32 }}>
           <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:6 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{ width:44, height:44, borderRadius:12,
-                background:"linear-gradient(135deg,#3B6FF7,#7C5CF5)",
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <div style={{ width:44, height:44, borderRadius:10,
+                background:"linear-gradient(145deg,#7C5CF5,#6B4FE0)",
                 display:"flex", alignItems:"center", justifyContent:"center",
-                fontSize:22, fontWeight:900, color:"white" }}>F</div>
-              <span style={{ fontFamily:FM, fontWeight:700, fontSize:28,
-                color:C.text, letterSpacing:"-0.02em" }}>Finzzup</span>
+                flexShrink:0, position:"relative",
+                boxShadow:"0 2px 10px rgba(124,92,245,0.35)" }}>
+                <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:900,
+                  fontSize:24, color:"white", lineHeight:1 }}>F</span>
+                <span style={{ position:"absolute", top:4, right:5,
+                  fontSize:10, fontWeight:900, color:"rgba(255,255,255,0.9)",
+                  fontFamily:"'Plus Jakarta Sans', sans-serif", lineHeight:1 }}>°</span>
+              </div>
+              <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800,
+                fontSize:28, color:C.text, letterSpacing:"-0.03em" }}>Finzzup</span>
             </div>
             <p style={{ fontSize:12, color:C.muted, margin:0, letterSpacing:"0.03em" }}>
               Smart Finance · Trusted Insights
