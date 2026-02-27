@@ -140,33 +140,38 @@ const PriBadge = ({ p }) => {
 };
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
-const Logo = ({ size=28, showTagline=false, darkText=false }) => (
-  <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start", gap:0 }}>
-    <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-      <div style={{ width:size*1.15, height:size*1.15, borderRadius:size*0.22,
-        background:"linear-gradient(145deg,#7C5CF5,#6B4FE0)",
-        display:"flex", alignItems:"center", justifyContent:"center",
-        flexShrink:0, position:"relative",
-        boxShadow:"0 2px 8px rgba(124,92,245,0.35)" }}>
-        <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:900,
-          fontSize:size*0.58, color:"white", lineHeight:1, letterSpacing:"-0.02em" }}>F</span>
-        <span style={{ position:"absolute", top:size*0.07, right:size*0.1,
-          fontSize:size*0.22, fontWeight:900, color:"rgba(255,255,255,0.9)",
-          fontFamily:"'Plus Jakarta Sans', sans-serif", lineHeight:1 }}>°</span>
+const Logo = ({ size=32, darkText=false, showTagline=false }) => {
+  const lime = "#C8F135";
+  const bg   = darkText ? "#0F1A38" : "#0A1128";
+  const text = darkText ? "#0F1A38" : "white";
+  const s    = (size/32)*40; // scale svg proportionally
+  return (
+    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        <svg width={s} height={s} viewBox="0 0 40 40" fill="none">
+          <rect width="40" height="40" rx="10" fill={lime}/>
+          <text x="50%" y="58%" dominantBaseline="middle" textAnchor="middle"
+            style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800, fontSize:22, fill:bg }}>
+            F
+          </text>
+          <circle cx="30" cy="10" r="5" fill={bg}/>
+          <circle cx="32" cy="10" r="2" fill={lime}/>
+        </svg>
+        <span style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800,
+          fontSize:size*0.69, color:text, letterSpacing:"-0.02em" }}>
+          Finzzup
+        </span>
       </div>
-      <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800,
-        fontSize:size*0.85, letterSpacing:"-0.03em",
-        color: darkText ? "#0F1A38" : "white" }}>Finzzup</span>
+      {showTagline && (
+        <div style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:10,
+          color: darkText ? "#6B7DB3" : "rgba(255,255,255,0.45)",
+          marginTop:2, letterSpacing:"0.04em" }}>
+          Smart Finance · Trusted Insights
+        </div>
+      )}
     </div>
-    {showTagline && (
-      <div style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:10,
-        color: darkText ? "#6B7DB3" : "rgba(255,255,255,0.45)",
-        marginTop:2, letterSpacing:"0.04em" }}>
-        Smart Finance · Trusted Insights
-      </div>
-    )}
-  </div>
-);
+  );
+};
 
 // ─── LOGIN INPUT — defined OUTSIDE Login so it never remounts on re-render ────
 function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
@@ -285,19 +290,17 @@ function Login({ onLogin }) {
         <div style={{ textAlign:"center", marginBottom:32 }}>
           <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:6 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ width:44, height:44, borderRadius:10,
-                background:"linear-gradient(145deg,#7C5CF5,#6B4FE0)",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                flexShrink:0, position:"relative",
-                boxShadow:"0 2px 10px rgba(124,92,245,0.35)" }}>
-                <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:900,
-                  fontSize:24, color:"white", lineHeight:1 }}>F</span>
-                <span style={{ position:"absolute", top:4, right:5,
-                  fontSize:10, fontWeight:900, color:"rgba(255,255,255,0.9)",
-                  fontFamily:"'Plus Jakarta Sans', sans-serif", lineHeight:1 }}>°</span>
-              </div>
-              <span style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontWeight:800,
-                fontSize:28, color:C.text, letterSpacing:"-0.03em" }}>Finzzup</span>
+              <svg width={44} height={44} viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="10" fill="#C8F135"/>
+                <text x="50%" y="58%" dominantBaseline="middle" textAnchor="middle"
+                  style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800, fontSize:22, fill:C.navy }}>
+                  F
+                </text>
+                <circle cx="30" cy="10" r="5" fill={C.navy}/>
+                <circle cx="32" cy="10" r="2" fill="#C8F135"/>
+              </svg>
+              <span style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800,
+                fontSize:28, color:C.text, letterSpacing:"-0.02em" }}>Finzzup</span>
             </div>
             <p style={{ fontSize:12, color:C.muted, margin:0, letterSpacing:"0.03em" }}>
               Smart Finance · Trusted Insights
@@ -3694,6 +3697,41 @@ function Portal({ client, onLogout }) {
 
 // ─── ADMIN PANEL ──────────────────────────────────────────────────────────────
 
+// ─── ADMIN SHARED COMPONENTS (defined outside to prevent focus loss on re-render) ─
+const AdminInput = ({ label, val, onChange, type="text", placeholder="", mono=false, C, F, FM }) => (
+  <div style={{ marginBottom:12 }}>
+    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
+    <input value={val} onChange={e => onChange(e.target.value)} type={type} placeholder={placeholder}
+      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+        border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
+        background:C.bg, outline:"none", boxSizing:"border-box" }}
+      onFocus={e => e.target.style.borderColor = C.amber}
+      onBlur={e  => e.target.style.borderColor = C.border}
+    />
+  </div>
+);
+const AdminSelect = ({ label, val, onChange, options, C, F }) => (
+  <div style={{ marginBottom:12 }}>
+    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
+    <select value={val} onChange={e => onChange(e.target.value)}
+      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+        border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+        background:C.bg, outline:"none", boxSizing:"border-box" }}>
+      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+    </select>
+  </div>
+);
+const AdminSaveBtn = ({ onClick, loading, saved, label="Save Changes", F }) => (
+  <button onClick={onClick} disabled={loading} style={{ padding:"11px 24px", borderRadius:10,
+    border:"none", background:"linear-gradient(135deg,#F59E0B,#EF4444)", color:"white",
+    fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", opacity:loading?0.75:1,
+    touchAction:"manipulation" }}>
+    {loading ? "Saving…" : saved ? "✅ Saved!" : label}
+  </button>
+);
+
 function AdminLogin({ onLogin }) {
   const [form, setForm] = useState({ email:"", password:"" });
   const [error, setError] = useState("");
@@ -4089,41 +4127,10 @@ function AdminPanel({ admin, onLogout }) {
     { id:"documents",  icon:"📁", label:"Documents"       },
   ];
 
-  const Input = ({ label, val, onChange, type="text", placeholder="", mono=false }) => (
-    <div style={{ marginBottom:12 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-        letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
-      <input value={val} onChange={e => onChange(e.target.value)} type={type} placeholder={placeholder}
-        style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-          border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
-          background:C.bg, outline:"none", boxSizing:"border-box" }}
-        onFocus={e => e.target.style.borderColor = C.amber}
-        onBlur={e  => e.target.style.borderColor = C.border}
-      />
-    </div>
-  );
-
-  const Select = ({ label, val, onChange, options }) => (
-    <div style={{ marginBottom:12 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-        letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
-      <select value={val} onChange={e => onChange(e.target.value)}
-        style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-          background:C.bg, outline:"none", boxSizing:"border-box" }}>
-        {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-      </select>
-    </div>
-  );
-
-  const SaveBtn = ({ onClick, label="Save Changes" }) => (
-    <button onClick={onClick} disabled={loading} style={{ padding:"11px 24px", borderRadius:10,
-      border:"none", background:"linear-gradient(135deg,#F59E0B,#EF4444)", color:"white",
-      fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", opacity:loading?0.75:1,
-      touchAction:"manipulation" }}>
-      {loading ? "Saving…" : saved ? "✅ Saved!" : label}
-    </button>
-  );
+  // Wrappers around module-level components — prevents focus loss on re-render
+  const Input   = (props) => <AdminInput   {...props} C={C} F={F} FM={FM}/>;
+  const Select  = (props) => <AdminSelect  {...props} C={C} F={F}/>;
+  const SaveBtn = (props) => <AdminSaveBtn {...props} loading={loading} saved={saved} F={F}/>;
 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
