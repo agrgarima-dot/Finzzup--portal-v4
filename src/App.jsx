@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line,
@@ -4811,13 +4811,10 @@ function AdminPanel({ admin, onLogout }) {
                                 style={{ color:C.blue, background:"#EFF6FF" }}/>
                             </td>
                             <td style={{ padding:"6px 10px" }}>
-                              <input value={row.forecast} onChange={e => {
-                                const cf=[...reportData.cashflow]; cf[i]={...cf[i],forecast:e.target.value};
-                                setReportData(r=>({...r,cashflow:cf}));
-                              }} placeholder="e.g. 195"
-                                style={{ width:"100%", padding:"7px 10px", borderRadius:8, fontSize:13,
-                                  border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.purple,
-                                  background:"#F5F0FF", outline:"none", boxSizing:"border-box" }}/>
+                              <InlineInput value={row.forecast}
+                                onCommit={v => { const cf=[...reportData.cashflow]; cf[i]={...cf[i],forecast:v}; setReportData(r=>({...r,cashflow:cf})); }}
+                                placeholder="e.g. 195"
+                                style={{ color:C.purple, background:"#F5F0FF" }}/>
                             </td>
                           </tr>
                         ))}
@@ -5118,7 +5115,7 @@ export default function App() {
     <div style={{ minHeight:"100vh", background:isAdminRoute?"#0A1128":C.bg,
       display:"flex", alignItems:"center", justifyContent:"center", fontFamily:F }}>
       <div style={{ textAlign:"center" }}>
-        <Logo size={36}/>
+        <Logo size={36} darkText={!isAdminRoute}/>
         <p style={{ color:C.muted, fontSize:13, marginTop:12 }}>Loading…</p>
       </div>
     </div>
