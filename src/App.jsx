@@ -833,7 +833,13 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 
       {/* KPI Row — pack-specific */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }} className="ov-kpi">
-        {(PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.overviewKpis || PACK_CONFIG.startup.overviewKpis).map((k,i) => (
+        {(kpis && kpis.length > 0 ? kpis.slice(0,3).map(k => ({
+            label: k.label, value: k.value, prev: k.prev,
+            pct: k.prev && k.prev !== "—" ? "" : "",
+            up: k.trend === "up", color: k.color, bg: k.bg, icon: k.icon
+          }))
+          : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.overviewKpis || PACK_CONFIG.startup.overviewKpis)
+        ).map((k,i) => (
           <Card key={i} style={{ padding:18 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
               <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
@@ -2220,11 +2226,21 @@ function ArchiveRow({ p, label }) {
               fontFamily:F, fontWeight:600, fontSize:12, cursor:"pointer", touchAction:"manipulation" }}>
             {showPreview ? "▲ Hide" : "👁 Preview"}
           </button>
-          <button style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.blue}`,
-            background:p.new?C.blue:"transparent", color:p.new?"white":C.blue,
-            fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer", touchAction:"manipulation" }}>
-            ↓ Download
-          </button>
+          {p.file_url ? (
+            <a href={p.file_url} target="_blank" rel="noopener"
+              style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.blue}`,
+                background:p.new?C.blue:"transparent", color:p.new?"white":C.blue,
+                fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer",
+                textDecoration:"none", display:"inline-block", touchAction:"manipulation" }}>
+              ↓ Download
+            </a>
+          ) : (
+            <button disabled style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.border}`,
+              background:"transparent", color:C.dim,
+              fontFamily:F, fontWeight:700, fontSize:12, cursor:"not-allowed", touchAction:"manipulation" }}>
+              ↓ Coming soon
+            </button>
+          )}
         </div>
       </div>
       {showPreview && <PackPreview p={p} label={label}/>}
@@ -3049,8 +3065,14 @@ function CFOPackContent({ reportData, client, kpis }) {
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
             Monthly packs prepared by Garima — updated by the 20th of each month.
           </div>
+          {archiveDocs.length === 0 && !isDemo && (
+            <Card style={{ textAlign:"center", padding:"32px 0", marginBottom:16 }}>
+              <div style={{ fontSize:32, marginBottom:8 }}>📭</div>
+              <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>No packs uploaded yet. Garima will upload your monthly pack here.</div>
+            </Card>
+          )}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="CFO Pack"/>)}
+            {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="CFO Pack"/>)}
           </div>
           <Card style={{ marginTop:20, background:`${C.blue}06`, borderColor:`${C.blue}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
@@ -3102,6 +3124,30 @@ function CFOPacks({ client, reportData }) {
   const packType  = client.client_pack || client.clientPack || "startup";
   const data      = CFO_PACK_DATA[packType];
   const [tab, setTab] = useState("pack"); // "pack" | "boardpacks"
+  const [liveDocs, setLiveDocs] = useState([]);
+  const isDemo = client?.isDemo === true;
+
+  useEffect(() => {
+    if (isDemo || !client?.id) return;
+    supabase.from("documents")
+      .select("*")
+      .eq("client_id", client.id)
+      .in("uploaded_by", ["garima", "Garima", "Garima Agarwal"])
+      .order("created_at", { ascending: false })
+      .then(({ data: docs }) => { if (docs?.length) setLiveDocs(docs); });
+  }, [client?.id, isDemo]);
+
+  // Map live docs to ARCHIVE format, fall back to static ARCHIVE for demo
+  const archiveDocs = liveDocs.length > 0
+    ? liveDocs.map(d => ({
+        name: d.name,
+        date: d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }) : "—",
+        size: d.file_size || "—",
+        uploadedAt: d.created_at || "",
+        file_url: d.file_url,
+        new: d.created_at ? (new Date() - new Date(d.created_at)) < 35 * 24 * 60 * 60 * 1000 : false,
+      }))
+    : ARCHIVE;
 
   return (
     <div style={{ padding:24 }}>
@@ -4432,7 +4478,7 @@ function Portal({ client, onLogout }) {
   const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
   const resolvedReportData = (!isDemo && liveReportData) ? liveReportData : null;
   const resolvedGarimaNote = (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
-    : "Revenue is up 6% MoM which is great. However cash balance has dipped — March forecast is tight due to the advance tax payment and the delayed collection from Client B. I'd recommend holding off on the equipment purchase until April. Full analysis in Cash Flow. Action items updated for this month.";
+    : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
 
   const pages = {
     overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData}/>,
