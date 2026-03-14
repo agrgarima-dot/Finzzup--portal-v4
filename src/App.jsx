@@ -4547,15 +4547,36 @@ ${pendingActions.length > 0 ? `
 
 </body></html>`;
 
-  const blob = new Blob([html], { type:"text/html" });
-  const url  = URL.createObjectURL(blob);
-  const win  = window.open(url, "_blank");
-  if (win) {
-    win.onload = () => {
-      setTimeout(() => { win.print(); }, 500);
-    };
-  }
-  setTimeout(() => URL.revokeObjectURL(url), 10000);
+  return html;
+}
+
+// Save report as HTML file to Supabase + insert documents record
+async function saveReportAsDocument({ client, kpis, garimaNote, reportData, actions }) {
+  const pack      = client?.client_pack || client?.clientPack || "startup";
+  const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
+  const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" });
+  const fileName  = `${packLabel.replace(" ","_")}_${month.replace(" ","_")}_${client.company.split(" ")[0]}.html`;
+
+  const html  = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
+  const blob  = new Blob([html], { type:"text/html" });
+  const path  = `${client.id}/${Date.now()}-${fileName}`;
+
+  const { error: upErr } = await supabase.storage.from("client-docs").upload(path, blob);
+  if (upErr) throw new Error("Storage upload failed: " + upErr.message);
+
+  const { data: urlData } = supabase.storage.from("client-docs").getPublicUrl(path);
+
+  const { data: docRow, error: dbErr } = await supabase.from("documents").insert({
+    client_id:   client.id,
+    name:        `${packLabel} — ${month}`,
+    file_url:    urlData.publicUrl,
+    file_size:   (blob.size / 1024).toFixed(0) + " KB",
+    uploaded_by: client.name,
+    created_at:  new Date().toISOString(),
+  }).select().single();
+
+  if (dbErr) throw new Error("DB insert failed: " + dbErr.message);
+  return docRow;
 }
 
 function MyReport({ client, reportData, kpis }) {
@@ -4585,6 +4606,76 @@ function getPageTitle(page, client) {
     terms:       "Legal & Compliance",
   };
   return map[page] || "Dashboard";
+}
+
+
+// ─── REPORT PDF BAR ───────────────────────────────────────────────────────────
+function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F }) {
+  const [saving,   setSaving]   = React.useState(false);
+  const [saved,    setSavedMsg] = React.useState(false);
+  const [error,    setError]    = React.useState("");
+
+  const handlePreview = () => {
+    const html = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
+    const blob = new Blob([html], { type:"text/html" });
+    const url  = URL.createObjectURL(blob);
+    const win  = window.open(url, "_blank");
+    if (win) win.onload = () => setTimeout(() => win.print(), 500);
+    setTimeout(() => URL.revokeObjectURL(url), 15000);
+  };
+
+  const handleSave = async () => {
+    setSaving(true); setError(""); setSavedMsg(false);
+    try {
+      await saveReportAsDocument({ client, kpis, garimaNote, reportData, actions });
+      setSavedMsg(true);
+      setTimeout(() => setSavedMsg(false), 4000);
+    } catch(e) {
+      setError(e.message);
+      setTimeout(() => setError(""), 5000);
+    }
+    setSaving(false);
+  };
+
+  const pack      = client?.client_pack || client?.clientPack || "startup";
+  const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
+  const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"});
+
+  return (
+    <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end",
+      padding:"10px 24px 0", gap:8, flexWrap:"wrap" }}>
+      {saved && (
+        <span style={{ fontFamily:F, fontSize:12, color:"#059669", fontWeight:600 }}>
+          ✅ Saved to My Documents!
+        </span>
+      )}
+      {error && (
+        <span style={{ fontFamily:F, fontSize:12, color:"#EF4444", fontWeight:600 }}>
+          ❌ {error}
+        </span>
+      )}
+      {/* Preview + Print */}
+      <button onClick={handlePreview}
+        style={{ display:"inline-flex", alignItems:"center", gap:6,
+          padding:"8px 16px", borderRadius:10,
+          border:"1.5px solid #E5E7EB", background:"white",
+          color:"#374151", fontFamily:F, fontWeight:600,
+          fontSize:12, cursor:"pointer" }}>
+        🖨 Preview & Print
+      </button>
+      {/* Save to My Documents */}
+      <button onClick={handleSave} disabled={saving}
+        style={{ display:"inline-flex", alignItems:"center", gap:6,
+          padding:"8px 18px", borderRadius:10,
+          background: saving ? "#E5E7EB" : "linear-gradient(135deg,#2563EB,#7C3AED)",
+          color: saving ? "#9CA3AF" : "white",
+          border:"none", fontFamily:F, fontWeight:700,
+          fontSize:12, cursor: saving ? "not-allowed" : "pointer",
+          boxShadow: saving ? "none" : "0 2px 10px rgba(37,99,235,0.28)" }}>
+        {saving ? "⏳ Saving…" : `📥 Save ${packLabel} — ${month}`}
+      </button>
+    </div>
+  );
 }
 
 function Portal({ client, onLogout }) {
@@ -4695,28 +4786,16 @@ function Portal({ client, onLogout }) {
           ]}
         />
         <main style={{ flex:1, overflowY:"auto" }}>
-          {/* ── Download PDF button — shown on key report pages ── */}
+          {/* ── Report PDF buttons — shown on key report pages ── */}
           {["dashboard","myreport","cashflow","actions","overview"].includes(page) && !isDemo && (
-            <div style={{ display:"flex", justifyContent:"flex-end", padding:"12px 24px 0", gap:8 }}>
-              <button
-                onClick={() => generateReportPDF({
-                  client,
-                  kpis: resolvedKpis,
-                  garimaNote: resolvedGarimaNote,
-                  reportData: resolvedReportData,
-                  actions: resolvedActions,
-                })}
-                style={{ display:"inline-flex", alignItems:"center", gap:7,
-                  padding:"8px 18px", borderRadius:10,
-                  background:"linear-gradient(135deg,#2563EB,#7C3AED)",
-                  color:"white", border:"none", fontFamily:F, fontWeight:700,
-                  fontSize:12, cursor:"pointer", boxShadow:"0 2px 10px rgba(37,99,235,0.3)",
-                  transition:"opacity 0.2s" }}
-                onMouseEnter={e => e.currentTarget.style.opacity="0.88"}
-                onMouseLeave={e => e.currentTarget.style.opacity="1"}>
-                📥 Download Report PDF
-              </button>
-            </div>
+            <ReportPDFBar
+              client={client}
+              kpis={resolvedKpis}
+              garimaNote={resolvedGarimaNote}
+              reportData={resolvedReportData}
+              actions={resolvedActions}
+              F={F}
+            />
           )}
           {pages[page]}
         </main>
