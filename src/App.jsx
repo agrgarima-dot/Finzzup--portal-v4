@@ -3132,9 +3132,23 @@ function CFOPacks({ client, reportData }) {
     supabase.from("documents")
       .select("*")
       .eq("client_id", client.id)
-      .in("uploaded_by", ["garima", "Garima", "Garima Agarwal"])
       .order("created_at", { ascending: false })
-      .then(({ data: docs }) => { if (docs?.length) setLiveDocs(docs); });
+      .then(({ data: docs }) => {
+        if (docs?.length) {
+          // Show docs uploaded by Garima OR tagged as board packs
+          const garimaUploads = docs.filter(d =>
+            ["garima", "Garima", "Garima Agarwal"].includes(d.uploaded_by) ||
+            d.doc_type === "board_pack" ||
+            d.name?.toLowerCase().includes("board pack") ||
+            d.name?.toLowerCase().includes("cfo pack") ||
+            d.name?.toLowerCase().includes("msme pack") ||
+            d.name?.toLowerCase().includes("report")
+          );
+          setLiveDocs(garimaUploads.length > 0 ? garimaUploads : docs.filter(d =>
+            ["garima", "Garima", "Garima Agarwal"].includes(d.uploaded_by)
+          ));
+        }
+      });
   }, [client?.id, isDemo]);
 
   // Map live docs to ARCHIVE format, fall back to static ARCHIVE for demo
@@ -4386,6 +4400,164 @@ function Terms() {
 // ─── PORTAL SHELL ─────────────────────────────────────────────────────────────
 
 // My Report component — shows correct pack based on client type
+
+// ─── PDF REPORT GENERATOR ────────────────────────────────────────────────────
+function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
+  const pack     = client?.client_pack || client?.clientPack || "startup";
+  const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
+  const month    = reportData?.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" });
+  const now      = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
+
+  const kpiRows  = (kpis || []).map(k => `
+    <tr>
+      <td>${k.label}</td>
+      <td class="val">${k.value || "—"}</td>
+      <td class="${k.trend === "up" ? "up" : "dn"}">${k.trend === "up" ? "▲" : "▼"} ${k.prev || "—"}</td>
+    </tr>`).join("");
+
+  const plData   = reportData?.pl || {};
+  const plKeys   = ["revenue","cogs","gross_profit","opex","ebitda","pat"];
+  const plLabels = { revenue:"Revenue", cogs:"Cost of Goods Sold", gross_profit:"Gross Profit",
+    opex:"Operating Expenses", ebitda:"EBITDA", pat:"Net Profit / PAT" };
+  const plRows   = plKeys.filter(k => plData[k]?.actual).map(k => `
+    <tr>
+      <td>${plLabels[k] || k}</td>
+      <td class="val">${plData[k].actual}</td>
+      <td>${plData[k].prev || "—"}</td>
+    </tr>`).join("");
+
+  const pendingActions = (actions || []).filter(a => !a.done);
+  const actionRows = pendingActions.map(a => `
+    <tr>
+      <td>${a.text}</td>
+      <td><span class="badge ${a.priority === "High" ? "high" : a.priority === "Medium" ? "med" : "low"}">${a.priority}</span></td>
+    </tr>`).join("");
+
+  const variance = (reportData?.variance || []).filter(r => r.item && (r.budget || r.actual));
+  const varianceRows = variance.map(r => `
+    <tr>
+      <td>${r.item}</td>
+      <td class="val">${r.budget || "—"}</td>
+      <td class="val">${r.actual || "—"}</td>
+      <td class="${r.fav ? "up" : "dn"}">${r.fav ? "✓ Fav" : "✗ Unfav"}</td>
+    </tr>`).join("");
+
+  const html = `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<title>${packLabel} — ${month} — ${client.company}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Helvetica Neue', Arial, sans-serif; color:#111827; background:#fff; font-size:12px; }
+  .cover { background:linear-gradient(135deg,#1a3a8f,#5B4FDB,#7C3AED); color:white; padding:60px 48px; min-height:240px; }
+  .cover h1 { font-size:32px; font-weight:800; letter-spacing:-0.03em; margin-bottom:8px; }
+  .cover .sub { font-size:14px; opacity:0.75; margin-bottom:24px; }
+  .cover .badge { display:inline-block; background:rgba(255,255,255,0.18); padding:5px 16px; border-radius:100px; font-size:11px; font-weight:700; border:1px solid rgba(255,255,255,0.25); }
+  .meta { display:flex; gap:32px; margin-top:28px; }
+  .meta div { font-size:11px; opacity:0.65; }
+  .meta strong { display:block; font-size:13px; opacity:1; font-weight:700; margin-bottom:2px; }
+  .section { padding:32px 48px; border-bottom:1px solid #E5E7EB; }
+  .section:last-child { border-bottom:none; }
+  h2 { font-size:15px; font-weight:700; color:#111827; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #E5E7EB; }
+  h2 span { font-size:11px; font-weight:400; color:#6B7280; margin-left:8px; }
+  table { width:100%; border-collapse:collapse; }
+  th { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#6B7280; padding:6px 10px; border-bottom:2px solid #E5E7EB; text-align:left; }
+  td { padding:8px 10px; border-bottom:1px solid #F3F4F6; font-size:12px; color:#374151; }
+  tr:last-child td { border-bottom:none; }
+  .val { font-family:monospace; font-weight:700; color:#111827; }
+  .up { color:#059669; font-weight:700; }
+  .dn { color:#EF4444; font-weight:700; }
+  .note { background:#EEF3FE; border-left:3px solid #2563EB; padding:14px 18px; border-radius:6px; font-size:13px; line-height:1.7; color:#111827; }
+  .note .label { font-size:10px; font-weight:700; color:#2563EB; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:700; }
+  .badge.high { background:#FEF2F2; color:#EF4444; }
+  .badge.med  { background:#FFFBEB; color:#D97706; }
+  .badge.low  { background:#ECFDF5; color:#059669; }
+  .empty { color:#9CA3AF; font-style:italic; padding:12px 10px; }
+  .footer { background:#F9FAFB; padding:20px 48px; font-size:10px; color:#9CA3AF; display:flex; justify-content:space-between; }
+  @media print {
+    .section { page-break-inside:avoid; }
+    .cover { page-break-after:always; }
+  }
+</style>
+</head>
+<body>
+
+<div class="cover">
+  <div class="badge">CONFIDENTIAL</div>
+  <h1 style="margin-top:16px">${client.company}</h1>
+  <div class="sub">${packLabel} — ${month}</div>
+  <div class="meta">
+    <div><strong>Prepared by</strong>Garima Agarwal · Finzzup Advisory</div>
+    <div><strong>Generated</strong>${now}</div>
+    <div><strong>Client</strong>${client.name}</div>
+  </div>
+</div>
+
+${garimaNote ? `
+<div class="section">
+  <h2>Note from Garima</h2>
+  <div class="note">
+    <div class="label">📝 CFO Commentary</div>
+    ${garimaNote}
+  </div>
+</div>` : ""}
+
+<div class="section">
+  <h2>KPI Snapshot <span>${month}</span></h2>
+  ${kpiRows ? `
+  <table>
+    <thead><tr><th>Metric</th><th>Current</th><th>vs Previous</th></tr></thead>
+    <tbody>${kpiRows}</tbody>
+  </table>` : `<div class="empty">No KPI data available yet.</div>`}
+</div>
+
+${plRows ? `
+<div class="section">
+  <h2>P&L Summary <span>${month}</span></h2>
+  <table>
+    <thead><tr><th>Line Item</th><th>This Month</th><th>Prev Month</th></tr></thead>
+    <tbody>${plRows}</tbody>
+  </table>
+</div>` : ""}
+
+${varianceRows ? `
+<div class="section">
+  <h2>Budget vs Actual</h2>
+  <table>
+    <thead><tr><th>Item</th><th>Budget</th><th>Actual</th><th>Variance</th></tr></thead>
+    <tbody>${varianceRows}</tbody>
+  </table>
+</div>` : ""}
+
+${pendingActions.length > 0 ? `
+<div class="section">
+  <h2>Action Items <span>${pendingActions.length} pending</span></h2>
+  <table>
+    <thead><tr><th>Action</th><th>Priority</th></tr></thead>
+    <tbody>${actionRows}</tbody>
+  </table>
+</div>` : ""}
+
+<div class="footer">
+  <span>Finzzup Advisory · garima@finzzup.com · finzzup.com</span>
+  <span>Confidential — prepared for ${client.name}, ${client.company}</span>
+</div>
+
+</body></html>`;
+
+  const blob = new Blob([html], { type:"text/html" });
+  const url  = URL.createObjectURL(blob);
+  const win  = window.open(url, "_blank");
+  if (win) {
+    win.onload = () => {
+      setTimeout(() => { win.print(); }, 500);
+    };
+  }
+  setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+
 function MyReport({ client, reportData, kpis }) {
   const pack = client?.client_pack || client?.clientPack || "startup";
   if (pack === "msme")      return <MSMEPackContent      reportData={reportData} kpis={kpis}/>;
@@ -4523,6 +4695,29 @@ function Portal({ client, onLogout }) {
           ]}
         />
         <main style={{ flex:1, overflowY:"auto" }}>
+          {/* ── Download PDF button — shown on key report pages ── */}
+          {["dashboard","myreport","cashflow","actions","overview"].includes(page) && !isDemo && (
+            <div style={{ display:"flex", justifyContent:"flex-end", padding:"12px 24px 0", gap:8 }}>
+              <button
+                onClick={() => generateReportPDF({
+                  client,
+                  kpis: resolvedKpis,
+                  garimaNote: resolvedGarimaNote,
+                  reportData: resolvedReportData,
+                  actions: resolvedActions,
+                })}
+                style={{ display:"inline-flex", alignItems:"center", gap:7,
+                  padding:"8px 18px", borderRadius:10,
+                  background:"linear-gradient(135deg,#2563EB,#7C3AED)",
+                  color:"white", border:"none", fontFamily:F, fontWeight:700,
+                  fontSize:12, cursor:"pointer", boxShadow:"0 2px 10px rgba(37,99,235,0.3)",
+                  transition:"opacity 0.2s" }}
+                onMouseEnter={e => e.currentTarget.style.opacity="0.88"}
+                onMouseLeave={e => e.currentTarget.style.opacity="1"}>
+                📥 Download Report PDF
+              </button>
+            </div>
+          )}
           {pages[page]}
         </main>
       </div>
@@ -6009,6 +6204,24 @@ function AdminPanel({ admin, onLogout }) {
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Upload board packs, valuation reports, or any client document. Max 10MB per file.
                   </p>
+                  {/* Doc type selector */}
+                  <div style={{ marginBottom:12 }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+                      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>
+                      Document Type
+                    </label>
+                    <select id="doc-type-select" defaultValue="general"
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
+                        border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                        background:C.bg, outline:"none" }}>
+                      <option value="general">General Document</option>
+                      <option value="board_pack">Board Pack / Monthly Report</option>
+                      <option value="valuation">Valuation Report</option>
+                      <option value="mis">MIS / P&L Pack</option>
+                      <option value="invoice">Invoice</option>
+                      <option value="legal">Legal / Compliance</option>
+                    </select>
+                  </div>
                   <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
                     border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
                     background:C.bg, transition:"border-color 0.2s" }}
@@ -6031,12 +6244,15 @@ function AdminPanel({ admin, onLogout }) {
                         if (upErr) { alert("Upload failed: " + upErr.message); setDocLoading(false); return; }
                         const { data: urlData } = supabase.storage
                           .from("client-docs").getPublicUrl(path);
+                        const docTypeEl = document.getElementById("doc-type-select");
+                        const docType = docTypeEl ? docTypeEl.value : "general";
                         const { data: docRow, error: insertErr } = await supabase.from("documents").insert({
                           client_id: selected.id,
                           name: file.name,
                           file_url: urlData.publicUrl,
                           file_size: (file.size/1024/1024).toFixed(2) + " MB",
                           uploaded_by: "garima",
+                          doc_type: docType,
                           created_at: new Date().toISOString(),
                         }).select().single();
                         if (insertErr) { alert("Saved to storage but DB record failed: " + insertErr.message); }
@@ -6077,8 +6293,16 @@ function AdminPanel({ admin, onLogout }) {
                             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📄</div>
                           <div>
                             <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
-                            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
-                              {d.file_size} · {d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN") : "—"}
+                            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2, display:"flex", gap:8, flexWrap:"wrap" }}>
+                              <span>{d.file_size}</span>
+                              <span>·</span>
+                              <span>{d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN") : "—"}</span>
+                              {d.doc_type && d.doc_type !== "general" && (
+                                <span style={{ color:C.blue, fontWeight:700, textTransform:"uppercase", fontSize:10,
+                                  background:`${C.blue}12`, padding:"1px 7px", borderRadius:100 }}>
+                                  {d.doc_type.replace("_"," ")}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
