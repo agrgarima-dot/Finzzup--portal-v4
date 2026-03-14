@@ -3922,6 +3922,7 @@ function MyDocuments({ client }) {
       file_url:    urlData.publicUrl,
       file_size:   (file.size / 1024 / 1024).toFixed(2) + " MB",
       uploaded_by: client.name,
+      created_at:  new Date().toISOString(),
     }).select().single();
     if (docRow) setDocs(prev => [docRow, ...prev]);
     setUploading(false);
@@ -4048,8 +4049,8 @@ function MyDocuments({ client }) {
             return (
               <div key={doc.id || i} style={{ display:"flex", alignItems:"center",
                 justifyContent:"space-between", padding:"12px 14px", borderRadius:10,
-                background: byGarima ? `${C.blue}04` : C.bg,
-                border:`1px solid ${byGarima ? C.blue+"20" : C.border}`,
+                background: byGarima ? `${C.blue}10` : C.bg,
+                border:`1px solid ${byGarima ? C.blue+"40" : C.border}`,
                 flexWrap:"wrap", gap:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, flex:1, minWidth:0 }}>
                   <div style={{ width:38, height:38, borderRadius:10,
@@ -4636,6 +4637,8 @@ function AdminPanel({ admin, onLogout }) {
 
   // Engagement state
   const [engagement, setEngagement] = useState({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
+  const [requests,   setRequests]   = useState([]);
+  const [reqLoading, setReqLoading] = useState(false);
   const [docs, setDocs]           = useState([]);
   const [docLoading, setDocLoading] = useState(false);
 
@@ -4800,6 +4803,9 @@ function AdminPanel({ admin, onLogout }) {
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending:false });
     setClients(data || []);
+    // Pre-load all requests so the Requests tab works without selecting a client
+    const { data: allReqs } = await supabase.from("requests").select("*").order("created_at", { ascending:false });
+    if (allReqs) setRequests(allReqs);
   };
 
   const selectClient = async (c) => {
@@ -4826,6 +4832,10 @@ function AdminPanel({ admin, onLogout }) {
     const { data: invData } = await supabase.from("invoices")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setInvoices(invData || []);
+    // Load requests
+    const { data: reqData } = await supabase.from("requests")
+      .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
+    setRequests(reqData || []);
     // Load report data
     const { data: rdData } = await supabase.from("report_data")
       .select("*").eq("client_id", c.id).single();
@@ -4964,6 +4974,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"reportdata", icon:"📈", label:"Report Data"     },
     { id:"treasury",   icon:"💎", label:"Treasury"        },
     { id:"documents",  icon:"📁", label:"Documents"       },
+    { id:"requests",   icon:"📩", label:"Requests"        },
   ];
 
   // Stable component references — prevents remount/focus-loss on every render
@@ -5975,6 +5986,7 @@ function AdminPanel({ admin, onLogout }) {
                           file_url: urlData.publicUrl,
                           file_size: (file.size/1024/1024).toFixed(2) + " MB",
                           uploaded_by: "garima",
+                          created_at: new Date().toISOString(),
                         }).select().single();
                         if (insertErr) { alert("Saved to storage but DB record failed: " + insertErr.message); }
                         if (docRow) setDocs(prev => [docRow, ...prev]);
@@ -6036,6 +6048,92 @@ function AdminPanel({ admin, onLogout }) {
                   </div>
                 </Card>
               </>)}
+            </div>
+          )}
+
+          {/* ── REQUESTS ── */}
+          {tab === "requests" && (
+            <div style={{ padding:28 }}>
+              <div style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, marginBottom:4 }}>
+                📩 Client Requests
+              </div>
+              <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:24 }}>
+                Service requests submitted by clients through the portal.
+              </p>
+              {reqLoading ? (
+                <Card>
+                  <p style={{ fontFamily:F, fontSize:13, color:C.dim, textAlign:"center", padding:"24px 0" }}>
+                    Loading requests…
+                  </p>
+                </Card>
+              ) : requests.length === 0 ? (
+                <Card>
+                  <div style={{ textAlign:"center", padding:"32px 0" }}>
+                    <div style={{ fontSize:36, marginBottom:10 }}>📭</div>
+                    <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
+                      No requests from {selected.name} yet.
+                    </div>
+                  </div>
+                </Card>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                  {requests.map((r, i) => (
+                    <Card key={r.id || i} style={{ padding:20 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:10 }}>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8, flexWrap:"wrap" }}>
+                            <span style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
+                              {r.service_name || r.service_id || "Service Request"}
+                            </span>
+                            <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700,
+                              background: r.status==="new" ? `${C.amber}18` : r.status==="in_progress" ? `${C.blue}18` : `${C.green}18`,
+                              color: r.status==="new" ? C.amber : r.status==="in_progress" ? C.blue : C.green,
+                              fontFamily:F, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                              {r.status || "new"}
+                            </span>
+                          </div>
+                          <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:6 }}>
+                            <strong>{r.client_name}</strong> · {r.company} · {r.email}
+                            {r.phone && <span> · {r.phone}</span>}
+                          </div>
+                          {r.notes && (
+                            <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6,
+                              padding:"10px 14px", borderRadius:8, background:C.bg3, marginTop:8 }}>
+                              {r.notes}
+                            </div>
+                          )}
+                          <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:8 }}>
+                            Submitted: {r.created_at ? new Date(r.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "—"}
+                          </div>
+                        </div>
+                        <div style={{ display:"flex", gap:8, flexShrink:0 }}>
+                          <select
+                            value={r.status || "new"}
+                            onChange={async (e) => {
+                              const newStatus = e.target.value;
+                              await supabase.from("requests").update({ status: newStatus }).eq("id", r.id);
+                              setRequests(prev => prev.map(x => x.id===r.id ? {...x, status:newStatus} : x));
+                            }}
+                            style={{ padding:"7px 12px", borderRadius:8, border:`1px solid ${C.border}`,
+                              fontFamily:F, fontSize:12, color:C.text, background:C.bg, cursor:"pointer" }}>
+                            <option value="new">New</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="proposal_sent">Proposal Sent</option>
+                            <option value="completed">Completed</option>
+                            <option value="declined">Declined</option>
+                          </select>
+                          <button onClick={async () => {
+                            if (!window.confirm("Delete this request?")) return;
+                            await supabase.from("requests").delete().eq("id", r.id);
+                            setRequests(prev => prev.filter(x => x.id !== r.id));
+                          }} style={{ padding:"7px 10px", borderRadius:8, border:`1px solid ${C.border}`,
+                            background:"none", color:C.red, cursor:"pointer", fontSize:14 }}>🗑</button>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
