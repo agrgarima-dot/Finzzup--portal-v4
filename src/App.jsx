@@ -33,7 +33,7 @@ const C = {
 };
 const F  = "'Plus Jakarta Sans', sans-serif";
 const FM = "'DM Mono', monospace";
-const WA = "https://wa.me/91983585810";  // Garima's WhatsApp — single source of truth
+const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
 
 // ─── INVITE CODES → client data ──────────────────────────────────────────────
 // 🔧 When you connect Supabase, replace this with a DB lookup
@@ -947,7 +947,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
             <div style={{ fontFamily:F, fontSize:12, color:"#047857", marginBottom:12, lineHeight:1.6 }}>
               Chat directly with Garima on WhatsApp for quick questions about your financials or valuations.
             </div>
-            <a href="https://wa.me/91983585810" target="_blank" rel="noopener noreferrer"
+            <a href={WA} target="_blank" rel="noopener noreferrer"
               style={{ display:"inline-flex", alignItems:"center", gap:8,
                 background:"#25D366", color:"white", borderRadius:10,
                 padding:"9px 18px", fontFamily:F, fontWeight:700, fontSize:13,
@@ -977,8 +977,13 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 function Dashboard({ client, kpis, garimaNote, reportData }) {
   const displayKpis = kpis || KPIs;
   const pack = client?.client_pack || client?.clientPack || "startup";
+  const ovPack = pack;
   const packCfg = PACK_CONFIG[pack] || PACK_CONFIG.startup;
   const displayNote = garimaNote || packCfg.garimaNote;
+  const defaultActions = ACTIONS_BY_PACK[pack] || ACTIONS_BY_PACK.startup;
+  const pendingActions = defaultActions.filter(a => !a.done);
+  const highPriority   = pendingActions.filter(a => a.priority === "High");
+  const engagement     = null;
   return (
     <div style={{ padding:24 }}>
       {/* Welcome — pack-aware colour */}
@@ -1791,7 +1796,7 @@ function StartupCFOPack({ data, client, reportData }) {
               )}
               {item.score < 70 && (
                 <div style={{ marginTop:6, marginLeft:152 }}>
-                  <a href="https://wa.me/91983585810" target="_blank" rel="noopener"
+                  <a href={WA} target="_blank" rel="noopener"
                     style={{ fontSize:11, fontWeight:700, color:C.blue, fontFamily:F,
                       textDecoration:"none", padding:"3px 10px", borderRadius:100,
                       border:`1px solid ${C.blue}40`, background:`${C.blue}08` }}>
@@ -1886,7 +1891,7 @@ function MSMECFOPack({ data, reportData }) {
               )}
               {item.score < 70 && (
                 <div style={{ marginTop:6, marginLeft:172 }}>
-                  <a href="https://wa.me/91983585810" target="_blank" rel="noopener"
+                  <a href={WA} target="_blank" rel="noopener"
                     style={{ fontSize:11, fontWeight:700, color:C.teal, fontFamily:F,
                       textDecoration:"none", padding:"3px 10px", borderRadius:100,
                       border:`1px solid ${C.teal}40`, background:`${C.teal}08` }}>
@@ -2039,7 +2044,7 @@ function CorporateCFOPack({ data, reportData }) {
               )}
               {item.score < 70 && (
                 <div style={{ marginTop:6, marginLeft:192 }}>
-                  <a href="https://wa.me/91983585810" target="_blank" rel="noopener"
+                  <a href={WA} target="_blank" rel="noopener"
                     style={{ fontSize:11, fontWeight:700, color:C.purple, fontFamily:F,
                       textDecoration:"none", padding:"3px 10px", borderRadius:100,
                       border:`1px solid ${C.purple}40`, background:`${C.purple}08` }}>
@@ -3352,7 +3357,7 @@ function Calendar() {
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 Can't find a slot? WhatsApp Garima directly at{" "}
           <a href={WA} target="_blank" rel="noopener"
-            style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
+            style={{ color:C.green, fontWeight:700 }}>+91 98335 85810</a>
         </div>
       </div>
       <style>{`@media(max-width:500px){.cal-grid{grid-template-columns:1fr!important}}`}</style>
@@ -3423,7 +3428,7 @@ function downloadInvoicePDF(inv, client) {
 <div class="footer">
   <strong>Finzzup Advisory LLP</strong> · GSTIN: [Add GSTIN] · PAN: [Add PAN]<br/>
   Bank: [Bank Name] · A/C No: [Account Number] · IFSC: [IFSC Code]<br/>
-  To pay: transfer to the above account and WhatsApp UTR to +91 98335 85820<br/>
+  To pay: transfer to the above account and WhatsApp UTR to +91 98335 85810<br/>
   Queries: garima@finzzup.com — This is a system-generated invoice.
 </div>
 </body></html>`;
@@ -4061,7 +4066,7 @@ function MyDocuments({ client }) {
                     <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2, display:"flex", gap:8, flexWrap:"wrap" }}>
                       <span>{doc.file_size}</span>
                       <span>·</span>
-                      <span>{new Date(doc.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" })}</span>
+                      <span>{doc.created_at ? new Date(doc.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }) : "—"}</span>
                       <span>·</span>
                       <span style={{ color: byGarima ? C.blue : C.muted, fontWeight:600 }}>
                         {byGarima ? "📌 From Garima" : "👤 You"}
@@ -4104,7 +4109,7 @@ function MyDocuments({ client }) {
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 <strong>Need to send a large file?</strong> WhatsApp it directly to Garima at{" "}
           <a href={WA} target="_blank" rel="noopener"
-            style={{ color:C.green, fontWeight:700 }}>+91 98335 85820</a>
+            style={{ color:C.green, fontWeight:700 }}>+91 98335 85810</a>
           {" "}or email{" "}
           <a href="mailto:garima@finzzup.com" style={{ color:C.green, fontWeight:700 }}>garima@finzzup.com</a>
         </div>
@@ -5951,20 +5956,27 @@ function AdminPanel({ admin, onLogout }) {
                       onChange={async (e) => {
                         const file = e.target.files[0];
                         if (!file || !selected) return;
+                        if (file.size > 10 * 1024 * 1024) {
+                          alert("File too large — max 10MB per upload.");
+                          e.target.value = "";
+                          return;
+                        }
                         setDocLoading(true);
-                        const path = `${selected.id}/${Date.now()}-${file.name}`;
+                        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+                        const path = `${selected.id}/${Date.now()}-${safeName}`;
                         const { error: upErr } = await supabase.storage
                           .from("client-docs").upload(path, file);
                         if (upErr) { alert("Upload failed: " + upErr.message); setDocLoading(false); return; }
                         const { data: urlData } = supabase.storage
                           .from("client-docs").getPublicUrl(path);
-                        const { data: docRow } = await supabase.from("documents").insert({
+                        const { data: docRow, error: insertErr } = await supabase.from("documents").insert({
                           client_id: selected.id,
                           name: file.name,
                           file_url: urlData.publicUrl,
                           file_size: (file.size/1024/1024).toFixed(2) + " MB",
                           uploaded_by: "garima",
                         }).select().single();
+                        if (insertErr) { alert("Saved to storage but DB record failed: " + insertErr.message); }
                         if (docRow) setDocs(prev => [docRow, ...prev]);
                         setDocLoading(false);
                         e.target.value = "";
@@ -6003,7 +6015,7 @@ function AdminPanel({ admin, onLogout }) {
                           <div>
                             <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
                             <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>
-                              {d.file_size} · {new Date(d.created_at).toLocaleDateString("en-IN")}
+                              {d.file_size} · {d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN") : "—"}
                             </div>
                           </div>
                         </div>
