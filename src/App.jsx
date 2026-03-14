@@ -162,31 +162,36 @@ const PriBadge = ({ p }) => {
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
 const Logo = ({ size=32, darkText=false, showTagline=false }) => {
-  const lime = "#5B4FDB";
-  const iconBg = "white";
   const textColor = darkText ? "#111827" : "white";
-  const s = (size/32)*40;
+  const s = (size/32)*36;
+  // Accent colour for icon — always vivid regardless of dark/light context
+  const accent = "#5B4FDB";
+  const accentLight = "#7C3AED";
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
-      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-        <svg width={s} height={s} viewBox="0 0 40 40" fill="none">
-          <rect width="40" height="40" rx="10" fill={lime}/>
-          <text x="50%" y="58%" dominantBaseline="middle" textAnchor="middle"
-            style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800, fontSize:22, fill:iconBg }}>
-            F
-          </text>
-          <circle cx="30" cy="10" r="5" fill={iconBg}/>
-          <circle cx="32" cy="10" r="2" fill="white"/>
+      <div style={{ display:"flex", alignItems:"center", gap:9 }}>
+        {/* Icon mark — stylised F with rising bar chart feel */}
+        <svg width={s} height={s} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="36" height="36" rx="9" fill={accent}/>
+          {/* Rising bars — symbolise financial growth */}
+          <rect x="8"  y="22" width="4" height="7"  rx="1.5" fill="rgba(255,255,255,0.45)"/>
+          <rect x="14" y="17" width="4" height="12" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+          <rect x="20" y="12" width="4" height="17" rx="1.5" fill="white"/>
+          {/* Trend line across top of bars */}
+          <polyline points="10,22 16,17 22,12" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+          {/* Top-right dot accent */}
+          <circle cx="28" cy="9" r="3" fill={accentLight}/>
+          <circle cx="28" cy="9" r="1.5" fill="white" opacity="0.9"/>
         </svg>
-        <span style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800,
-          fontSize:size*0.69, color:textColor, letterSpacing:"-0.02em" }}>
+        <span style={{ fontFamily:"'Inter Tight', 'Inter', 'Plus Jakarta Sans', sans-serif", fontWeight:800,
+          fontSize:size*0.72, color:textColor, letterSpacing:"-0.03em" }}>
           Finzzup
         </span>
       </div>
       {showTagline && (
         <div style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:10,
           color: darkText ? "#9CA3AF" : "rgba(255,255,255,0.45)",
-          marginTop:2, letterSpacing:"0.04em" }}>
+          marginTop:3, letterSpacing:"0.05em", textTransform:"uppercase" }}>
           Smart Finance · Trusted Insights
         </div>
       )}
@@ -318,17 +323,17 @@ function Login({ onLogin }) {
         <div style={{ textAlign:"center", marginBottom:32 }}>
           <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:6 }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <svg width={44} height={44} viewBox="0 0 40 40" fill="none">
-                <rect width="40" height="40" rx="10" fill="#5B4FDB"/>
-                <text x="50%" y="58%" dominantBaseline="middle" textAnchor="middle"
-                  style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800, fontSize:22, fill:"white" }}>
-                  F
-                </text>
-                <circle cx="30" cy="10" r="5" fill="white"/>
-                <circle cx="32" cy="10" r="2" fill="#5B4FDB"/>
+              <svg width={44} height={44} viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect width="36" height="36" rx="9" fill="#5B4FDB"/>
+                <rect x="8"  y="22" width="4" height="7"  rx="1.5" fill="rgba(255,255,255,0.45)"/>
+                <rect x="14" y="17" width="4" height="12" rx="1.5" fill="rgba(255,255,255,0.7)"/>
+                <rect x="20" y="12" width="4" height="17" rx="1.5" fill="white"/>
+                <polyline points="10,22 16,17 22,12" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+                <circle cx="28" cy="9" r="3" fill="#7C3AED"/>
+                <circle cx="28" cy="9" r="1.5" fill="white" opacity="0.9"/>
               </svg>
               <span style={{ fontFamily:"'Inter Tight', 'Inter', sans-serif", fontWeight:800,
-                fontSize:28, color:C.text, letterSpacing:"-0.02em" }}>Finzzup</span>
+                fontSize:28, color:C.text, letterSpacing:"-0.03em" }}>Finzzup</span>
             </div>
             <p style={{ fontSize:12, color:C.muted, margin:0, letterSpacing:"0.03em" }}>
               Smart Finance · Trusted Insights
@@ -824,6 +829,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
           <div style={{ fontFamily:F, fontSize:13, opacity:0.8, marginBottom:12 }}>
             {client?.company || "Company"}
+            {reportData?.monthLabel ? ` · ${reportData.monthLabel}` : ""}
           </div>
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.18)",
             borderRadius:100, padding:"4px 14px", fontSize:12, fontWeight:700,
@@ -1009,7 +1015,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
           <div style={{ fontFamily:F, fontWeight:800, fontSize:22, marginBottom:4 }}>{client.name}</div>
           <div style={{ fontFamily:F, fontSize:13, opacity:0.75 }}>
             {client.company} · {pack==="msme"?"MSME Pack":pack==="corporate"?"Board Pack":"CFO Pack"}
-            {displayKpis?.[0]?.value && displayKpis[0].value !== "—" ? ` · Updated: ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"})}` : ""}
+            {reportData?.monthLabel ? ` · ${reportData.monthLabel}` : displayKpis?.[0]?.value && displayKpis[0].value !== "—" ? ` · ${new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}` : ""}
           </div>
         </div>
       </div>
@@ -1025,7 +1031,25 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
         </p>
       </Card>
 
-      {/* KPI Grid */}
+      {/* KPI Grid header with month context */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, flexWrap:"wrap", gap:8 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
+            KPI Snapshot
+          </div>
+          {reportData?.monthLabel && (
+            <span style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.blue,
+              background:`${C.blue}12`, padding:"3px 12px", borderRadius:100 }}>
+              {reportData.monthLabel}
+            </span>
+          )}
+        </div>
+        {reportData?.monthLabel && (
+          <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>
+            📅 Last updated by Garima · {reportData.monthLabel}
+          </div>
+        )}
+      </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:24 }} className="kpi-grid">
         {displayKpis.map((k,i) => (
           <Card key={i} style={{ padding:18 }}>
@@ -1034,11 +1058,13 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
                 display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>
                 {k.icon}
               </div>
-              <span style={{ fontSize:11, fontWeight:700, color:k.trend==="up"?C.green:C.red,
-                background:k.trend==="up"?"#ECFDF5":"#FEF2F2", padding:"3px 8px",
-                borderRadius:100, fontFamily:F }}>
-                {k.trend==="up" ? "▲" : "▼"} vs last month
-              </span>
+              {k.prev && k.prev !== "—" && (
+                <span style={{ fontSize:11, fontWeight:700, color:k.trend==="up"?C.green:C.red,
+                  background:k.trend==="up"?"#ECFDF5":"#FEF2F2", padding:"3px 8px",
+                  borderRadius:100, fontFamily:F }}>
+                  {k.trend==="up" ? "▲" : "▼"} vs last month
+                </span>
+              )}
             </div>
             <div style={{ fontFamily:FM, fontWeight:600, fontSize:22, color:k.color, marginBottom:2 }}>
               {k.value}
@@ -1047,32 +1073,37 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
               {k.label}
             </div>
             <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>
-              Prev: {k.prev}
+              {k.prev && k.prev !== "—" ? `Prev: ${k.prev}` : "No prior month data"}
             </div>
           </Card>
         ))}
       </div>
+      {displayKpis.every(k => !k.value || k.value === "—") && (
+        <div style={{ textAlign:"center", padding:"12px 0 4px", fontFamily:F, fontSize:12, color:C.dim }}>
+          📊 KPI data not yet updated — Garima will update this after your next session.
+        </div>
+      )}
 
       {/* Quick links row — pack-aware */}
       {(() => {
         const qpack = client?.client_pack || client?.clientPack || "startup";
         const quickItems = qpack === "msme" ? [
           { icon:"📊", label:"MSME Report", color:C.teal, action:"myreport",
-            sub: reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"}) },
+            sub: reportData?.monthLabel ? `${reportData.monthLabel} report ready` : "Awaiting data from Garima" },
           { icon:"✅", label:"Action Items", color:C.red, action:"actions",
             sub: `${pendingActions.length} pending · ${highPriority.length} high priority` },
           { icon:"💎", label:"Treasury", color:C.blue, action:"treasury",
             sub:"Cash visibility & FD tracking" },
         ] : qpack === "corporate" ? [
           { icon:"🏦", label:"Board Report", color:C.purple, action:"myreport",
-            sub: reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"}) },
+            sub: reportData?.monthLabel ? `${reportData.monthLabel} report ready` : "Awaiting data from Garima" },
           { icon:"✅", label:"Action Items", color:C.red, action:"actions",
             sub: `${pendingActions.length} pending · ${highPriority.length} high priority` },
           { icon:"📋", label:"Valuation Status", color:C.teal, action:"engagement",
             sub: engagement?.garima_note?.slice(0,40)+"…" || "Active engagement" },
         ] : [
           { icon:"📁", label:"Latest CFO Report", color:C.purple, action:"myreport",
-            sub: reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"}) },
+            sub: reportData?.monthLabel ? `${reportData.monthLabel} report ready` : "Awaiting data from Garima" },
           { icon:"✅", label:"Action Items", color:C.red, action:"actions",
             sub: `${pendingActions.length} pending · ${highPriority.length} high priority` },
           { icon:"📋", label:"Valuation Status", color:C.teal, action:"engagement",
@@ -2373,84 +2404,31 @@ function MSMEPackContent({ reportData, kpis }) {
         })()}
       </Card>
 
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Working Capital Analysis</div>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="wc-g">
-          {[
-            { label:"Debtors (AR)",   value:"₹38.4L", days:"46 days", color:C.blue   },
-            { label:"Creditors (AP)", value:"₹22.1L", days:"31 days", color:C.purple },
-            { label:"Inventory",      value:"₹15.8L", days:"22 days", color:C.teal   },
-          ].map((w,i) => (
-            <div key={i} style={{ padding:"14px 10px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}`, textAlign:"center" }}>
-              <div style={{ fontFamily:FM, fontSize:20, fontWeight:700, color:w.color }}>{w.value}</div>
-              <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
-              <div style={{ fontFamily:F, fontSize:11, color:w.color, marginTop:2 }}>{w.days}</div>
-            </div>
-          ))}
-        </div>
-        <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
-          <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>⚠️ Cash Conversion Cycle: 37 days (AR 46 − AP 31 + Inventory 22). Target: below 30 days.</span>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Ageing Analysis</div>
-        <AgeingTable title="Receivables (Debtors)" color={C.blue} rows={[
-          ["Client A — Retail",  "₹8.2L","₹4.1L","₹2.0L","—",     "₹14.3L","37.2%"],
-          ["Client B — Exports", "₹6.5L","₹3.2L","—",    "₹4.8L", "₹14.5L","37.8%"],
-          ["Client C — SME",     "₹4.1L","₹2.2L","₹1.5L","—",     "₹7.8L", "20.3%"],
-          ["Others",             "₹1.8L","—",    "—",    "—",     "₹1.8L", "4.7%" ],
-          ["Total",              "₹20.6L","₹9.5L","₹3.5L","₹4.8L","₹38.4L","100%" ],
-        ]}/>
-        <AgeingTable title="Payables (Creditors)" color={C.purple} rows={[
-          ["Supplier X — Raw Material","₹9.2L","₹3.4L","—",    "—","₹12.6L","57.0%"],
-          ["Supplier Y — Packaging",   "₹4.8L","₹2.1L","₹1.2L","—","₹8.1L", "36.7%"],
-          ["Others",                   "₹1.4L","—",    "—",    "—","₹1.4L", "6.3%" ],
-          ["Total",                    "₹15.4L","₹5.5L","₹1.2L","—","₹22.1L","100%" ],
-        ]}/>
-        <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.red}08`, border:`1px solid ${C.red}25` }}>
-          <span style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:600 }}>🔴 ₹4.8L from Client B is 90+ days overdue. Follow-up required immediately — risk of bad debt.</span>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Cash Flow & Runway</div>
-        {[
-          { label:"Opening Cash Balance",   value:"₹26.4L", sub:"1 Feb 2026" },
-          { label:"Cash Inflows (Feb)",      value:"+₹81.8L",sub:"Collections from clients" },
-          { label:"Cash Outflows (Feb)",     value:"−₹82.1L",sub:"COGS + opex + taxes" },
-          { label:"Closing Cash Balance",    value:"₹26.1L", sub:"28 Feb 2026" },
-          { label:"Monthly Burn Rate",       value:"₹48L",   pct:"7.7%", trend:"up",   sub:"Improved from ₹52L" },
-          { label:"Cash Runway",             value:"4.4 mo", pct:"12%",  trend:"down", sub:"Based on current burn" },
-        ].map((r,i) => <StatRow key={i} {...r}/>)}
-        <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
-          <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>⚠️ Runway below 6 months. March advance tax (₹32L) will reduce cash further.</span>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>GST & Compliance Status</div>
-        {[
-          { item:"GSTR-1 (Jan)",                  due:"11 Feb", status:"done"     },
-          { item:"GSTR-3B (Jan)",                 due:"20 Feb", status:"done"     },
-          { item:"TDS Payment (Jan deductions)",  due:"07 Feb", status:"done"     },
-          { item:"PF & ESI (Jan)",                due:"15 Feb", status:"done"     },
-          { item:"GSTR-1 (Feb)",                  due:"11 Mar", status:"upcoming" },
-          { item:"GSTR-3B (Feb)",                 due:"20 Mar", status:"due-soon" },
-          { item:"Advance Tax Q4",                due:"15 Mar", status:"due-soon" },
-        ].map((g,i) => {
-          const [c,bg,lbl] = g.status==="done"?[C.green,"#ECFDF5","Filed ✓"]:g.status==="due-soon"?[C.red,"#FEF2F2","Due Soon"]:[C.amber,"#FFFBEB","Upcoming"];
-          return (
-            <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"9px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:8 }}>
-              <div>
-                <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:500 }}>{g.item}</span>
-                <span style={{ fontFamily:F, fontSize:11, color:C.dim, marginLeft:8 }}>Due: {g.due}</span>
+      {reportData?.metrics?.some(m => m.value) && (
+        <Card>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Working Capital Analysis</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="wc-g">
+            {reportData.metrics.filter(m => m.value).map((m,i) => (
+              <div key={i} style={{ padding:"14px 10px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}`, textAlign:"center" }}>
+                <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:C.teal }}>{m.value}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{m.label}</div>
+                {m.sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{m.sub}</div>}
               </div>
-              <Badge color={c} bg={bg}>{lbl}</Badge>
-            </div>
-          );
-        })}
-      </Card>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {kpis?.some(k => k.value && k.value !== "—") && (
+        <Card>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>KPI Snapshot</div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>Latest figures from Garima</div>
+          {kpis.filter(k => k.value && k.value !== "—").map((k,i) => (
+            <StatRow key={i} label={k.label} value={k.value}
+              sub={k.prev && k.prev !== "—" ? `prev: ${k.prev}` : ""} trend={k.trend||"up"}/>
+          ))}
+        </Card>
+      )}
 
       <Card>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>📅 Compliance Due Date Calendar — March 2026</div>
@@ -2472,21 +2450,6 @@ function MSMEPackContent({ reportData, kpis }) {
         </div>
       </Card>
 
-      <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items from Garima — March 2026</div>
-        {[
-          { p:"High",   t:"Follow up Client B on ₹4.8L overdue — escalate if no response by 5 Mar" },
-          { p:"High",   t:"Arrange ₹32L for advance tax by 15 March — do not miss this" },
-          { p:"Medium", t:"Negotiate extended credit with Supplier X (push from 30 to 45 days)" },
-          { p:"Medium", t:"Review and cut discretionary opex by 10% — details shared separately" },
-          { p:"Low",    t:"Begin FY close reconciliation checklist — target completion by 25 March" },
-        ].map((a,i,arr) => (
-          <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", alignItems:"flex-start" }}>
-            <PriBadge p={a.p}/>
-            <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{a.t}</span>
-          </div>
-        ))}
-      </Card>
 
       <div>
         <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Previous MSME Packs</div>
@@ -2501,62 +2464,60 @@ function MSMEPackContent({ reportData, kpis }) {
 
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-          <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Budget vs Actual vs Prior Year — February 2026</div>
-            <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>All figures in ₹L</div>
-            <div style={{ overflowX:"auto" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
-                <thead>
-                  <tr style={{ background:C.navy }}>
-                    {["P&L Line","Budget","Actual","Var ₹","Var %","PY Feb","YoY %"].map((h,i) => (
-                      <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"right", color:"white", fontWeight:700, fontSize:12, whiteSpace:"nowrap" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { m:"Revenue",       bud:79.4, act:84.2, py:74.1, favBud:true, favPY:true },
-                    { m:"COGS",          bud:48.1, act:49.7, py:45.8, favBud:false,favPY:false },
-                    { m:"Gross Profit",  bud:31.3, act:34.5, py:28.3, favBud:true, favPY:true },
-                    { m:"Operating Exp", bud:20.4, act:19.8, py:18.9, favBud:true, favPY:false },
-                    { m:"EBITDA",        bud:12.1, act:14.7, py:11.2, favBud:true, favPY:true },
-                    { m:"Net Profit",    bud:8.4,  act:10.2, py:7.6,  favBud:true, favPY:true },
-                  ].map((r,i) => {
-                    const varBud = (r.act - r.bud).toFixed(1);
-                    const varBudPct = ((r.act - r.bud)/r.bud*100).toFixed(1)+"%";
-                    const varPY = ((r.act - r.py)/r.py*100).toFixed(1)+"%";
-                    return (
-                      <tr key={i} style={{ background:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
-                        <td style={{ padding:"10px 12px", fontWeight:600, color:C.text }}>{r.m}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.bud}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", fontWeight:700, fontFamily:FM }}>{r.act}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favBud?C.green:C.red }}>{r.favBud?"+":""}{varBud}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favBud?C.green:C.red }}>{r.favBud?"+":""}{varBudPct}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.py}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favPY?C.green:C.red }}>{r.favPY?"+":""}{varPY}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-          <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>📝 Variance Commentary</div>
-            {[
-              { item:"Revenue ₹4.8L above budget (+6.0%)", note:"Strong secondary sales from existing customers. New distributor onboarded in Pune contributing ₹2.1L.", c:C.green },
-              { item:"COGS ₹1.6L over budget", note:"Raw material price increase of ~3.2% not captured in budget. Need to renegotiate with Supplier X or pass through in Q1 pricing.", c:C.red },
-              { item:"EBITDA ₹2.6L above budget — margin 17.5% vs 15.2% budgeted", note:"Operating leverage kicking in as revenue scales. Sustaining this requires holding opex flat in March.", c:C.green },
-            ].map((v,i) => (
-              <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<2?`1px solid ${C.border}`:"none" }}>
-                <div style={{ width:8, height:8, borderRadius:100, background:v.c, flexShrink:0, marginTop:6 }}/>
-                <div>
-                  <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
-                  <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>
-                </div>
+          {reportData?.variance?.some(r => r.item && (r.budget || r.actual)) ? (<>
+            <Card>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                MSME Variance Analysis{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
               </div>
-            ))}
-          </Card>
+              <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>Actuals vs Budget — updated by Garima</div>
+              <div style={{ overflowX:"auto" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
+                  <thead>
+                    <tr style={{ background:C.navy }}>
+                      {["Item","Budget","Actual","Variance"].map((h,i) => (
+                        <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"right", color:"white", fontWeight:700, fontSize:11 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData.variance.filter(r => r.item).map((r,i) => (
+                      <tr key={i} style={{ background:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
+                        <td style={{ padding:"10px 12px", fontWeight:600, color:C.text }}>{r.item}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.budget||"—"}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontWeight:700, fontFamily:FM }}>{r.actual||"—"}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right" }}>
+                          <span style={{ padding:"3px 8px", borderRadius:100, fontSize:10, fontWeight:700,
+                            background:r.fav?`${C.green}15`:`${C.red}15`, color:r.fav?C.green:C.red }}>
+                            {r.fav?"▲ Fav":"▼ Unfav"}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+            {reportData?.varianceCommentary?.some(v => v.item) && (
+              <Card style={{ borderLeft:`3px solid $C.teal` }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>📝 Commentary</div>
+                {reportData.varianceCommentary.filter(v => v.item).map((v,i,arr) => (
+                  <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
+                    <div style={{ width:8, height:8, borderRadius:100, background:v.favorable?C.green:C.red, flexShrink:0, marginTop:6 }}/>
+                    <div>
+                      <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
+                      {v.note && <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>}
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            )}
+          </>) : (
+            <Card style={{ textAlign:"center", padding:"40px 0" }}>
+              <div style={{ fontSize:36, marginBottom:12 }}>📉</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>Variance Analysis</div>
+              <div style={{ fontFamily:F, fontSize:13, color:C.dim }}>Garima will update this with your variance data.</div>
+            </Card>
+          )}
         </div>
       )}
 
@@ -2688,170 +2649,65 @@ function CorporatePackContent({ reportData, kpis }) {
         </div>
       </Card>
 
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>EBITDA Bridge — Jan to Feb 2026</div>
-        {[
-          { label:"January EBITDA",  value:"₹115L", delta:"",      color:C.navy,   base:true  },
-          { label:"+ Revenue growth",value:"+₹26L", delta:"+22.6%",color:C.green,  base:false },
-          { label:"− COGS increase", value:"−₹8L",  delta:"",      color:C.red,    base:false },
-          { label:"+ Opex savings",  value:"+₹7L",  delta:"3.4%",  color:C.green,  base:false },
-          { label:"− Misc one-offs", value:"−₹1L",  delta:"",      color:C.red,    base:false },
-          { label:"February EBITDA", value:"₹139L", delta:"+20.9%",color:C.blue,   base:true  },
-        ].map((b,i) => (
-          <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"11px 14px", borderRadius:10, margin:"2px 0", background:b.base?`${b.color}12`:C.bg, border:b.base?`1px solid ${b.color}30`:`1px solid ${C.border}` }}>
-            <span style={{ fontFamily:F, fontSize:13, color:b.base?b.color:C.muted, fontWeight:b.base?700:500 }}>{b.label}</span>
-            <div style={{ display:"flex", gap:10, alignItems:"center" }}>
-              {b.delta && <span style={{ fontFamily:F, fontSize:11, color:b.color, fontWeight:700 }}>{b.delta}</span>}
-              <span style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:b.base?b.color:C.text }}>{b.value}</span>
-            </div>
-          </div>
-        ))}
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Cash Flow Forecast — Q1 FY27 (Mar–May 2026)</div>
-        <div style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
-            <thead>
-              <tr style={{ background:C.bg3 }}>
-                {["","March","April","May","Q1 Total"].map((h,i) => (
-                  <th key={i} style={{ padding:"9px 12px", textAlign:i===0?"left":"right", color:C.muted, fontWeight:700, fontSize:11, borderBottom:`1px solid ${C.border}` }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {[
-                ["Opening Cash",       "₹261L","₹143L","₹137L","₹261L"],
-                ["Operating Inflows",  "₹818L","₹880L","₹920L","₹2,618L"],
-                ["Operating Outflows", "−₹821L","−₹790L","−₹810L","−₹2,421L"],
-                ["Capex",              "—",   "−₹45L","—",    "−₹45L"],
-                ["Debt Repayment",     "−₹83L","−₹83L","−₹83L","−₹249L"],
-                ["Tax Payment",        "−₹32L","—",   "—",    "−₹32L"],
-                ["Closing Cash",       "₹143L","₹105L","₹164L","₹122L"],
-              ].map((r,i) => (
-                <tr key={i} style={{ background:i%2===0?C.bg2:C.bg }}>
-                  {r.map((cell,j) => (
-                    <td key={j} style={{ padding:"9px 12px", textAlign:j===0?"left":"right", fontWeight:["Opening Cash","Closing Cash"].includes(r[0])||j===0?700:400, color:C.text, borderBottom:`1px solid ${C.border}`, background:r[0]==="Closing Cash"?`${C.blue}06`:undefined }}>{cell}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10, background:`${C.red}08`, border:`1px solid ${C.red}25` }}>
-          <span style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:600 }}>⚠️ March closing cash ₹143L — lowest in 12 months. No discretionary capex in March.</span>
-        </div>
-      </Card>
-
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Key Risks & Mitigants</div>
-        {[
-          { risk:"Client B collection (₹4.8L overdue 90+ days)", impact:"High",   mitigant:"Legal notice issued. Board authorised write-off if unpaid by 31 Mar.", c:C.red    },
-          { risk:"March cash dip below ₹150L",                   impact:"Medium", mitigant:"CC limit of ₹50L available with HDFC. Not drawn — emergency buffer.",  c:C.amber  },
-          { risk:"GST notice on FY24 ITC claims",                 impact:"Medium", mitigant:"CA response submitted. Hearing 12 March. Provision made.",              c:C.amber  },
-          { risk:"Revenue concentration — Client A = 37%",        impact:"Low",    mitigant:"3 new accounts in pipeline. Target <25% by Q2.",                        c:C.green  },
-        ].map((r,i) => (
-          <div key={i} style={{ padding:"12px 14px", borderRadius:10, marginBottom:10, background:`${r.c}06`, border:`1px solid ${r.c}22` }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6, flexWrap:"wrap", gap:8 }}>
-              <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text }}>{r.risk}</span>
-              <Badge color={r.impact==="High"?C.red:r.impact==="Medium"?C.amber:C.green} bg={r.impact==="High"?"#FEF2F2":r.impact==="Medium"?"#FFFBEB":"#ECFDF5"}>{r.impact} Impact</Badge>
-            </div>
-            <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0, lineHeight:1.6 }}><strong style={{ color:C.text }}>Mitigant:</strong> {r.mitigant}</p>
-          </div>
-        ))}
-      </Card>
-
-      <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Board Decisions Required</div>
-        {[
-          { p:"High",   t:"Approve write-off of Client B receivable (₹4.8L) if not recovered by 31 March" },
-          { p:"High",   t:"Approve Q1 FY27 budget — revised upward given Feb outperformance" },
-          { p:"Medium", t:"Authorise April capex of ₹45L for production equipment" },
-          { p:"Medium", t:"Review and approve FY24 GST response filed by CA — board sign-off needed" },
-        ].map((a,i,arr) => (
-          <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", alignItems:"flex-start" }}>
-            <PriBadge p={a.p}/>
-            <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{a.t}</span>
-          </div>
-        ))}
-      </Card>
-
-
         </div>
       )}
 
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-          <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Board-Ready Variance Analysis — February 2026</div>
-            <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>Actuals vs Budget vs Prior Year (₹Cr)</div>
-            <div style={{ overflowX:"auto" }}>
-              <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
-                <thead>
-                  <tr style={{ background:C.navy }}>
-                    {["","Act Feb","Bud Feb","Var ₹","Var %","PY Feb","YoY %","Status"].map((h,i) => (
-                      <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"right", color:"white", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { m:"Revenue",          act:84.2, bud:79.4, py:74.1, favBud:true,  favPY:true  },
-                    { m:"Cost of Sales",    act:49.7, bud:48.1, py:45.8, favBud:false, favPY:false },
-                    { m:"Gross Profit",     act:34.5, bud:31.3, py:28.3, favBud:true,  favPY:true  },
-                    { m:"GP Margin %",      act:"41%",bud:"39%",py:"38%",favBud:true,  favPY:true, noCalc:true },
-                    { m:"EBITDA",           act:14.7, bud:12.1, py:11.2, favBud:true,  favPY:true  },
-                    { m:"EBITDA Margin %",  act:"17.5%",bud:"15.2%",py:"15.1%",favBud:true,favPY:true,noCalc:true },
-                    { m:"Depreciation",     act:3.2,  bud:3.1,  py:2.8,  favBud:false, favPY:false },
-                    { m:"EBIT",             act:11.5, bud:9.0,  py:8.4,  favBud:true,  favPY:true  },
-                    { m:"Finance Costs",    act:1.8,  bud:2.0,  py:2.1,  favBud:true,  favPY:true  },
-                    { m:"PBT",              act:9.7,  bud:7.0,  py:6.3,  favBud:true,  favPY:true  },
-                    { m:"Tax",              act:2.4,  bud:1.8,  py:1.6,  favBud:false, favPY:false },
-                    { m:"PAT",              act:7.3,  bud:5.2,  py:4.7,  favBud:true,  favPY:true  },
-                  ].map((r,i) => {
-                    const av = parseFloat(r.act), bv = parseFloat(r.bud), pv = parseFloat(r.py);
-                    const varBud = r.noCalc ? "—" : (av-bv).toFixed(1);
-                    const varBudPct = r.noCalc ? "—" : ((av-bv)/bv*100).toFixed(1)+"%";
-                    const varPY = r.noCalc ? "—" : ((av-pv)/pv*100).toFixed(1)+"%";
-                    const isBold = ["Gross Profit","EBITDA","PAT"].includes(r.m);
-                    return (
-                      <tr key={i} style={{ background:isBold?`${C.blue}06`:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
-                        <td style={{ padding:"10px 12px", fontWeight:isBold?700:500, color:C.text }}>{r.m}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", fontWeight:isBold?700:400, fontFamily:FM }}>{r.act}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.bud}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favBud?C.green:C.red }}>{r.noCalc?"—":(r.favBud?"+":"")+varBud}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favBud?C.green:C.red }}>{r.noCalc?"—":(r.favBud?"+":"")+varBudPct}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.py}</td>
-                        <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.favPY?C.green:C.red }}>{r.noCalc?"—":(r.favPY?"+":"")+varPY}</td>
+          {reportData?.variance?.some(r => r.item && (r.budget || r.actual)) ? (<>
+            <Card>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                Board-Ready Variance Analysis{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
+              </div>
+              <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>Actuals vs Budget — updated by Garima</div>
+              <div style={{ overflowX:"auto" }}>
+                <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:13 }}>
+                  <thead>
+                    <tr style={{ background:C.navy }}>
+                      {["Item","Budget","Actual","Variance"].map((h,i) => (
+                        <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"right", color:"white", fontWeight:700, fontSize:11 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reportData.variance.filter(r => r.item).map((r,i) => (
+                      <tr key={i} style={{ background:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
+                        <td style={{ padding:"10px 12px", fontWeight:600, color:C.text }}>{r.item}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.budget||"—"}</td>
+                        <td style={{ padding:"10px 12px", textAlign:"right", fontWeight:700, fontFamily:FM }}>{r.actual||"—"}</td>
                         <td style={{ padding:"10px 12px", textAlign:"right" }}>
                           <span style={{ padding:"3px 8px", borderRadius:100, fontSize:10, fontWeight:700,
-                            background:r.favBud?`${C.green}15`:`${C.red}15`, color:r.favBud?C.green:C.red }}>
-                            {r.favBud?"▲ Fav":"▼ Unfav"}
+                            background:r.fav?`${C.green}15`:`${C.red}15`, color:r.fav?C.green:C.red }}>
+                            {r.fav?"▲ Fav":"▼ Unfav"}
                           </span>
                         </td>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-          <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>📝 Board Commentary</div>
-            {[
-              { item:"Revenue ₹4.8Cr above budget (+6.0%); +₹10.1Cr YoY (+13.6%)", note:"Outperformance driven by Q4 order book pull-forward and new institutional account. Sustainable if pipeline converts — 3 proposals worth ₹28Cr outstanding.", c:C.green },
-              { item:"PAT ₹2.1Cr above budget — Net margin 8.7% vs 6.5% budgeted", note:"Finance cost savings (lower utilisation of CC facility) + operating leverage. Management to review whether to re-invest or declare interim dividend.", c:C.green },
-              { item:"Cost of Sales 1.6% above budget — margin pressure to watch", note:"Input cost inflation (steel, packaging) not fully passed through. Pricing review recommended for Q1 FY27. Finance team modelling break-even scenarios.", c:C.amber },
-            ].map((v,i) => (
-              <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<2?`1px solid ${C.border}`:"none" }}>
-                <div style={{ width:8, height:8, borderRadius:100, background:v.c, flexShrink:0, marginTop:6 }}/>
-                <div>
-                  <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
-                  <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>
-                </div>
+                    ))}
+                  </tbody>
+                </table>
               </div>
-            ))}
-          </Card>
+            </Card>
+            {reportData?.varianceCommentary?.some(v => v.item) && (
+              <Card style={{ borderLeft:`3px solid $C.purple` }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>📝 Commentary</div>
+                {reportData.varianceCommentary.filter(v => v.item).map((v,i,arr) => (
+                  <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
+                    <div style={{ width:8, height:8, borderRadius:100, background:v.favorable?C.green:C.red, flexShrink:0, marginTop:6 }}/>
+                    <div>
+                      <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
+                      {v.note && <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>}
+                    </div>
+                  </div>
+                ))}
+              </Card>
+            )}
+          </>) : (
+            <Card style={{ textAlign:"center", padding:"40px 0" }}>
+              <div style={{ fontSize:36, marginBottom:12 }}>📉</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>Variance Analysis</div>
+              <div style={{ fontFamily:F, fontSize:13, color:C.dim }}>Garima will update this with your variance data.</div>
+            </Card>
+          )}
         </div>
       )}
 
@@ -4419,43 +4275,59 @@ function Terms() {
 
 // ─── PDF REPORT GENERATOR ────────────────────────────────────────────────────
 function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
-  const pack     = client?.client_pack || client?.clientPack || "startup";
+  const pack      = client?.client_pack || client?.clientPack || "startup";
   const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
-  const month    = reportData?.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" });
-  const now      = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
+  const coverColor = pack === "msme" ? "#065f46,#059669,#0891B2"
+                   : pack === "corporate" ? "#4C1D95,#7C3AED,#DB2777"
+                   : "#1a3a8f,#2563EB,#7C3AED";
+  const accentColor = pack === "msme" ? "#059669" : pack === "corporate" ? "#7C3AED" : "#2563EB";
+  const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" });
+  const now       = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
 
-  const kpiRows  = (kpis || []).map(k => `
-    <tr>
-      <td>${k.label}</td>
-      <td class="val">${k.value || "—"}</td>
-      <td class="${k.trend === "up" ? "up" : "dn"}">${k.trend === "up" ? "▲" : "▼"} ${k.prev || "—"}</td>
-    </tr>`).join("");
+  // KPI cards — 2 per row grid
+  const kpiCards  = (kpis || []).map(k => {
+    const isUp = k.trend === "up";
+    return `<div style="background:#f8faff;border:1px solid #e0e7ff;border-radius:10px;padding:16px 18px;break-inside:avoid">
+      <div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">${k.label}</div>
+      <div style="font-size:22px;font-weight:800;color:#111827;font-family:monospace;margin-bottom:4px">${k.value || "—"}</div>
+      <div style="font-size:11px;font-weight:700;color:${isUp?"#059669":"#EF4444"}">
+        ${isUp?"▲":"▼"} prev: ${k.prev || "—"}
+      </div>
+    </div>`;
+  }).join("");
 
-  const plData   = reportData?.pl || {};
-  const plKeys   = ["revenue","cogs","gross_profit","opex","ebitda","pat"];
-  const plLabels = { revenue:"Revenue", cogs:"Cost of Goods Sold", gross_profit:"Gross Profit",
+  const plData    = reportData?.pl || {};
+  const plKeys    = ["revenue","cogs","gross_profit","opex","ebitda","pat"];
+  const plLabels  = { revenue:"Revenue", cogs:"Cost of Goods Sold", gross_profit:"Gross Profit",
     opex:"Operating Expenses", ebitda:"EBITDA", pat:"Net Profit / PAT" };
-  const plRows   = plKeys.filter(k => plData[k]?.actual).map(k => `
-    <tr>
-      <td>${plLabels[k] || k}</td>
-      <td class="val">${plData[k].actual}</td>
-      <td>${plData[k].prev || "—"}</td>
+  const plRows    = plKeys.filter(k => plData[k]?.actual).map((k,i) => `
+    <tr style="background:${i%2===0?"#fff":"#f9fafb"}">
+      <td style="padding:10px 14px;font-size:12px;color:#374151;border-bottom:1px solid #F3F4F6;font-weight:${["gross_profit","ebitda","pat"].includes(k)?"700":"400"}">${plLabels[k]}</td>
+      <td style="padding:10px 14px;font-size:13px;font-weight:700;color:#111827;font-family:monospace;border-bottom:1px solid #F3F4F6">${plData[k].actual}</td>
+      <td style="padding:10px 14px;font-size:12px;color:#6B7280;font-family:monospace;border-bottom:1px solid #F3F4F6">${plData[k].prev || "—"}</td>
     </tr>`).join("");
 
   const pendingActions = (actions || []).filter(a => !a.done);
-  const actionRows = pendingActions.map(a => `
-    <tr>
-      <td>${a.text}</td>
-      <td><span class="badge ${a.priority === "High" ? "high" : a.priority === "Medium" ? "med" : "low"}">${a.priority}</span></td>
-    </tr>`).join("");
+  const actionRows = pendingActions.map(a => {
+    const col = a.priority==="High"?"#EF4444":a.priority==="Medium"?"#D97706":"#059669";
+    const bg  = a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#ECFDF5";
+    return `<tr>
+      <td style="padding:10px 14px;font-size:12px;color:#374151;border-bottom:1px solid #F3F4F6">${a.text}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #F3F4F6">
+        <span style="background:${bg};color:${col};font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px">${a.priority}</span>
+      </td>
+    </tr>`;
+  }).join("");
 
-  const variance = (reportData?.variance || []).filter(r => r.item && (r.budget || r.actual));
-  const varianceRows = variance.map(r => `
-    <tr>
-      <td>${r.item}</td>
-      <td class="val">${r.budget || "—"}</td>
-      <td class="val">${r.actual || "—"}</td>
-      <td class="${r.fav ? "up" : "dn"}">${r.fav ? "✓ Fav" : "✗ Unfav"}</td>
+  const variance  = (reportData?.variance || []).filter(r => r.item && (r.budget || r.actual));
+  const varianceRows = variance.map((r,i) => `
+    <tr style="background:${i%2===0?"#fff":"#f9fafb"}">
+      <td style="padding:10px 14px;font-size:12px;color:#374151;border-bottom:1px solid #F3F4F6">${r.item}</td>
+      <td style="padding:10px 14px;font-size:12px;font-family:monospace;color:#374151;border-bottom:1px solid #F3F4F6">${r.budget||"—"}</td>
+      <td style="padding:10px 14px;font-size:12px;font-family:monospace;font-weight:700;color:#111827;border-bottom:1px solid #F3F4F6">${r.actual||"—"}</td>
+      <td style="padding:10px 14px;border-bottom:1px solid #F3F4F6">
+        <span style="color:${r.fav?"#059669":"#EF4444"};font-weight:700;font-size:12px">${r.fav?"✓ Favourable":"✗ Unfavourable"}</span>
+      </td>
     </tr>`).join("");
 
   const html = `<!DOCTYPE html>
@@ -4464,102 +4336,159 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
 <meta charset="utf-8"/>
 <title>${packLabel} — ${month} — ${client.company}</title>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Helvetica Neue', Arial, sans-serif; color:#111827; background:#fff; font-size:12px; }
-  .cover { background:linear-gradient(135deg,#1a3a8f,#5B4FDB,#7C3AED); color:white; padding:60px 48px; min-height:240px; }
-  .cover h1 { font-size:32px; font-weight:800; letter-spacing:-0.03em; margin-bottom:8px; }
-  .cover .sub { font-size:14px; opacity:0.75; margin-bottom:24px; }
-  .cover .badge { display:inline-block; background:rgba(255,255,255,0.18); padding:5px 16px; border-radius:100px; font-size:11px; font-weight:700; border:1px solid rgba(255,255,255,0.25); }
-  .meta { display:flex; gap:32px; margin-top:28px; }
-  .meta div { font-size:11px; opacity:0.65; }
-  .meta strong { display:block; font-size:13px; opacity:1; font-weight:700; margin-bottom:2px; }
-  .section { padding:32px 48px; border-bottom:1px solid #E5E7EB; }
-  .section:last-child { border-bottom:none; }
-  h2 { font-size:15px; font-weight:700; color:#111827; margin-bottom:16px; padding-bottom:8px; border-bottom:2px solid #E5E7EB; }
-  h2 span { font-size:11px; font-weight:400; color:#6B7280; margin-left:8px; }
-  table { width:100%; border-collapse:collapse; }
-  th { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; color:#6B7280; padding:6px 10px; border-bottom:2px solid #E5E7EB; text-align:left; }
-  td { padding:8px 10px; border-bottom:1px solid #F3F4F6; font-size:12px; color:#374151; }
-  tr:last-child td { border-bottom:none; }
-  .val { font-family:monospace; font-weight:700; color:#111827; }
-  .up { color:#059669; font-weight:700; }
-  .dn { color:#EF4444; font-weight:700; }
-  .note { background:#EEF3FE; border-left:3px solid #2563EB; padding:14px 18px; border-radius:6px; font-size:13px; line-height:1.7; color:#111827; }
-  .note .label { font-size:10px; font-weight:700; color:#2563EB; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
-  .badge { display:inline-block; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:700; }
-  .badge.high { background:#FEF2F2; color:#EF4444; }
-  .badge.med  { background:#FFFBEB; color:#D97706; }
-  .badge.low  { background:#ECFDF5; color:#059669; }
-  .empty { color:#9CA3AF; font-style:italic; padding:12px 10px; }
-  .footer { background:#F9FAFB; padding:20px 48px; font-size:10px; color:#9CA3AF; display:flex; justify-content:space-between; }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body { font-family:'Helvetica Neue',Arial,sans-serif; color:#111827; background:#fff; font-size:12px; }
   @media print {
-    .section { page-break-inside:avoid; }
-    .cover { page-break-after:always; }
+    body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+    .no-break { page-break-inside:avoid; break-inside:avoid; }
+    .page-break { page-break-after:always; break-after:page; }
   }
 </style>
 </head>
 <body>
 
-<div class="cover">
-  <div class="badge">CONFIDENTIAL</div>
-  <h1 style="margin-top:16px">${client.company}</h1>
-  <div class="sub">${packLabel} — ${month}</div>
-  <div class="meta">
-    <div><strong>Prepared by</strong>Garima Agarwal · Finzzup Advisory</div>
-    <div><strong>Generated</strong>${now}</div>
-    <div><strong>Client</strong>${client.name}</div>
+<!-- COVER PAGE -->
+<div class="page-break" style="background:linear-gradient(135deg,${coverColor});min-height:100vh;padding:0;display:flex;flex-direction:column;-webkit-print-color-adjust:exact;print-color-adjust:exact">
+
+  <!-- Top bar -->
+  <div style="padding:32px 48px 0;display:flex;justify-content:space-between;align-items:center">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:36px;height:36px;background:rgba(255,255,255,0.2);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:900;color:white">F</div>
+      <span style="font-size:18px;font-weight:800;color:white;letter-spacing:-0.02em">Finzzup</span>
+    </div>
+    <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);letter-spacing:0.1em;text-transform:uppercase;background:rgba(255,255,255,0.12);padding:5px 14px;border-radius:100px;border:1px solid rgba(255,255,255,0.2)">CONFIDENTIAL</span>
+  </div>
+
+  <!-- Main content -->
+  <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:48px 48px 0">
+    <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:16px">${packLabel}</div>
+    <div style="font-size:44px;font-weight:900;color:white;letter-spacing:-0.03em;line-height:1.1;margin-bottom:12px">${client.company}</div>
+    <div style="font-size:18px;color:rgba(255,255,255,0.7);font-weight:400;margin-bottom:40px">${month}</div>
+    <div style="width:48px;height:3px;background:rgba(255,255,255,0.4);border-radius:2px;margin-bottom:40px"></div>
+    <div style="display:flex;gap:48px">
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Prepared by</div>
+        <div style="font-size:13px;font-weight:700;color:white">Garima Agarwal</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6)">Finzzup Advisory</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Prepared for</div>
+        <div style="font-size:13px;font-weight:700;color:white">${client.name}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,0.6)">${client.company}</div>
+      </div>
+      <div>
+        <div style="font-size:10px;color:rgba(255,255,255,0.45);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Generated</div>
+        <div style="font-size:13px;font-weight:700;color:white">${now}</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom bar -->
+  <div style="padding:24px 48px;border-top:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;margin-top:48px">
+    <div style="font-size:10px;color:rgba(255,255,255,0.4)">garima@finzzup.com · finzzup.com</div>
+    <div style="font-size:10px;color:rgba(255,255,255,0.4)">This report is confidential and intended solely for ${client.name}</div>
   </div>
 </div>
 
-${garimaNote ? `
-<div class="section">
-  <h2>Note from Garima</h2>
-  <div class="note">
-    <div class="label">📝 CFO Commentary</div>
-    ${garimaNote}
+<!-- CONTENT PAGES -->
+<div style="padding:0 48px">
+
+  ${garimaNote ? `
+  <!-- Garima's Note -->
+  <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+      <div style="width:4px;height:20px;background:${accentColor};border-radius:2px"></div>
+      <div style="font-size:14px;font-weight:700;color:#111827">Note from Garima</div>
+    </div>
+    <div style="background:#f0f4ff;border-left:4px solid ${accentColor};border-radius:0 8px 8px 0;padding:18px 22px">
+      <div style="font-size:10px;font-weight:700;color:${accentColor};text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px">CFO Commentary — ${month}</div>
+      <div style="font-size:13px;color:#1f2937;line-height:1.8">${garimaNote}</div>
+    </div>
+  </div>` : ""}
+
+  <!-- KPI Snapshot -->
+  <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <div style="width:4px;height:20px;background:${accentColor};border-radius:2px"></div>
+      <div style="font-size:14px;font-weight:700;color:#111827">KPI Snapshot</div>
+      <span style="font-size:11px;color:#6B7280;background:#F3F4F6;padding:3px 10px;border-radius:100px">${month}</span>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+      ${kpiCards || `<div style="color:#9CA3AF;font-style:italic">No KPI data available.</div>`}
+    </div>
   </div>
-</div>` : ""}
 
-<div class="section">
-  <h2>KPI Snapshot <span>${month}</span></h2>
-  ${kpiRows ? `
-  <table>
-    <thead><tr><th>Metric</th><th>Current</th><th>vs Previous</th></tr></thead>
-    <tbody>${kpiRows}</tbody>
-  </table>` : `<div class="empty">No KPI data available yet.</div>`}
+  ${plRows ? `
+  <!-- P&L Summary -->
+  <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <div style="width:4px;height:20px;background:${accentColor};border-radius:2px"></div>
+      <div style="font-size:14px;font-weight:700;color:#111827">P&L Summary</div>
+      <span style="font-size:11px;color:#6B7280;background:#F3F4F6;padding:3px 10px;border-radius:100px">${month}</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #E5E7EB;border-radius:8px;overflow:hidden">
+      <thead>
+        <tr style="background:#F9FAFB">
+          <th style="padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6B7280;text-align:left;border-bottom:2px solid #E5E7EB">Line Item</th>
+          <th style="padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6B7280;text-align:left;border-bottom:2px solid #E5E7EB">This Month</th>
+          <th style="padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6B7280;text-align:left;border-bottom:2px solid #E5E7EB">Prev Month</th>
+        </tr>
+      </thead>
+      <tbody>${plRows}</tbody>
+    </table>
+  </div>` : ""}
+
+  ${varianceRows ? `
+  <!-- Budget vs Actual -->
+  <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <div style="width:4px;height:20px;background:${accentColor};border-radius:2px"></div>
+      <div style="font-size:14px;font-weight:700;color:#111827">Budget vs Actual</div>
+    </div>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #E5E7EB">
+      <thead>
+        <tr style="background:#F9FAFB">
+          <th style="padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6B7280;text-align:left;border-bottom:2px solid #E5E7EB">Item</th>
+          <th style="padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6B7280;text-align:left;border-bottom:2px solid #E5E7EB">Budget</th>
+          <th style="padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6B7280;text-align:left;border-bottom:2px solid #E5E7EB">Actual</th>
+          <th style="padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6B7280;text-align:left;border-bottom:2px solid #E5E7EB">Variance</th>
+        </tr>
+      </thead>
+      <tbody>${varianceRows}</tbody>
+    </table>
+  </div>` : ""}
+
+  ${pendingActions.length > 0 ? `
+  <!-- Action Items -->
+  <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
+      <div style="width:4px;height:20px;background:${accentColor};border-radius:2px"></div>
+      <div style="font-size:14px;font-weight:700;color:#111827">Action Items</div>
+      <span style="font-size:11px;color:#EF4444;background:#FEF2F2;padding:3px 10px;border-radius:100px;font-weight:700">${pendingActions.length} pending</span>
+    </div>
+    <table style="width:100%;border-collapse:collapse;border:1px solid #E5E7EB">
+      <thead>
+        <tr style="background:#F9FAFB">
+          <th style="padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6B7280;text-align:left;border-bottom:2px solid #E5E7EB">Action</th>
+          <th style="padding:10px 14px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#6B7280;text-align:left;border-bottom:2px solid #E5E7EB;width:100px">Priority</th>
+        </tr>
+      </thead>
+      <tbody>${actionRows}</tbody>
+    </table>
+  </div>` : ""}
+
 </div>
 
-${plRows ? `
-<div class="section">
-  <h2>P&L Summary <span>${month}</span></h2>
-  <table>
-    <thead><tr><th>Line Item</th><th>This Month</th><th>Prev Month</th></tr></thead>
-    <tbody>${plRows}</tbody>
-  </table>
-</div>` : ""}
-
-${varianceRows ? `
-<div class="section">
-  <h2>Budget vs Actual</h2>
-  <table>
-    <thead><tr><th>Item</th><th>Budget</th><th>Actual</th><th>Variance</th></tr></thead>
-    <tbody>${varianceRows}</tbody>
-  </table>
-</div>` : ""}
-
-${pendingActions.length > 0 ? `
-<div class="section">
-  <h2>Action Items <span>${pendingActions.length} pending</span></h2>
-  <table>
-    <thead><tr><th>Action</th><th>Priority</th></tr></thead>
-    <tbody>${actionRows}</tbody>
-  </table>
-</div>` : ""}
-
-<div class="footer">
-  <span>Finzzup Advisory · garima@finzzup.com · finzzup.com</span>
-  <span>Confidential — prepared for ${client.name}, ${client.company}</span>
+<!-- FOOTER -->
+<div style="margin:40px 48px 0;padding:20px 0;border-top:2px solid #E5E7EB;display:flex;justify-content:space-between;align-items:center">
+  <div style="display:flex;align-items:center;gap:8px">
+    <div style="width:24px;height:24px;background:${accentColor};border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;color:white">F</div>
+    <span style="font-size:11px;font-weight:700;color:#374151">Finzzup Advisory</span>
+    <span style="font-size:11px;color:#9CA3AF">· garima@finzzup.com · finzzup.com</span>
+  </div>
+  <div style="font-size:10px;color:#9CA3AF">Confidential — ${client.name}, ${client.company} — ${now}</div>
 </div>
+<div style="height:32px"></div>
 
 </body></html>`;
 
@@ -4594,9 +4523,36 @@ async function saveReportAsDocument({ client, kpis, garimaNote, reportData, acti
 
 function MyReport({ client, reportData, kpis }) {
   const pack = client?.client_pack || client?.clientPack || "startup";
-  if (pack === "msme")      return <MSMEPackContent      reportData={reportData} kpis={kpis}/>;
-  if (pack === "corporate") return <CorporatePackContent reportData={reportData} kpis={kpis}/>;
-  return <CFOPackContent reportData={reportData} client={client} kpis={kpis}/>;
+  const packLabel = pack === "msme" ? "MSME Report" : pack === "corporate" ? "Board Report" : "CFO Report";
+  return (
+    <div>
+      {/* Report header with month context */}
+      <div style={{ padding:"20px 24px 0", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:18, color:C.text }}>{packLabel}</div>
+          {reportData?.monthLabel ? (
+            <span style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.blue,
+              background:`${C.blue}12`, padding:"4px 14px", borderRadius:100 }}>
+              {reportData.monthLabel}
+            </span>
+          ) : (
+            <span style={{ fontFamily:F, fontSize:11, color:C.dim,
+              background:C.bg3, padding:"4px 12px", borderRadius:100 }}>
+              Month not set
+            </span>
+          )}
+        </div>
+        {reportData?.monthLabel && (
+          <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>
+            📅 Data for {reportData.monthLabel} · Updated by Garima
+          </div>
+        )}
+      </div>
+      {pack === "msme"      && <MSMEPackContent      reportData={reportData} kpis={kpis}/>}
+      {pack === "corporate" && <CorporatePackContent reportData={reportData} kpis={kpis}/>}
+      {pack !== "msme" && pack !== "corporate" && <CFOPackContent reportData={reportData} client={client} kpis={kpis}/>}
+    </div>
+  );
 }
 
 function getPageTitle(page, client) {
@@ -5407,7 +5363,10 @@ function AdminPanel({ admin, onLogout }) {
               <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
                 {clients.map(c => (
                   <Card key={c.id} style={{ padding:"16px 20px", cursor:"pointer",
-                    borderLeft: selected?.id===c.id ? `3px solid ${C.amber}` : `3px solid transparent` }}
+                    borderLeft: selected?.id===c.id ? `3px solid ${C.amber}` : `3px solid transparent`,
+                    transition:"box-shadow 0.15s" }}
+                    onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 16px rgba(15,26,56,0.1)"}
+                    onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}
                     onClick={() => { selectClient(c); setTab("kpis"); }}>
                     <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
                       <div>
@@ -5416,16 +5375,22 @@ function AdminPanel({ admin, onLogout }) {
                         <div style={{ fontFamily:FM, fontSize:11, color:C.dim, marginTop:4 }}>{c.email}</div>
                       </div>
                       <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:6 }}>
-                        <Badge color={C.blue}>{c.client_pack}</Badge>
-                        <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.amber }}>
-                          {c.invite_code}
+                        <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                          <Badge color={
+                            c.client_pack==="msme" ? C.teal :
+                            c.client_pack==="corporate" ? C.purple : C.blue
+                          }>{c.client_pack?.toUpperCase()}</Badge>
+                          <span style={{ fontFamily:FM, fontSize:10, fontWeight:700, color:C.amber,
+                            background:`${C.amber}15`, padding:"2px 8px", borderRadius:100 }}>
+                            {c.invite_code}
+                          </span>
                         </div>
                         <button onClick={e => { e.stopPropagation(); toggleClientActive(c); }}
                           style={{ padding:"4px 12px", borderRadius:100, border:"none", cursor:"pointer",
                             fontFamily:F, fontSize:11, fontWeight:700,
                             background: c.active ? `${C.green}15` : `${C.red}15`,
                             color: c.active ? C.green : C.red }}>
-                          {c.active ? "● Active" : "● Inactive"} — toggle
+                          {c.active ? "● Active" : "● Inactive"}
                         </button>
                       </div>
                     </div>
@@ -5508,16 +5473,25 @@ function AdminPanel({ admin, onLogout }) {
                 </Card>
               ) : (
                 <Card>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>
-                      KPI Update — {selected.name}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4, flexWrap:"wrap", gap:8 }}>
+                    <div>
+                      <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>
+                        KPI Update — {selected.name}
+                      </div>
+                      {kpis.month && (
+                        <div style={{ fontFamily:F, fontSize:11, color:C.blue, marginTop:3, display:"flex", alignItems:"center", gap:5 }}>
+                          <span style={{ background:`${C.blue}12`, padding:"2px 10px", borderRadius:100, fontWeight:700 }}>
+                            📅 Currently showing: {kpis.month}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                    <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>
-                      {saved ? "✅ Saved" : "📝 Unsaved changes"}
+                    <span style={{ fontFamily:F, fontSize:11, color:saved?C.green:C.muted, fontWeight:saved?700:400 }}>
+                      {saved ? "✅ Saved to client portal" : "📝 Unsaved changes"}
                     </span>
                   </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20 }}>
-                    These numbers appear on the client's dashboard instantly after saving.
+                    These numbers appear on the client's dashboard instantly after saving. Set the Month field to tell the client which period this covers.
                   </p>
                   <AdminInput C={C} F={F} FM={FM} label="Month" val={kpis.month} onChange={v=>setKpis(k=>({...k,month:v}))} placeholder="e.g. February 2026" />
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }} className="kpi-edit-grid">
@@ -5791,9 +5765,17 @@ function AdminPanel({ admin, onLogout }) {
 
                 {/* ══ 1: MONTH LABEL ═══════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>📅 Month Label</div>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>📅 Month Label</div>
+                    {reportData?.monthLabel && (
+                      <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
+                        background:`${C.blue}12`, padding:"3px 12px", borderRadius:100 }}>
+                        Currently: {reportData.monthLabel}
+                      </span>
+                    )}
+                  </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                    Shown as "KPI Snapshot — <strong>[Month]</strong>" and "Last updated by Garima: <strong>[Month]</strong>" on the portal.
+                    This month label appears on the client's Dashboard, Overview, and My Report pages so they always know which period they're viewing.
                   </p>
                   <AdminInput C={C} F={F} FM={FM} label="Month Label" val={reportData.monthLabel || ""}
                     onChange={v => setReportData(r => ({...r, monthLabel:v}))}
