@@ -2227,13 +2227,17 @@ function ArchiveRow({ p, label }) {
             {showPreview ? "▲ Hide" : "👁 Preview"}
           </button>
           {p.file_url ? (
-            <a href={p.file_url} target="_blank" rel="noopener"
-              style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.blue}`,
+            <button onClick={() => {
+              if (p.file_url.startsWith("data:text/html")) {
+                const win = window.open("", "_blank");
+                if (win) { win.document.write(decodeURIComponent(p.file_url.replace("data:text/html;charset=utf-8,",""))); win.document.close(); }
+              } else { window.open(p.file_url, "_blank"); }
+            }} style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.blue}`,
                 background:p.new?C.blue:"transparent", color:p.new?"white":C.blue,
                 fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer",
-                textDecoration:"none", display:"inline-block", touchAction:"manipulation" }}>
-              ↓ Download
-            </a>
+                touchAction:"manipulation" }}>
+              {p.file_url.startsWith("data:text/html") ? "👁 View Report" : "↓ Download"}
+            </button>
           ) : (
             <button disabled style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.border}`,
               background:"transparent", color:C.dim,
@@ -3996,6 +4000,17 @@ function MyDocuments({ client }) {
 
   const handleDownload = (doc) => {
     if (!doc.file_url) { alert("File URL not available."); return; }
+    const isReport = doc.doc_type === "report" || doc.file_url?.startsWith("data:text/html");
+    if (isReport) {
+      // data URL reports — open in new tab so they render as a webpage
+      // Then client can use browser Print → Save as PDF
+      const win = window.open("", "_blank");
+      if (win) {
+        win.document.write(decodeURIComponent(doc.file_url.replace("data:text/html;charset=utf-8,", "")));
+        win.document.close();
+      }
+      return;
+    }
     const a = document.createElement("a");
     a.href = doc.file_url;
     a.download = doc.name;
@@ -4005,7 +4020,8 @@ function MyDocuments({ client }) {
     document.body.removeChild(a);
   };
 
-  const fileIcon = (name) => {
+  const fileIcon = (name, docType) => {
+    if (docType === "report") return "📊";
     const ext = name?.split(".").pop()?.toLowerCase();
     if (["pdf"].includes(ext))                    return "📄";
     if (["xls","xlsx","csv"].includes(ext))       return "📊";
@@ -4117,7 +4133,7 @@ function MyDocuments({ client }) {
                     background: byGarima ? `${C.blue}12` : `${C.muted}0A`,
                     display:"flex", alignItems:"center", justifyContent:"center",
                     fontSize:18, flexShrink:0 }}>
-                    {fileIcon(doc.name)}
+                    {fileIcon(doc.name, doc.doc_type)}
                   </div>
                   <div style={{ minWidth:0 }}>
                     <div title={doc.name} style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text,
@@ -4147,7 +4163,7 @@ function MyDocuments({ client }) {
                       border:`1.5px solid ${C.blue}`, background:"transparent",
                       color:C.blue, fontFamily:F, fontWeight:700, fontSize:12,
                       cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
-                    ⬇ Download
+                    {doc.doc_type === "report" || doc.file_url?.endsWith(".html") ? "👁 View Report" : "⬇ Download"}
                   </button>
 
                   {/* Delete — only for files the client uploaded themselves */}
@@ -4553,27 +4569,25 @@ async function saveReportAsDocument({ client, kpis, garimaNote, reportData, acti
   const pack      = client?.client_pack || client?.clientPack || "startup";
   const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
   const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" });
-  const fileName  = `${packLabel.replace(" ","_")}_${month.replace(" ","_")}_${client.company.split(" ")[0]}.html`;
 
-  const html  = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
-  const blob  = new Blob([html], { type:"text/html" });
-  const path  = `${client.id}/${Date.now()}-${fileName}`;
+  const html     = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
+  const blob     = new Blob([html], { type:"text/html" });
+  const sizeKB   = (blob.size / 1024).toFixed(0) + " KB";
 
-  const { error: upErr } = await supabase.storage.from("client-docs").upload(path, blob);
-  if (upErr) throw new Error("Storage upload failed: " + upErr.message);
-
-  const { data: urlData } = supabase.storage.from("client-docs").getPublicUrl(path);
+  // Store as data URL directly in DB — no storage upload needed, always renders correctly
+  const dataUrl  = "data:text/html;charset=utf-8," + encodeURIComponent(html);
 
   const { data: docRow, error: dbErr } = await supabase.from("documents").insert({
     client_id:   client.id,
     name:        `${packLabel} — ${month}`,
-    file_url:    urlData.publicUrl,
-    file_size:   (blob.size / 1024).toFixed(0) + " KB",
+    file_url:    dataUrl,
+    file_size:   sizeKB,
     uploaded_by: client.name,
     created_at:  new Date().toISOString(),
+    doc_type:    "report",
   }).select().single();
 
-  if (dbErr) throw new Error("DB insert failed: " + dbErr.message);
+  if (dbErr) throw new Error("DB record failed: " + dbErr.message);
   return docRow;
 }
 
