@@ -230,6 +230,8 @@ function Login({ onLogin }) {
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Note: session restore is handled at App level — Login only shows when no session exists
+
   // Check invite code — demo codes use local data, real codes hit Supabase
   const checkCode = async () => {
     if (!code.trim()) { setError("Please enter an invite code."); return; }
@@ -4133,7 +4135,7 @@ function MyDocuments({ client }) {
                     background: byGarima ? `${C.blue}12` : `${C.muted}0A`,
                     display:"flex", alignItems:"center", justifyContent:"center",
                     fontSize:18, flexShrink:0 }}>
-                    {fileIcon(doc.name, doc.doc_type)}
+                    {fileIcon(doc.name, doc.file_url?.startsWith("data:text/html") ? "report" : null)}
                   </div>
                   <div style={{ minWidth:0 }}>
                     <div title={doc.name} style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text,
@@ -4163,7 +4165,7 @@ function MyDocuments({ client }) {
                       border:`1.5px solid ${C.blue}`, background:"transparent",
                       color:C.blue, fontFamily:F, fontWeight:700, fontSize:12,
                       cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
-                    {doc.doc_type === "report" || doc.file_url?.endsWith(".html") ? "👁 View Report" : "⬇ Download"}
+                    {doc.file_url?.startsWith("data:text/html") ? "👁 View Report" : "⬇ Download"}
                   </button>
 
                   {/* Delete — only for files the client uploaded themselves */}
@@ -4584,7 +4586,6 @@ async function saveReportAsDocument({ client, kpis, garimaNote, reportData, acti
     file_size:   sizeKB,
     uploaded_by: client.name,
     created_at:  new Date().toISOString(),
-    doc_type:    "report",
   }).select().single();
 
   if (dbErr) throw new Error("DB record failed: " + dbErr.message);
