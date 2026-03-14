@@ -3127,7 +3127,7 @@ function CFOPacks({ client, reportData }) {
   const [liveDocs, setLiveDocs] = useState([]);
   const isDemo = client?.isDemo === true;
 
-  useEffect(() => {
+  const fetchLiveDocs = React.useCallback(() => {
     if (isDemo || !client?.id) return;
     supabase.from("documents")
       .select("*")
@@ -3135,21 +3135,19 @@ function CFOPacks({ client, reportData }) {
       .order("created_at", { ascending: false })
       .then(({ data: docs }) => {
         if (docs?.length) {
-          // Show docs uploaded by Garima OR tagged as board packs
-          const garimaUploads = docs.filter(d =>
+          // Show: Garima uploads + any client-generated packs (contain pack/report keywords)
+          const packDocs = docs.filter(d =>
             ["garima", "Garima", "Garima Agarwal"].includes(d.uploaded_by) ||
-            d.doc_type === "board_pack" ||
-            d.name?.toLowerCase().includes("board pack") ||
-            d.name?.toLowerCase().includes("cfo pack") ||
-            d.name?.toLowerCase().includes("msme pack") ||
-            d.name?.toLowerCase().includes("report")
+            d.name?.toLowerCase().includes("pack") ||
+            d.name?.toLowerCase().includes("report") ||
+            d.name?.toLowerCase().includes("board")
           );
-          setLiveDocs(garimaUploads.length > 0 ? garimaUploads : docs.filter(d =>
-            ["garima", "Garima", "Garima Agarwal"].includes(d.uploaded_by)
-          ));
+          setLiveDocs(packDocs.length > 0 ? packDocs : docs);
         }
       });
   }, [client?.id, isDemo]);
+
+  useEffect(() => { fetchLiveDocs(); }, [fetchLiveDocs]);
 
   // Map live docs to ARCHIVE format, fall back to static ARCHIVE for demo
   const archiveDocs = liveDocs.length > 0
@@ -4610,7 +4608,7 @@ function getPageTitle(page, client) {
 
 
 // ─── REPORT PDF BAR ───────────────────────────────────────────────────────────
-function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F }) {
+function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSaved }) {
   const [saving,   setSaving]   = React.useState(false);
   const [saved,    setSavedMsg] = React.useState(false);
   const [error,    setError]    = React.useState("");
@@ -4630,6 +4628,7 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F }) {
       await saveReportAsDocument({ client, kpis, garimaNote, reportData, actions });
       setSavedMsg(true);
       setTimeout(() => setSavedMsg(false), 4000);
+      if (onSaved) onSaved();
     } catch(e) {
       setError(e.message);
       setTimeout(() => setError(""), 5000);
@@ -4691,6 +4690,7 @@ function Portal({ client, onLogout }) {
   const [dataLoading,     setDataLoading]     = useState(false);
 
   const isDemo = client?.isDemo === true;
+  const [reportSaveKey, setReportSaveKey] = React.useState(0);
 
   // Fetch all live data from Supabase when a real client logs in
   useEffect(() => {
@@ -4748,7 +4748,7 @@ function Portal({ client, onLogout }) {
     dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData}/>,
     cashflow:   <CashFlow   reportData={resolvedReportData} client={client}/>,
     actions:    <ActionItems actions={resolvedActions}/>,
-    myreport:   <MyReport   client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
+    myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
     engagement: <Engagement liveData={resolvedEngagement}/>,
     calendar:   <Calendar/>,
     newrequest: <NewRequest client={client} setPage={setPage}/>,
@@ -4795,6 +4795,7 @@ function Portal({ client, onLogout }) {
               reportData={resolvedReportData}
               actions={resolvedActions}
               F={F}
+              onSaved={() => setReportSaveKey(k => k + 1)}
             />
           )}
           {pages[page]}
