@@ -238,7 +238,9 @@ function Login({ onLogin }) {
 
     // ── Demo codes: bypass Supabase, log straight in with dummy data ──
     if (INVITE_CODES[upper]) {
-      const demo = { ...INVITE_CODES[upper], invite_code: upper, id: upper, isDemo: true };
+      const raw = INVITE_CODES[upper];
+      const demo = { ...raw, invite_code: upper, id: upper, isDemo: true,
+        client_pack: raw.clientPack || raw.client_pack || "startup" };
       setLoading(false);
       onLogin(demo);   // straight to Portal, no password needed
       return;
@@ -284,7 +286,8 @@ function Login({ onLogin }) {
     const demoMatch = Object.values(INVITE_CODES).find(d => d.email === form.email.trim().toLowerCase());
     if (demoMatch) {
       setLoading(false);
-      onLogin({ ...demoMatch, isDemo: true });
+      onLogin({ ...demoMatch, isDemo: true,
+        client_pack: demoMatch.clientPack || demoMatch.client_pack || "startup" });
       return;
     }
 
@@ -470,7 +473,7 @@ function Login({ onLogin }) {
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 // Dynamic nav based on client pack type
 function getNav(client) {
-  const pack = client?.client_pack || "startup";
+  const pack = client?.client_pack || client?.clientPack || "startup";
   const type = client?.type || "both";
 
   const base = [
@@ -781,7 +784,7 @@ const PACK_CONFIG = {
 function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null }) {
   // Fall back to dummy data if no live data passed
   const displayKpis = kpis || KPIs;
-  const ovPack = client?.client_pack || "startup";
+  const ovPack = client?.client_pack || client?.clientPack || "startup";
   const pendingActions = actions.filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
   const displayNote = garimaNote || (PACK_CONFIG[ovPack]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
@@ -828,7 +831,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 
       {/* KPI Row — pack-specific */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }} className="ov-kpi">
-        {(PACK_CONFIG[client?.client_pack||"startup"]?.overviewKpis || PACK_CONFIG.startup.overviewKpis).map((k,i) => (
+        {(PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.overviewKpis || PACK_CONFIG.startup.overviewKpis).map((k,i) => (
           <Card key={i} style={{ padding:18 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
               <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
@@ -973,7 +976,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 function Dashboard({ client, kpis, garimaNote, reportData }) {
   const displayKpis = kpis || KPIs;
-  const pack = client?.client_pack || "startup";
+  const pack = client?.client_pack || client?.clientPack || "startup";
   const packCfg = PACK_CONFIG[pack] || PACK_CONFIG.startup;
   const displayNote = garimaNote || packCfg.garimaNote;
   return (
@@ -1037,7 +1040,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
 
       {/* Quick links row — pack-aware */}
       {(() => {
-        const qpack = client?.client_pack || "startup";
+        const qpack = client?.client_pack || client?.clientPack || "startup";
         const quickItems = qpack === "msme" ? [
           { icon:"📊", label:"MSME Report", color:C.teal, action:"myreport",
             sub: reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"}) },
@@ -1157,7 +1160,7 @@ const CASHFLOW_CORPORATE = [
 
 // ─── CASH FLOW ────────────────────────────────────────────────────────────────
 function CashFlow({ reportData, client }) {
-  const pack = client?.client_pack || "startup";
+  const pack = client?.client_pack || client?.clientPack || "startup";
 
   // ── Shared tooltip ──────────────────────────────────────────────────────────
   const Tip = ({ active, payload, label }) => {
@@ -2891,7 +2894,7 @@ function CFOPackContent({ reportData, client, kpis }) {
           <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>📝 Note from Garima</div>
             <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
-              {reportData?.reportNote || reportData?.packNote || (PACK_CONFIG[client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote}
+              {reportData?.reportNote || reportData?.packNote || (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote}
             </p>
           </Card>
           <Card>
@@ -2930,7 +2933,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                     trend="up"/>
                 ));
               }
-              return (PACK_CONFIG[client?.clientPack||"startup"]?.plRows || PACK_CONFIG.startup.plRows).map((r,i) => <StatRow key={i} {...r}/>);
+              return (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.plRows || PACK_CONFIG.startup.plRows).map((r,i) => <StatRow key={i} {...r}/>);
             })()}
           </Card>
           <Card style={{ borderLeft:`3px solid ${C.green}` }}>
@@ -3089,7 +3092,7 @@ function BoardPacksTabbed() {
 
 // ─── CFO PACKS (existing component) ──────────────────────────────────────────
 function CFOPacks({ client, reportData }) {
-  const packType  = client.clientPack || "startup";
+  const packType  = client.client_pack || client.clientPack || "startup";
   const data      = CFO_PACK_DATA[packType];
   const [tab, setTab] = useState("pack"); // "pack" | "boardpacks"
 
@@ -4330,14 +4333,14 @@ function Terms() {
 
 // My Report component — shows correct pack based on client type
 function MyReport({ client, reportData, kpis }) {
-  const pack = client?.client_pack || "startup";
+  const pack = client?.client_pack || client?.clientPack || "startup";
   if (pack === "msme")      return <MSMEPackContent      reportData={reportData} kpis={kpis}/>;
   if (pack === "corporate") return <CorporatePackContent reportData={reportData} kpis={kpis}/>;
   return <CFOPackContent reportData={reportData} client={client} kpis={kpis}/>;
 }
 
 function getPageTitle(page, client) {
-  const pack = client?.client_pack || "startup";
+  const pack = client?.client_pack || client?.clientPack || "startup";
   const reportLabel = pack === "msme" ? "MSME Report"
     : pack === "corporate" ? "Board Report"
     : "CFO Report";
@@ -6052,7 +6055,8 @@ export default function App() {
           );
           if (demoMatch) {
             const [code, demo] = demoMatch;
-            setClient({ ...demo, invite_code: code, id: code, isDemo: true });
+            setClient({ ...demo, invite_code: code, id: code, isDemo: true,
+              client_pack: demo.clientPack || demo.client_pack || "startup" });
           } else {
             // Real client — fetch from Supabase
             const { data: clientData } = await supabase
