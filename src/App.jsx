@@ -273,8 +273,10 @@ function Login({ onLogin }) {
     });
     setLoading(false);
     if (authErr) { setError(authErr.message); return; }
-    // Account created — log them straight in
-    onLogin(client);
+    // Fetch fresh client row from DB to ensure all fields (client_pack etc) are present
+    const { data: freshClient } = await supabase
+      .from("clients").select("*").eq("email", form.email.trim()).single();
+    onLogin(freshClient || client);
   };
 
   // Sign in existing account
@@ -4384,6 +4386,9 @@ function Portal({ client, onLogout }) {
   // Fetch all live data from Supabase when a real client logs in
   useEffect(() => {
     if (isDemo || !client?.id) return;
+    // Safety: if client.id looks like an invite code string (not a UUID), skip fetch
+    const looksLikeUUID = /^[0-9a-f-]{36}$/i.test(client.id);
+    if (!looksLikeUUID) { console.warn("client.id is not a UUID — skipping live data fetch:", client.id); return; }
     const fetchAll = async () => {
       setDataLoading(true);
       const [kpiRes, actionRes, engRes, invRes, rdRes] = await Promise.all([
