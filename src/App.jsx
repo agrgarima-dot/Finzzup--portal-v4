@@ -2308,6 +2308,165 @@ const COMPLIANCE_DATES = [
   { due:"30 Apr", item:"TDS Returns Q4 (Form 24Q/26Q)",      status:"upcoming", owner:"CA" },
 ];
 
+
+// ─── LOAN READINESS PDF ───────────────────────────────────────────────────────
+function generateLoanPDF({ client, reportData }) {
+  const score = reportData?.loanScore || 64;
+  const month = reportData?.monthLabel || "Current Period";
+  const company = client?.company || "Your Company";
+  const schemes = [
+    { name:"SBI Startup Branch",        amount:"Up to Rs.50 Cr",    rate:"Repo+2%",    recommended:true  },
+    { name:"SIDBI SPEED+",              amount:"Up to Rs.25 Cr",    rate:"9.5-11%",    recommended:false },
+    { name:"CGTMSE (Collateral-free)",  amount:"Up to Rs.5 Cr",     rate:"Market rate",recommended:true  },
+    { name:"Mudra Tarun / Kishor",      amount:"Rs.5L to Rs.10L",   rate:"10-12%",     recommended:false },
+    { name:"NBFC / Fintech Debt",       amount:"Rs.25L to Rs.5 Cr", rate:"14-18%",     recommended:false },
+  ];
+  const docs = [
+    { doc:"Last 2 years ITR (Company and Directors)",             done:true  },
+    { doc:"Last 12 months Bank Statements",                       done:true  },
+    { doc:"Audited Financials (P&L and Balance Sheet)",           done:true  },
+    { doc:"GST Returns last 12 months",                           done:true  },
+    { doc:"CA-certified Financial Projections (3 years)",         done:false },
+    { doc:"Business Plan and Pitch Deck",                         done:false },
+    { doc:"KYC - Directors and Company",                          done:true  },
+    { doc:"MCA Filings and Incorporation Certificate",            done:true  },
+    { doc:"Existing Loan and Liability Statement",                done:false },
+    { doc:"CIBIL Credit Report (all directors)",                  done:false },
+  ];
+  const readyCount = docs.filter(d=>d.done).length;
+  const statusText = score >= 75 ? "Strong Profile - Eligible for Most Schemes"
+    : score >= 55 ? "Moderate Profile - Eligible with Preparation"
+    : "Early Stage - Build Track Record First";
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family: 'Arial', sans-serif; color: #111827; background: white; }
+  .page { max-width: 800px; margin: 0 auto; padding: 48px 48px; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:40px; padding-bottom:24px; border-bottom:2px solid #5B4FDB; }
+  .logo-text { font-size:26px; font-weight:900; color:#5B4FDB; letter-spacing:-0.02em; }
+  .tagline { font-size:9px; color:#9CA3AF; letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
+  .doc-meta { text-align:right; font-size:11px; color:#6B7280; }
+  .doc-meta strong { color:#111827; font-size:13px; display:block; margin-bottom:4px; }
+  .title-block { margin-bottom:32px; }
+  .eyebrow { font-size:11px; font-weight:700; color:#5B4FDB; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
+  h1 { font-size:28px; font-weight:900; color:#111827; margin-bottom:6px; }
+  .subtitle { font-size:14px; color:#6B7280; }
+  .score-box { background:linear-gradient(135deg,#EEF2FF,#F5F3FF); border:1px solid #C7D2FE; border-radius:16px; padding:24px 28px; margin-bottom:28px; display:flex; justify-content:space-between; align-items:center; }
+  .score-num { font-size:56px; font-weight:900; color:#5B4FDB; line-height:1; }
+  .score-label { font-size:11px; color:#6B7280; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+  .score-status { font-size:14px; font-weight:700; color:#111827; }
+  .score-bar-wrap { flex:1; margin: 0 32px; }
+  .score-bar-bg { height:12px; background:#E5E7EB; border-radius:6px; overflow:hidden; }
+  .score-bar-fill { height:100%; background:linear-gradient(90deg,#5B4FDB,#7C3AED); border-radius:6px; width:${score}%; }
+  h2 { font-size:16px; font-weight:800; color:#111827; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #F3F4F6; }
+  .section { margin-bottom:28px; }
+  table { width:100%; border-collapse:collapse; font-size:13px; }
+  th { background:#F9FAFB; padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
+  td { padding:11px 14px; border-bottom:1px solid #F3F4F6; vertical-align:top; }
+  tr:last-child td { border-bottom:none; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:700; }
+  .badge-rec { background:#EEF2FF; color:#5B4FDB; }
+  .badge-done { background:#ECFDF5; color:#059669; }
+  .badge-pending { background:#FEF3C7; color:#D97706; }
+  .checklist-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; margin-bottom:6px; font-size:13px; }
+  .done-row { background:#F0FDF4; border:1px solid #BBF7D0; color:#111827; }
+  .pending-row { background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; }
+  .footer { margin-top:40px; padding-top:20px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:11px; color:#9CA3AF; }
+  .disclaimer { margin-top:20px; padding:14px 16px; background:#F9FAFB; border-radius:8px; font-size:11px; color:#6B7280; line-height:1.6; border:1px solid #E5E7EB; }
+  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div>
+      <div class="logo-text">Finzzup</div>
+      <div class="tagline">Build. Value. Scale.</div>
+    </div>
+    <div class="doc-meta">
+      <strong>Loan Readiness Report</strong>
+      Prepared for: ${company}<br/>
+      Period: ${month}<br/>
+      Date: ${new Date().toLocaleDateString("en-IN", {day:"numeric",month:"long",year:"numeric"})}
+    </div>
+  </div>
+
+  <div class="title-block">
+    <div class="eyebrow">Confidential | Prepared by Garima Agarwal CA</div>
+    <h1>${company}</h1>
+    <div class="subtitle">Loan Readiness Assessment &amp; Scheme Eligibility Report</div>
+  </div>
+
+  <div class="score-box">
+    <div>
+      <div class="score-label">Loan Eligibility Score</div>
+      <div class="score-num">${score}</div>
+      <div style="font-size:12px;color:#6B7280;margin-top:4px;">out of 100</div>
+    </div>
+    <div class="score-bar-wrap">
+      <div class="score-status" style="margin-bottom:12px;">${statusText}</div>
+      <div class="score-bar-bg"><div class="score-bar-fill"></div></div>
+      <div style="font-size:11px;color:#6B7280;margin-top:6px;">Documents ready: ${readyCount}/${docs.length}</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Recommended Loan Schemes</h2>
+    <table>
+      <thead>
+        <tr><th>Scheme</th><th>Loan Amount</th><th>Rate</th><th>Suitability</th></tr>
+      </thead>
+      <tbody>
+        ${schemes.map(s => `
+        <tr>
+          <td><strong>${s.name}</strong>${s.recommended ? ' <span class="badge badge-rec">Recommended</span>' : ''}</td>
+          <td>${s.amount}</td>
+          <td>${s.rate}</td>
+          <td>${s.recommended ? "High" : "Moderate"}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Documents Checklist (${readyCount}/${docs.length} Ready)</h2>
+    ${docs.map(d => `
+    <div class="checklist-row ${d.done ? "done-row" : "pending-row"}">
+      <span>${d.done ? "✅" : "⏳"}</span>
+      <span>${d.doc}</span>
+      <span class="badge ${d.done ? "badge-done" : "badge-pending"}" style="margin-left:auto;">${d.done ? "Ready" : "Pending"}</span>
+    </div>`).join("")}
+  </div>
+
+  <div class="section">
+    <h2>Next Steps</h2>
+    <table>
+      <tbody>
+        <tr><td style="width:28px;font-size:18px;">1</td><td><strong>Complete pending documents</strong> — ${docs.filter(d=>!d.done).length} documents still needed before applying</td></tr>
+        <tr><td style="font-size:18px;">2</td><td><strong>Financial projections</strong> — CA-certified 3-year projections are required for most schemes</td></tr>
+        <tr><td style="font-size:18px;">3</td><td><strong>Connect with lender</strong> — Garima has a direct connection with SBI Startup Branch and can facilitate introduction</td></tr>
+        <tr><td style="font-size:18px;">4</td><td><strong>Submit application</strong> — Garima will prepare and review the complete package before submission</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="disclaimer">
+    <strong>Disclaimer:</strong> This assessment is based on information provided by the client and is indicative in nature. Actual loan eligibility is subject to lender assessment, credit bureau checks, and applicable scheme criteria at the time of application. This report does not constitute a guarantee of loan approval.
+  </div>
+
+  <div class="footer">
+    <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038</span>
+    <span>agrgarima@gmail.com | Finzzup</span>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
 // ─── LIVE DOCS HOOK for Pack Content components ──────────────────────────────
 function useLiveDocs(client) {
   const [liveDocs, setLiveDocs] = React.useState([]);
@@ -2935,8 +3094,7 @@ function CFOPackContent({ reportData, client, kpis }) {
         </div>
       )}
 
-      {/* Board Packs tab */}
-      {tab === "loan" && (
+{tab === "loan" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
           <div style={{ padding:"20px 22px", borderRadius:16, background:`linear-gradient(135deg,${C.blue}12,${C.purple}08)`, border:`1px solid ${C.blue}20` }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
@@ -3024,8 +3182,19 @@ function CFOPackContent({ reportData, client, kpis }) {
                 style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`, color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
                 {"💬 WhatsApp Garima"}
               </a>
-              <div style={{ display:"flex", alignItems:"center", padding:"11px 20px", borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}20`, fontFamily:F, fontSize:13, fontWeight:700, color:C.blue }}>
-                {"From Rs.15,000 | 5-7 days"}
+              <button
+                onClick={() => {
+                  const html = generateLoanPDF({ client, reportData });
+                  const w = window.open("","_blank");
+                  w.document.write(html);
+                  w.document.close();
+                  setTimeout(() => w.print(), 500);
+                }}
+                style={{ display:"flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}20`, fontFamily:F, fontSize:13, fontWeight:700, color:C.blue, cursor:"pointer" }}>
+                {"📄 Download PDF Report"}
+              </button>
+              <div style={{ display:"flex", alignItems:"center", padding:"11px 20px", borderRadius:12, background:`${C.purple}10`, border:`1.5px solid ${C.purple}20`, fontFamily:F, fontSize:12, fontWeight:600, color:C.purple }}>
+                {"Loan Package from Rs.15,000"}
               </div>
             </div>
           </Card>
