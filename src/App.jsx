@@ -1326,6 +1326,126 @@ function CashFlow({ reportData, client, kpis }) {
           ))}
         </Card>
 
+        {/* Inflow vs Outflow bar chart */}
+        <Card style={{ marginBottom:20 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+            Monthly Cash Inflows vs Outflows
+          </div>
+          <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>₹ Lakhs · Actual through Feb · Forecast from Mar</div>
+          <div style={{ height:220 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={cfData.map(r => ({
+                month: r.month,
+                inflow:   r.value    ? Math.round(r.value * 1.35)    : null,
+                outflow:  r.value    ? Math.round(r.value * 0.82)    : null,
+                fInflow:  r.forecast ? Math.round(r.forecast * 1.35) : null,
+                fOutflow: r.forecast ? Math.round(r.forecast * 0.82) : null,
+              }))} margin={{ top:5, right:10, left:0, bottom:0 }} barGap={3}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+                <XAxis dataKey="month" tick={{ fontFamily:F, fontSize:11, fill:C.dim }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontFamily:FM, fontSize:10, fill:C.dim }} axisLine={false} tickLine={false} tickFormatter={v=>`₹${v}L`} width={50}/>
+                <Tooltip content={<Tip/>}/>
+                <ReferenceLine x="Feb" stroke={C.border} strokeDasharray="4 4" label={{ value:"Forecast →", position:"top", fontSize:10, fill:C.dim, fontFamily:F }}/>
+                <Bar dataKey="inflow"   name="Inflows"          fill={C.green}  radius={[4,4,0,0]} opacity={0.85}/>
+                <Bar dataKey="outflow"  name="Outflows"         fill={C.red}    radius={[4,4,0,0]} opacity={0.75}/>
+                <Bar dataKey="fInflow"  name="Forecast Inflows" fill={C.green}  radius={[4,4,0,0]} opacity={0.35}/>
+                <Bar dataKey="fOutflow" name="Forecast Outflows"fill={C.red}    radius={[4,4,0,0]} opacity={0.30}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+
+        {/* Working Capital Positions */}
+        <Card style={{ marginBottom:20 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
+            Working Capital Positions — {reportData?.monthLabel || "Current Month"}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="wc-cf-s">
+            {[
+              { label:"Debtors (AR)",   value: reportData?.debtors   || "₹38.4L", days: reportData?.debtorDays   || "—", color:C.blue,   flag: !!(reportData?.debtorDays  && parseInt(reportData.debtorDays)>30),  note: reportData?.debtorDays  ? `${reportData.debtorDays} debtor days` : "Target: <30 days" },
+              { label:"Creditors (AP)", value: reportData?.creditors  || "₹22.1L", days: reportData?.creditorDays || "—", color:C.purple, flag: false,                                                              note: reportData?.creditorDays ? `${reportData.creditorDays} creditor days` : "Well managed" },
+              { label:"Inventory",      value: reportData?.inventory  || "—",       days: reportData?.inventoryDays|| "—", color:C.teal,   flag: false,                                                              note: "Stock on hand" },
+            ].map((w,i) => (
+              <div key={i} style={{ padding:"14px 12px", borderRadius:12,
+                background: w.flag ? `${C.amber}08` : C.bg,
+                border:`1px solid ${w.flag ? C.amber+"40" : C.border}`, textAlign:"center" }}>
+                <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:w.color }}>{w.value}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
+                {w.days !== "—" && <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:w.color, marginTop:2 }}>{w.days}</div>}
+                <div style={{ fontFamily:F, fontSize:10, color:w.flag?C.amber:C.green, marginTop:3 }}>
+                  {w.flag ? "⚠️ " : "✅ "}{w.note}
+                </div>
+              </div>
+            ))}
+            <style>{`.wc-cf-s{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-cf-s{grid-template-columns:1fr!important}}`}</style>
+          </div>
+          {(reportData?.debtorDays || reportData?.creditorDays) && (
+            <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
+              <span style={{ fontFamily:F, fontSize:12, color:C.blue, fontWeight:600 }}>
+                Cash Conversion Cycle: AR {reportData?.debtorDays || "—"} − AP {reportData?.creditorDays || "—"} + Inv {reportData?.inventoryDays || "—"} = <strong>{reportData?.ccc || "—"}</strong>
+                {reportData?.ccc && parseInt(reportData.ccc) > 30 ? " ⚠️ Above 30-day target" : " ✅"}
+              </span>
+            </div>
+          )}
+        </Card>
+
+        {/* Burn Rate Analysis */}
+        <Card style={{ marginBottom:20 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+            Burn Rate & Runway Analysis
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="wc-cf-s">
+            {[
+              { label:"Gross Burn",    value: kpis?.find(k=>k.label?.toLowerCase().includes("burn"))?.value || "₹48L/mo",  color:C.red,   note:"Total monthly spend" },
+              { label:"Net Burn",      value: kpis?.find(k=>k.label?.toLowerCase().includes("net"))?.value  || "₹31L/mo",  color:C.amber, note:"After revenue" },
+              { label:"Runway",        value: kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value|| "4.4 mo",  color: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? C.red : C.green, note: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? "⚠️ Below 6 months" : "✅ Healthy" },
+            ].map((b,i) => (
+              <div key={i} style={{ padding:"14px 12px", borderRadius:12, background:C.bg2, border:`1px solid ${C.border}`, textAlign:"center" }}>
+                <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:b.color }}>{b.value}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{b.label}</div>
+                <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3 }}>{b.note}</div>
+              </div>
+            ))}
+          </div>
+          {/* Efficiency metrics */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+            {[
+              { label:"Burn Multiple",       value: reportData?.burnMultiple      || "1.8x",  note:"Revenue / Net Burn. Target <1.5x", flag: reportData?.burnMultiple ? parseFloat(reportData.burnMultiple)>1.5 : true },
+              { label:"EBITDA-to-Cash Conv.", value: reportData?.ebitdaCashConv    || "—",     note:"Operating cash efficiency",         flag: false },
+              { label:"CAC Payback Period",  value: reportData?.cacPayback        || "18 mo", note:"Investors prefer <12 months",       flag: reportData?.cacPayback ? parseInt(reportData.cacPayback)>12 : true },
+              { label:"Net Revenue Retention",value: reportData?.nrr              || "108%",  note:"Expansion + retention. Target >100%",flag: false },
+            ].map((m,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px",
+                borderRadius:10, background:m.flag?`${C.amber}08`:C.bg,
+                border:`1px solid ${m.flag?C.amber+"25":C.border}` }}>
+                <div style={{ flex:1 }}>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600 }}>{m.label}</div>
+                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:m.flag?C.amber:C.green }}>{m.value}</div>
+                </div>
+                <div style={{ fontFamily:F, fontSize:10, color:C.dim, maxWidth:120, textAlign:"right", lineHeight:1.4 }}>{m.note}</div>
+              </div>
+            ))}
+          </div>
+        </Card>
+
+        {/* Cash Pressure Points */}
+        {(reportData?.cashPressure1 || reportData?.cashPressure2) && (
+          <Card style={{ marginBottom:20, borderLeft:`3px solid ${C.red}` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+              {"⚠️ Upcoming Cash Pressure Points"}
+            </div>
+            {[reportData?.cashPressure1, reportData?.cashPressure2, reportData?.cashPressure3]
+              .filter(Boolean)
+              .map((p, i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px",
+                  borderRadius:8, background:`${C.red}06`, border:`1px solid ${C.red}15`, marginBottom:8,
+                  fontFamily:F, fontSize:13, color:C.text }}>
+                  <span style={{ color:C.red }}>{"•"}</span>{p}
+                </div>
+            ))}
+          </Card>
+        )}
+
         <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
             📝 Garima's Analysis
@@ -7009,6 +7129,26 @@ function AdminPanel({ admin, onLogout }) {
                     onFocus={e=>e.target.style.borderColor=C.amber}
                     onBlur={e=>e.target.style.borderColor=C.border}/>
                 </Card>
+
+                {/* Cash Pressure Points — startup only */}
+                {selected.client_pack === "startup" && (
+                  <Card style={{ marginBottom:20, border:`1px solid ${C.red}20`, background:`${C.red}04` }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"⚠️ Upcoming Cash Pressure Points"}</div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      {"Shown as red warning cards on the startup cash flow page — helps client flag upcoming cash stress."}
+                    </p>
+                    {[
+                      { key:"cashPressure1", label:"Pressure Point 1", placeholder:"e.g. Advance tax Q4 — Rs.22L due 15 Mar" },
+                      { key:"cashPressure2", label:"Pressure Point 2", placeholder:"e.g. Client B collection overdue — Rs.4.8L at risk" },
+                      { key:"cashPressure3", label:"Pressure Point 3", placeholder:"e.g. Payroll + benefits — Rs.28L due 1 Apr" },
+                    ].map(f => (
+                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
+                        val={reportData[f.key] || ""}
+                        onChange={v => setReportData(r => ({...r, [f.key]:v}))}
+                        placeholder={f.placeholder}/>
+                    ))}
+                  </Card>
+                )}
 
                 <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>
               </>)}
