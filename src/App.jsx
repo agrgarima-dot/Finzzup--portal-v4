@@ -2308,7 +2308,44 @@ const COMPLIANCE_DATES = [
   { due:"30 Apr", item:"TDS Returns Q4 (Form 24Q/26Q)",      status:"upcoming", owner:"CA" },
 ];
 
-function MSMEPackContent({ reportData, kpis }) {
+// ─── LIVE DOCS HOOK for Pack Content components ──────────────────────────────
+function useLiveDocs(client) {
+  const [liveDocs, setLiveDocs] = React.useState([]);
+  const isDemo = client?.isDemo === true;
+  React.useEffect(() => {
+    if (isDemo || !client?.id) return;
+    supabase.from("documents")
+      .select("*")
+      .eq("client_id", client.id)
+      .order("created_at", { ascending: false })
+      .then(({ data: docs }) => {
+        if (docs?.length) {
+          const packDocs = docs.filter(d =>
+            ["garima", "Garima", "Garima Agarwal"].includes(d.uploaded_by) ||
+            d.name?.toLowerCase().includes("pack") ||
+            d.name?.toLowerCase().includes("report") ||
+            d.name?.toLowerCase().includes("board")
+          );
+          setLiveDocs(packDocs.length > 0 ? packDocs : docs);
+        }
+      });
+  }, [client?.id, isDemo]);
+
+  const archiveDocs = liveDocs.length > 0
+    ? liveDocs.map(d => ({
+        name: d.name,
+        date: d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }) : "—",
+        size: d.file_size || "—",
+        uploadedAt: d.created_at || "",
+        file_url: d.file_url,
+        new: d.created_at ? (new Date() - new Date(d.created_at)) < 35 * 24 * 60 * 60 * 1000 : false,
+      }))
+    : ARCHIVE;
+
+  return archiveDocs;
+}
+
+function MSMEPackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
     { id:"monthly",  icon:"📊", label:"Monthly Report"   },
@@ -2317,6 +2354,7 @@ function MSMEPackContent({ reportData, kpis }) {
     { id:"packs",    icon:"📁", label:"Previous Packs"    },
   ];
   const data = CFO_PACK_DATA["msme"];
+  const archiveDocs = useLiveDocs(client);
 
   return (
     <div>
@@ -2427,7 +2465,7 @@ function MSMEPackContent({ reportData, kpis }) {
       <div>
         <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Previous MSME Packs</div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
+          {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
         </div>
       </div>
 
@@ -2514,7 +2552,7 @@ function MSMEPackContent({ reportData, kpis }) {
             Monthly packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
+            {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
           </div>
           <Card style={{ marginTop:20, background:`${C.teal}06`, borderColor:`${C.teal}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
@@ -2529,7 +2567,7 @@ function MSMEPackContent({ reportData, kpis }) {
   );
 }
 
-function CorporatePackContent({ reportData, kpis }) {
+function CorporatePackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
     { id:"monthly", icon:"📊", label:"Monthly Report"    },
@@ -2538,6 +2576,7 @@ function CorporatePackContent({ reportData, kpis }) {
     { id:"packs",   icon:"📁", label:"Previous Packs"    },
   ];
   const data = CFO_PACK_DATA["corporate"];
+  const archiveDocs = useLiveDocs(client);
 
   return (
     <div>
@@ -2704,7 +2743,7 @@ function CorporatePackContent({ reportData, kpis }) {
             Monthly board packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {ARCHIVE.map((p,i) => <ArchiveRow key={i} p={p} label="Corporate Pack"/>)}
+            {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Corporate Pack"/>)}
           </div>
           <Card style={{ marginTop:20, background:`${C.purple}06`, borderColor:`${C.purple}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
@@ -2728,6 +2767,7 @@ function CFOPackContent({ reportData, client, kpis }) {
     { id:"boardpacks", icon:"📁", label:"Board Packs"         },
   ];
   const data = CFO_PACK_DATA["startup"];
+  const archiveDocs = useLiveDocs(client);
 
   return (
     <div>
@@ -4520,8 +4560,8 @@ function MyReport({ client, reportData, kpis }) {
           </div>
         )}
       </div>
-      {pack === "msme"      && <MSMEPackContent      reportData={reportData} kpis={kpis}/>}
-      {pack === "corporate" && <CorporatePackContent reportData={reportData} kpis={kpis}/>}
+      {pack === "msme"      && <MSMEPackContent      reportData={reportData} kpis={kpis} client={client}/>}
+      {pack === "corporate" && <CorporatePackContent reportData={reportData} kpis={kpis} client={client}/>}
       {pack !== "msme" && pack !== "corporate" && <CFOPackContent reportData={reportData} client={client} kpis={kpis}/>}
     </div>
   );
