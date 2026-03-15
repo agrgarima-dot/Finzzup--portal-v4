@@ -1178,7 +1178,7 @@ const CASHFLOW_CORPORATE = [
 ];
 
 // ─── CASH FLOW ────────────────────────────────────────────────────────────────
-function CashFlow({ reportData, client }) {
+function CashFlow({ reportData, client, kpis }) {
   const pack = client?.client_pack || client?.clientPack || "startup";
 
   // ── Shared tooltip ──────────────────────────────────────────────────────────
@@ -1238,7 +1238,22 @@ function CashFlow({ reportData, client }) {
     const nextForecast = cfData.find(r => r.forecast && !r.value);
     return (
       <div style={{ padding:24 }}>
-        <SectionTitle sub="Burn rate, runway and 9-month cash position">Cash Flow</SectionTitle>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
+          <SectionTitle sub="Burn rate, runway and 9-month cash position">Cash Flow</SectionTitle>
+          <button
+            onClick={() => {
+              const html = generateCashPDF({ client, reportData, kpis });
+              const w = window.open("","_blank");
+              w.document.write(html);
+              w.document.close();
+              setTimeout(() => w.print(), 600);
+            }}
+            style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
+              borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
+              color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            {"📄 Download Cash Report"}
+          </button>
+        </div>
 
         <KpiBar items={[
           { label:"Current Cash",  value:"₹2.1 Cr", color:C.blue,   bg:"#EEF3FE", sub:"▼ vs ₹2.6 Cr last month", trend:"down" },
@@ -1330,7 +1345,22 @@ function CashFlow({ reportData, client }) {
     const cfData = CASHFLOW_MSME;
     return (
       <div style={{ padding:24 }}>
-        <SectionTitle sub="Collections, payments, working capital and cash conversion">Cash Flow</SectionTitle>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
+          <SectionTitle sub="Collections, payments, working capital and cash conversion">Cash Flow</SectionTitle>
+          <button
+            onClick={() => {
+              const html = generateCashPDF({ client, reportData, kpis });
+              const w = window.open("","_blank");
+              w.document.write(html);
+              w.document.close();
+              setTimeout(() => w.print(), 600);
+            }}
+            style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
+              borderRadius:12, background:`${C.teal}10`, border:`1.5px solid ${C.teal}25`,
+              color:C.teal, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            {"📄 Download Cash Report"}
+          </button>
+        </div>
 
         <KpiBar items={[
           { label:"Cash Inflows (Feb)",   value:"₹84L",    color:C.green,  bg:"#ECFDF5", sub:"▲ +6.1% vs Jan", trend:"up" },
@@ -1435,7 +1465,22 @@ function CashFlow({ reportData, client }) {
   const cfData = CASHFLOW_CORPORATE;
   return (
     <div style={{ padding:24 }}>
-      <SectionTitle sub="Operating, investing and financing cash flows — board-ready format">Cash Flow</SectionTitle>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
+          <SectionTitle sub="Operating, investing and financing cash flows — board-ready format">Cash Flow</SectionTitle>
+          <button
+            onClick={() => {
+              const html = generateCashPDF({ client, reportData, kpis });
+              const w = window.open("","_blank");
+              w.document.write(html);
+              w.document.close();
+              setTimeout(() => w.print(), 600);
+            }}
+            style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
+              borderRadius:12, background:`${C.purple}10`, border:`1.5px solid ${C.purple}25`,
+              color:C.purple, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            {"📄 Download Cash Report"}
+          </button>
+        </div>
 
       <KpiBar items={[
         { label:"Operating CF (Feb)",  value:"₹45L",   color:C.green,  bg:"#ECFDF5", sub:"▲ Best month YTD", trend:"up" },
@@ -2309,6 +2354,242 @@ const COMPLIANCE_DATES = [
   { due:"07 Apr", item:"TDS Payment — Mar deductions",       status:"upcoming", owner:"Accounts" },
   { due:"30 Apr", item:"TDS Returns Q4 (Form 24Q/26Q)",      status:"upcoming", owner:"CA" },
 ];
+
+
+
+// ─── CASH FLOW PDF ────────────────────────────────────────────────────────────
+function generateCashPDF({ client, reportData, kpis }) {
+  const company  = client?.company || "Your Company";
+  const month    = reportData?.monthLabel || "Current Period";
+  const pack     = client?.client_pack || client?.clientPack || "startup";
+  const note     = reportData?.cashflowNote || reportData?.packNote || "";
+  const pl       = reportData?.plInputs || {};
+  const isMSME   = pack === "msme";
+  const isCorp   = pack === "corporate";
+  const packLabel = isMSME ? "MSME Pack" : isCorp ? "Board Pack" : "CFO Pack";
+
+  // KPIs
+  const cashKpi    = kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value    || pl.closingCash || "—";
+  const burnKpi    = kpis?.find(k=>k.label?.toLowerCase().includes("burn"))?.value    || "—";
+  const runwayKpi  = kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value  || "—";
+  const revenueKpi = kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value     || pl.revenue || "—";
+  const marginKpi  = kpis?.find(k=>k.label?.toLowerCase().includes("margin"))?.value  || pl.gpMargin || "—";
+  const ebitda     = pl.ebitda     || "—";
+  const pat        = pl.pat        || "—";
+  const cogs       = pl.cogs       || "—";
+  const grossProfit= pl.grossProfit|| "—";
+
+  // Cash movement — startup style
+  const cashMoves = [
+    { label:"Opening Balance",          value: pl.openingCash  || "—", type:"neutral" },
+    { label:"+ Collections Received",   value: pl.collections  || "—", type:"in"      },
+    { label:"− Payroll & Benefits",     value: pl.payroll      || "—", type:"out"     },
+    { label:"− Vendor Payments",        value: pl.vendorPay    || "—", type:"out"     },
+    { label:"− Tax Payments",           value: pl.taxPay       || "—", type:"out"     },
+    { label:"− Other Operating Costs",  value: pl.otherOpex    || "—", type:"out"     },
+    { label:"Closing Cash Balance",     value: pl.closingCash  || cashKpi || "—", type:"neutral" },
+  ];
+
+  // Working capital — MSME / Corporate
+  const wcItems = [
+    { label:"Trade Debtors (AR)",   value: reportData?.debtors      || "—", days: reportData?.debtorDays  || "—", note:"Collections outstanding" },
+    { label:"Trade Creditors (AP)", value: reportData?.creditors     || "—", days: reportData?.creditorDays|| "—", note:"Payables to suppliers" },
+    { label:"Inventory",            value: reportData?.inventory     || "—", days: reportData?.inventoryDays|| "—", note:"Stock on hand" },
+    { label:"Working Capital",      value: reportData?.workingCapital|| "—", days: "—",                            note:"Current Assets − Current Liabilities" },
+  ];
+
+  // Indirect cash flow — Corporate
+  const indirectCF = [
+    { label:"EBITDA",                    value: ebitda,                           bold:true  },
+    { label:"− Interest Paid",           value: pl.interestPaid    || "—",        bold:false },
+    { label:"− Tax Paid",                value: pl.taxPaid         || "—",        bold:false },
+    { label:"± Working Capital Changes", value: pl.wcChanges       || "—",        bold:false },
+    { label:"= Operating Cash Flow",     value: reportData?.operatingCF || "—",   bold:true  },
+    { label:"− Capex",                   value: pl.capex           || "—",        bold:false },
+    { label:"+ Asset Disposal",          value: pl.assetDisposal   || "—",        bold:false },
+    { label:"= Free Cash Flow",          value: reportData?.freeCF || "—",        bold:true  },
+  ];
+
+  // Key ratios from reportData
+  const ratios = [
+    { label:"Current Ratio",          value: reportData?.currentRatio     || "—", benchmark:">2.0x" },
+    { label:"Cash Conversion Cycle",  value: reportData?.ccc              || "—", benchmark:"<30 days" },
+    { label:"Debtor Days",            value: reportData?.debtorDays       || "—", benchmark:"<30 days" },
+    { label:"Creditor Days",          value: reportData?.creditorDays     || "—", benchmark:">45 days" },
+    { label:"DSCR",                   value: reportData?.dscr             || "—", benchmark:">1.25x" },
+    { label:"Interest Coverage",      value: reportData?.interestCoverage || "—", benchmark:">3.0x" },
+    { label:"Debt / EBITDA",          value: reportData?.debtEbitda       || "—", benchmark:"<3.0x" },
+    { label:"Working Capital",        value: reportData?.workingCapital   || "—", benchmark:"Positive" },
+  ].filter(r => r.value !== "—");
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:13px; }
+  .page { max-width:800px; margin:0 auto; padding:48px; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; padding-bottom:18px; border-bottom:2px solid #3B6FF7; }
+  .logo { font-size:24px; font-weight:900; color:#3B6FF7; letter-spacing:-0.02em; }
+  .tagline { font-size:9px; color:#9CA3AF; letter-spacing:0.1em; text-transform:uppercase; margin-top:2px; }
+  .doc-meta { text-align:right; font-size:11px; color:#6B7280; line-height:1.7; }
+  .doc-meta strong { color:#111827; font-size:13px; display:block; }
+  h1 { font-size:24px; font-weight:900; color:#111827; margin-bottom:4px; }
+  .subtitle { font-size:12px; color:#6B7280; margin-bottom:24px; }
+  .eyebrow { font-size:10px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
+  h2 { font-size:13px; font-weight:800; color:#111827; margin:0 0 12px; padding-bottom:7px; border-bottom:1px solid #F3F4F6; text-transform:uppercase; letter-spacing:0.05em; }
+  .section { margin-bottom:24px; }
+  .kpi-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px; margin-bottom:24px; }
+  .kpi-card { padding:12px; border-radius:8px; background:#F9FAFB; border:1px solid #E5E7EB; text-align:center; }
+  .kpi-label { font-size:9px; color:#6B7280; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px; }
+  .kpi-value { font-size:18px; font-weight:900; color:#111827; }
+  .kpi-sub { font-size:9px; color:#6B7280; margin-top:3px; }
+  table { width:100%; border-collapse:collapse; margin-bottom:4px; }
+  th { background:#F9FAFB; padding:8px 10px; text-align:left; font-size:9px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
+  td { padding:9px 10px; border-bottom:1px solid #F3F4F6; font-size:12px; vertical-align:middle; }
+  .bold-row td { font-weight:800; background:#F0F4FF; }
+  .in-val  { color:#059669; font-weight:700; text-align:right; }
+  .out-val { color:#DC2626; font-weight:700; text-align:right; }
+  .neu-val { color:#111827; font-weight:800; text-align:right; }
+  .right   { text-align:right; }
+  .dim     { color:#6B7280; font-size:11px; }
+  .note-box { padding:14px 16px; background:#EEF3FE; border-radius:8px; border-left:3px solid #3B6FF7; margin-bottom:24px; }
+  .note-label { font-size:9px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+  .note-text { font-size:12px; color:#111827; line-height:1.8; }
+  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .disclaimer { margin-top:24px; padding:10px 12px; background:#F9FAFB; border-radius:6px; font-size:10px; color:#6B7280; line-height:1.6; border:1px solid #E5E7EB; }
+  .footer { margin-top:16px; padding-top:14px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header">
+    <div><div class="logo">Finzzup</div><div class="tagline">Build. Value. Scale.</div></div>
+    <div class="doc-meta">
+      <strong>Cash Flow Report</strong>
+      ${company} | ${packLabel}<br/>
+      Period: ${month}<br/>
+      ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
+    </div>
+  </div>
+
+  <div class="eyebrow">Confidential | Prepared by Garima Agarwal CA | Membership 160944</div>
+  <h1>${company}</h1>
+  <div class="subtitle">Cash Flow Statement, Working Capital & Liquidity Analysis — ${month}</div>
+
+  <!-- KPI SUMMARY -->
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-label">Cash Balance</div><div class="kpi-value">${cashKpi}</div><div class="kpi-sub">End of period</div></div>
+    <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-value">${revenueKpi}</div><div class="kpi-sub">This period</div></div>
+    <div class="kpi-card"><div class="kpi-label">EBITDA</div><div class="kpi-value">${ebitda}</div><div class="kpi-sub">Operating profit</div></div>
+    ${isMSME || isCorp
+      ? `<div class="kpi-card"><div class="kpi-label">Working Capital</div><div class="kpi-value">${reportData?.workingCapital || "—"}</div><div class="kpi-sub">Current assets − liabilities</div></div>`
+      : `<div class="kpi-card"><div class="kpi-label">Runway</div><div class="kpi-value">${runwayKpi}</div><div class="kpi-sub">At current burn</div></div>`
+    }
+  </div>
+
+  <!-- P&L SUMMARY -->
+  <div class="section">
+    <h2>P&L Summary — ${month}</h2>
+    <table>
+      <thead><tr><th>Line Item</th><th class="right">Amount</th><th>Notes</th></tr></thead>
+      <tbody>
+        <tr><td>Revenue</td><td class="neu-val">${revenueKpi}</td><td class="dim">Gross receipts this period</td></tr>
+        <tr><td>Cost of Goods Sold</td><td class="out-val">${cogs}</td><td class="dim">Direct costs</td></tr>
+        <tr class="bold-row"><td>Gross Profit</td><td class="right">${grossProfit}</td><td class="dim">Margin: ${marginKpi}</td></tr>
+        <tr class="bold-row"><td>EBITDA</td><td class="right">${ebitda}</td><td class="dim">Earnings before interest, tax, depreciation</td></tr>
+        <tr><td>PAT (Net Profit after Tax)</td><td class="in-val">${pat}</td><td class="dim">Bottom line</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- CASH MOVEMENT -->
+  <div class="section">
+    <h2>Cash Movement — ${month}</h2>
+    <table>
+      <thead><tr><th>Item</th><th class="right">Amount</th></tr></thead>
+      <tbody>
+        ${cashMoves.map(r => `
+        <tr ${r.type==="neutral"?"class=\"bold-row\"":""}>
+          <td>${r.label}</td>
+          <td class="${r.type==="in"?"in-val":r.type==="out"?"out-val":"neu-val"}">${r.value}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+  </div>
+
+  ${isCorp ? `
+  <!-- INDIRECT CASH FLOW -->
+  <div class="section">
+    <h2>Indirect Cash Flow Statement</h2>
+    <table>
+      <thead><tr><th>Item</th><th class="right">Amount</th></tr></thead>
+      <tbody>
+        ${indirectCF.map(r => `
+        <tr ${r.bold?"class=\"bold-row\"":""}>
+          <td>${r.label}</td>
+          <td class="${r.bold?"neu-val":"right"}">${r.value}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+  </div>` : ""}
+
+  <!-- WORKING CAPITAL -->
+  <div class="section">
+    <h2>Working Capital Analysis</h2>
+    <table>
+      <thead><tr><th>Component</th><th class="right">Value</th><th class="right">Days</th><th>Notes</th></tr></thead>
+      <tbody>
+        ${wcItems.map(r => `
+        <tr>
+          <td>${r.label}</td>
+          <td class="neu-val">${r.value}</td>
+          <td class="right dim">${r.days}</td>
+          <td class="dim">${r.note}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+  </div>
+
+  ${ratios.length > 0 ? `
+  <!-- KEY RATIOS -->
+  <div class="section">
+    <h2>Key Liquidity & Debt Ratios</h2>
+    <table>
+      <thead><tr><th>Ratio</th><th class="right">Value</th><th>Benchmark</th></tr></thead>
+      <tbody>
+        ${ratios.map(r => `
+        <tr>
+          <td>${r.label}</td>
+          <td class="neu-val">${r.value}</td>
+          <td class="dim">${r.benchmark}</td>
+        </tr>`).join("")}
+      </tbody>
+    </table>
+  </div>` : ""}
+
+  ${note ? `
+  <div class="note-box">
+    <div class="note-label">CA's Cash Flow Analysis — ${month}</div>
+    <div class="note-text">${note}</div>
+  </div>` : ""}
+
+  <div class="disclaimer">
+    <strong>Disclaimer:</strong> This cash flow report is prepared based on information provided by the client and is for management and banking purposes. It does not constitute a statutory financial statement. Figures are subject to audit adjustments. For statutory reporting, refer to audited financials.
+  </div>
+
+  <div class="footer">
+    <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038 | agrgarima@gmail.com</span>
+    <span>Finzzup | ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</span>
+  </div>
+
+</div>
+</body>
+</html>`;
+}
 
 
 // ─── LOAN READINESS PDF ───────────────────────────────────────────────────────
@@ -5207,7 +5488,7 @@ function Portal({ client, onLogout }) {
   const pages = {
     overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData}/>,
     dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData}/>,
-    cashflow:   <CashFlow   reportData={resolvedReportData} client={client}/>,
+    cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
     actions:    <ActionItems actions={resolvedActions}/>,
     myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
     engagement: <Engagement liveData={resolvedEngagement}/>,
