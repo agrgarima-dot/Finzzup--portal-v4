@@ -1962,12 +1962,14 @@ function MSMECFOPack({ data, reportData }) {
         <SectionTitle sub="Readiness for working capital loans & term finance">Bank Finance Readiness</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="inv-grid">
           {[
-            { label:"DSCR",              value:"2.1x",    flag:false, note:"Banks prefer >1.5x" },
-            { label:"Debt:Equity Ratio", value:"0.8:1",   flag:false, note:"Conservative — good" },
-            { label:"Current Ratio",     value:"1.62x",   flag:false, note:"Meets bank norms" },
-            { label:"Promoter Equity",   value:"68%",     flag:false, note:"Strong skin in game" },
-            { label:"External Ratings",  value:"BBB+",    flag:false, note:"Investment grade" },
-            { label:"Overdue to Banks",  value:"None",    flag:false, note:"Clean track record" },
+            { label:"DSCR",                    value: reportData?.dscr || "2.1x",            flag: reportData?.dscr ? parseFloat(reportData.dscr)<1.5 : false,  note: reportData?.dscr ? (parseFloat(reportData.dscr)<1.5?"Below bank threshold":"Banks prefer >1.5x") : "Banks prefer >1.5x" },
+            { label:"Interest Coverage",       value: reportData?.interestCoverage || "4.2x", flag: reportData?.interestCoverage ? parseFloat(reportData.interestCoverage)<3 : false, note: reportData?.interestCoverage ? (parseFloat(reportData.interestCoverage)<3?"Below threshold":"Comfortable coverage") : "Target >3.0x" },
+            { label:"Interest Margin",         value: reportData?.interestMargin || "3.8%",   flag: false, note:"Net interest spread" },
+            { label:"ROE",                     value: reportData?.roe || "18.4%",             flag: reportData?.roe ? parseFloat(reportData.roe)<12 : false,    note: reportData?.roe ? (parseFloat(reportData.roe)<12?"Below sector avg":"Above sector avg") : "Return on equity" },
+            { label:"Debt:Equity Ratio",       value: reportData?.debtEquity || "0.8:1",      flag: false, note:"Conservative — good" },
+            { label:"Current Ratio",           value: reportData?.currentRatio || "1.62x",    flag: reportData?.currentRatio ? parseFloat(reportData.currentRatio)<1.2 : false, note: reportData?.currentRatio ? (parseFloat(reportData.currentRatio)<1.2?"Below bank norms":"Meets bank norms") : "Meets bank norms" },
+            { label:"Cash Conversion Cycle",   value: reportData?.ccc || "37 days",           flag: reportData?.ccc ? parseFloat(reportData.ccc)>45 : false,  note: reportData?.ccc ? (parseFloat(reportData.ccc)>45?"Target <30 days":"Target <30 days") : "Target <30 days" },
+            { label:"Working Capital",         value: reportData?.workingCapital || "Rs.32.4L", flag: false, note:"Net current assets" },
           ].map((m,i) => (
             <div key={i} style={{ padding:"12px 14px", borderRadius:12,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
@@ -2321,12 +2323,10 @@ function generateLoanPDF({ client, reportData, kpis }) {
   const loanNote = reportData?.loanNote || "";
   const improvements = (reportData?.loanImprovements || []).filter(x=>x);
   const ratios = [
-    { label:"Current Ratio",    value:reportData?.currentRatio,     benchmark:"Target >2.0x",  good:parseFloat(reportData?.currentRatio)>=2 },
-    { label:"Debt / Equity",    value:reportData?.debtEquity,       benchmark:"Target <1.0x",  good:!reportData?.debtEquity||reportData?.debtEquity?.toLowerCase()==="nil"||parseFloat(reportData?.debtEquity)<1 },
-    { label:"Interest Coverage",value:reportData?.interestCoverage, benchmark:"Target >3.0x",  good:parseFloat(reportData?.interestCoverage)>=3 },
-    { label:"DSCR",             value:reportData?.dscr,             benchmark:"Target >1.25x", good:parseFloat(reportData?.dscr)>=1.25 },
-    { label:"Operating CF",     value:reportData?.operatingCF,      benchmark:"Should be +ve", good:reportData?.operatingCF&&!reportData?.operatingCF?.includes("-") },
-    { label:"Free Cash Flow",   value:reportData?.freeCF,           benchmark:"Should be +ve", good:reportData?.freeCF&&!reportData?.freeCF?.includes("-") },
+    { label:"Current Ratio",     value:reportData?.currentRatio,     benchmark:"Target >2.0x",  good:parseFloat(reportData?.currentRatio)>=2 },
+    { label:"DSCR",              value:reportData?.dscr,             benchmark:"Target >1.25x", good:parseFloat(reportData?.dscr)>=1.25 },
+    { label:"Interest Coverage", value:reportData?.interestCoverage, benchmark:"Target >3.0x",  good:parseFloat(reportData?.interestCoverage)>=3 },
+    { label:"Debt / EBITDA",     value:reportData?.debtEbitda,       benchmark:"Target <3.0x",  good:parseFloat(reportData?.debtEbitda)<=3 },
   ].filter(r=>r.value);
   const revKpi    = kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value || reportData?.plInputs?.revenue || "—";
   const marginKpi = kpis?.find(k=>k.label?.toLowerCase().includes("margin"))?.value || reportData?.plInputs?.gpMargin || "—";
@@ -3235,29 +3235,68 @@ function CFOPackContent({ reportData, client, kpis }) {
             </div>
           </Card>
 
-          {/* KEY RATIOS */}
-          {(reportData?.currentRatio || reportData?.debtEquity || reportData?.dscr || reportData?.interestCoverage) && (
-            <Card>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"Key Financial Ratios"}</div>
-              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }} className="inv-grid">
-                {[
-                  { label:"Current Ratio",     value:reportData?.currentRatio,     benchmark:"Target: >2.0x",  good: parseFloat(reportData?.currentRatio)>=2 },
-                  { label:"Debt / Equity",      value:reportData?.debtEquity,       benchmark:"Target: <1.0x",  good: !reportData?.debtEquity||reportData.debtEquity.toLowerCase()==="nil"||parseFloat(reportData.debtEquity)<1 },
-                  { label:"Interest Coverage",  value:reportData?.interestCoverage, benchmark:"Target: >3.0x",  good: parseFloat(reportData?.interestCoverage)>=3 },
-                  { label:"DSCR",               value:reportData?.dscr,             benchmark:"Target: >1.25x", good: parseFloat(reportData?.dscr)>=1.25 },
-                  { label:"Operating CF",       value:reportData?.operatingCF,      benchmark:"Should be +ve",  good: reportData?.operatingCF&&!reportData.operatingCF.includes("-") },
-                  { label:"Free Cash Flow",     value:reportData?.freeCF,           benchmark:"Should be +ve",  good: reportData?.freeCF&&!reportData.freeCF.includes("-") },
-                ].filter(r=>r.value).map((r,i) => (
-                  <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:r.good?`${C.green}08`:`${C.amber}08`, border:`1px solid ${r.good?C.green+"25":C.amber+"30"}` }}>
-                    <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{r.label}</div>
-                    <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:r.good?C.green:C.amber }}>{r.value}</div>
-                    <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:2 }}>{r.benchmark}</div>
-                    <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:r.good?C.green:C.amber, marginTop:2 }}>{r.good?"Within range":"Needs attention"}</div>
+          {/* KEY DEBT RATIOS — always visible */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Key Debt Ratios"}</div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>{"Assessed by Garima — set in admin"}</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              {[
+                {
+                  label:"Current Ratio",
+                  value: reportData?.currentRatio || null,
+                  benchmark:"Target: above 2.0x",
+                  what:"Measures ability to pay short-term obligations. Banks require >2.0x before sanctioning.",
+                  good: reportData?.currentRatio ? parseFloat(reportData.currentRatio)>=2 : null,
+                },
+                {
+                  label:"DSCR",
+                  value: reportData?.dscr || null,
+                  benchmark:"Target: above 1.25x",
+                  what:"Debt Service Coverage Ratio — can the business repay loan EMIs from operating income?",
+                  good: reportData?.dscr ? parseFloat(reportData.dscr)>=1.25 : null,
+                },
+                {
+                  label:"Interest Coverage Ratio",
+                  value: reportData?.interestCoverage || null,
+                  benchmark:"Target: above 3.0x",
+                  what:"EBIT divided by interest expense. Shows how comfortably interest is being serviced.",
+                  good: reportData?.interestCoverage ? parseFloat(reportData.interestCoverage)>=3 : null,
+                },
+                {
+                  label:"Debt / EBITDA",
+                  value: reportData?.debtEbitda || null,
+                  benchmark:"Target: below 3.0x",
+                  what:"How many years of EBITDA needed to repay debt. Lower is better for lenders.",
+                  good: reportData?.debtEbitda ? parseFloat(reportData.debtEbitda)<=3 : null,
+                },
+              ].map((r, i) => (
+                <div key={i} style={{
+                  padding:"16px", borderRadius:14,
+                  background: r.good===true ? `${C.green}08` : r.good===false ? `${C.amber}08` : C.bg2,
+                  border:`1px solid ${r.good===true ? C.green+"25" : r.good===false ? C.amber+"30" : C.border}`
+                }}>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6 }}>{r.label}</div>
+                  <div style={{ fontFamily:FM, fontSize:24, fontWeight:800, marginBottom:4,
+                    color: r.good===true ? C.green : r.good===false ? C.amber : C.dim }}>
+                    {r.value || "—"}
                   </div>
-                ))}
-              </div>
-            </Card>
-          )}
+                  <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginBottom:6 }}>{r.benchmark}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, lineHeight:1.6, marginBottom:r.value?8:0 }}>{r.what}</div>
+                  {r.value && (
+                    <div style={{ display:"inline-flex", alignItems:"center", gap:4, fontFamily:F, fontSize:11, fontWeight:700,
+                      color: r.good ? C.green : C.amber,
+                      background: r.good ? `${C.green}15` : `${C.amber}15`,
+                      padding:"3px 10px", borderRadius:100 }}>
+                      {r.good ? "✅ Within range" : "⚠️ Needs attention"}
+                    </div>
+                  )}
+                  {!r.value && (
+                    <div style={{ fontFamily:F, fontSize:11, color:C.dim, fontStyle:"italic" }}>{"Not yet assessed"}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
 
           {/* AUTO FLAGS */}
           {(() => {
@@ -3265,6 +3304,7 @@ function CFOPackContent({ reportData, client, kpis }) {
             if (reportData?.currentRatio && parseFloat(reportData.currentRatio)<2) flags.push("Current Ratio is below 2.0x — banks prefer a stronger liquidity position");
             if (reportData?.dscr && parseFloat(reportData.dscr)<1.25) flags.push("DSCR below 1.25x — lenders will question debt repayment capacity");
             if (reportData?.interestCoverage && parseFloat(reportData.interestCoverage)<3) flags.push("Interest Coverage below 3.0x — may limit eligibility for larger amounts");
+            if (reportData?.debtEbitda && parseFloat(reportData.debtEbitda)>3) flags.push("Debt/EBITDA above 3.0x — lenders may view this as overleveraged relative to earnings");
             if (reportData?.existingDebt && reportData.existingDebt.toLowerCase()!=="nil" && reportData.existingDebt!=="Not provided") flags.push(`Existing debt of ${reportData.existingDebt} — lenders will factor this into total exposure`);
             const rkpi = kpis?.find(k=>k.label?.toLowerCase().includes("runway"));
             if (rkpi && parseFloat(rkpi.value)<6) flags.push("Runway below 6 months — banks may see this as distress. Consider raising equity first");
@@ -6517,6 +6557,56 @@ function AdminPanel({ admin, onLogout }) {
                       val={reportData.loanNote || ""}
                       onChange={v => setReportData(r => ({...r, loanNote: v}))}
                       placeholder="e.g. Your profile is strong for CGTMSE. We recommend completing the financial projections before applying to SBI Startup Branch."/>
+                  </Card>
+                )}
+
+                {/* ══ DEBT RATIOS (msme + corporate) ═══════════════════════════ */}
+                {(selected.client_pack === "msme" || selected.client_pack === "corporate") && (
+                  <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}03` }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      📐 Debt & Financial Ratios
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                      These ratios appear in the client's Cash Health / Board Report and are included in the downloadable PDF report.
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                      <AdminInput C={C} F={F} FM={FM} label="DSCR (Debt Service Coverage)"
+                        val={reportData.dscr || ""}
+                        onChange={v => setReportData(r => ({...r, dscr:v}))}
+                        placeholder="e.g. 2.1x" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="Interest Coverage Ratio"
+                        val={reportData.interestCoverage || ""}
+                        onChange={v => setReportData(r => ({...r, interestCoverage:v}))}
+                        placeholder="e.g. 4.2x" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="Interest Margin / Net Interest"
+                        val={reportData.interestMargin || ""}
+                        onChange={v => setReportData(r => ({...r, interestMargin:v}))}
+                        placeholder="e.g. 3.8%" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="ROE (Return on Equity)"
+                        val={reportData.roe || ""}
+                        onChange={v => setReportData(r => ({...r, roe:v}))}
+                        placeholder="e.g. 18.4%" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="Current Ratio"
+                        val={reportData.currentRatio || ""}
+                        onChange={v => setReportData(r => ({...r, currentRatio:v}))}
+                        placeholder="e.g. 1.8x" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="Debt / Equity Ratio"
+                        val={reportData.debtEquity || ""}
+                        onChange={v => setReportData(r => ({...r, debtEquity:v}))}
+                        placeholder="e.g. 0.6:1" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="Cash Conversion Cycle"
+                        val={reportData.ccc || ""}
+                        onChange={v => setReportData(r => ({...r, ccc:v}))}
+                        placeholder="e.g. 37 days" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="Debt / EBITDA"
+                        val={reportData.debtEbitda || ""}
+                        onChange={v => setReportData(r => ({...r, debtEbitda:v}))}
+                        placeholder="e.g. 2.4x" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="Working Capital"
+                        val={reportData.workingCapital || ""}
+                        onChange={v => setReportData(r => ({...r, workingCapital:v}))}
+                        placeholder="e.g. Rs.32.4L" mono/>
+                    </div>
                   </Card>
                 )}
 
