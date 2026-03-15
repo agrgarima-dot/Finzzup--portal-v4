@@ -3105,7 +3105,7 @@ function CFOPacks({ client, reportData }) {
               <div style={{ width:44, height:44, borderRadius:12, background:C.blue, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>🏦</div>
               <div>
                 <div style={{ fontFamily:F, fontWeight:800, fontSize:18, color:C.text }}>Loan Readiness Assessment</div>
-                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>SBI Startup Branch · SIDBI · CGTMSE · NBFCs</div>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>SBI Startup Branch  |  SIDBI  |  CGTMSE  |  NBFCs</div>
               </div>
             </div>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, margin:0 }}>
@@ -3150,7 +3150,7 @@ function CFOPacks({ client, reportData }) {
                       {s.hot && <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:s.color, background:`${s.color}15`, padding:"2px 8px", borderRadius:100 }}>RECOMMENDED</span>}
                     </div>
                     <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:2 }}>
-                      <strong style={{ color:C.text }}>Loan: </strong>{s.amount} &nbsp;·&nbsp; <strong style={{ color:C.text }}>Rate: </strong>{s.rate}
+                      <strong style={{ color:C.text }}>Loan: </strong>{s.amount} {"   |   "} <strong style={{ color:C.text }}>Rate: </strong>{s.rate}
                     </div>
                     <div style={{ fontFamily:F, fontSize:12, color:C.dim }}>{s.note}</div>
                   </div>
@@ -3199,7 +3199,7 @@ function CFOPacks({ client, reportData }) {
               <div style={{ display:"flex", alignItems:"center", padding:"11px 20px", borderRadius:12,
                 background:`${C.blue}10`, border:`1.5px solid ${C.blue}20`,
                 fontFamily:F, fontSize:13, fontWeight:700, color:C.blue }}>
-                💰 From ₹15,000 · 5–7 days
+                💰 From ₹15,000  |  5–7 days
               </div>
             </div>
           </Card>
