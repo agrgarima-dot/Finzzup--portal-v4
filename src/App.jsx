@@ -4092,7 +4092,7 @@ function Calendar() {
       </SectionTitle>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:20 }} className="cal-grid">
-        <a href="https://calendly.com/agrgarima/30min" target="_blank" rel="noopener"
+        <a href="https://calendly.com/agrgarimaca/30min" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
           <Card style={{ padding:24, borderTop:`3px solid ${C.blue}`, cursor:"pointer",
             transition:"box-shadow 0.2s" }}
