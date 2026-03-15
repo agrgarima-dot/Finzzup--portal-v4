@@ -1792,7 +1792,7 @@ function StartupCFOPack({ data, client, reportData }) {
           <ScoreGauge score={parseInt(reportData?.score)||data.fundraiseScore} color={C.blue} size={100}/>
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {(reportData?.scoreBreakdown?.some(s=>s.score) ? reportData.scoreBreakdown : data.fundraiseBreakdown).map((item, i) => (
+          {(Array.isArray(reportData?.scoreBreakdown) && reportData.scoreBreakdown.some(s=>s.score) ? reportData.scoreBreakdown : data.fundraiseBreakdown).map((item, i) => (
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"140px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
@@ -1827,7 +1827,7 @@ function StartupCFOPack({ data, client, reportData }) {
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Key metrics investors will ask about in your data room">Investor Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
-          {(reportData?.metrics?.some(m=>m.value) ? reportData.metrics : data.investorMetrics).map((m, i) => (
+          {(Array.isArray(reportData?.metrics) && reportData.metrics.some(m=>m.value) ? reportData.metrics : data.investorMetrics).map((m, i) => (
             <div key={i} style={{ padding:"14px 14px", borderRadius:12,
               background: m.flag ? "#FEF2F2" : C.bg,
               border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
@@ -1847,7 +1847,7 @@ function StartupCFOPack({ data, client, reportData }) {
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Documents investors will request in due diligence">Financial DD Checklist</SectionTitle>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-          {(reportData?.checklist?.length ? reportData.checklist : data.dueDiligence).map((d, i) => (
+          {(Array.isArray(reportData?.checklist) && reportData.checklist.length ? reportData.checklist : data.dueDiligence).map((d, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
               borderRadius:10, background:d.done ? `${C.green}08` : "#FFFBEB",
               border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
@@ -2310,34 +2310,51 @@ const COMPLIANCE_DATES = [
 
 
 // ─── LOAN READINESS PDF ───────────────────────────────────────────────────────
-function generateLoanPDF({ client, reportData }) {
-  const score = reportData?.loanScore || 64;
-  const month = reportData?.monthLabel || "Current Period";
-  const company = client?.company || "Your Company";
-  const schemes = [
-    { name:"SBI Startup Branch",        amount:"Up to Rs.50 Cr",    rate:"Repo+2%",    recommended:true  },
-    { name:"SIDBI SPEED+",              amount:"Up to Rs.25 Cr",    rate:"9.5-11%",    recommended:false },
-    { name:"CGTMSE (Collateral-free)",  amount:"Up to Rs.5 Cr",     rate:"Market rate",recommended:true  },
-    { name:"Mudra Tarun / Kishor",      amount:"Rs.5L to Rs.10L",   rate:"10-12%",     recommended:false },
-    { name:"NBFC / Fintech Debt",       amount:"Rs.25L to Rs.5 Cr", rate:"14-18%",     recommended:false },
+  const score    = reportData?.loanScore || 64;
+  const month    = reportData?.monthLabel || "Current Period";
+  const company  = client?.company || "Your Company";
+  const existing = reportData?.existingDebt || "Nil";
+  const interest = reportData?.interestCost || "Nil";
+  const sought   = reportData?.loanAmountSought || "Not specified";
+  const purpose  = reportData?.loanPurpose || "Not specified";
+  const loanNote = reportData?.loanNote || "";
+  const improvements = (reportData?.loanImprovements || []).filter(x=>x);
+  const ratios = [
+    { label:"Current Ratio",    value:reportData?.currentRatio,     benchmark:"Target >2.0x",  good:parseFloat(reportData?.currentRatio)>=2 },
+    { label:"Debt / Equity",    value:reportData?.debtEquity,       benchmark:"Target <1.0x",  good:!reportData?.debtEquity||reportData?.debtEquity?.toLowerCase()==="nil"||parseFloat(reportData?.debtEquity)<1 },
+    { label:"Interest Coverage",value:reportData?.interestCoverage, benchmark:"Target >3.0x",  good:parseFloat(reportData?.interestCoverage)>=3 },
+    { label:"DSCR",             value:reportData?.dscr,             benchmark:"Target >1.25x", good:parseFloat(reportData?.dscr)>=1.25 },
+    { label:"Operating CF",     value:reportData?.operatingCF,      benchmark:"Should be +ve", good:reportData?.operatingCF&&!reportData?.operatingCF?.includes("-") },
+    { label:"Free Cash Flow",   value:reportData?.freeCF,           benchmark:"Should be +ve", good:reportData?.freeCF&&!reportData?.freeCF?.includes("-") },
+  ].filter(r=>r.value);
+  const revKpi    = kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value || reportData?.plInputs?.revenue || "—";
+  const marginKpi = kpis?.find(k=>k.label?.toLowerCase().includes("margin"))?.value || reportData?.plInputs?.gpMargin || "—";
+  const cashKpi   = kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—";
+  const runwayKpi = kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value || "—";
+  const ebitda    = reportData?.plInputs?.ebitda || "—";
+  const pat       = reportData?.plInputs?.pat || "—";
+  const schemes = [    { name:"SBI Startup Branch",       amount:"Up to Rs.50 Cr", rate:"Repo+2%",    recommended:true  },
+    { name:"SIDBI SPEED+",             amount:"Up to Rs.25 Cr", rate:"9.5-11%",   recommended:false },
+    { name:"CGTMSE (Collateral-free)", amount:"Up to Rs.5 Cr",  rate:"Market rate",recommended:true  },
+    { name:"Mudra Tarun / Kishor",     amount:"Up to Rs.10L",   rate:"10-12%",     recommended:false },
+    { name:"NBFC / Fintech Debt",      amount:"Rs.25L-Rs.5 Cr", rate:"14-18%",    recommended:false },
   ];
   const docs = [
-    { doc:"Last 2 years ITR (Company and Directors)",             done:true  },
-    { doc:"Last 12 months Bank Statements",                       done:true  },
-    { doc:"Audited Financials (P&L and Balance Sheet)",           done:true  },
-    { doc:"GST Returns last 12 months",                           done:true  },
-    { doc:"CA-certified Financial Projections (3 years)",         done:false },
-    { doc:"Business Plan and Pitch Deck",                         done:false },
-    { doc:"KYC - Directors and Company",                          done:true  },
-    { doc:"MCA Filings and Incorporation Certificate",            done:true  },
-    { doc:"Existing Loan and Liability Statement",                done:false },
-    { doc:"CIBIL Credit Report (all directors)",                  done:false },
+    { doc:"Last 2 years ITR (Company and Directors)",           done:true  },
+    { doc:"Last 12 months Bank Statements",                     done:true  },
+    { doc:"Audited Financials (P&L and Balance Sheet)",         done:true  },
+    { doc:"GST Returns last 12 months",                         done:true  },
+    { doc:"CA-certified Financial Projections (3 years)",       done:false },
+    { doc:"Business Plan and Pitch Deck",                       done:false },
+    { doc:"KYC — Directors and Company",                        done:true  },
+    { doc:"MCA Filings and Incorporation Certificate",          done:true  },
+    { doc:"Existing Loan and Liability Statement",              done:false },
+    { doc:"CIBIL Credit Report (all directors)",                done:false },
   ];
   const readyCount = docs.filter(d=>d.done).length;
-  const statusText = score >= 75 ? "Strong Profile - Eligible for Most Schemes"
-    : score >= 55 ? "Moderate Profile - Eligible with Preparation"
-    : "Early Stage - Build Track Record First";
-
+  const statusText = score >= 75 ? "Strong Profile — Eligible for Most Schemes"
+    : score >= 55 ? "Moderate Profile — Eligible with Preparation"
+    : "Early Stage — Build Track Record First";
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -2400,6 +2417,7 @@ function generateLoanPDF({ client, reportData }) {
     <h1>${company}</h1>
     <div class="subtitle">Loan Readiness Assessment &amp; Scheme Eligibility Report</div>
   </div>
+  ${loanNote ? `<div style="margin-bottom:24px;padding:16px 18px;background:#EEF2FF;border-radius:10px;border-left:3px solid #5B4FDB"><div style="font-size:10px;font-weight:700;color:#5B4FDB;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Garima's Assessment</div><p style="font-size:14px;color:#111827;line-height:1.7;margin:0">${loanNote}</p></div>` : ""}
 
   <div class="score-box">
     <div>
@@ -2441,6 +2459,52 @@ function generateLoanPDF({ client, reportData }) {
       <span class="badge ${d.done ? "badge-done" : "badge-pending"}" style="margin-left:auto;">${d.done ? "Ready" : "Pending"}</span>
     </div>`).join("")}
   </div>
+
+  <div class="section">
+    <h2>Financial Snapshot</h2>
+    <table>
+      <thead><tr><th>Metric</th><th>Value</th><th>Metric</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Revenue</td><td><strong>${revKpi}</strong></td><td>Gross Margin</td><td><strong>${marginKpi}</strong></td></tr>
+        <tr><td>EBITDA</td><td><strong>${ebitda}</strong></td><td>PAT</td><td><strong>${pat}</strong></td></tr>
+        <tr><td>Cash Balance</td><td><strong>${cashKpi}</strong></td><td>Runway</td><td><strong>${runwayKpi}</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>Debt Position</h2>
+    <table>
+      <thead><tr><th>Item</th><th>Value</th></tr></thead>
+      <tbody>
+        <tr><td>Existing Debt / Loans</td><td><strong>${existing}</strong></td></tr>
+        <tr><td>Annual Interest Cost</td><td><strong>${interest}</strong></td></tr>
+        <tr><td>Loan Amount Sought</td><td><strong>${sought}</strong></td></tr>
+        <tr><td>Purpose of Loan</td><td><strong>${purpose}</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  ${ratios.length > 0 ? `
+  <div class="section">
+    <h2>Key Financial Ratios</h2>
+    <table>
+      <thead><tr><th>Ratio</th><th>Value</th><th>Benchmark</th><th>Status</th></tr></thead>
+      <tbody>
+        ${ratios.map(r => `<tr><td>${r.label}</td><td><strong>${r.value}</strong></td><td style="color:#6B7280">${r.benchmark}</td><td><span class="badge ${r.good?"badge-done":"badge-pending"}">${r.good?"Within Range":"Needs Attention"}</span></td></tr>`).join("")}
+      </tbody>
+    </table>
+  </div>` : ""}
+
+  ${improvements.length > 0 ? `
+  <div class="section">
+    <h2>Recommended Improvements</h2>
+    ${improvements.map((imp,i) => `
+    <div class="checklist-row pending-row" style="margin-bottom:6px">
+      <span style="font-weight:700;color:#2563EB;background:#EEF2FF;padding:2px 8px;border-radius:4px;font-size:11px">${i+1}</span>
+      <span>${imp}</span>
+    </div>`).join("")}
+  </div>` : ""}
 
   <div class="section">
     <h2>Next Steps</h2>
@@ -3096,108 +3160,209 @@ function CFOPackContent({ reportData, client, kpis }) {
 
 {tab === "loan" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+          {/* HEADER */}
           <div style={{ padding:"20px 22px", borderRadius:16, background:`linear-gradient(135deg,${C.blue}12,${C.purple}08)`, border:`1px solid ${C.blue}20` }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
-              <div style={{ width:44, height:44, borderRadius:12, background:C.blue, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>{"🏦"}</div>
+              <div style={{ width:44, height:44, borderRadius:12, background:C.blue, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>{"🏦"}</div>
               <div>
-                <div style={{ fontFamily:F, fontWeight:800, fontSize:18, color:C.text }}>{"Loan Readiness Assessment"}</div>
-                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{"SBI Startup Branch | SIDBI | CGTMSE | NBFCs"}</div>
+                <div style={{ fontFamily:F, fontWeight:800, fontSize:18, color:C.text }}>{"Loan Readiness Report"}</div>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{reportData?.monthLabel ? `As of ${reportData.monthLabel}` : "Current Period"}{" | Prepared by Garima Agarwal CA"}</div>
               </div>
             </div>
-            <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, margin:0 }}>
-              {"Based on your current financials, here is where you stand for debt funding. Garima can help prepare the full loan package and connect you with the right lenders."}
-            </p>
+            {reportData?.loanNote && (
+              <div style={{ marginTop:10, padding:"12px 14px", borderRadius:10, background:"rgba(255,255,255,0.7)", border:`1px solid ${C.blue}20` }}>
+                <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4 }}>{"Garima's Assessment"}</div>
+                <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.7, margin:0 }}>{reportData.loanNote}</p>
+              </div>
+            )}
           </div>
+
+          {/* SCORE */}
           <Card>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>{"Loan Eligibility Score"}</div>
-              <div style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.blue }}>{reportData?.loanScore || 64}<span style={{ fontSize:13, color:C.muted, fontWeight:500 }}>{"/100"}</span></div>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16, marginBottom:16 }}>
+              <div>
+                <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{"Loan Eligibility Score"}</div>
+                <div style={{ fontFamily:F, fontWeight:800, fontSize:40, color:C.blue, lineHeight:1 }}>{reportData?.loanScore || 64}<span style={{ fontSize:14, color:C.muted, fontWeight:500 }}>{"/100"}</span></div>
+                <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
+                  {(reportData?.loanScore || 64) >= 75 ? "Strong Profile — Eligible for Most Schemes" : (reportData?.loanScore || 64) >= 55 ? "Moderate Profile — Eligible with Preparation" : "Early Stage — Build Track Record First"}
+                </div>
+              </div>
+              <ScoreGauge score={parseInt(reportData?.loanScore) || 64} color={C.blue} size={100}/>
             </div>
-            <div style={{ height:8, borderRadius:4, background:C.bg3, marginBottom:12 }}>
-              <div style={{ height:"100%", borderRadius:4, width:`${reportData?.loanScore || 64}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})` }}/>
-            </div>
-            <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
-              {(reportData?.loanScore || 64) >= 75
-                ? "Strong profile - eligible for most startup loan schemes"
-                : (reportData?.loanScore || 64) >= 55
-                ? "Moderate profile - eligible with some preparation"
-                : "Early stage - build 12-month revenue track record first"}
+            <div style={{ height:8, borderRadius:4, background:C.bg3 }}>
+              <div style={{ height:"100%", borderRadius:4, width:`${reportData?.loanScore || 64}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
             </div>
           </Card>
+
+          {/* FINANCIAL SNAPSHOT */}
           <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"Relevant Schemes"}</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Financial Snapshot"}</div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>{"Pulled from current period KPIs and P&L"}</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }} className="inv-grid">
+              {[
+                { label:"Revenue",      value: kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value || reportData?.plInputs?.revenue || "—",     color:C.blue   },
+                { label:"Gross Margin", value: kpis?.find(k=>k.label?.toLowerCase().includes("margin"))?.value || reportData?.plInputs?.gpMargin || "—", color:C.teal   },
+                { label:"EBITDA",       value: reportData?.plInputs?.ebitda || "—",                                                                        color:C.purple },
+                { label:"PAT",          value: reportData?.plInputs?.pat || "—",                                                                           color:C.green  },
+                { label:"Cash Balance", value: kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—",                                      color:C.blue   },
+                { label:"Runway",       value: kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value || "—",                                    color:C.amber  },
+              ].map((item, i) => (
+                <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:C.bg2, border:`1px solid ${C.border}`, textAlign:"center" }}>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{item.label}</div>
+                  <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:item.value==="—"?C.dim:item.color }}>{item.value}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* DEBT POSITION */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"Debt Position"}</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              {[
+                { label:"Existing Debt",        value: reportData?.existingDebt || "Not provided",       flag: !!(reportData?.existingDebt && reportData.existingDebt.toLowerCase()!=="nil") },
+                { label:"Annual Interest Cost",  value: reportData?.interestCost || "Not provided",      flag: false },
+                { label:"Loan Amount Sought",    value: reportData?.loanAmountSought || "Not provided",  flag: false },
+                { label:"Purpose of Loan",       value: reportData?.loanPurpose || "Not provided",       flag: false },
+              ].map((item, i) => (
+                <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:item.flag?`${C.amber}08`:C.bg2, border:`1px solid ${item.flag?C.amber+"30":C.border}` }}>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{item.label}</div>
+                  <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:item.value==="Not provided"?C.dim:item.flag?C.amber:C.text }}>{item.value}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* KEY RATIOS */}
+          {(reportData?.currentRatio || reportData?.debtEquity || reportData?.dscr || reportData?.interestCoverage) && (
+            <Card>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"Key Financial Ratios"}</div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }} className="inv-grid">
+                {[
+                  { label:"Current Ratio",     value:reportData?.currentRatio,     benchmark:"Target: >2.0x",  good: parseFloat(reportData?.currentRatio)>=2 },
+                  { label:"Debt / Equity",      value:reportData?.debtEquity,       benchmark:"Target: <1.0x",  good: !reportData?.debtEquity||reportData.debtEquity.toLowerCase()==="nil"||parseFloat(reportData.debtEquity)<1 },
+                  { label:"Interest Coverage",  value:reportData?.interestCoverage, benchmark:"Target: >3.0x",  good: parseFloat(reportData?.interestCoverage)>=3 },
+                  { label:"DSCR",               value:reportData?.dscr,             benchmark:"Target: >1.25x", good: parseFloat(reportData?.dscr)>=1.25 },
+                  { label:"Operating CF",       value:reportData?.operatingCF,      benchmark:"Should be +ve",  good: reportData?.operatingCF&&!reportData.operatingCF.includes("-") },
+                  { label:"Free Cash Flow",     value:reportData?.freeCF,           benchmark:"Should be +ve",  good: reportData?.freeCF&&!reportData.freeCF.includes("-") },
+                ].filter(r=>r.value).map((r,i) => (
+                  <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:r.good?`${C.green}08`:`${C.amber}08`, border:`1px solid ${r.good?C.green+"25":C.amber+"30"}` }}>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{r.label}</div>
+                    <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:r.good?C.green:C.amber }}>{r.value}</div>
+                    <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:2 }}>{r.benchmark}</div>
+                    <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:r.good?C.green:C.amber, marginTop:2 }}>{r.good?"Within range":"Needs attention"}</div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* AUTO FLAGS */}
+          {(() => {
+            const flags = [];
+            if (reportData?.currentRatio && parseFloat(reportData.currentRatio)<2) flags.push("Current Ratio is below 2.0x — banks prefer a stronger liquidity position");
+            if (reportData?.dscr && parseFloat(reportData.dscr)<1.25) flags.push("DSCR below 1.25x — lenders will question debt repayment capacity");
+            if (reportData?.interestCoverage && parseFloat(reportData.interestCoverage)<3) flags.push("Interest Coverage below 3.0x — may limit eligibility for larger amounts");
+            if (reportData?.existingDebt && reportData.existingDebt.toLowerCase()!=="nil" && reportData.existingDebt!=="Not provided") flags.push(`Existing debt of ${reportData.existingDebt} — lenders will factor this into total exposure`);
+            const rkpi = kpis?.find(k=>k.label?.toLowerCase().includes("runway"));
+            if (rkpi && parseFloat(rkpi.value)<6) flags.push("Runway below 6 months — banks may see this as distress. Consider raising equity first");
+            return flags.length>0 ? (
+              <Card style={{ borderLeft:`3px solid ${C.amber}`, background:`${C.amber}06` }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.amber, marginBottom:12 }}>{"Auto-Flagged Issues"}</div>
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {flags.map((f,i) => (
+                    <div key={i} style={{ display:"flex", gap:10, padding:"9px 12px", borderRadius:8, background:"rgba(255,255,255,0.6)", fontSize:13, color:C.text, fontFamily:F, lineHeight:1.6 }}>
+                      <span style={{ color:C.amber, flexShrink:0 }}>{"•"}</span>{f}
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            ) : null;
+          })()}
+
+          {/* IMPROVEMENTS */}
+          {Array.isArray(reportData?.loanImprovements) && reportData.loanImprovements.some(x=>x) && (
+            <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.blue, marginBottom:12 }}>{"Recommended Improvements"}</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {reportData.loanImprovements.filter(x=>x).map((item,i) => (
+                  <div key={i} style={{ display:"flex", gap:12, padding:"10px 14px", borderRadius:8, background:`${C.blue}06`, border:`1px solid ${C.blue}15`, fontSize:13, color:C.text, fontFamily:F, lineHeight:1.6, alignItems:"flex-start" }}>
+                    <span style={{ fontFamily:FM, fontWeight:700, color:C.blue, background:`${C.blue}15`, borderRadius:6, padding:"2px 8px", fontSize:11, flexShrink:0, marginTop:1 }}>{i+1}</span>
+                    {item}
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
+
+          {/* SCHEMES */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"Recommended Schemes"}</div>
             <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
               {[
-                { name:"SBI Startup Branch", amount:"Up to Rs.50 Cr", rate:"Repo+2%", note:"Dedicated startup desk. Garima has direct connect.", color:C.blue, hot:true },
-                { name:"SIDBI SPEED+", amount:"Up to Rs.25 Cr", rate:"9.5-11%", note:"For tech-enabled startups with 2+ years revenue.", color:C.purple, hot:false },
-                { name:"CGTMSE Collateral-free", amount:"Up to Rs.5 Cr", rate:"Market rate", note:"No collateral needed - backed by govt guarantee.", color:C.teal, hot:true },
-                { name:"Mudra Tarun / Kishor", amount:"Rs.5L to Rs.10L", rate:"10-12%", note:"Early stage and micro enterprises.", color:C.amber, hot:false },
-                { name:"NBFC / Fintech Debt", amount:"Rs.25L to Rs.5 Cr", rate:"14-18%", note:"Faster disbursement, lighter documentation.", color:C.muted, hot:false },
-              ].map((s, i) => (
-                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", borderRadius:12, background:C.bg2, border:`1px solid ${s.hot ? s.color+"30" : C.border}` }}>
+                { name:"SBI Startup Branch",     amount:"Up to Rs.50 Cr", rate:"Repo+2%",   note:"Dedicated startup desk. Garima has direct connect.",   color:C.blue,   hot:true  },
+                { name:"SIDBI SPEED+",           amount:"Up to Rs.25 Cr", rate:"9.5-11%",  note:"For tech-enabled startups with 2+ years revenue.",     color:C.purple, hot:false },
+                { name:"CGTMSE Collateral-free", amount:"Up to Rs.5 Cr",  rate:"Market",   note:"No collateral needed — govt-backed guarantee.",         color:C.teal,   hot:true  },
+                { name:"Mudra Tarun",            amount:"Up to Rs.10L",   rate:"10-12%",   note:"Early stage and micro enterprises.",                    color:C.amber,  hot:false },
+                { name:"NBFC / Fintech Debt",    amount:"Rs.25L-Rs.5 Cr", rate:"14-18%",  note:"Faster disbursement, lighter documentation.",           color:C.muted,  hot:false },
+              ].map((s,i) => (
+                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", borderRadius:12, background:C.bg2, border:`1px solid ${s.hot?s.color+"30":C.border}` }}>
                   <div style={{ width:8, height:8, borderRadius:"50%", background:s.color, flexShrink:0, marginTop:5 }}/>
                   <div style={{ flex:1 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
                       <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{s.name}</span>
                       {s.hot && <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:s.color, background:`${s.color}15`, padding:"2px 8px", borderRadius:100 }}>{"RECOMMENDED"}</span>}
                     </div>
-                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:2 }}>
-                      {s.amount}{" | "}{s.rate}
-                    </div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:2 }}>{s.amount}{" | "}{s.rate}</div>
                     <div style={{ fontFamily:F, fontSize:12, color:C.dim }}>{s.note}</div>
                   </div>
                 </div>
               ))}
             </div>
           </Card>
+
+          {/* DOCS CHECKLIST */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"Documents Checklist"}</div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {[
-                { doc:"Last 2 years ITR (Company and Directors)",            done:true  },
-                { doc:"Last 12 months Bank Statements",                      done:true  },
-                { doc:"Audited Financials (P&L and Balance Sheet)",          done:true  },
-                { doc:"GST Returns last 12 months",                          done:true  },
-                { doc:"CA-certified Financial Projections 3 years",          done:false },
-                { doc:"Business Plan and Pitch Deck",                        done:false },
-                { doc:"KYC - Directors and Company",                         done:true  },
-                { doc:"MCA Filings and Incorporation Certificate",           done:true  },
-                { doc:"Existing Loan and Liability Statement",               done:false },
-                { doc:"CIBIL Credit Report all directors",                   done:false },
-              ].map((item, i) => (
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", borderRadius:8, background:item.done ? `${C.green}08` : C.bg2, border:`1px solid ${item.done ? C.green+"20" : C.border}` }}>
+                { doc:"Last 2 years ITR (Company and Directors)",           done:true  },
+                { doc:"Last 12 months Bank Statements",                     done:true  },
+                { doc:"Audited Financials (P&L and Balance Sheet)",         done:true  },
+                { doc:"GST Returns last 12 months",                         done:true  },
+                { doc:"CA-certified Financial Projections (3 years)",       done:false },
+                { doc:"Business Plan and Pitch Deck",                       done:false },
+                { doc:"KYC — Directors and Company",                        done:true  },
+                { doc:"MCA Filings and Incorporation Certificate",          done:true  },
+                { doc:"Existing Loan and Liability Statement",              done:false },
+                { doc:"CIBIL Credit Report (all directors)",                done:false },
+              ].map((item,i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", borderRadius:8, background:item.done?`${C.green}08`:C.bg2, border:`1px solid ${item.done?C.green+"20":C.border}` }}>
                   <span style={{ fontSize:14 }}>{item.done ? "✅" : "⬜"}</span>
-                  <span style={{ fontFamily:F, fontSize:13, color:item.done ? C.text : C.muted }}>{item.doc}</span>
+                  <span style={{ fontFamily:F, fontSize:13, color:item.done?C.text:C.muted }}>{item.doc}</span>
+                  <span style={{ marginLeft:"auto", fontFamily:F, fontSize:10, fontWeight:700, color:item.done?C.green:C.amber, background:item.done?`${C.green}15`:`${C.amber}15`, padding:"2px 8px", borderRadius:100 }}>{item.done?"Ready":"Pending"}</span>
                 </div>
               ))}
             </div>
           </Card>
+
+          {/* CTA */}
           <Card style={{ background:`${C.blue}06`, borderColor:`${C.blue}20` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>{"Ready to apply?"}</div>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:14 }}>
-              {"Garima can prepare your full loan readiness pack - projections, business plan, and lender deck - and connect you with SBI Startup Branch or SIDBI. Typically 5-7 working days."}
+              {"Garima can prepare your complete loan application package — projections, ratios, business plan, lender deck — and connect you with SBI Startup Branch or SIDBI."}
             </p>
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-              <a href={WA} target="_blank" rel="noopener"
-                style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`, color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
-                {"💬 WhatsApp Garima"}
-              </a>
-              <button
-                onClick={() => {
-                  const html = generateLoanPDF({ client, reportData });
-                  const w = window.open("","_blank");
-                  w.document.write(html);
-                  w.document.close();
-                  setTimeout(() => w.print(), 500);
-                }}
-                style={{ display:"flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}20`, fontFamily:F, fontSize:13, fontWeight:700, color:C.blue, cursor:"pointer" }}>
-                {"📄 Download PDF Report"}
+              <a href={WA} target="_blank" rel="noopener" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`, color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>{"💬 WhatsApp Garima"}</a>
+              <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w = window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`, color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                {"📄 Download Full Report"}
               </button>
-              <div style={{ display:"flex", alignItems:"center", padding:"11px 20px", borderRadius:12, background:`${C.purple}10`, border:`1.5px solid ${C.purple}20`, fontFamily:F, fontSize:12, fontWeight:600, color:C.purple }}>
-                {"Loan Package from Rs.15,000"}
-              </div>
+              <div style={{ display:"inline-flex", alignItems:"center", padding:"11px 20px", borderRadius:12, background:`${C.purple}10`, border:`1.5px solid ${C.purple}20`, fontFamily:F, fontSize:12, fontWeight:600, color:C.purple }}>{"Loan Package from Rs.15,000"}</div>
             </div>
           </Card>
+
         </div>
       )}
 
@@ -4993,7 +5158,6 @@ function Portal({ client, onLogout }) {
     monthLabel: "March 2026",
     score: 72,
     varianceCommentary: "Revenue tracking slightly ahead of plan. Operating expenses within budget.",
-    metrics: { currentRatio: "1.8x", debtEquity: "0.4x", workingCapital: "₹1.2 Cr" },
   };
   const resolvedReportData = (!isDemo && liveReportData) ? liveReportData : DEMO_REPORT_DATA;
   const resolvedGarimaNote = (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
@@ -6317,6 +6481,43 @@ function AdminPanel({ admin, onLogout }) {
                     </div>
                   ))}
                 </Card>
+
+                {/* ══ LOAN READINESS SCORE (startup only) ══════════════════════ */}
+                {selected.client_pack === "startup" && (
+                  <Card style={{ marginBottom:20, border:`1px solid ${C.blue}25`, background:`${C.blue}04` }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
+                      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>🏦 Loan Readiness Score</div>
+                      {reportData?.loanScore && (
+                        <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
+                          background:`${C.blue}12`, padding:"3px 12px", borderRadius:100 }}>
+                          Currently: {reportData.loanScore}/100
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                      Score shown on the client's <strong>Loan Readiness tab</strong>. Set this manually after reviewing the client's loan eligibility. 
+                      0–54 = Early Stage · 55–74 = Moderate · 75–100 = Strong Profile.
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
+                      <AdminInput C={C} F={F} FM={FM} label="Loan Readiness Score (0-100)"
+                        val={reportData.loanScore || ""}
+                        onChange={v => setReportData(r => ({...r, loanScore: v}))}
+                        placeholder="e.g. 68" mono/>
+                      <div style={{ padding:"12px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
+                        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.06em" }}>Score Guide</div>
+                        <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.8 }}>
+                          <span style={{ color:C.red }}>0–54</span> Early Stage<br/>
+                          <span style={{ color:C.amber }}>55–74</span> Moderate — eligible with prep<br/>
+                          <span style={{ color:C.green }}>75–100</span> Strong — eligible for most schemes
+                        </div>
+                      </div>
+                    </div>
+                    <AdminInput C={C} F={F} FM={FM} label="Garima's Loan Note (shown to client)"
+                      val={reportData.loanNote || ""}
+                      onChange={v => setReportData(r => ({...r, loanNote: v}))}
+                      placeholder="e.g. Your profile is strong for CGTMSE. We recommend completing the financial projections before applying to SBI Startup Branch."/>
+                  </Card>
+                )}
 
                 {/* ══ EXISTING: KEY METRICS ═════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
