@@ -2310,6 +2310,7 @@ const COMPLIANCE_DATES = [
 
 
 // ─── LOAN READINESS PDF ───────────────────────────────────────────────────────
+function generateLoanPDF({ client, reportData, kpis }) {
   const score    = reportData?.loanScore || 64;
   const month    = reportData?.monthLabel || "Current Period";
   const company  = client?.company || "Your Company";
