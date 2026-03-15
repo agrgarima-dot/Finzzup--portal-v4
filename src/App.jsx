@@ -2764,6 +2764,7 @@ function CFOPackContent({ reportData, client, kpis }) {
     { id:"monthly",    icon:"📊", label:"Monthly Report"      },
     { id:"variance",   icon:"📉", label:"Variance Analysis"   },
     { id:"fundraise",  icon:"🎯", label:"Fundraise Readiness" },
+    { id:"loan",       icon:"🏦", label:"Loan Readiness"      },
     { id:"boardpacks", icon:"📁", label:"Board Packs"         },
   ];
   const data = CFO_PACK_DATA["startup"];
@@ -3092,6 +3093,118 @@ function CFOPacks({ client, reportData }) {
             </a>
           </div>
         </>
+      )}
+
+
+      {tab === "loan" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+          {/* Header */}
+          <div style={{ padding:"20px 22px", borderRadius:16, background:`linear-gradient(135deg,${C.blue}12,${C.purple}08)`, border:`1px solid ${C.blue}20` }}>
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
+              <div style={{ width:44, height:44, borderRadius:12, background:C.blue, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22 }}>🏦</div>
+              <div>
+                <div style={{ fontFamily:F, fontWeight:800, fontSize:18, color:C.text }}>Loan Readiness Assessment</div>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>SBI Startup Branch · SIDBI · CGTMSE · NBFCs</div>
+              </div>
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, margin:0 }}>
+              Based on your current financials, here's where you stand for debt funding. Garima can help you prepare the full loan package and connect you with the right lenders.
+            </p>
+          </div>
+
+          {/* Eligibility Score */}
+          <Card>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>Loan Eligibility Score</div>
+              <div style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.blue }}>{reportData?.loanScore || 64}<span style={{ fontSize:13, color:C.muted, fontWeight:500 }}>/100</span></div>
+            </div>
+            <div style={{ height:8, borderRadius:4, background:C.bg3, marginBottom:12 }}>
+              <div style={{ height:"100%", borderRadius:4, width:`${reportData?.loanScore || 64}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
+            </div>
+            <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
+              {(reportData?.loanScore || 64) >= 75
+                ? "✅ Strong profile — eligible for most startup loan schemes"
+                : (reportData?.loanScore || 64) >= 55
+                ? "⚠️ Moderate profile — eligible with some preparation"
+                : "🔴 Early stage — focus on documentation and 12-month revenue track record first"}
+            </div>
+          </Card>
+
+          {/* Schemes */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Relevant Schemes for You</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {[
+                { name:"SBI Startup Branch", amount:"Up to ₹50 Cr", rate:"Repo + 2%", note:"Dedicated startup desk — fast processing. Garima has direct connect.", color:C.blue, hot:true },
+                { name:"SIDBI SPEED+", amount:"Up to ₹25 Cr", rate:"9.5–11%", note:"For tech-enabled startups with 2+ years revenue.", color:C.purple, hot:false },
+                { name:"CGTMSE (Collateral-free)", amount:"Up to ₹5 Cr", rate:"Market rate", note:"No collateral required — backed by govt guarantee.", color:C.teal, hot:true },
+                { name:"Mudra Tarun / Kishor", amount:"₹5L – ₹10L", rate:"10–12%", note:"Early stage / micro enterprises.", color:C.amber, hot:false },
+                { name:"NBFC / Fintech Debt", amount:"₹25L – ₹5 Cr", rate:"14–18%", note:"Faster disbursement, lighter documentation.", color:C.muted, hot:false },
+              ].map((s, i) => (
+                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", borderRadius:12, background:C.bg2, border:`1px solid ${s.hot ? s.color+"30" : C.border}` }}>
+                  <div style={{ width:8, height:8, borderRadius:"50%", background:s.color, flexShrink:0, marginTop:5 }}/>
+                  <div style={{ flex:1 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+                      <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{s.name}</span>
+                      {s.hot && <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:s.color, background:`${s.color}15`, padding:"2px 8px", borderRadius:100 }}>RECOMMENDED</span>}
+                    </div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:2 }}>
+                      <strong style={{ color:C.text }}>Loan: </strong>{s.amount} &nbsp;·&nbsp; <strong style={{ color:C.text }}>Rate: </strong>{s.rate}
+                    </div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.dim }}>{s.note}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Documents Checklist */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>📋 Documents Checklist</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {[
+                { doc:"Last 2 years ITR (Company + Directors)",       done:true  },
+                { doc:"Last 12 months Bank Statements",               done:true  },
+                { doc:"Audited Financial Statements (P&L + Balance Sheet)", done:true },
+                { doc:"GST Returns (last 12 months)",                 done:true  },
+                { doc:"CA-certified Financial Projections (3 years)", done:false },
+                { doc:"Business Plan / Pitch Deck",                   done:false },
+                { doc:"KYC — Directors & Company",                    done:true  },
+                { doc:"MCA Filings & Incorporation Certificate",      done:true  },
+                { doc:"Existing Loan / Liability Statement",          done:false },
+                { doc:"CIBIL / Credit Report (all directors)",        done:false },
+              ].map((item, i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", borderRadius:8, background:item.done ? `${C.green}08` : C.bg2, border:`1px solid ${item.done ? C.green+"20" : C.border}` }}>
+                  <span style={{ fontSize:14 }}>{item.done ? "✅" : "⬜"}</span>
+                  <span style={{ fontFamily:F, fontSize:13, color:item.done ? C.text : C.muted }}>{item.doc}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* CTA */}
+          <Card style={{ background:`${C.blue}06`, borderColor:`${C.blue}20` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>Ready to apply?</div>
+            <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:14 }}>
+              Garima can prepare your full loan readiness pack — financial projections, business plan, and lender deck — and connect you directly with SBI Startup Branch or SIDBI. Typically takes 5–7 working days.
+            </p>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              <a href={WA} target="_blank" rel="noopener"
+                style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px",
+                  borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                  color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
+                💬 WhatsApp Garima
+              </a>
+              <div style={{ display:"flex", alignItems:"center", padding:"11px 20px", borderRadius:12,
+                background:`${C.blue}10`, border:`1.5px solid ${C.blue}20`,
+                fontFamily:F, fontSize:13, fontWeight:700, color:C.blue }}>
+                💰 From ₹15,000 · 5–7 days
+              </div>
+            </div>
+          </Card>
+
+        </div>
       )}
 
       {tab === "boardpacks" && <BoardPacksTabbed/>}
