@@ -4722,7 +4722,13 @@ function Portal({ client, onLogout }) {
 
   const resolvedActions    = (!isDemo && liveActions)    ? liveActions    : (ACTIONS_BY_PACK[client?.client_pack||'startup'] || ACTIONS);
   const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
-  const resolvedReportData = (!isDemo && liveReportData) ? liveReportData : null;
+  const DEMO_REPORT_DATA = {
+    monthLabel: "March 2026",
+    score: 72,
+    varianceCommentary: "Revenue tracking slightly ahead of plan. Operating expenses within budget.",
+    metrics: { currentRatio: "1.8x", debtEquity: "0.4x", workingCapital: "₹1.2 Cr" },
+  };
+  const resolvedReportData = (!isDemo && liveReportData) ? liveReportData : DEMO_REPORT_DATA;
   const resolvedGarimaNote = (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
     : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
 
