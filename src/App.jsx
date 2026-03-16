@@ -320,7 +320,7 @@ function Login({ onLogin }) {
     if (authErr) { setError(authErr.message); return; }
     // Fetch fresh client row from DB to ensure all fields (client_pack etc) are present
     const { data: freshClient } = await supabase
-      .from("clients").select("*").eq("email", form.email.trim()).maybeSingle();
+      .from("clients").select("*").eq("email", form.email.trim()).single();
     onLogin(freshClient || client);
   };
 
@@ -344,7 +344,7 @@ function Login({ onLogin }) {
     });
     if (authErr) { setLoading(false); setError("Incorrect email or password."); return; }
     const { data, error: dbErr } = await supabase
-      .from("clients").select("*").eq("email", form.email.trim()).maybeSingle();
+      .from("clients").select("*").eq("email", form.email.trim()).single();
     setLoading(false);
     if (dbErr || !data) { setError("Account not found. Please register first."); return; }
     onLogin(data);
@@ -1176,7 +1176,7 @@ function LiveMarketWidget({ pack, kpis, reportData }) {
   const enrichedBench = benchmarks ? {
     ...benchmarks,
     metrics: benchmarks.metrics.map(m => {
-      let yours = null;
+      var yours = null;
       if (m.key === "revenue")  yours = kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value;
       if (m.key === "gross_margin") yours = kpis?.find(k=>k.label?.toLowerCase().includes("margin"))?.value;
       if (m.key === "burn")     yours = kpis?.find(k=>k.label?.toLowerCase().includes("burn"))?.value;
@@ -2029,7 +2029,7 @@ function CashFlow({ reportData, client, kpis }) {
                 ["Financing CF", "−₹5L",  "−₹5L",  "−₹5L",  "−₹15L" ],
                 ["Net CF",       "₹18L",  "₹33L",  "₹37L",  "₹88L"  ],
               ].map((r,i) => {
-                const bold = i===3;
+                var bold = i===3;
                 return (
                   <tr key={i} style={{ background:bold?`${C.blue}06`:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
                     {r.map((cell,j) => (
@@ -3983,7 +3983,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>📅 Compliance Due Date Calendar — March 2026</div>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {COMPLIANCE_DATES.map((c,i) => {
-            const [col,bg] = c.status==="critical"?[C.red,"#FEF2F2"]:c.status==="due-soon"?[C.amber,"#FFFBEB"]:[C.blue,"#EEF3FE"];
+            var [col,bg] = c.status==="critical"?[C.red,"#FEF2F2"]:c.status==="due-soon"?[C.amber,"#FFFBEB"]:[C.blue,"#EEF3FE"];
             return (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", borderRadius:10, background:bg, border:`1px solid ${col}22` }}>
                 <div style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:col, minWidth:52, whiteSpace:"nowrap" }}>{c.due}</div>
@@ -4200,7 +4200,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 { label:"Inventory Turnover",    value: reportData?.invTurnover  || "6.2x",  benchmark: reportData?.benchInvTurnover  || "MSME avg: 4–8x",         target:4,   actual: parseFloat(reportData?.invTurnover||"6.2"),   higher:true  },
                 { label:"Debtor Turnover",       value: reportData?.debtorTurn   || "7.8x",  benchmark: reportData?.benchDebtorTurn   || "Target: >10x",           target:10,  actual: parseFloat(reportData?.debtorTurn||"7.8"),    higher:true  },
               ].map((r, i) => {
-                const good = r.higher ? r.actual >= r.target : r.actual <= r.target;
+                var good = r.higher ? r.actual >= r.target : r.actual <= r.target;
                 return (
                   <div key={i} style={{ padding:"14px", borderRadius:12,
                     background: good ? `${C.green}06` : `${C.amber}06`,
@@ -4683,8 +4683,8 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { item:"CSR Compliance (if applicable)",     status: reportData?.csrStatus       || "na",      due:"2% of avg net profit"             },
                 { item:"Ind AS Financial Statements",        status: reportData?.indAsStatus     || "pending", due:"As per applicable standards"      },
               ].map((row, i) => {
-                const isDone = row.status === "done";
-                const isNA   = row.status === "na";
+                var isDone = row.status === "done";
+                var isNA   = row.status === "na";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
                     borderRadius:10,
@@ -4724,7 +4724,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { std:"Ind AS 12 — Deferred Tax",       status: reportData?.indAs12  || "done",   note:"Deferred tax assets and liabilities properly recognised" },
                 { std:"Related Party Disclosures",       status: reportData?.indAsRpt || "review", note:"All RPTs disclosed with arm's length justification" },
               ].map((item, i) => {
-                const ok = item.status === "done";
+                var ok = item.status === "done";
                 return (
                   <div key={i} style={{ padding:"12px", borderRadius:10,
                     background: ok ? `${C.green}06` : `${C.amber}06`,
@@ -4784,7 +4784,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { gap:"Legal and IP clean-up complete",        status:reportData?.ipoGap5||"pending", note:"All litigation disclosed, IP registered, key contracts reviewed and assignable." },
                 { gap:"ESOP scheme formalised",                status:reportData?.ipoGap6||"done",    note:"Employee stock options must be board-approved and documented before listing." },
               ].map((item, i) => {
-                const done = item.status === "done";
+                var done = item.status === "done";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10,
                     padding:"12px 14px", borderRadius:10,
@@ -5004,9 +5004,9 @@ function CFOPackContent({ reportData, client, kpis }) {
                     { m:"Cash Balance",    bud:"2.4Cr",act:"2.1Cr",fav:false, noCalc:true },
                     { m:"Headcount Cost",  bud:"95",  act:"88",  fav:true  },
                   ].map((r,i) => {
-                    const bv = parseFloat(r.bud), av = parseFloat(r.act);
-                    const varVal = r.noCalc ? "—" : (av - bv).toFixed(1);
-                    const varPct = r.noCalc ? "—" : ((av - bv)/bv*100).toFixed(1)+"%";
+                    var bv = parseFloat(r.bud), av = parseFloat(r.act);
+                    var varVal = r.noCalc ? "—" : (av - bv).toFixed(1);
+                    var varPct = r.noCalc ? "—" : ((av - bv)/bv*100).toFixed(1)+"%";
                     return (
                       <tr key={i} style={{ background:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
                         <td style={{ padding:"10px 12px", fontWeight:600, color:C.text }}>{r.m}</td>
@@ -6565,7 +6565,7 @@ function MyDocuments({ client }) {
 
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {displayDocs.map((doc, i) => {
-            const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
+            var byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
             return (
               <div key={doc.id || i} style={{ display:"flex", alignItems:"center",
                 justifyContent:"space-between", padding:"12px 14px", borderRadius:10,
@@ -6872,7 +6872,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
 
   // KPI cards — 2 per row grid
   const kpiCards  = (kpis || []).map(k => {
-    const isUp = k.trend === "up";
+    var isUp = k.trend === "up";
     return `<div style="background:#f8faff;border:1px solid #e0e7ff;border-radius:10px;padding:16px 18px;break-inside:avoid">
       <div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">${k.label}</div>
       <div style="font-size:22px;font-weight:800;color:#111827;font-family:monospace;margin-bottom:4px">${k.value || "—"}</div>
@@ -6895,8 +6895,8 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
 
   const pendingActions = (actions || []).filter(a => !a.done);
   const actionRows = pendingActions.map(a => {
-    const col = a.priority==="High"?"#EF4444":a.priority==="Medium"?"#D97706":"#059669";
-    const bg  = a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#ECFDF5";
+    var col = a.priority==="High"?"#EF4444":a.priority==="Medium"?"#D97706":"#059669";
+    var bg  = a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#ECFDF5";
     return `<tr>
       <td style="padding:10px 14px;font-size:12px;color:#374151;border-bottom:1px solid #F3F4F6">${a.text}</td>
       <td style="padding:10px 14px;border-bottom:1px solid #F3F4F6">
@@ -7275,13 +7275,13 @@ function Portal({ client, onLogout }) {
       setDataLoading(true);
       const [kpiRes, actionRes, engRes, invRes, rdRes] = await Promise.all([
         supabase.from("kpis").select("*").eq("client_id", client.id)
-          .order("updated_at", { ascending:false }).limit(1).maybeSingle(),
+          .order("updated_at", { ascending:false }).limit(1).single(),
         supabase.from("action_items").select("*").eq("client_id", client.id)
           .order("created_at", { ascending:false }),
-        supabase.from("engagements").select("*").eq("client_id", client.id).maybeSingle(),
+        supabase.from("engagements").select("*").eq("client_id", client.id).single(),
         supabase.from("invoices").select("*").eq("client_id", client.id)
           .order("created_at", { ascending:false }),
-        supabase.from("report_data").select("*").eq("client_id", client.id).maybeSingle(),
+        supabase.from("report_data").select("*").eq("client_id", client.id).single(),
       ]);
       if (kpiRes.data)    setLiveKpis(kpiRes.data);
       if (actionRes.data) setLiveActions(actionRes.data);
@@ -7465,7 +7465,7 @@ function AdminLogin({ onLogin }) {
     if (authErr) { setLoading(false); setError("Invalid credentials."); return; }
     // Check if admin
     const { data: adminData } = await supabase
-      .from("admins").select("*").eq("email", form.email).maybeSingle();
+      .from("admins").select("*").eq("email", form.email).single();
     setLoading(false);
     if (!adminData) { await supabase.auth.signOut(); setError("Not authorised as admin."); return; }
     onLogin(adminData);
@@ -7721,7 +7721,7 @@ function AdminPanel({ admin, onLogout }) {
     setSelected(c); setSaved(false);
     // Load latest KPIs
     const { data: kpiData } = await supabase.from("kpis")
-      .select("*").eq("client_id", c.id).order("updated_at", { ascending:false }).limit(1).maybeSingle();
+      .select("*").eq("client_id", c.id).order("updated_at", { ascending:false }).limit(1).single();
     if (kpiData) setKpis(kpiData);
     else setKpis({ month:"", revenue:"", gross_margin:"", cash_balance:"", burn_rate:"", runway:"", arr:"", garima_note:"" });
     // Load actions
@@ -7730,7 +7730,7 @@ function AdminPanel({ admin, onLogout }) {
     setActions(actData || []);
     // Load engagement
     const { data: engData } = await supabase.from("engagements")
-      .select("*").eq("client_id", c.id).maybeSingle();
+      .select("*").eq("client_id", c.id).single();
     if (engData) setEngagement(engData);
     else setEngagement({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
     // Load documents
@@ -7747,7 +7747,7 @@ function AdminPanel({ admin, onLogout }) {
     setRequests(reqData || []);
     // Load report data
     const { data: rdData } = await supabase.from("report_data")
-      .select("*").eq("client_id", c.id).maybeSingle();
+      .select("*").eq("client_id", c.id).single();
     const defaults = defaultReportData(c.client_pack || "startup");
     if (rdData?.data) {
       try {
@@ -7817,7 +7817,7 @@ function AdminPanel({ admin, onLogout }) {
     setLoading(true);
     const payload = { client_id: selected.id, data: JSON.stringify(reportData), updated_at: new Date().toISOString() };
     // Check if exists first
-    const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).maybeSingle();
+    const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).single();
     if (existing?.id) {
       await supabase.from("report_data").update(payload).eq("id", existing.id);
     } else {
@@ -8803,23 +8803,23 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       </thead>
                       <tbody>
                         {(reportData.variance || []).map((row, i) => {
-                          const bv = parseFloat(row.budget), av = parseFloat(row.actual);
-                          const varNum = (!row.noCalc && !isNaN(bv) && !isNaN(av)) ? (av-bv).toFixed(1) : "—";
-                          const varPct = (!row.noCalc && !isNaN(bv) && !isNaN(av) && bv!==0)
+                          var bv = parseFloat(row.budget), av = parseFloat(row.actual);
+                          var varNum = (!row.noCalc && !isNaN(bv) && !isNaN(av)) ? (av-bv).toFixed(1) : "—";
+                          var varPct = (!row.noCalc && !isNaN(bv) && !isNaN(av) && bv!==0)
                             ? ((av-bv)/Math.abs(bv)*100).toFixed(1)+"%" : "";
-                          const isBold = ["Gross Profit","EBITDA","Net Profit"].some(k => row.metric.includes(k));
+                          var isBold = ["Gross Profit","EBITDA","Net Profit"].some(k => row.metric.includes(k));
                           return (
                             <tr key={i} style={{ background:isBold?`${C.blue}06`:i%2===0?"#FFFFFF":C.bg, borderBottom:`1px solid ${C.border}` }}>
                               <td style={{ padding:"10px 12px", fontWeight:isBold?700:500, fontSize:13, color:C.text }}>{row.metric}</td>
                               <td style={{ padding:"6px 8px" }}>
                                 <InlineInput value={row.budget}
-                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],budget:v}; setReportData(r=>({...r,variance:arr})); }}
+                                  onCommit={v => { var arr=[...reportData.variance]; arr[i]={...arr[i],budget:v}; setReportData(r=>({...r,variance:arr})); }}
                                   placeholder="budget"
                                   style={{ textAlign:"right", color:C.muted, background:C.bg }}/>
                               </td>
                               <td style={{ padding:"6px 8px" }}>
                                 <InlineInput value={row.actual}
-                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],actual:v}; setReportData(r=>({...r,variance:arr})); }}
+                                  onCommit={v => { var arr=[...reportData.variance]; arr[i]={...arr[i],actual:v}; setReportData(r=>({...r,variance:arr})); }}
                                   placeholder="actual"
                                   style={{ textAlign:"right", fontWeight:700, color:C.text, background:"#F0F4FF" }}/>
                               </td>
@@ -8829,7 +8829,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                                 {varPct && <div style={{ fontSize:10, opacity:0.7 }}>{row.fav?"+":""}{varPct}</div>}
                               </td>
                               <td style={{ padding:"8px", textAlign:"center" }}>
-                                <button onClick={() => { const v=[...reportData.variance]; v[i]={...v[i],fav:!v[i].fav}; setReportData(r=>({...r,variance:v})); }}
+                                <button onClick={() => { var v=[...reportData.variance]; v[i]={...v[i],fav:!v[i].fav}; setReportData(r=>({...r,variance:v})); }}
                                   style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:F, fontSize:12, fontWeight:700,
                                     background:row.fav?`${C.green}15`:`${C.red}15`, color:row.fav?C.green:C.red }}>
                                   {row.fav?"✅ Fav":"⚠️ Unfav"}
@@ -9336,7 +9336,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </p>
                   {(reportData.checklist || []).map((item, i) => (
                     <div key={i} onClick={() => {
-                      const cl=[...reportData.checklist]; cl[i]={...cl[i],done:!cl[i].done};
+                      var cl=[...reportData.checklist]; cl[i]={...cl[i],done:!cl[i].done};
                       setReportData(r=>({...r,checklist:cl}));
                     }} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
                       borderRadius:10, marginBottom:8, cursor:"pointer",
@@ -9369,7 +9369,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           { key:"bench",  placeholder:"Benchmark",      color:C.bg,     fc:C.text },
                         ].map(col => (
                           <InlineInput key={col.key} value={b[col.key]}
-                            onCommit={v => { const bm=[...reportData.benchmarks]; bm[i]={...bm[i],[col.key]:v}; setReportData(r=>({...r,benchmarks:bm})); }}
+                            onCommit={v => { var bm=[...reportData.benchmarks]; bm[i]={...bm[i],[col.key]:v}; setReportData(r=>({...r,benchmarks:bm})); }}
                             placeholder={col.placeholder}
                             style={{ fontFamily:FM, color:col.fc, background:col.color }}/>
                         ))}
@@ -10029,7 +10029,7 @@ export default function App() {
       if (session?.user?.email) {
         if (isAdminRoute) {
           const { data: adminData } = await supabase
-            .from("admins").select("*").eq("email", session.user.email).maybeSingle();
+            .from("admins").select("*").eq("email", session.user.email).single();
           if (adminData) setAdmin(adminData);
         } else {
           // Check if this is a demo email — restore demo session without DB hit
@@ -10043,7 +10043,7 @@ export default function App() {
           } else {
             // Real client — fetch from Supabase
             const { data: clientData } = await supabase
-              .from("clients").select("*").eq("email", session.user.email).maybeSingle();
+              .from("clients").select("*").eq("email", session.user.email).single();
             if (clientData) setClient(clientData);
           }
         }
