@@ -7762,10 +7762,10 @@ function AdminPanel({ admin, onLogout }) {
     // Load report data
     const { data: rdData } = await supabase.from("report_data")
       .select("*").eq("client_id", c.id).single();
+    const defaults = defaultReportData(c.client_pack || "startup");
     if (rdData?.data) {
       try {
         const parsed = JSON.parse(rdData.data);
-        const defaults = defaultReportData(c.client_pack || "startup");
         setReportData({
           ...defaults,
           ...parsed,
@@ -7774,9 +7774,9 @@ function AdminPanel({ admin, onLogout }) {
           varianceCommentary: parsed.varianceCommentary || defaults.varianceCommentary,
           prevKpis:           { ...defaults.prevKpis, ...(parsed.prevKpis          || {}) },
         });
-      } catch(e) { setReportData(defaultReportData(c.client_pack || "startup")); }
+      } catch(e) { setReportData(defaults)); }
     }
-    else setReportData(defaultReportData(c.client_pack || "startup"));
+    else setReportData(defaults);
   };
 
   const saveKPIs = async () => {
