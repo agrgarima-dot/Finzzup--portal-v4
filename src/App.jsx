@@ -328,6 +328,7 @@ function Login({ onLogin }) {
   const [form, setForm]     = useState({ email:"", password:"", confirm:"" });
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
+  const [consent, setConsent] = useState(false);
 
   // Note: session restore is handled at App level — Login only shows when no session exists
 
@@ -460,10 +461,36 @@ function Login({ onLogin }) {
             />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:8, textAlign:"center" }}>{error}</p>}
 
-            <button onClick={checkCode} disabled={loading} style={{ width:"100%", marginTop:16, padding:14,
-              borderRadius:12, border:"none", background:C.grad1, color:"white",
-              fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
-              boxShadow:"0 6px 20px rgba(59,111,247,0.28)", touchAction:"manipulation" }}>
+            {/* ── AI & Data Consent ── */}
+            <div onClick={() => setConsent(c => !c)}
+              style={{ display:"flex", alignItems:"flex-start", gap:10, marginTop:18,
+                padding:"12px 14px", borderRadius:10, cursor:"pointer",
+                background: consent ? `${C.blue}08` : C.bg3,
+                border:`1.5px solid ${consent ? C.blue : C.border}`,
+                transition:"all 0.2s" }}>
+              <div style={{ width:18, height:18, borderRadius:4, flexShrink:0, marginTop:1,
+                border:`2px solid ${consent ? C.blue : C.dim}`,
+                background: consent ? C.blue : "transparent",
+                display:"flex", alignItems:"center", justifyContent:"center",
+                transition:"all 0.2s" }}>
+                {consent && <span style={{ color:"white", fontSize:11, fontWeight:900, lineHeight:1 }}>✓</span>}
+              </div>
+              <p style={{ margin:0, fontSize:12, color:C.muted, lineHeight:1.6, fontFamily:F }}>
+                I understand that this portal uses <strong>AI (powered by Anthropic/Claude)</strong> to
+                generate financial analysis from data entered by my advisor. Data is processed securely
+                and <strong>not stored or used for AI training</strong>.{" "}
+                By continuing, I acknowledge this and consent to its use for my advisory services.
+              </p>
+            </div>
+
+            <button onClick={checkCode} disabled={loading || !consent} style={{ width:"100%", marginTop:14, padding:14,
+              borderRadius:12, border:"none", background: consent ? C.grad1 : C.bg3,
+              color: consent ? "white" : C.dim,
+              fontFamily:F, fontWeight:700, fontSize:15,
+              cursor: consent ? "pointer" : "not-allowed",
+              opacity:loading ? 0.75 : 1,
+              boxShadow: consent ? "0 6px 20px rgba(59,111,247,0.28)" : "none",
+              transition:"all 0.2s", touchAction:"manipulation" }}>
               {loading ? "Checking…" : "Continue →"}
             </button>
 
