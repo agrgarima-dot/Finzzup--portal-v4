@@ -1,10 +1,65 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
-import {
-  AreaChart, Area, BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Legend,
-  Tooltip, ResponsiveContainer, ReferenceLine
-} from "recharts";
+// ─── CHART STUBS (no recharts dependency) ─────────────────────────────────────
+const ResponsiveContainer = ({ children, width, height }) => (
+  <div style={{ width: width||"100%", height: height||200, position:"relative" }}>{children}</div>
+);
+const _ChartBase = ({ data=[], height=180, children, margin={} }) => (
+  <div style={{ width:"100%", height, position:"relative", display:"flex", alignItems:"flex-end", gap:2, padding:"8px 4px 20px" }}>
+    {children}
+  </div>
+);
+// Simple bar chart renderer
+const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
+  const maxVal = Math.max(...data.flatMap(d => bars.map(b => Math.abs(d[b.key]||0))), 1);
+  return (
+    <div style={{ width:"100%", height, display:"flex", alignItems:"flex-end", gap:3, padding:"4px 0 20px" }}>
+      {data.map((d,i) => (
+        <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
+          {bars.map(b => (
+            <div key={b.key} style={{ width:"100%", height: Math.max(2,(Math.abs(d[b.key]||0)/maxVal)*(height-24)),
+              background: b.fill||"#3B6FF7", borderRadius:"3px 3px 0 0", opacity: b.opacity||1 }}/>
+          ))}
+          <div style={{ fontSize:9, color:"#9CA3AF", marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+// Simple line chart renderer  
+const SimpleLineChart = ({ data=[], lines=[], height=180 }) => {
+  const allVals = data.flatMap(d => lines.map(l => d[l.key]||0));
+  const maxVal = Math.max(...allVals, 1);
+  const minVal = Math.min(...allVals, 0);
+  const range = maxVal - minVal || 1;
+  const w = 100, h = height - 30;
+  return (
+    <div style={{ width:"100%", height, position:"relative" }}>
+      <svg viewBox={`0 0 ${data.length*20} ${h}`} style={{ width:"100%", height:h }} preserveAspectRatio="none">
+        {lines.map(l => {
+          const pts = data.map((d,i) => `${i*20+10},${h - ((d[l.key]||0)-minVal)/range*h}`).join(" ");
+          return <polyline key={l.key} points={pts} fill="none" stroke={l.stroke||"#3B6FF7"} strokeWidth="2"/>;
+        })}
+      </svg>
+      <div style={{ display:"flex", justifyContent:"space-between", padding:"0 4px" }}>
+        {data.map((d,i) => <span key={i} style={{ fontSize:9, color:"#9CA3AF" }}>{d.month||""}</span>)}
+      </div>
+    </div>
+  );
+};
+// Stubs for unused recharts components (keep JSX valid)
+const AreaChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
+const BarChart = ({children,...p}) => <SimpleBarChart data={p.data||[]} bars={[]} height={p.height||180}/>;
+const LineChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
+const Area = () => null;
+const Bar = () => null;
+const Line = () => null;
+const XAxis = () => null;
+const YAxis = () => null;
+const CartesianGrid = () => null;
+const Legend = () => null;
+const Tooltip = () => null;
+const ReferenceLine = () => null;
 import LOGO_SRC from "./logo.png";
 
 // ─── TOKENS ──────────────────────────────────────────────────────────────────
