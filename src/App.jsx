@@ -8699,6 +8699,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 </Card>
               ) : (<>
 
+                {/* Pre-compute ratios once — avoids crashes from inline calls */}
+                {(() => { try { window.__adminCalc = calcRatios(); } catch(e) { window.__adminCalc = {}; } return null; })()}
+
                 {/* ══ 1: MONTH LABEL ═══════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
@@ -9018,9 +9021,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           val={reportData.dscr || ""}
                           onChange={v => setReportData(r => ({...r, dscr:v}))}
                           placeholder="e.g. 2.1x" mono/>
-                        {!reportData.dscr && calcRatios().dscrCalc && (
+                        {!reportData.dscr && (window.__adminCalc||{}).dscrCalc && (
                           <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>
-                            {"⚡ Calculated: "}{calcRatios().dscrCalc}{" — will auto-fill on Generate"}
+                            {"⚡ Calculated: "}{(window.__adminCalc||{}).dscrCalc}{" — will auto-fill on Generate"}
                           </div>
                         )}
                       </div>
@@ -9029,9 +9032,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           val={reportData.interestCoverage || ""}
                           onChange={v => setReportData(r => ({...r, interestCoverage:v}))}
                           placeholder="e.g. 4.2x" mono/>
-                        {!reportData.interestCoverage && calcRatios().interestCoverageCalc && (
+                        {!reportData.interestCoverage && (window.__adminCalc||{}).interestCoverageCalc && (
                           <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>
-                            {"⚡ Calculated: "}{calcRatios().interestCoverageCalc}
+                            {"⚡ Calculated: "}{(window.__adminCalc||{}).interestCoverageCalc}
                           </div>
                         )}
                       </div>
@@ -9060,9 +9063,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           val={reportData.debtEbitda || ""}
                           onChange={v => setReportData(r => ({...r, debtEbitda:v}))}
                           placeholder="e.g. 2.4x" mono/>
-                        {!reportData.debtEbitda && calcRatios().debtEbitdaCalc && (
+                        {!reportData.debtEbitda && (window.__adminCalc||{}).debtEbitdaCalc && (
                           <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>
-                            {"⚡ Calculated: "}{calcRatios().debtEbitdaCalc}
+                            {"⚡ Calculated: "}{(window.__adminCalc||{}).debtEbitdaCalc}
                           </div>
                         )}
                       </div>
@@ -9097,14 +9100,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                             val={reportData[f.key] || ""}
                             onChange={v => setReportData(r => ({...r, [f.key]:v}))}
                             placeholder={f.placeholder} mono/>
-                          {!reportData[f.key] && f.key==="ltvCac" && calcRatios().ltvCacCalc && (
-                            <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>{"⚡ Calculated: "}{calcRatios().ltvCacCalc}</div>
+                          {!reportData[f.key] && f.key==="ltvCac" && (window.__adminCalc||{}).ltvCacCalc && (
+                            <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>{"⚡ Calculated: "}{(window.__adminCalc||{}).ltvCacCalc}</div>
                           )}
-                          {!reportData[f.key] && f.key==="burnMultiple" && calcRatios().burnMultipleCalc && (
-                            <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>{"⚡ Calculated: "}{calcRatios().burnMultipleCalc}</div>
+                          {!reportData[f.key] && f.key==="burnMultiple" && (window.__adminCalc||{}).burnMultipleCalc && (
+                            <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>{"⚡ Calculated: "}{(window.__adminCalc||{}).burnMultipleCalc}</div>
                           )}
-                          {!reportData[f.key] && f.key==="cacPayback" && calcRatios().cacPaybackCalc && (
-                            <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>{"⚡ Calculated: "}{calcRatios().cacPaybackCalc}</div>
+                          {!reportData[f.key] && f.key==="cacPayback" && (window.__adminCalc||{}).cacPaybackCalc && (
+                            <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>{"⚡ Calculated: "}{(window.__adminCalc||{}).cacPaybackCalc}</div>
                           )}
                         </div>
                       ))}
@@ -9591,7 +9594,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
 
                   {/* Show auto-calculated preview */}
                   {(() => {
-                    const c = calcRatios();
+                    const c = window.__adminCalc || {};
                     const items = [
                       c.interestCoverageCalc && { label:"Interest Coverage", value:c.interestCoverageCalc },
                       c.debtEbitdaCalc       && { label:"Debt / EBITDA",     value:c.debtEbitdaCalc       },
