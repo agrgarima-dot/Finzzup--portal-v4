@@ -7774,7 +7774,7 @@ function AdminPanel({ admin, onLogout }) {
           varianceCommentary: parsed.varianceCommentary || defaults.varianceCommentary,
           prevKpis:           { ...defaults.prevKpis, ...(parsed.prevKpis          || {}) },
         });
-      } catch(e) { setReportData(defaults)); }
+      } catch(e) { setReportData(defaults); }
     }
     else setReportData(defaults);
   };
