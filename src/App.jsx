@@ -1434,9 +1434,9 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
       )}
 
       {/* Quick links row — pack-aware */}
-      {(() => {
-        const qpack = client?.client_pack || client?.clientPack || "startup";
-        const quickItems = qpack === "msme" ? [
+      {(function() {
+        var qpack = client?.client_pack || client?.clientPack || "startup";
+        var quickItems = qpack === "msme" ? [
           { icon:"📊", label:"MSME Report", color:C.teal, action:"myreport",
             sub: reportData?.monthLabel ? `${reportData.monthLabel} report ready` : "Awaiting data from Garima" },
           { icon:"✅", label:"Action Items", color:C.red, action:"actions",
@@ -1471,7 +1471,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
         ))}
       </div>
         );
-      })()}
+      }())}
 
       <style>{`
         @media(max-width:640px){
@@ -3925,9 +3925,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
           P&L Summary{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : " — Current Month"}
         </div>
         <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>vs prior month</div>
-        {(() => {
-          const pl = reportData?.pl;
-          const hasLive = pl && Object.values(pl).some(v => v?.actual);
+        {(function() {
+          var pl = reportData?.pl;
+          var hasLive = pl && Object.values(pl).some(v => v?.actual);
           if (hasLive) {
             return [
               { key:"revenue",     label:"Revenue"           },
@@ -3950,7 +3950,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
             { label:"EBITDA",             value:"₹14.7L", pct:"17.5%", trend:"up",   sub:"EBITDA margin 17.5%" },
             { label:"Net Profit",         value:"₹10.2L", pct:"12.1%", trend:"up",   sub:"Net margin 12.1%" },
           ].map((r,i) => <StatRow key={i} {...r}/>);
-        })()}
+        }())}
       </Card>
 
       {reportData?.metrics?.some(m => m.value) && (
@@ -4314,8 +4314,8 @@ function MSMEPackContent({ reportData, kpis, client }) {
           </Card>
 
           {/* Auto-flagged issues */}
-          {(() => {
-            const flags = [];
+          {(function() {
+            var flags = [];
             if (reportData?.dscr && parseFloat(reportData.dscr)<1.25) flags.push({ text:`DSCR of ${reportData.dscr} is below the 1.25x minimum — banks will reject the application. Increase operating income or reduce existing debt first.`, severity:"high" });
             if (reportData?.currentRatio && parseFloat(reportData.currentRatio)<1.33) flags.push({ text:`Current Ratio of ${reportData.currentRatio} is below 1.33x — the minimum for working capital loans. Reduce short-term liabilities or increase current assets.`, severity:"high" });
             if (reportData?.debtEbitda && parseFloat(reportData.debtEbitda)>4) flags.push({ text:`Debt/EBITDA of ${reportData.debtEbitda} is high for an MSME. Banks may cap the loan amount or require additional collateral.`, severity:"medium" });
@@ -4341,7 +4341,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 </div>
               </Card>
             ) : null;
-          })()}
+          }())}
 
           {/* Recommended Schemes for MSME */}
           <Card>
@@ -4940,9 +4940,9 @@ function CFOPackContent({ reportData, client, kpis }) {
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
               P&L at a Glance{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
             </div>
-            {(() => {
-              const pl = reportData?.pl;
-              const hasLive = pl && Object.values(pl).some(v => v?.actual);
+            {(function() {
+              var pl = reportData?.pl;
+              var hasLive = pl && Object.values(pl).some(v => v?.actual);
               if (hasLive) {
                 return [
                   { key:"revenue",     label:"Revenue"      },
@@ -4958,7 +4958,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 ));
               }
               return (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.plRows || PACK_CONFIG.startup.plRows).map((r,i) => <StatRow key={i} {...r}/>);
-            })()}
+            }())}
           </Card>
           <Card style={{ borderLeft:`3px solid ${C.green}` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items</div>
@@ -5399,14 +5399,14 @@ function CFOPackContent({ reportData, client, kpis }) {
           </Card>
 
           {/* AUTO FLAGS */}
-          {(() => {
-            const flags = [];
+          {(function() {
+            var flags = [];
             if (reportData?.currentRatio && parseFloat(reportData.currentRatio)<2) flags.push("Current Ratio is below 2.0x — banks prefer a stronger liquidity position");
             if (reportData?.dscr && parseFloat(reportData.dscr)<1.25) flags.push("DSCR below 1.25x — lenders will question debt repayment capacity");
             if (reportData?.interestCoverage && parseFloat(reportData.interestCoverage)<3) flags.push("Interest Coverage below 3.0x — may limit eligibility for larger amounts");
             if (reportData?.debtEbitda && parseFloat(reportData.debtEbitda)>3) flags.push("Debt/EBITDA above 3.0x — lenders may view this as overleveraged relative to earnings");
             if (reportData?.existingDebt && reportData.existingDebt.toLowerCase()!=="nil" && reportData.existingDebt!=="Not provided") flags.push(`Existing debt of ${reportData.existingDebt} — lenders will factor this into total exposure`);
-            const rkpi = kpis?.find(k=>k.label?.toLowerCase().includes("runway"));
+            var rkpi = kpis?.find(k=>k.label?.toLowerCase().includes("runway"));
             if (rkpi && parseFloat(rkpi.value)<6) flags.push("Runway below 6 months — banks may see this as distress. Consider raising equity first");
             return flags.length>0 ? (
               <Card style={{ borderLeft:`3px solid ${C.amber}`, background:`${C.amber}06` }}>
@@ -5420,7 +5420,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 </div>
               </Card>
             ) : null;
-          })()}
+          }())}
 
           {/* IMPROVEMENTS */}
           {Array.isArray(reportData?.loanImprovements) && reportData.loanImprovements.some(x=>x) && (
