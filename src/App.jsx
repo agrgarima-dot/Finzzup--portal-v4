@@ -3008,22 +3008,8 @@ function useMarketData() {
         const sarInr = rates.SAR ? (1 / rates.SAR).toFixed(2) : null;
         const aedInr = rates.AED ? (1 / rates.AED).toFixed(2) : null;
 
-        // 2. Nifty 50 via Yahoo Finance (no key needed)
+        // Nifty removed — CORS blocked from browser
         let nifty = null, niftyChg = null;
-        try {
-          const nRes = await fetch(
-            "https://query1.finance.yahoo.com/v8/finance/chart/%5ENSEI?interval=1d&range=2d",
-            { headers: { "Accept": "application/json" } }
-          );
-          const nData = await nRes.json();
-          const closes = nData?.chart?.result?.[0]?.indicators?.quote?.[0]?.close || [];
-          if (closes.length >= 2) {
-            const last = closes[closes.length - 1];
-            const prev = closes[closes.length - 2];
-            nifty    = last  ? last.toFixed(0) : null;
-            niftyChg = (last && prev) ? (((last - prev) / prev) * 100).toFixed(2) : null;
-          }
-        } catch(e) { /* Yahoo sometimes blocks — non-critical */ }
 
         // 3. RBI Repo rate — hardcoded current value, update monthly
         // RBI API has CORS issues so we use a known current value
@@ -8055,25 +8041,23 @@ function AdminPanel({ admin, onLogout }) {
       calc.inventoryDaysCalc    = ((inventory / (revenue/30))).toFixed(0) + " days";
 
     // ── STARTUP UNIT ECONOMICS ──
-    // Calculate CAC from raw inputs if available
-    const mktgSpend    = parse(rd.totalMktgSpend);
-    const newCusts     = parse(rd.newCustomers);
-    const avgRevCust   = parse(rd.avgRevPerCust);
-    const retentionMos = parse(rd.avgRetentionMos);
-    const derivedCac   = (mktgSpend && newCusts && newCusts > 0) ? mktgSpend / newCusts : cac;
-    const derivedLtv   = (avgRevCust && retentionMos) ? avgRevCust * retentionMos / 12 : ltv;
+    // Calculate CAC and LTV from raw inputs if available
+    var mktgSpend    = parse(rd.totalMktgSpend);
+    var newCusts     = parse(rd.newCustomers);
+    var avgRevCust   = parse(rd.avgRevPerCust);
+    var retentionMos = parse(rd.avgRetentionMos);
+    var derivedCac   = (mktgSpend && newCusts && newCusts > 0) ? mktgSpend / newCusts : cac;
+    var derivedLtv   = (avgRevCust && retentionMos) ? avgRevCust * retentionMos / 12 : ltv;
 
     if (derivedCac && !cac)
-      calc.cacCalc              = "₹" + Math.round(derivedCac * 100).toLocaleString("en-IN");
+      calc.cacCalc = "Rs." + Math.round(derivedCac * 100).toLocaleString("en-IN");
     if (derivedLtv && !ltv)
-      calc.ltvCalc              = "₹" + Math.round(derivedLtv * 1000).toLocaleString("en-IN");
-
+      calc.ltvCalc = "Rs." + Math.round(derivedLtv * 1000).toLocaleString("en-IN");
     if ((derivedLtv || ltv) && (derivedCac || cac) && (derivedCac || cac) > 0)
-      calc.ltvCacCalc           = ((derivedLtv||ltv) / (derivedCac||cac)).toFixed(1) + "x";
-
+      calc.ltvCacCalc = ((derivedLtv||ltv) / (derivedCac||cac)).toFixed(1) + "x";
     if ((derivedCac || cac) && ebitda && revenue) {
-      const margin = parse(pl.gpMargin) || 40;
-      calc.cacPaybackCalc       = (((derivedCac||cac) / (revenue * margin / 100)) * 12).toFixed(0) + " months";
+      var margin = parse(pl.gpMargin) || 40;
+      calc.cacPaybackCalc = (((derivedCac||cac) / (revenue * margin / 100)) * 12).toFixed(0) + " months";
     }
 
     if (burn && arr && arr > 0)
@@ -8699,8 +8683,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 </Card>
               ) : (<>
 
-                {/* Pre-compute ratios once — avoids crashes from inline calls */}
-                {(() => { try { window.__adminCalc = calcRatios(); } catch(e) { window.__adminCalc = {}; } return null; })()}
+                {/* Pre-compute ratios once */}
+                {(function() { try { window.__adminCalc = calcRatios(); } catch(ex) { window.__adminCalc = {}; } return null; }())}
 
                 {/* ══ 1: MONTH LABEL ═══════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
