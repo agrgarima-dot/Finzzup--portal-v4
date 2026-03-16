@@ -10,7 +10,7 @@ const _ChartBase = ({ data=[], height=180, children, margin={} }) => (
   </div>
 );
 // Simple bar chart renderer
-function SimpleBarChart({ data=[], bars=[], height=180 }) {
+const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
   const maxVal = Math.max(...data.flatMap(d => bars.map(b => Math.abs(d[b.key]||0))), 1);
   return (
     <div style={{ width:"100%", height, display:"flex", alignItems:"flex-end", gap:3, padding:"4px 0 20px" }}>
@@ -27,7 +27,7 @@ function SimpleBarChart({ data=[], bars=[], height=180 }) {
   );
 };
 // Simple line chart renderer  
-function SimpleLineChart({ data=[], lines=[], height=180 }) {
+const SimpleLineChart = ({ data=[], lines=[], height=180 }) => {
   const allVals = data.flatMap(d => lines.map(l => d[l.key]||0));
   const maxVal = Math.max(...allVals, 1);
   const minVal = Math.min(...allVals, 0);
@@ -37,7 +37,7 @@ function SimpleLineChart({ data=[], lines=[], height=180 }) {
     <div style={{ width:"100%", height, position:"relative" }}>
       <svg viewBox={`0 0 ${data.length*20} ${h}`} style={{ width:"100%", height:h }} preserveAspectRatio="none">
         {lines.map(l => {
-          var pts = data.map((d,i) => `${i*20+10},${h - ((d[l.key]||0)-minVal)/range*h}`).join(" ");
+          const pts = data.map((d,i) => `${i*20+10},${h - ((d[l.key]||0)-minVal)/range*h}`).join(" ");
           return <polyline key={l.key} points={pts} fill="none" stroke={l.stroke||"#3B6FF7"} strokeWidth="2"/>;
         })}
       </svg>
@@ -269,7 +269,7 @@ const Badge = ({ children, color=C.blue, bg }) => (
   </span>
 );
 
-function PriBadge({ p }) {
+const PriBadge = ({ p }) => {
   const map = { High:[C.red,"#FEF2F2"], Medium:[C.amber,"#FFFBEB"], Low:[C.green,"#ECFDF5"] };
   const [c,bg] = map[p]||map.Low;
   return <Badge color={c} bg={bg}>{p}</Badge>;
@@ -277,7 +277,7 @@ function PriBadge({ p }) {
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
 
-function Logo({ size=32, darkText=false, showTagline=false }) {
+const Logo = ({ size=32, darkText=false, showTagline=false }) => {
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
       <img src={LOGO_SRC} alt="Finzzup"
@@ -1417,8 +1417,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
             </div>
           </Card>
         );
-      })()
-}
+      })()}
 
       {/* Garima's note — pack-aware */}
       <Card style={{ marginBottom:24, borderLeft:`3px solid ${ovPack==="msme"?C.teal:ovPack==="corporate"?C.purple:C.blue}` }}>
@@ -1528,7 +1527,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
         ))}
       </div>
         );
-      })()}
+      }())}
 
       <style>{`
         @media(max-width:640px){
@@ -2086,7 +2085,7 @@ function CashFlow({ reportData, client, kpis }) {
                 ["Financing CF", "−₹5L",  "−₹5L",  "−₹5L",  "−₹15L" ],
                 ["Net CF",       "₹18L",  "₹33L",  "₹37L",  "₹88L"  ],
               ].map((r,i) => {
-                var bold = i===3;
+                const bold = i===3;
                 return (
                   <tr key={i} style={{ background:bold?`${C.blue}06`:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
                     {r.map((cell,j) => (
@@ -2137,12 +2136,12 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
   // Auto-generate strategic alerts from KPI data
   const strategicAlerts = (() => {
     if (!kpis || kpis.length === 0) return [];
-    var alerts = [];
-    var run  = kpis.find(k=>k.label?.toLowerCase().includes("runway"));
-    var cash = kpis.find(k=>k.label?.toLowerCase().includes("cash"));
-    var burn = kpis.find(k=>k.label?.toLowerCase().includes("burn"));
-    var rev  = kpis.find(k=>k.label?.toLowerCase().includes("rev"));
-    var mar  = kpis.find(k=>k.label?.toLowerCase().includes("margin"));
+    const alerts = [];
+    const run  = kpis.find(k=>k.label?.toLowerCase().includes("runway"));
+    const cash = kpis.find(k=>k.label?.toLowerCase().includes("cash"));
+    const burn = kpis.find(k=>k.label?.toLowerCase().includes("burn"));
+    const rev  = kpis.find(k=>k.label?.toLowerCase().includes("rev"));
+    const mar  = kpis.find(k=>k.label?.toLowerCase().includes("margin"));
     if (run  && parseFloat(run.value)  < 3)  alerts.push({ text:`🔴 Runway is ${run.value} — raise capital or cut costs immediately. Every week counts.`,   priority:"High",   color:C.red    });
     if (run  && parseFloat(run.value)  < 6  && parseFloat(run.value) >= 3) alerts.push({ text:`⚠️ Runway at ${run.value} — start fundraise conversations now. 6 months is the minimum buffer.`, priority:"High", color:C.amber });
     if (burn && burn.trend === "down") alerts.push({ text:`Burn increased to ${burn.value} — review discretionary spend and defer non-essential hiring.`, priority:"Medium", color:C.amber });
@@ -4004,7 +4003,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
             { label:"EBITDA",             value:"₹14.7L", pct:"17.5%", trend:"up",   sub:"EBITDA margin 17.5%" },
             { label:"Net Profit",         value:"₹10.2L", pct:"12.1%", trend:"up",   sub:"Net margin 12.1%" },
           ].map((r,i) => <StatRow key={i} {...r}/>);
-        })()}
+        }())}
       </Card>
 
       {reportData?.metrics?.some(m => m.value) && (
@@ -4037,8 +4036,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>📅 Compliance Due Date Calendar — March 2026</div>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {COMPLIANCE_DATES.map((c,i) => {
-            var col = c.status==="critical"?C.red:c.status==="due-soon"?C.amber:C.blue;
-            var bg  = c.status==="critical"?"#FEF2F2":c.status==="due-soon"?"#FFFBEB":"#EEF3FE";
+            const [col,bg] = c.status==="critical"?[C.red,"#FEF2F2"]:c.status==="due-soon"?[C.amber,"#FFFBEB"]:[C.blue,"#EEF3FE"];
             return (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", borderRadius:10, background:bg, border:`1px solid ${col}22` }}>
                 <div style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:col, minWidth:52, whiteSpace:"nowrap" }}>{c.due}</div>
@@ -4255,7 +4253,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 { label:"Inventory Turnover",    value: reportData?.invTurnover  || "6.2x",  benchmark: reportData?.benchInvTurnover  || "MSME avg: 4–8x",         target:4,   actual: parseFloat(reportData?.invTurnover||"6.2"),   higher:true  },
                 { label:"Debtor Turnover",       value: reportData?.debtorTurn   || "7.8x",  benchmark: reportData?.benchDebtorTurn   || "Target: >10x",           target:10,  actual: parseFloat(reportData?.debtorTurn||"7.8"),    higher:true  },
               ].map((r, i) => {
-                var good = r.higher ? r.actual >= r.target : r.actual <= r.target;
+                const good = r.higher ? r.actual >= r.target : r.actual <= r.target;
                 return (
                   <div key={i} style={{ padding:"14px", borderRadius:12,
                     background: good ? `${C.green}06` : `${C.amber}06`,
@@ -4396,7 +4394,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 </div>
               </Card>
             ) : null;
-          })()}
+          }())}
 
           {/* Recommended Schemes for MSME */}
           <Card>
@@ -4738,8 +4736,8 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { item:"CSR Compliance (if applicable)",     status: reportData?.csrStatus       || "na",      due:"2% of avg net profit"             },
                 { item:"Ind AS Financial Statements",        status: reportData?.indAsStatus     || "pending", due:"As per applicable standards"      },
               ].map((row, i) => {
-                var isDone = row.status === "done";
-                var isNA   = row.status === "na";
+                const isDone = row.status === "done";
+                const isNA   = row.status === "na";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
                     borderRadius:10,
@@ -4779,7 +4777,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { std:"Ind AS 12 — Deferred Tax",       status: reportData?.indAs12  || "done",   note:"Deferred tax assets and liabilities properly recognised" },
                 { std:"Related Party Disclosures",       status: reportData?.indAsRpt || "review", note:"All RPTs disclosed with arm's length justification" },
               ].map((item, i) => {
-                var ok = item.status === "done";
+                const ok = item.status === "done";
                 return (
                   <div key={i} style={{ padding:"12px", borderRadius:10,
                     background: ok ? `${C.green}06` : `${C.amber}06`,
@@ -4839,7 +4837,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { gap:"Legal and IP clean-up complete",        status:reportData?.ipoGap5||"pending", note:"All litigation disclosed, IP registered, key contracts reviewed and assignable." },
                 { gap:"ESOP scheme formalised",                status:reportData?.ipoGap6||"done",    note:"Employee stock options must be board-approved and documented before listing." },
               ].map((item, i) => {
-                var done = item.status === "done";
+                const done = item.status === "done";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10,
                     padding:"12px 14px", borderRadius:10,
@@ -5013,7 +5011,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 ));
               }
               return (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.plRows || PACK_CONFIG.startup.plRows).map((r,i) => <StatRow key={i} {...r}/>);
-            })()}
+            }())}
           </Card>
           <Card style={{ borderLeft:`3px solid ${C.green}` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items</div>
@@ -5059,9 +5057,9 @@ function CFOPackContent({ reportData, client, kpis }) {
                     { m:"Cash Balance",    bud:"2.4Cr",act:"2.1Cr",fav:false, noCalc:true },
                     { m:"Headcount Cost",  bud:"95",  act:"88",  fav:true  },
                   ].map((r,i) => {
-                    var bv = parseFloat(r.bud), av = parseFloat(r.act);
-                    var varVal = r.noCalc ? "—" : (av - bv).toFixed(1);
-                    var varPct = r.noCalc ? "—" : ((av - bv)/bv*100).toFixed(1)+"%";
+                    const bv = parseFloat(r.bud), av = parseFloat(r.act);
+                    const varVal = r.noCalc ? "—" : (av - bv).toFixed(1);
+                    const varPct = r.noCalc ? "—" : ((av - bv)/bv*100).toFixed(1)+"%";
                     return (
                       <tr key={i} style={{ background:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
                         <td style={{ padding:"10px 12px", fontWeight:600, color:C.text }}>{r.m}</td>
@@ -5475,7 +5473,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 </div>
               </Card>
             ) : null;
-          })()}
+          }())}
 
           {/* IMPROVEMENTS */}
           {Array.isArray(reportData?.loanImprovements) && reportData.loanImprovements.some(x=>x) && (
@@ -6285,7 +6283,7 @@ function Invoices({ client, liveInvoices }) {
   const paid   = allInvoices.filter(i=>i.status==="paid");
 
   const InvoiceCard = ({ inv }) => {
-    var isUnpaid = inv.status === "unpaid";
+    const isUnpaid = inv.status === "unpaid";
     return (
       <div style={{ padding:"16px 18px", borderRadius:12,
         border:`1.5px solid ${isUnpaid ? C.amber+"50" : C.border}`,
@@ -6499,18 +6497,18 @@ function MyDocuments({ client }) {
 
   const handleDownload = (doc) => {
     if (!doc.file_url) { alert("File URL not available."); return; }
-    var isReport = doc.doc_type === "report" || doc.file_url?.startsWith("data:text/html");
+    const isReport = doc.doc_type === "report" || doc.file_url?.startsWith("data:text/html");
     if (isReport) {
       // data URL reports — open in new tab so they render as a webpage
       // Then client can use browser Print → Save as PDF
-      var win = window.open("", "_blank");
+      const win = window.open("", "_blank");
       if (win) {
         win.document.write(decodeURIComponent(doc.file_url.replace("data:text/html;charset=utf-8,", "")));
         win.document.close();
       }
       return;
     }
-    var a = document.createElement("a");
+    const a = document.createElement("a");
     a.href = doc.file_url;
     a.download = doc.name;
     a.target = "_blank";
@@ -6620,7 +6618,7 @@ function MyDocuments({ client }) {
 
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {displayDocs.map((doc, i) => {
-            var byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
+            const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
             return (
               <div key={doc.id || i} style={{ display:"flex", alignItems:"center",
                 justifyContent:"space-between", padding:"12px 14px", borderRadius:10,
@@ -6927,7 +6925,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
 
   // KPI cards — 2 per row grid
   const kpiCards  = (kpis || []).map(k => {
-    var isUp = k.trend === "up";
+    const isUp = k.trend === "up";
     return `<div style="background:#f8faff;border:1px solid #e0e7ff;border-radius:10px;padding:16px 18px;break-inside:avoid">
       <div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">${k.label}</div>
       <div style="font-size:22px;font-weight:800;color:#111827;font-family:monospace;margin-bottom:4px">${k.value || "—"}</div>
@@ -6950,8 +6948,8 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
 
   const pendingActions = (actions || []).filter(a => !a.done);
   const actionRows = pendingActions.map(a => {
-    var col = a.priority==="High"?"#EF4444":a.priority==="Medium"?"#D97706":"#059669";
-    var bg  = a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#ECFDF5";
+    const col = a.priority==="High"?"#EF4444":a.priority==="Medium"?"#D97706":"#059669";
+    const bg  = a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#ECFDF5";
     return `<tr>
       <td style="padding:10px 14px;font-size:12px;color:#374151;border-bottom:1px solid #F3F4F6">${a.text}</td>
       <td style="padding:10px 14px;border-bottom:1px solid #F3F4F6">
@@ -7580,6 +7578,9 @@ function AdminPanel({ admin, onLogout }) {
   const [selected, setSelected] = useState(null); // selected client for editing
   const [loading, setLoading]       = useState(false);
   const [saved, setSaved]           = useState(false);
+  const [aiGenerating, setAiGen]    = useState(false);
+  const [aiDraft, setAiDraft]       = useState(null);
+  const [aiError, setAiError]       = useState("");
 
   // KPI edit state
   const [kpis, setKpis] = useState({
@@ -7941,8 +7942,309 @@ function AdminPanel({ admin, onLogout }) {
 
   // Stable component references — prevents remount/focus-loss on every render
 
+  // ── AUTO-CALCULATE RATIOS FROM ENTERED DATA ─────────────────────────────────
+  const calcRatios = () => {
+    if (!reportData) return {};
+    var pl     = reportData?.plInputs || {};
+    var rd     = reportData || {};
+    // Admin kpis is a form object {revenue, gross_margin, cash_balance...}
+    // Map it to match what calcRatios expects
+    var kv     = {
+      revenue:       kpis?.revenue       || "",
+      cash_balance:  kpis?.cash_balance  || "",
+      burn_rate:     kpis?.burn_rate     || "",
+      runway:        kpis?.runway        || "",
+      arr:           kpis?.arr           || "",
+    };
+    var calc   = {};
+
+    // Helper: parse numeric value from strings like "₹84L", "₹2.1 Cr", "41%", "4.2x"
+    var parse = (val) => {
+      if (!val) return null;
+      var s = String(val).replace(/[₹,\s]/g, "");
+      var n = parseFloat(s);
+      if (isNaN(n)) return null;
+      if (s.toLowerCase().includes("cr"))  n = n * 100; // Cr → L
+      if (s.toLowerCase().includes("%"))   n = n;       // keep as %
+      return n;
+    };
+
+    var revenue   = parse(pl.revenue)      || parse(kv.revenue);
+    var gp        = parse(pl.grossProfit);
+    var gpMargin  = parse(pl.gpMargin);
+    var ebitda    = parse(pl.ebitda);
+    var pat       = parse(pl.pat);
+    var cash      = parse(kv.cash_balance) || parse(rd.closingCash);
+    var burn      = parse(kv.burn_rate);
+    var runway    = parse(kv.runway);
+    var arr       = parse(kv.arr)          || parse(rd.arr);
+    var debt      = parse(rd.existingDebt);
+    var interest  = parse(rd.interestCost);
+    var operCF    = parse(rd.operatingCF);
+    var freeCF    = parse(rd.freeCF);
+    var debtors   = parse(rd.debtors);
+    var creditors = parse(rd.creditors);
+    var inventory = parse(rd.inventory);
+    var ddays     = parse(rd.debtorDays);
+    var cdays     = parse(rd.creditorDays);
+    var idays     = parse(rd.inventoryDays);
+    var cac       = parse(rd.cac);
+    var ltv       = parse(rd.ltv);
+    var momGrowth = parse(rd.momGrowth);
+    var churn     = parse(rd.churnRate);
+    var nrr       = parse(rd.nrr);
+
+    // ── P&L DERIVED ──
+    if (revenue && gp)          calc.gpMarginCalc      = ((gp/revenue)*100).toFixed(1) + "%";
+    if (ebitda && revenue)      calc.ebitdaMarginCalc  = ((ebitda/revenue)*100).toFixed(1) + "%";
+    if (pat && revenue)         calc.netMarginCalc     = ((pat/revenue)*100).toFixed(1) + "%";
+
+    // ── DEBT RATIOS ──
+    if (ebitda && interest && interest > 0)
+      calc.interestCoverageCalc = (ebitda / interest).toFixed(2) + "x";
+
+    if (debt && ebitda && ebitda > 0)
+      calc.debtEbitdaCalc       = (debt / ebitda).toFixed(2) + "x";
+
+    if (debt && pat && pat > 0 && interest)
+      calc.dscrCalc             = ((ebitda - interest) / (interest)).toFixed(2) + "x";
+
+    if (operCF && interest && interest > 0)
+      calc.dscrCalc             = (operCF / interest).toFixed(2) + "x"; // override with actual CF
+
+    // ── WORKING CAPITAL ──
+    if (ddays !== null && cdays !== null && idays !== null)
+      calc.cccCalc              = (ddays - cdays + idays).toFixed(0) + " days";
+    else if (ddays !== null && cdays !== null)
+      calc.cccCalc              = (ddays - cdays).toFixed(0) + " days";
+
+    if (revenue && debtors)
+      calc.debtorDaysCalc       = ((debtors / (revenue/30))).toFixed(0) + " days";
+    if (revenue && creditors)
+      calc.creditorDaysCalc     = ((creditors / (revenue/30))).toFixed(0) + " days";
+    if (revenue && inventory)
+      calc.inventoryDaysCalc    = ((inventory / (revenue/30))).toFixed(0) + " days";
+
+    // ── STARTUP UNIT ECONOMICS ──
+    // Calculate CAC and LTV from raw inputs if available
+    var mktgSpend    = parse(rd.totalMktgSpend);
+    var newCusts     = parse(rd.newCustomers);
+    var avgRevCust   = parse(rd.avgRevPerCust);
+    var retentionMos = parse(rd.avgRetentionMos);
+    var derivedCac   = (mktgSpend && newCusts && newCusts > 0) ? mktgSpend / newCusts : cac;
+    var derivedLtv   = (avgRevCust && retentionMos) ? avgRevCust * retentionMos / 12 : ltv;
+
+    if (derivedCac && !cac)
+      calc.cacCalc = "Rs." + Math.round(derivedCac * 100).toLocaleString("en-IN");
+    if (derivedLtv && !ltv)
+      calc.ltvCalc = "Rs." + Math.round(derivedLtv * 1000).toLocaleString("en-IN");
+    if ((derivedLtv || ltv) && (derivedCac || cac) && (derivedCac || cac) > 0)
+      calc.ltvCacCalc = ((derivedLtv||ltv) / (derivedCac||cac)).toFixed(1) + "x";
+    if ((derivedCac || cac) && ebitda && revenue) {
+      var margin = parse(pl.gpMargin) || 40;
+      calc.cacPaybackCalc = (((derivedCac||cac) / (revenue * margin / 100)) * 12).toFixed(0) + " months";
+    }
+
+    if (burn && arr && arr > 0)
+      calc.burnMultipleCalc     = (burn / (arr / 12)).toFixed(2) + "x";
+
+    // ── RUNWAY CHECK ──
+    if (cash && burn && burn > 0 && !runway)
+      calc.runwayCalc           = (cash / burn).toFixed(1) + " months";
+
+    return calc;
+  };
+
+  // ── AI ANALYSIS GENERATOR ──────────────────────────────────────────────────
+  const generateAnalysis = async () => {
+    if (!selected) return;
+    setAiGen(true);
+    setAiError("");
+    setAiDraft(null);
+
+    const pack    = selected.client_pack || "startup";
+    const company = selected.company || selected.name || "the client";
+    const month   = reportData?.monthLabel || "current month";
+
+    // Auto-calculate ratios from entered data
+    const calc = calcRatios();
+
+    // Auto-apply calculated ratios to reportData fields that aren't manually set
+    const autoFields = {};
+    if (calc.interestCoverageCalc && !reportData?.interestCoverage) autoFields.interestCoverage = calc.interestCoverageCalc;
+    if (calc.debtEbitdaCalc && !reportData?.debtEbitda)             autoFields.debtEbitda       = calc.debtEbitdaCalc;
+    if (calc.dscrCalc && !reportData?.dscr)                         autoFields.dscr             = calc.dscrCalc;
+    if (calc.cccCalc && !reportData?.ccc)                           autoFields.ccc              = calc.cccCalc;
+    if (calc.debtorDaysCalc && !reportData?.debtorDays)             autoFields.debtorDays       = calc.debtorDaysCalc;
+    if (calc.creditorDaysCalc && !reportData?.creditorDays)         autoFields.creditorDays     = calc.creditorDaysCalc;
+    if (calc.inventoryDaysCalc && !reportData?.inventoryDays)       autoFields.inventoryDays    = calc.inventoryDaysCalc;
+    if (calc.ltvCacCalc && !reportData?.ltvCac)                     autoFields.ltvCac           = calc.ltvCacCalc;
+    if (calc.burnMultipleCalc && !reportData?.burnMultiple)         autoFields.burnMultiple     = calc.burnMultipleCalc;
+    if (calc.cacPaybackCalc && !reportData?.cacPayback)             autoFields.cacPayback       = calc.cacPaybackCalc;
+    if (Object.keys(autoFields).length > 0) setReportData(r => ({...r, ...autoFields}));
+
+    // Build a rich context from all available data
+    const kpiSummary = [
+      kpis.revenue      && `Revenue: ${kpis.revenue}`,
+      kpis.gross_margin && `Gross Margin: ${kpis.gross_margin}`,
+      kpis.cash_balance && `Cash Balance: ${kpis.cash_balance}`,
+      kpis.burn_rate    && `Burn Rate: ${kpis.burn_rate}`,
+      kpis.runway       && `Runway: ${kpis.runway}`,
+      kpis.arr          && `ARR: ${kpis.arr}`,
+    ].filter(Boolean).join(", ");
+
+    const plSummary = reportData?.plInputs ? [
+      reportData.plInputs.revenue      && `Revenue: ${reportData.plInputs.revenue}`,
+      reportData.plInputs.ebitda        && `EBITDA: ${reportData.plInputs.ebitda}`,
+      reportData.plInputs.pat           && `PAT: ${reportData.plInputs.pat}`,
+      reportData.plInputs.gpMargin      && `GP Margin: ${reportData.plInputs.gpMargin}`,
+      reportData.plInputs.ebitdaMargin  && `EBITDA Margin: ${reportData.plInputs.ebitdaMargin}`,
+    ].filter(Boolean).join(", ") : "";
+
+    const debtSummary = [
+      reportData?.existingDebt      && `Existing Debt: ${reportData.existingDebt}`,
+      reportData?.dscr              && `DSCR: ${reportData.dscr}`,
+      reportData?.currentRatio      && `Current Ratio: ${reportData.currentRatio}`,
+      reportData?.interestCoverage  && `Interest Coverage: ${reportData.interestCoverage}`,
+      reportData?.debtEbitda        && `Debt/EBITDA: ${reportData.debtEbitda}`,
+    ].filter(Boolean).join(", ");
+
+    const wcSummary = [
+      reportData?.debtorDays    && `Debtor Days: ${reportData.debtorDays}`,
+      reportData?.creditorDays  && `Creditor Days: ${reportData.creditorDays}`,
+      reportData?.ccc           && `CCC: ${reportData.ccc}`,
+      reportData?.workingCapital&& `Working Capital: ${reportData.workingCapital}`,
+    ].filter(Boolean).join(", ");
+
+    const packContext = pack === "startup"
+      ? `This is a startup on a CFO advisory pack. Key startup concerns: burn rate, runway, fundraising readiness, unit economics.`
+      : pack === "msme"
+      ? `This is an MSME on a working capital and bank finance pack. Key MSME concerns: collections, debtor days, bank loan eligibility, cash conversion cycle.`
+      : `This is a corporate entity on a board reporting pack. Key concerns: board-ready financials, IPO readiness, governance, Ind AS compliance.`;
 
 
+    // Build calculated ratios summary for prompt
+    const calcSummary = Object.entries(calc)
+      .map(([k,v]) => `${k.replace("Calc","")}: ${v}`)
+      .join(", ");
+
+    // Fetch live market context for AI
+    let marketContext = "";
+    try {
+      const fxRes  = await fetch("https://api.frankfurter.app/latest?from=INR");
+      const fxData = await fxRes.json();
+      const usd = fxData?.rates?.USD ? (1/fxData.rates.USD).toFixed(2) : null;
+      const sar = fxData?.rates?.SAR ? (1/fxData.rates.SAR).toFixed(2) : null;
+      const repoRate = "6.50";
+      marketContext = [
+        `RBI Repo Rate: ${repoRate}%`,
+        `SBI effective lending rate: ~${(parseFloat(repoRate)+2.5).toFixed(2)}%`,
+        usd && `USD/INR: ₹${usd}`,
+        sar && `SAR/INR: ₹${sar}`,
+      ].filter(Boolean).join(", ");
+    } catch(e) { /* non-critical */ }
+
+    const prompt = `You are Garima Agarwal, a Chartered Accountant and CFO advisor writing monthly financial analysis for your client ${company} for ${month}.
+
+${packContext}
+
+Financial data for ${month}:
+${kpiSummary ? `KPIs: ${kpiSummary}` : ""}
+${plSummary ? `P&L: ${plSummary}` : ""}
+${debtSummary ? `Debt/Ratios: ${debtSummary}` : ""}
+${wcSummary ? `Working Capital: ${wcSummary}` : ""}
+${reportData?.loanScore ? `Loan Readiness Score: ${reportData.loanScore}/100` : ""}
+${reportData?.varianceCommentary ? `Variance note: ${reportData.varianceCommentary}` : ""}
+${calcSummary ? `Auto-calculated ratios: ${calcSummary}` : ""}
+${reportData?.loanAmountSought ? `Loan sought: ${reportData.loanAmountSought} for ${reportData.loanPurpose||"unspecified purpose"}` : ""}
+${marketContext ? `Current market context: ${marketContext}` : ""}
+${pack==="startup" && reportData?.cac ? `Unit economics entered: CAC ${reportData.cac}, LTV ${reportData.ltv||"—"}` : ""}
+
+Write the following analyses in Garima's voice — direct, specific, actionable. Use Indian financial context (lakhs, crores). Do NOT use generic filler. Every sentence should refer to actual numbers.
+
+Respond ONLY with a valid JSON object (no markdown, no backticks) with these exact keys:
+{
+  "garimaNote": "2-3 sentence monthly dashboard note — what happened, why it matters, what to watch",
+  "cashflowNote": "2-3 sentence cash flow analysis — cash position, burn/collections, forward outlook",
+  "varianceCommentary": "1-2 sentence variance note — what beat or missed budget and why",
+  "packNote": "3-4 sentence overall CFO pack commentary — performance narrative, key risks, recommended actions",
+  "execPerformance": "2-3 sentences on performance for board executive summary",
+  "execCash": "2-3 sentences on cash and liquidity for board executive summary",
+  "execRisks": "2-3 key risks as numbered points",
+  "execOpportunities": "2-3 opportunities as numbered points",
+  "execNextSteps": "3-4 next steps as numbered points",
+  "wcNote": "1-2 sentences on working capital efficiency (if MSME)",
+  "ueNote": "1-2 sentences on unit economics assessment (if startup)",
+  "loanNote": "1-2 sentences on loan readiness assessment",
+  "forecastNote": "2-3 sentences on 3-month forward outlook"
+}`;
+
+    try {
+      const apiKey = import.meta.env.VITE_ANTHROPIC_KEY;
+      if (!apiKey) {
+        setAiError("API key not configured. Add VITE_ANTHROPIC_KEY to your Vercel environment variables.");
+        setAiGen(false);
+        return;
+      }
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "anthropic-dangerous-direct-browser-access": "true",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 1500,
+          messages: [{ role: "user", content: prompt }],
+        }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err?.error?.message || `API error ${res.status}`);
+      }
+      const data = await res.json();
+      const raw = data?.content?.[0]?.text || "";
+      const clean = raw.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(clean);
+      setAiDraft(parsed);
+    } catch(e) {
+      setAiError("Generation failed — check your numbers are filled in and try again.");
+      console.error(e);
+    } finally {
+      setAiGen(false);
+    }
+  };
+
+  const applyDraft = (field) => {
+    if (!aiDraft?.[field]) return;
+    const updates = {[field]: aiDraft[field]};
+    if (field === "garimaNote") {
+      updates.packNote   = aiDraft[field];
+      updates.reportNote = aiDraft[field];
+    }
+    setReportData(r => ({...r, ...updates}));
+    if (field === "garimaNote") setKpis(k => ({...k, garima_note: aiDraft[field]}));
+  };
+
+  const applyAllDraft = () => {
+    if (!aiDraft) return;
+    // garimaNote from AI maps to packNote in reportData (used by monthly report)
+    // also set reportNote as fallback
+    const mapped = {...aiDraft};
+    if (aiDraft.garimaNote) {
+      mapped.packNote   = aiDraft.garimaNote;
+      mapped.reportNote = aiDraft.garimaNote;
+    }
+    setReportData(r => ({...r, ...mapped}));
+    // Also update the garima_note KPI field so Dashboard note updates
+    if (aiDraft.garimaNote) {
+      setKpis(k => ({...k, garima_note: aiDraft.garimaNote}));
+    }
+    setAiDraft(null);
+    setSaved(false);
+  };
 
 
   return (
@@ -8554,23 +8856,23 @@ function AdminPanel({ admin, onLogout }) {
                       </thead>
                       <tbody>
                         {(reportData.variance || []).map((row, i) => {
-                          var bv = parseFloat(row.budget), av = parseFloat(row.actual);
-                          var varNum = (!row.noCalc && !isNaN(bv) && !isNaN(av)) ? (av-bv).toFixed(1) : "—";
-                          var varPct = (!row.noCalc && !isNaN(bv) && !isNaN(av) && bv!==0)
+                          const bv = parseFloat(row.budget), av = parseFloat(row.actual);
+                          const varNum = (!row.noCalc && !isNaN(bv) && !isNaN(av)) ? (av-bv).toFixed(1) : "—";
+                          const varPct = (!row.noCalc && !isNaN(bv) && !isNaN(av) && bv!==0)
                             ? ((av-bv)/Math.abs(bv)*100).toFixed(1)+"%" : "";
-                          var isBold = ["Gross Profit","EBITDA","Net Profit"].some(k => row.metric.includes(k));
+                          const isBold = ["Gross Profit","EBITDA","Net Profit"].some(k => row.metric.includes(k));
                           return (
                             <tr key={i} style={{ background:isBold?`${C.blue}06`:i%2===0?"#FFFFFF":C.bg, borderBottom:`1px solid ${C.border}` }}>
                               <td style={{ padding:"10px 12px", fontWeight:isBold?700:500, fontSize:13, color:C.text }}>{row.metric}</td>
                               <td style={{ padding:"6px 8px" }}>
                                 <InlineInput value={row.budget}
-                                  onCommit={v => { var arr=[...reportData.variance]; arr[i]={...arr[i],budget:v}; setReportData(r=>({...r,variance:arr})); }}
+                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],budget:v}; setReportData(r=>({...r,variance:arr})); }}
                                   placeholder="budget"
                                   style={{ textAlign:"right", color:C.muted, background:C.bg }}/>
                               </td>
                               <td style={{ padding:"6px 8px" }}>
                                 <InlineInput value={row.actual}
-                                  onCommit={v => { var arr=[...reportData.variance]; arr[i]={...arr[i],actual:v}; setReportData(r=>({...r,variance:arr})); }}
+                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],actual:v}; setReportData(r=>({...r,variance:arr})); }}
                                   placeholder="actual"
                                   style={{ textAlign:"right", fontWeight:700, color:C.text, background:"#F0F4FF" }}/>
                               </td>
@@ -8580,7 +8882,7 @@ function AdminPanel({ admin, onLogout }) {
                                 {varPct && <div style={{ fontSize:10, opacity:0.7 }}>{row.fav?"+":""}{varPct}</div>}
                               </td>
                               <td style={{ padding:"8px", textAlign:"center" }}>
-                                <button onClick={() => { var v=[...reportData.variance]; v[i]={...v[i],fav:!v[i].fav}; setReportData(r=>({...r,variance:v})); }}
+                                <button onClick={() => { const v=[...reportData.variance]; v[i]={...v[i],fav:!v[i].fav}; setReportData(r=>({...r,variance:v})); }}
                                   style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:F, fontSize:12, fontWeight:700,
                                     background:row.fav?`${C.green}15`:`${C.red}15`, color:row.fav?C.green:C.red }}>
                                   {row.fav?"✅ Fav":"⚠️ Unfav"}
@@ -9309,7 +9611,113 @@ function AdminPanel({ admin, onLogout }) {
                   </div>
                 </Card>}
 
-                <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
+                {/* ══ AI ANALYSIS GENERATOR ══════════════════════════════════ */}
+                {reportData && <Card style={{ marginBottom:20, border:`1.5px solid ${C.purple}30`,
+                  background:`linear-gradient(135deg,${C.purple}06,${C.blue}04)` }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+                    <div style={{ width:36, height:36, borderRadius:10,
+                      background:`linear-gradient(135deg,${C.purple},${C.blue})`,
+                      display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
+                      {"✨"}
+                    </div>
+                    <div>
+                      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
+                        {"Generate Analysis with AI"}
+                      </div>
+                      <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>
+                        {"Reads all the numbers you've entered and drafts Garima's commentary — you review and approve"}
+                      </div>
+                    </div>
+                  </div>
+
+                  <button onClick={generateAnalysis} disabled={aiGenerating}
+                    style={{ width:"100%", padding:"12px", borderRadius:10, border:"none",
+                      background: aiGenerating
+                        ? C.bg3
+                        : `linear-gradient(135deg,${C.purple},${C.blue})`,
+                      color: aiGenerating ? C.muted : "white",
+                      fontFamily:F, fontWeight:700, fontSize:14, cursor: aiGenerating ? "not-allowed" : "pointer",
+                      display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+                      marginBottom: aiDraft || aiError ? 16 : 0 }}>
+                    {aiGenerating
+                      ? <><span>⟳</span>{" Analysing numbers..."}</>
+                      : "✨ Generate Analysis Draft"
+                    }
+                  </button>
+
+                  {aiError && (
+                    <div style={{ padding:"10px 14px", borderRadius:8, background:`${C.red}10`,
+                      border:`1px solid ${C.red}20`, fontFamily:F, fontSize:12, color:C.red }}>
+                      {aiError}
+                    </div>
+                  )}
+
+                  {aiDraft && (
+                    <div>
+                      <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text,
+                        marginBottom:12 }}>
+                        {"📋 Draft ready — review and apply"}
+                      </div>
+
+                      {/* Show each generated field with apply button */}
+                      {[
+                        { key:"garimaNote",        label:"Dashboard Note",           field:"garimaNote"        },
+                        { key:"cashflowNote",       label:"Cash Flow Analysis",       field:"cashflowNote"       },
+                        { key:"packNote",           label:"CFO Pack Commentary",      field:"packNote"           },
+                        { key:"varianceCommentary", label:"Variance Commentary",      field:"varianceCommentary" },
+                        { key:"forecastNote",       label:"3-Month Forward Outlook",  field:"forecastNote"       },
+                        { key:"loanNote",           label:"Loan Readiness Note",      field:"loanNote"           },
+                        ...(selected?.client_pack==="startup" ? [{ key:"ueNote", label:"Unit Economics Note", field:"ueNote" }] : []),
+                        ...(selected?.client_pack==="msme"    ? [{ key:"wcNote", label:"Working Capital Note", field:"wcNote" }] : []),
+                        { key:"execPerformance",    label:"Board: Performance",       field:"execPerformance"    },
+                        { key:"execCash",           label:"Board: Cash & Liquidity",  field:"execCash"           },
+                        { key:"execRisks",          label:"Board: Key Risks",         field:"execRisks"          },
+                        { key:"execOpportunities",  label:"Board: Opportunities",     field:"execOpportunities"  },
+                        { key:"execNextSteps",       label:"Board: Next Steps",        field:"execNextSteps"       },
+                      ].filter(f => aiDraft[f.key]).map((f, i) => (
+                        <div key={i} style={{ marginBottom:10, padding:"12px 14px", borderRadius:10,
+                          background:C.bg, border:`1px solid ${C.border}` }}>
+                          <div style={{ display:"flex", alignItems:"center",
+                            justifyContent:"space-between", marginBottom:6 }}>
+                            <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
+                              color:C.purple, textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                              {f.label}
+                            </span>
+                            <button onClick={() => applyDraft(f.field)}
+                              style={{ padding:"3px 12px", borderRadius:100, border:"none",
+                                background:`${C.purple}15`, color:C.purple,
+                                fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                              {"Apply"}
+                            </button>
+                          </div>
+                          <div style={{ fontFamily:F, fontSize:12, color:C.text,
+                            lineHeight:1.7, whiteSpace:"pre-wrap" }}>
+                            {aiDraft[f.key]}
+                          </div>
+                        </div>
+                      ))}
+
+                      {/* Apply All button */}
+                      <div style={{ display:"flex", gap:10, marginTop:4 }}>
+                        <button onClick={applyAllDraft}
+                          style={{ flex:1, padding:"11px", borderRadius:10, border:"none",
+                            background:`linear-gradient(135deg,${C.purple},${C.blue})`,
+                            color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+                            cursor:"pointer" }}>
+                          {"✅ Apply All & Save"}
+                        </button>
+                        <button onClick={() => setAiDraft(null)}
+                          style={{ padding:"11px 16px", borderRadius:10,
+                            border:`1px solid ${C.border}`, background:C.bg,
+                            color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer" }}>
+                          {"Discard"}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </Card>}
+
+                {reportData && <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
               </>)}
             </div>
           )}
