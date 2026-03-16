@@ -71,6 +71,64 @@ const KPIs = [
   { label:"ARR",          value:"₹6.2 Cr",  prev:"₹5.4 Cr",  trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"🎯" },
 ];
 
+// ─── KPI CONTEXT GENERATOR ────────────────────────────────────────────────────
+// Generates a one-line meaningful insight for any KPI based on label, value, trend, prev
+function kpiContext(k) {
+  const label = (k.label || "").toLowerCase();
+  const up    = k.trend === "up";
+  const prev  = k.prev && k.prev !== "—" ? k.prev : null;
+  const val   = k.value || "";
+
+  if (label.includes("revenue")) {
+    if (!prev) return "Track monthly to spot growth trend";
+    return up ? `Up from ${prev} — growth on track` : `Down from ${prev} — review pipeline`;
+  }
+  if (label.includes("margin") || label.includes("gross")) {
+    const num = parseFloat(val);
+    if (num >= 60) return "Excellent margin — strong unit economics";
+    if (num >= 40) return "Healthy margin · target 45%+ before raise";
+    if (num >= 20) return "Moderate · watch cost structure";
+    return prev ? (up ? `Improving from ${prev} — keep focus` : `Declined from ${prev} — review COGS`) : "Monitor cost of goods sold";
+  }
+  if (label.includes("cash") || label.includes("balance")) {
+    const num = parseFloat(val);
+    if (!prev) return "Maintain 6+ months of runway";
+    return up ? `Up from ${prev} — healthy position` : `Down from ${prev} — monitor burn`;
+  }
+  if (label.includes("burn")) {
+    return up ? `Improved from ${prev || "last month"} — efficiency gaining` : prev ? `Up from ${prev} — review spend` : "Lower is better — target <₹40L/mo";
+  }
+  if (label.includes("runway")) {
+    const num = parseFloat(val);
+    if (num >= 12) return "Strong runway — focus on growth";
+    if (num >= 6)  return "Adequate · start fundraise planning now";
+    if (num >= 3)  return "⚠️ Under 6 months — act immediately";
+    return "🔴 Critical — fundraise or cut costs now";
+  }
+  if (label.includes("arr") || label.includes("mrr")) {
+    return up ? `Growing — ${prev ? `up from ${prev}` : "positive trend"}` : prev ? `Declined from ${prev} — check churn` : "Annual recurring revenue";
+  }
+  if (label.includes("ebitda")) {
+    return up ? "Improving profitability" : prev ? `Down from ${prev} — review opex` : "Earnings before interest & tax";
+  }
+  if (label.includes("debtor") || label.includes("receivable")) {
+    const num = parseFloat(val);
+    if (num > 45) return "⚠️ High — chase collections urgently";
+    if (num > 30) return "Above target · follow up overdue invoices";
+    return "✅ Within target range";
+  }
+  if (label.includes("working capital")) {
+    return up ? `Improved from ${prev || "last period"}` : "Monitor current assets vs liabilities";
+  }
+  if (label.includes("pat") || label.includes("profit")) {
+    return up ? `Profitable · up from ${prev || "last month"}` : prev ? `Declined from ${prev}` : "Net profit after tax";
+  }
+  // generic fallback
+  if (prev) return up ? `Improved from ${prev}` : `Changed from ${prev}`;
+  return "Updated by Garima";
+}
+
+
 const CASHFLOW = [
   { month:"Sep", value:210, forecast:null },
   { month:"Oct", value:185, forecast:null },
@@ -836,10 +894,61 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
               {k.value}
             </div>
             <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, marginBottom:2 }}>{k.label}</div>
-            <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>Prev: {k.prev}</div>
+            <div style={{ fontFamily:F, fontSize:11, color:k.up?C.green:C.red, lineHeight:1.4, marginBottom:2 }}>
+              {kpiContext(k)}
+            </div>
+            {kpiBenchmark(k.label, ovPack, null) && (
+              <div style={{ fontFamily:F, fontSize:10, color:C.blue, background:`${C.blue}08`,
+                padding:"2px 8px", borderRadius:6, display:"inline-block", marginTop:2 }}>
+                {kpiBenchmark(k.label, ovPack, null)}
+              </div>
+            )}
           </Card>
         ))}
       </div>
+
+      {/* ── 3-MONTH FORWARD VIEW ── */}
+      {(reportData?.forecast1Label || reportData?.forecastNote) && (
+        <Card style={{ marginBottom:24, borderLeft:`3px solid ${C.purple}` }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+            <div style={{ width:36, height:36, borderRadius:10, background:`${C.purple}15`,
+              display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>{"🔭"}</div>
+            <div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>{"3-Month Forward View"}</div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{"Garima's outlook — updated each month"}</div>
+            </div>
+          </div>
+          {reportData?.forecastNote && (
+            <div style={{ padding:"12px 14px", borderRadius:10, background:`${C.purple}08`,
+              border:`1px solid ${C.purple}15`, marginBottom:14 }}>
+              <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8, margin:0 }}>
+                {reportData.forecastNote}
+              </p>
+            </div>
+          )}
+          {(reportData?.forecast1Label) && (
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }} className="inv-grid">
+              {[
+                { label: reportData?.forecast1Label || "Month 1", value: reportData?.forecast1Value, trend: reportData?.forecast1Trend },
+                { label: reportData?.forecast2Label || "Month 2", value: reportData?.forecast2Value, trend: reportData?.forecast2Trend },
+                { label: reportData?.forecast3Label || "Month 3", value: reportData?.forecast3Value, trend: reportData?.forecast3Trend },
+              ].filter(f => f.value).map((f, i) => (
+                <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:C.bg2,
+                  border:`1px solid ${C.border}`, textAlign:"center" }}>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
+                  <div style={{ fontFamily:FM, fontSize:20, fontWeight:800,
+                    color: f.trend==="up" ? C.green : f.trend==="down" ? C.red : C.purple }}>{f.value}</div>
+                  {f.trend && (
+                    <div style={{ fontFamily:F, fontSize:10, color: f.trend==="up"?C.green:f.trend==="down"?C.red:C.muted, marginTop:3 }}>
+                      {f.trend==="up" ? "▲ Improving" : f.trend==="down" ? "▼ Watch" : "→ Stable"}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
 
       {/* Charts Row */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="ov-charts">
@@ -993,6 +1102,41 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
         </div>
       </div>
 
+      {/* ── THIS MONTH'S STORY ── auto-generated from KPI directions */}
+      {displayKpis.length > 0 && (() => {
+        const rev   = displayKpis.find(k=>k.label?.toLowerCase().includes("rev"));
+        const cash  = displayKpis.find(k=>k.label?.toLowerCase().includes("cash"));
+        const burn  = displayKpis.find(k=>k.label?.toLowerCase().includes("burn"));
+        const run   = displayKpis.find(k=>k.label?.toLowerCase().includes("runway"));
+        const mar   = displayKpis.find(k=>k.label?.toLowerCase().includes("margin"));
+        const lines = [];
+        if (rev)  lines.push(rev.trend==="up"  ? `Revenue grew to ${rev.value} — growth trajectory intact.` : `Revenue dipped to ${rev.value} — monitor pipeline closely.`);
+        if (mar)  lines.push(mar.trend==="up"  ? `Gross margin improved to ${mar.value} — unit economics strengthening.` : `Margin compressed to ${mar.value} — review cost structure.`);
+        if (cash) lines.push(cash.trend==="down"? `Cash dropped to ${cash.value} — collections need attention.` : `Cash position healthy at ${cash.value}.`);
+        if (burn) lines.push(burn.trend==="up"  ? `Burn improved to ${burn.value} — efficiency gaining.` : `Burn increased to ${burn.value} — review discretionary spend.`);
+        if (run)  lines.push(parseFloat(run.value)<6 ? `⚠️ Runway at ${run.value} — fundraise or cut costs urgently.` : parseFloat(run.value)<9 ? `Runway at ${run.value} — begin fundraise conversations now.` : `Runway comfortable at ${run.value}.`);
+        if (lines.length === 0) return null;
+        return (
+          <Card style={{ marginBottom:20, background:`${C.navy}`, borderColor:"transparent" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
+              <span style={{ fontSize:16 }}>{"📖"}</span>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13,
+                color:"rgba(255,255,255,0.9)", textTransform:"uppercase", letterSpacing:"0.08em" }}>
+                {`This Month's Story${reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}`}
+              </div>
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              {lines.map((line, i) => (
+                <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
+                  <span style={{ color: line.includes("⚠️") ? C.amber : line.startsWith("Revenue grew") || line.includes("healthy") || line.includes("intact") || line.includes("improved") || line.includes("comfortable") || line.includes("gaining") || line.includes("strengthening") ? C.green : "rgba(255,255,255,0.5)", flexShrink:0, marginTop:2 }}>{"•"}</span>
+                  <span style={{ fontFamily:F, fontSize:13, color:"rgba(255,255,255,0.85)", lineHeight:1.6 }}>{line}</span>
+                </div>
+              ))}
+            </div>
+          </Card>
+        );
+      })()}
+
       {/* Garima's note — pack-aware */}
       <Card style={{ marginBottom:24, borderLeft:`3px solid ${ovPack==="msme"?C.teal:ovPack==="corporate"?C.purple:C.blue}` }}>
         <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
@@ -1045,9 +1189,15 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
             <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, marginBottom:2 }}>
               {k.label}
             </div>
-            <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>
-              {k.prev && k.prev !== "—" ? `Prev: ${k.prev}` : "No prior month data"}
+            <div style={{ fontFamily:F, fontSize:11, color:k.trend==="up"?C.green:k.trend==="down"?C.red:C.muted, lineHeight:1.4, marginBottom:2 }}>
+              {kpiContext(k)}
             </div>
+            {kpiBenchmark(k.label, pack, reportData) && (
+              <div style={{ fontFamily:F, fontSize:10, color:C.blue, background:`${C.blue}08`,
+                padding:"2px 8px", borderRadius:6, display:"inline-block", marginTop:2 }}>
+                {kpiBenchmark(k.label, pack, reportData)}
+              </div>
+            )}
           </Card>
         ))}
       </div>
@@ -1726,7 +1876,7 @@ function CashFlow({ reportData, client, kpis }) {
 }
 
 // ─── ACTION ITEMS ─────────────────────────────────────────────────────────────
-function ActionItems({ actions: actionsProp }) {
+function ActionItems({ actions: actionsProp, kpis, reportData }) {
   const [items, setItems] = useState(actionsProp || ACTIONS);
   // Sync if parent passes new live data after load
   useEffect(() => { if (actionsProp) setItems(actionsProp); }, [actionsProp]);
@@ -1743,12 +1893,53 @@ function ActionItems({ actions: actionsProp }) {
   const pending  = items.filter(a => !a.done);
   const done     = items.filter(a => a.done);
 
+  // Auto-generate strategic alerts from KPI data
+  const strategicAlerts = (() => {
+    if (!kpis || kpis.length === 0) return [];
+    const alerts = [];
+    const run  = kpis.find(k=>k.label?.toLowerCase().includes("runway"));
+    const cash = kpis.find(k=>k.label?.toLowerCase().includes("cash"));
+    const burn = kpis.find(k=>k.label?.toLowerCase().includes("burn"));
+    const rev  = kpis.find(k=>k.label?.toLowerCase().includes("rev"));
+    const mar  = kpis.find(k=>k.label?.toLowerCase().includes("margin"));
+    if (run  && parseFloat(run.value)  < 3)  alerts.push({ text:`🔴 Runway is ${run.value} — raise capital or cut costs immediately. Every week counts.`,   priority:"High",   color:C.red    });
+    if (run  && parseFloat(run.value)  < 6  && parseFloat(run.value) >= 3) alerts.push({ text:`⚠️ Runway at ${run.value} — start fundraise conversations now. 6 months is the minimum buffer.`, priority:"High", color:C.amber });
+    if (burn && burn.trend === "down") alerts.push({ text:`Burn increased to ${burn.value} — review discretionary spend and defer non-essential hiring.`, priority:"Medium", color:C.amber });
+    if (rev  && rev.trend  === "down") alerts.push({ text:`Revenue dipped to ${rev.value} — review pipeline and follow up on delayed deals before month end.`, priority:"High", color:C.red });
+    if (mar  && mar.trend  === "down") alerts.push({ text:`Gross margin compressed to ${mar.value} — audit COGS and renegotiate vendor contracts.`, priority:"Medium", color:C.amber });
+    if (cash && cash.trend === "down") alerts.push({ text:`Cash dropped to ${cash.value} — prioritise collections and delay non-critical payments.`, priority:"Medium", color:C.amber });
+    if (reportData?.loanScore && reportData.loanScore < 55) alerts.push({ text:"Loan readiness score is low — complete financial projections and clean up balance sheet before applying.", priority:"Medium", color:C.amber });
+    return alerts;
+  })();
+
   return (
     <div style={{ padding:24 }}>
       <SectionTitle
         sub={`${pending.length} pending · ${done.length} completed`}>
         Action Items from Garima
       </SectionTitle>
+
+      {/* Strategic Alerts — auto-generated */}
+      {strategicAlerts.length > 0 && (
+        <div style={{ marginBottom:24 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase",
+            letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>{"⚡ Strategic Alerts — Based on Your Numbers"}</div>
+          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+            {strategicAlerts.map((a, i) => (
+              <div key={i} style={{ padding:"12px 16px", borderRadius:12,
+                background:`${a.color}08`, border:`1px solid ${a.color}25`,
+                display:"flex", alignItems:"flex-start", gap:10 }}>
+                <div style={{ width:6, height:6, borderRadius:"50%", background:a.color,
+                  flexShrink:0, marginTop:5 }}/>
+                <div style={{ flex:1 }}>
+                  <p style={{ fontFamily:F, fontSize:13, color:C.text, margin:"0 0 4px", lineHeight:1.6 }}>{a.text}</p>
+                  <PriBadge p={a.priority}/>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20, textAlign:"center" }}>
         {[
@@ -2477,6 +2668,135 @@ const COMPLIANCE_DATES = [
 
 
 
+
+// ─── EXECUTIVE SUMMARY PDF ───────────────────────────────────────────────────
+function generateExecSummaryPDF({ client, reportData, kpis }) {
+  const company  = client?.company || "Your Company";
+  const month    = reportData?.monthLabel || "Current Period";
+  const pack     = client?.client_pack || client?.clientPack || "startup";
+  const packLabel = pack==="msme" ? "MSME Pack" : pack==="corporate" ? "Board Pack" : "CFO Pack";
+
+  const rev  = kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value  || reportData?.plInputs?.revenue || "—";
+  const cash = kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—";
+  const burn = kpis?.find(k=>k.label?.toLowerCase().includes("burn"))?.value || "—";
+  const run  = kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value || "—";
+  const mar  = kpis?.find(k=>k.label?.toLowerCase().includes("margin"))?.value || reportData?.plInputs?.gpMargin || "—";
+  const ebitda = reportData?.plInputs?.ebitda || "—";
+
+  const perf     = reportData?.execPerformance  || "Performance summary not yet added. Please update in the admin panel.";
+  const cashNote = reportData?.execCash         || "Cash position analysis not yet added.";
+  const risks    = reportData?.execRisks        || "Risk summary not yet added.";
+  const opps     = reportData?.execOpportunities|| "Opportunities not yet added.";
+  const nextSteps= reportData?.execNextSteps    || "Next steps not yet added.";
+  const garimaNote = reportData?.garimaNote || reportData?.packNote || "";
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:Arial,sans-serif; color:#111827; background:white; }
+  .page { max-width:800px; margin:0 auto; padding:48px; }
+  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; padding-bottom:18px; border-bottom:3px solid #3B6FF7; }
+  .logo { font-size:26px; font-weight:900; color:#3B6FF7; }
+  .tagline { font-size:9px; color:#9CA3AF; letter-spacing:0.1em; text-transform:uppercase; margin-top:2px; }
+  .doc-meta { text-align:right; font-size:11px; color:#6B7280; line-height:1.7; }
+  .doc-meta strong { font-size:14px; color:#111827; display:block; }
+  h1 { font-size:28px; font-weight:900; color:#111827; margin-bottom:4px; }
+  .subtitle { font-size:13px; color:#6B7280; margin-bottom:6px; }
+  .eyebrow { font-size:10px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
+  .kpi-strip { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:24px 0; }
+  .kpi { padding:10px 8px; border-radius:8px; background:#F9FAFB; border:1px solid #E5E7EB; text-align:center; }
+  .kpi-label { font-size:8px; color:#6B7280; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
+  .kpi-value { font-size:14px; font-weight:900; color:#111827; }
+  .section { margin-bottom:24px; padding:18px 20px; border-radius:12px; border:1px solid #E5E7EB; }
+  .section-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .section-icon { font-size:18px; }
+  h2 { font-size:13px; font-weight:800; color:#111827; text-transform:uppercase; letter-spacing:0.05em; }
+  .section-body { font-size:13px; color:#374151; line-height:1.8; }
+  .perf   { border-left:3px solid #3B6FF7; background:#F0F4FF; }
+  .cash   { border-left:3px solid #10B981; background:#F0FDF4; }
+  .risks  { border-left:3px solid #EF4444; background:#FEF2F2; }
+  .opps   { border-left:3px solid #8B5CF6; background:#F5F3FF; }
+  .next   { border-left:3px solid #F59E0B; background:#FFFBEB; }
+  .garima-note { margin-top:24px; padding:16px 18px; background:#EEF3FE; border-radius:10px; border-left:3px solid #3B6FF7; }
+  .garima-label { font-size:10px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
+  .garima-text  { font-size:13px; color:#111827; line-height:1.8; }
+  .disclaimer { margin-top:24px; padding:10px 12px; background:#F9FAFB; border-radius:6px; font-size:10px; color:#6B7280; line-height:1.6; border:1px solid #E5E7EB; }
+  .footer { margin-top:16px; padding-top:14px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="header">
+    <div><div class="logo">Finzzup</div><div class="tagline">Build. Value. Scale.</div></div>
+    <div class="doc-meta">
+      <strong>Executive Summary</strong>
+      ${company} | ${packLabel}<br/>
+      Period: ${month}<br/>
+      ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
+    </div>
+  </div>
+
+  <div class="eyebrow">Board-Ready | Confidential | Prepared by Garima Agarwal CA</div>
+  <h1>${company}</h1>
+  <div class="subtitle">Monthly Executive Summary — ${month}</div>
+
+  <div class="kpi-strip">
+    <div class="kpi"><div class="kpi-label">Revenue</div><div class="kpi-value">${rev}</div></div>
+    <div class="kpi"><div class="kpi-label">Gross Margin</div><div class="kpi-value">${mar}</div></div>
+    <div class="kpi"><div class="kpi-label">EBITDA</div><div class="kpi-value">${ebitda}</div></div>
+    <div class="kpi"><div class="kpi-label">Cash Balance</div><div class="kpi-value">${cash}</div></div>
+    <div class="kpi"><div class="kpi-label">Burn Rate</div><div class="kpi-value">${burn}</div></div>
+    <div class="kpi"><div class="kpi-label">Runway</div><div class="kpi-value">${run}</div></div>
+  </div>
+
+  <div class="section perf">
+    <div class="section-header"><span class="section-icon">📈</span><h2>Performance</h2></div>
+    <div class="section-body">${perf}</div>
+  </div>
+
+  <div class="section cash">
+    <div class="section-header"><span class="section-icon">💰</span><h2>Cash & Liquidity</h2></div>
+    <div class="section-body">${cashNote}</div>
+  </div>
+
+  <div class="section risks">
+    <div class="section-header"><span class="section-icon">⚠️</span><h2>Key Risks</h2></div>
+    <div class="section-body">${risks}</div>
+  </div>
+
+  <div class="section opps">
+    <div class="section-header"><span class="section-icon">🚀</span><h2>Opportunities</h2></div>
+    <div class="section-body">${opps}</div>
+  </div>
+
+  <div class="section next">
+    <div class="section-header"><span class="section-icon">✅</span><h2>Next Steps</h2></div>
+    <div class="section-body">${nextSteps}</div>
+  </div>
+
+  ${garimaNote ? `
+  <div class="garima-note">
+    <div class="garima-label">CA's Note — ${month}</div>
+    <div class="garima-text">${garimaNote}</div>
+  </div>` : ""}
+
+  <div class="disclaimer">
+    This executive summary is prepared by Garima Agarwal (CA Membership: 160944) based on management information provided by the client. It is for internal management and board use only and does not constitute audited financial statements.
+  </div>
+
+  <div class="footer">
+    <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038 | agrgarima@gmail.com</span>
+    <span>Finzzup | Build. Value. Scale.</span>
+  </div>
+</div>
+</body>
+</html>`;
+}
+
 // ─── CASH FLOW PDF ────────────────────────────────────────────────────────────
 function generateCashPDF({ client, reportData, kpis }) {
   const company  = client?.company || "Your Company";
@@ -2709,6 +3029,51 @@ function generateCashPDF({ client, reportData, kpis }) {
 </div>
 </body>
 </html>`;
+}
+
+
+// ─── KPI BENCHMARKS ───────────────────────────────────────────────────────────
+// Returns benchmark text for a KPI. reportData overrides take precedence.
+function kpiBenchmark(label, pack, reportData) {
+  const l = (label || "").toLowerCase();
+  const overrides = {
+    revenue:      reportData?.benchRevenue,
+    margin:       reportData?.benchMargin,
+    cash:         reportData?.benchCash,
+    burn:         reportData?.benchBurn,
+    runway:       reportData?.benchRunway,
+    arr:          reportData?.benchArr,
+    ebitda:       reportData?.benchEbitda,
+    debtor:       reportData?.benchDebtorDays,
+    working:      reportData?.benchWorkingCapital,
+  };
+  // Check overrides first
+  for (const [key, val] of Object.entries(overrides)) {
+    if (l.includes(key) && val) return `Target: ${val}`;
+  }
+  // Default benchmarks by pack + label
+  if (pack === "startup") {
+    if (l.includes("revenue"))    return "Series A threshold: ₹10 Cr ARR";
+    if (l.includes("margin"))     return "Series A benchmark: 45%+ gross margin";
+    if (l.includes("burn"))       return "Efficient: <₹40L/mo net burn";
+    if (l.includes("runway"))     return "Fundraise trigger: <9 months";
+    if (l.includes("cash"))       return "Maintain 9–12 months runway";
+    if (l.includes("arr"))        return "Series A: ₹3–10 Cr ARR";
+  }
+  if (pack === "msme") {
+    if (l.includes("revenue"))    return "Sector avg: ₹60–90L/mo";
+    if (l.includes("margin"))     return "MSME avg: 22–28% gross margin";
+    if (l.includes("cash"))       return "Target: 45–60 days operating expenses";
+    if (l.includes("debtor"))     return "Target: <30 debtor days";
+    if (l.includes("working"))    return "Current ratio target: >1.5x";
+  }
+  if (pack === "corporate") {
+    if (l.includes("revenue"))    return "Board target: ₹100 Cr run rate";
+    if (l.includes("ebitda"))     return "Sector avg: 15–18% EBITDA margin";
+    if (l.includes("margin"))     return "Industry benchmark: 35%+ gross margin";
+    if (l.includes("cash"))       return "Target: 60 days operating expenses";
+  }
+  return null;
 }
 
 
@@ -3388,6 +3753,7 @@ function CFOPackContent({ reportData, client, kpis }) {
   const tabs = [
     { id:"monthly",    icon:"📊", label:"Monthly Report"      },
     { id:"variance",   icon:"📉", label:"Variance Analysis"   },
+    { id:"uniteco",    icon:"📐", label:"Unit Economics"      },
     { id:"fundraise",  icon:"🎯", label:"Fundraise Readiness" },
     { id:"loan",       icon:"🏦", label:"Loan Readiness"      },
     { id:"boardpacks", icon:"📁", label:"Board Packs"         },
@@ -3430,7 +3796,9 @@ function CFOPackContent({ reportData, client, kpis }) {
                 <div key={i} style={{ padding:"14px 10px", borderRadius:12, background:k.bg, textAlign:"center" }}>
                   <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:k.color }}>{k.value}</div>
                   <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:4 }}>{k.label}</div>
-                  <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:C.red, marginTop:2 }}>{k.trend==="up"?"▲":"▼"} vs {k.prev}</div>
+                  <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:k.trend==="down"?C.red:C.muted, marginTop:2, lineHeight:1.4 }}>
+                    {kpiContext(k)}
+                  </div>
                 </div>
               ))}
             </div>
@@ -3545,6 +3913,194 @@ function CFOPackContent({ reportData, client, kpis }) {
           </Card>
         </div>
       )}
+
+      {tab === "uniteco" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+          {/* Header */}
+          <div style={{ padding:"18px 22px", borderRadius:16,
+            background:`linear-gradient(135deg,${C.blue}10,${C.teal}08)`,
+            border:`1px solid ${C.blue}18` }}>
+            <div style={{ fontFamily:F, fontWeight:800, fontSize:17, color:C.text, marginBottom:4 }}>
+              {"Unit Economics"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
+              {"The metrics investors will scrutinise in your data room — CAC, LTV, payback, retention."}
+            </div>
+          </div>
+
+          {/* Core Metrics — 2x2 big cards */}
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            {[
+              {
+                label:"CAC",
+                full:"Customer Acquisition Cost",
+                value: reportData?.cac || "—",
+                benchmark: reportData?.cacBenchmark || "Sector avg: ₹8,000–15,000",
+                note:"Total sales+marketing spend ÷ new customers acquired",
+                color:C.blue,
+                target: reportData?.cacTarget || null,
+                good: reportData?.cac && reportData?.cacTarget ? parseFloat(reportData.cac?.replace(/[^0-9.]/g,"")) <= parseFloat(reportData.cacTarget?.replace(/[^0-9.]/g,"")) : null,
+              },
+              {
+                label:"LTV",
+                full:"Lifetime Value",
+                value: reportData?.ltv || "—",
+                benchmark: reportData?.ltvBenchmark || "Target: LTV:CAC > 3x",
+                note:"Average revenue per customer × avg retention period × margin",
+                color:C.teal,
+                target: reportData?.ltvTarget || null,
+                good: null,
+              },
+              {
+                label:"LTV : CAC",
+                full:"LTV to CAC Ratio",
+                value: reportData?.ltvCac || "—",
+                benchmark: reportData?.ltvCacBenchmark || "Series A min: 3x · Good: >5x",
+                note:"How much value you get per rupee spent acquiring a customer",
+                color: reportData?.ltvCac ? (parseFloat(reportData.ltvCac) >= 3 ? C.green : C.red) : C.purple,
+                good: reportData?.ltvCac ? parseFloat(reportData.ltvCac) >= 3 : null,
+              },
+              {
+                label:"Payback Period",
+                full:"CAC Payback Period",
+                value: reportData?.cacPayback || "—",
+                benchmark: reportData?.cacPaybackBenchmark || "Investors prefer <12 months",
+                note:"Months to recover acquisition cost from gross margin",
+                color: reportData?.cacPayback ? (parseInt(reportData.cacPayback) <= 12 ? C.green : C.amber) : C.amber,
+                good: reportData?.cacPayback ? parseInt(reportData.cacPayback) <= 12 : null,
+              },
+            ].map((m, i) => (
+              <div key={i} style={{ padding:"18px", borderRadius:14,
+                background: m.good===true ? `${C.green}08` : m.good===false ? `${C.red}06` : C.bg2,
+                border:`1px solid ${m.good===true ? C.green+"25" : m.good===false ? C.red+"20" : C.border}` }}>
+                <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+                    textTransform:"uppercase", letterSpacing:"0.07em" }}>{m.label}</div>
+                  {m.good !== null && (
+                    <span style={{ fontSize:10, fontWeight:700, fontFamily:F,
+                      color: m.good ? C.green : C.red,
+                      background: m.good ? `${C.green}15` : `${C.red}10`,
+                      padding:"2px 8px", borderRadius:100 }}>
+                      {m.good ? "✅ On track" : "⚠️ Watch"}
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontFamily:FM, fontWeight:800, fontSize:28, color:m.value==="—"?C.dim:m.color, marginBottom:4 }}>
+                  {m.value}
+                </div>
+                <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginBottom:6 }}>{m.full}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.blue, fontWeight:600,
+                  background:`${C.blue}08`, padding:"4px 10px", borderRadius:8, marginBottom:6 }}>
+                  {m.benchmark}
+                </div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.dim, lineHeight:1.5 }}>{m.note}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Growth & Retention */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
+              {"Growth & Retention"}
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
+              {[
+                {
+                  label:"MoM Revenue Growth",
+                  value: reportData?.momGrowth || kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value ? "—" : "—",
+                  benchmark: reportData?.momGrowthBenchmark || "Series A: >10% MoM",
+                  good: reportData?.momGrowth ? parseFloat(reportData.momGrowth) >= 10 : null,
+                  color:C.blue,
+                },
+                {
+                  label:"Net Revenue Retention",
+                  value: reportData?.nrr || "—",
+                  benchmark: reportData?.nrrBenchmark || "Good: >100% · Great: >120%",
+                  good: reportData?.nrr ? parseFloat(reportData.nrr) >= 100 : null,
+                  color:C.teal,
+                },
+                {
+                  label:"Gross Churn (Monthly)",
+                  value: reportData?.churnRate || "—",
+                  benchmark: reportData?.churnBenchmark || "SaaS target: <2%/mo",
+                  good: reportData?.churnRate ? parseFloat(reportData.churnRate) <= 2 : null,
+                  color:C.purple,
+                },
+                {
+                  label:"Burn Multiple",
+                  value: reportData?.burnMultiple || "—",
+                  benchmark: reportData?.burnMultipleBenchmark || "Good: <1.5x · Raise ready: <1x",
+                  good: reportData?.burnMultiple ? parseFloat(reportData.burnMultiple) <= 1.5 : null,
+                  color:C.amber,
+                },
+                {
+                  label:"ARR",
+                  value: reportData?.arr || kpis?.find(k=>k.label?.toLowerCase().includes("arr"))?.value || "—",
+                  benchmark: reportData?.arrBenchmark || "Series A: ₹3–10 Cr",
+                  good: null,
+                  color:C.blue,
+                },
+                {
+                  label:"Magic Number",
+                  value: reportData?.magicNumber || "—",
+                  benchmark: reportData?.magicNumberBenchmark || "Good: >0.75 · Efficient: >1.0",
+                  good: reportData?.magicNumber ? parseFloat(reportData.magicNumber) >= 0.75 : null,
+                  color:C.teal,
+                },
+              ].map((m, i) => (
+                <div key={i} style={{ padding:"14px", borderRadius:12,
+                  background: m.good===true ? `${C.green}08` : m.good===false ? `${C.amber}08` : C.bg2,
+                  border:`1px solid ${m.good===true ? C.green+"20" : m.good===false ? C.amber+"25" : C.border}` }}>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700,
+                    textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6 }}>{m.label}</div>
+                  <div style={{ fontFamily:FM, fontWeight:800, fontSize:22,
+                    color:m.value==="—"?C.dim:m.color, marginBottom:4 }}>{m.value}</div>
+                  <div style={{ fontFamily:F, fontSize:10, color:C.blue, lineHeight:1.5 }}>{m.benchmark}</div>
+                  {m.good !== null && (
+                    <div style={{ fontFamily:F, fontSize:10, fontWeight:700,
+                      color:m.good?C.green:C.amber, marginTop:4 }}>
+                      {m.good ? "✅ On track" : "⚠️ Needs attention"}
+                    </div>
+                  )}
+                  {m.value === "—" && (
+                    <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:4, fontStyle:"italic" }}>
+                      {"Set in admin"}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Garima's UE Commentary */}
+          {reportData?.ueNote && (
+            <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
+              <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
+                letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
+                {"📝 Garima's Assessment"}
+              </div>
+              <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
+                {reportData.ueNote}
+              </p>
+            </Card>
+          )}
+
+          {/* CTA */}
+          <Card style={{ background:`${C.blue}06`, borderColor:`${C.blue}15` }}>
+            <div style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7 }}>
+              {"These metrics are updated by Garima after reviewing your data each month. For a full investor-ready unit economics model, "}
+              <a href={WA} target="_blank" rel="noopener"
+                style={{ color:C.green, fontWeight:700, textDecoration:"none" }}>
+                {"💬 request a deep-dive session"}
+              </a>
+              {"."}
+            </div>
+          </Card>
+
+        </div>
+      )}
+
 
       {tab === "fundraise" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
@@ -4092,7 +4648,7 @@ function Calendar() {
       </SectionTitle>
 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:20 }} className="cal-grid">
-        <a href="https://calendly.com/agrgarimaca/30min" target="_blank" rel="noopener"
+        <a href="https://calendly.com/agrgarima/30min" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
           <Card style={{ padding:24, borderTop:`3px solid ${C.blue}`, cursor:"pointer",
             transition:"box-shadow 0.2s" }}
@@ -5470,6 +6026,13 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
   const [saved,    setSavedMsg] = React.useState(false);
   const [error,    setError]    = React.useState("");
 
+  const handleExecSummary = () => {
+    const html = generateExecSummaryPDF({ client, reportData, kpis });
+    const w = window.open("","_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 600);
+  };
   const handlePreview = () => {
     const html = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
     const blob = new Blob([html], { type:"text/html" });
@@ -5518,6 +6081,15 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
           color:"#374151", fontFamily:F, fontWeight:600,
           fontSize:12, cursor:"pointer" }}>
         🖨 Preview & Print
+      </button>
+      {/* Board Executive Summary */}
+      <button onClick={handleExecSummary}
+        style={{ display:"inline-flex", alignItems:"center", gap:6,
+          padding:"8px 16px", borderRadius:10,
+          border:`1.5px solid ${C.purple}30`, background:`${C.purple}08`,
+          color:C.purple, fontFamily:F, fontWeight:600,
+          fontSize:12, cursor:"pointer" }}>
+        {"📋 Exec Summary"}
       </button>
       {/* Save to My Documents */}
       <button onClick={handleSave} disabled={saving}
@@ -5609,7 +6181,7 @@ function Portal({ client, onLogout }) {
     overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData}/>,
     dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData}/>,
     cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
-    actions:    <ActionItems actions={resolvedActions}/>,
+    actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
     myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
     engagement: <Engagement liveData={resolvedEngagement}/>,
     calendar:   <Calendar/>,
@@ -7011,6 +7583,95 @@ function AdminPanel({ admin, onLogout }) {
                   </Card>
                 )}
 
+                {/* ══ UNIT ECONOMICS (startup only) ══════════════════════════════ */}
+                {selected.client_pack === "startup" && (
+                  <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}04` }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"📐 Unit Economics"}</div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                      {"Shown on the client's Unit Economics tab. Fill in after reviewing their data. Leave blank to show — (not yet assessed)."}
+                    </p>
+
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Core Metrics"}</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+                      {[
+                        { key:"cac",           label:"CAC",                   placeholder:"e.g. ₹12,000" },
+                        { key:"ltv",           label:"LTV",                   placeholder:"e.g. ₹85,000" },
+                        { key:"ltvCac",        label:"LTV:CAC Ratio",         placeholder:"e.g. 7.1x" },
+                        { key:"cacPayback",    label:"CAC Payback Period",    placeholder:"e.g. 8 months" },
+                        { key:"arr",           label:"ARR",                   placeholder:"e.g. ₹6.2 Cr" },
+                        { key:"burnMultiple",  label:"Burn Multiple",         placeholder:"e.g. 1.4x" },
+                      ].map(f => (
+                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
+                          val={reportData[f.key] || ""}
+                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
+                          placeholder={f.placeholder} mono/>
+                      ))}
+                    </div>
+
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Growth & Retention"}</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+                      {[
+                        { key:"momGrowth",    label:"MoM Revenue Growth",    placeholder:"e.g. 6%" },
+                        { key:"nrr",          label:"Net Revenue Retention", placeholder:"e.g. 108%" },
+                        { key:"churnRate",    label:"Gross Churn (Monthly)", placeholder:"e.g. 1.8%" },
+                        { key:"magicNumber",  label:"Magic Number",          placeholder:"e.g. 0.82" },
+                      ].map(f => (
+                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
+                          val={reportData[f.key] || ""}
+                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
+                          placeholder={f.placeholder} mono/>
+                      ))}
+                    </div>
+
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Benchmarks (override defaults)"}</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+                      {[
+                        { key:"cacBenchmark",        label:"CAC Benchmark",        placeholder:"e.g. Sector avg: ₹8,000–15,000" },
+                        { key:"ltvCacBenchmark",      label:"LTV:CAC Benchmark",    placeholder:"e.g. Series A min: 3x" },
+                        { key:"cacPaybackBenchmark",  label:"Payback Benchmark",    placeholder:"e.g. Investors prefer <12 months" },
+                        { key:"nrrBenchmark",         label:"NRR Benchmark",        placeholder:"e.g. Good: >100% · Great: >120%" },
+                        { key:"churnBenchmark",       label:"Churn Benchmark",      placeholder:"e.g. SaaS target: <2%/mo" },
+                        { key:"arrBenchmark",         label:"ARR Benchmark",        placeholder:"e.g. Series A: ₹3–10 Cr" },
+                      ].map(f => (
+                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
+                          val={reportData[f.key] || ""}
+                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
+                          placeholder={f.placeholder}/>
+                      ))}
+                    </div>
+
+                    <AdminInput C={C} F={F} FM={FM} label="Garima's UE Assessment (shown to client)"
+                      val={reportData.ueNote || ""}
+                      onChange={v => setReportData(r => ({...r, ueNote:v}))}
+                      placeholder="e.g. LTV:CAC of 7.1x is strong — well above Series A threshold. Focus on reducing CAC from ₹12K to ₹8K before next raise."/>
+                  </Card>
+                )}
+
+                {/* ══ KPI BENCHMARKS ═══════════════════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"🎯 KPI Benchmarks"}</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                    {"Override the default sector benchmarks shown under each KPI card. Leave blank to use the built-in defaults."}
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    {[
+                      { key:"benchRevenue",      label:"Revenue Benchmark",       placeholder:"e.g. Series A: ₹10 Cr ARR" },
+                      { key:"benchMargin",       label:"Margin Benchmark",        placeholder:"e.g. Target: 45%+ gross margin" },
+                      { key:"benchCash",         label:"Cash Benchmark",          placeholder:"e.g. Maintain 9–12 months runway" },
+                      { key:"benchBurn",         label:"Burn Benchmark",          placeholder:"e.g. Efficient: <₹40L/mo" },
+                      { key:"benchRunway",       label:"Runway Benchmark",        placeholder:"e.g. Fundraise trigger: <9 months" },
+                      { key:"benchArr",          label:"ARR Benchmark",           placeholder:"e.g. Series A: ₹3–10 Cr" },
+                      { key:"benchEbitda",       label:"EBITDA Benchmark",        placeholder:"e.g. Sector avg: 15–18% margin" },
+                      { key:"benchDebtorDays",   label:"Debtor Days Benchmark",   placeholder:"e.g. Target: <30 days" },
+                    ].map(f => (
+                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
+                        val={reportData[f.key] || ""}
+                        onChange={v => setReportData(r => ({...r, [f.key]:v}))}
+                        placeholder={f.placeholder}/>
+                    ))}
+                  </div>
+                </Card>
+
                 {/* ══ EXISTING: KEY METRICS ═════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>📋 Key Metrics Table</div>
@@ -7128,6 +7789,72 @@ function AdminPanel({ admin, onLogout }) {
                       background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
                     onFocus={e=>e.target.style.borderColor=C.amber}
                     onBlur={e=>e.target.style.borderColor=C.border}/>
+                </Card>
+
+                {/* ══ 3-MONTH FORECAST ════════════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"🔭 3-Month Forward View"}</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                    {"Shown on the client's Dashboard. Write your outlook and optionally add 3 forward data points (e.g. projected revenue)."}
+                  </p>
+                  <AdminInput C={C} F={F} FM={FM} label="Garima's Forward Outlook"
+                    val={reportData.forecastNote || ""}
+                    onChange={v => setReportData(r => ({...r, forecastNote:v}))}
+                    placeholder="e.g. Revenue trajectory is strong for Q1. March may dip slightly due to advance tax outflow but April–May looks positive. Focus: close 2 enterprise deals before quarter end."/>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, margin:"14px 0 10px" }}>{"Forward Data Points (optional)"}</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+                    {[
+                      { lkey:"forecast1Label", vkey:"forecast1Value", tkey:"forecast1Trend", num:"1" },
+                      { lkey:"forecast2Label", vkey:"forecast2Value", tkey:"forecast2Trend", num:"2" },
+                      { lkey:"forecast3Label", vkey:"forecast3Value", tkey:"forecast3Trend", num:"3" },
+                    ].map(f => (
+                      <div key={f.num} style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                        <AdminInput C={C} F={F} FM={FM} label={`Month ${f.num} Label`}
+                          val={reportData[f.lkey] || ""}
+                          onChange={v => setReportData(r => ({...r, [f.lkey]:v}))}
+                          placeholder="e.g. April 2026"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Value"
+                          val={reportData[f.vkey] || ""}
+                          onChange={v => setReportData(r => ({...r, [f.vkey]:v}))}
+                          placeholder="e.g. ₹92L" mono/>
+                        <select value={reportData[f.tkey] || "stable"}
+                          onChange={e => setReportData(r => ({...r, [f.tkey]:e.target.value}))}
+                          style={{ padding:"8px 10px", borderRadius:8, border:`1px solid ${C.border}`,
+                            background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
+                          <option value="up">▲ Improving</option>
+                          <option value="stable">→ Stable</option>
+                          <option value="down">▼ Watch</option>
+                        </select>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                {/* ══ EXECUTIVE SUMMARY ════════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"📋 Board Executive Summary"}</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                    {"One paragraph each — shown in the downloadable Board Executive Summary PDF. Write in plain English as if briefing a board member."}
+                  </p>
+                  {[
+                    { key:"execPerformance",   label:"📈 Performance",      placeholder:"e.g. Revenue grew 6% MoM to ₹84L — tracking ahead of Q4 plan. Gross margin improved to 41% as COGS optimisation begins to reflect. EBITDA positive for second consecutive month." },
+                    { key:"execCash",          label:"💰 Cash & Liquidity",  placeholder:"e.g. Cash position at ₹2.1 Cr with 4.4 months runway. March will see pressure from advance tax (₹22L) and delayed Client B collection. April outlook is positive." },
+                    { key:"execRisks",         label:"⚠️ Key Risks",         placeholder:"e.g. (1) Runway below 6 months — fundraise urgently. (2) Client B overdue ₹4.8L at 90+ days. (3) Burn multiple at 1.8x — above Series A benchmark." },
+                    { key:"execOpportunities", label:"🚀 Opportunities",     placeholder:"e.g. (1) SBI Startup Branch intro secured — loan application ready. (2) SIES Incubator partnership in progress — 5 potential clients. (3) EBITDA margin improving — profitability within reach." },
+                    { key:"execNextSteps",     label:"✅ Next Steps",        placeholder:"e.g. (1) Close Client B collection by 15 Mar. (2) File GSTR-3B by 20 Mar. (3) Submit SBI loan application by 31 Mar. (4) Begin Series A deck preparation." },
+                  ].map(f => (
+                    <div key={f.key} style={{ marginBottom:12 }}>
+                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:6 }}>{f.label}</div>
+                      <textarea value={reportData[f.key] || ""} rows={3}
+                        onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
+                        placeholder={f.placeholder}
+                        style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
+                          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                          background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
+                        onFocus={e=>e.target.style.borderColor=C.blue}
+                        onBlur={e=>e.target.style.borderColor=C.border}/>
+                    </div>
+                  ))}
                 </Card>
 
                 {/* Cash Pressure Points — startup only */}
