@@ -1417,7 +1417,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
             </div>
           </Card>
         );
-      }())}
+      })()}
 
       {/* Garima's note — pack-aware */}
       <Card style={{ marginBottom:24, borderLeft:`3px solid ${ovPack==="msme"?C.teal:ovPack==="corporate"?C.purple:C.blue}` }}>
@@ -1527,7 +1527,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
         ))}
       </div>
         );
-      }())}
+      })()}
 
       <style>{`
         @media(max-width:640px){
@@ -4003,7 +4003,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
             { label:"EBITDA",             value:"₹14.7L", pct:"17.5%", trend:"up",   sub:"EBITDA margin 17.5%" },
             { label:"Net Profit",         value:"₹10.2L", pct:"12.1%", trend:"up",   sub:"Net margin 12.1%" },
           ].map((r,i) => <StatRow key={i} {...r}/>);
-        }())}
+        })()}
       </Card>
 
       {reportData?.metrics?.some(m => m.value) && (
@@ -4395,7 +4395,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 </div>
               </Card>
             ) : null;
-          }())}
+          })()}
 
           {/* Recommended Schemes for MSME */}
           <Card>
@@ -5012,7 +5012,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 ));
               }
               return (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.plRows || PACK_CONFIG.startup.plRows).map((r,i) => <StatRow key={i} {...r}/>);
-            }())}
+            })()}
           </Card>
           <Card style={{ borderLeft:`3px solid ${C.green}` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items</div>
@@ -5474,7 +5474,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 </div>
               </Card>
             ) : null;
-          }())}
+          })()}
 
           {/* IMPROVEMENTS */}
           {Array.isArray(reportData?.loanImprovements) && reportData.loanImprovements.some(x=>x) && (
