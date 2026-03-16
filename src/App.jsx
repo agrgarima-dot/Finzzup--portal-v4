@@ -7960,54 +7960,54 @@ function AdminPanel({ admin, onLogout }) {
   // ── AUTO-CALCULATE RATIOS FROM ENTERED DATA ─────────────────────────────────
   const calcRatios = () => {
     if (!reportData) return {};
-    const pl     = reportData?.plInputs || {};
-    const rd     = reportData || {};
+    var pl     = reportData?.plInputs || {};
+    var rd     = reportData || {};
     // Admin kpis is a form object {revenue, gross_margin, cash_balance...}
     // Map it to match what calcRatios expects
-    const kv     = {
+    var kv     = {
       revenue:       kpis?.revenue       || "",
       cash_balance:  kpis?.cash_balance  || "",
       burn_rate:     kpis?.burn_rate     || "",
       runway:        kpis?.runway        || "",
       arr:           kpis?.arr           || "",
     };
-    const calc   = {};
+    var calc   = {};
 
     // Helper: parse numeric value from strings like "₹84L", "₹2.1 Cr", "41%", "4.2x"
-    const parse = (val) => {
+    var parse = (val) => {
       if (!val) return null;
-      const s = String(val).replace(/[₹,\s]/g, "");
-      let n = parseFloat(s);
+      var s = String(val).replace(/[₹,\s]/g, "");
+      var n = parseFloat(s);
       if (isNaN(n)) return null;
       if (s.toLowerCase().includes("cr"))  n = n * 100; // Cr → L
       if (s.toLowerCase().includes("%"))   n = n;       // keep as %
       return n;
     };
 
-    const revenue   = parse(pl.revenue)      || parse(kv.revenue);
-    const gp        = parse(pl.grossProfit);
-    const gpMargin  = parse(pl.gpMargin);
-    const ebitda    = parse(pl.ebitda);
-    const pat       = parse(pl.pat);
-    const cash      = parse(kv.cash_balance) || parse(rd.closingCash);
-    const burn      = parse(kv.burn_rate);
-    const runway    = parse(kv.runway);
-    const arr       = parse(kv.arr)          || parse(rd.arr);
-    const debt      = parse(rd.existingDebt);
-    const interest  = parse(rd.interestCost);
-    const operCF    = parse(rd.operatingCF);
-    const freeCF    = parse(rd.freeCF);
-    const debtors   = parse(rd.debtors);
-    const creditors = parse(rd.creditors);
-    const inventory = parse(rd.inventory);
-    const ddays     = parse(rd.debtorDays);
-    const cdays     = parse(rd.creditorDays);
-    const idays     = parse(rd.inventoryDays);
-    const cac       = parse(rd.cac);
-    const ltv       = parse(rd.ltv);
-    const momGrowth = parse(rd.momGrowth);
-    const churn     = parse(rd.churnRate);
-    const nrr       = parse(rd.nrr);
+    var revenue   = parse(pl.revenue)      || parse(kv.revenue);
+    var gp        = parse(pl.grossProfit);
+    var gpMargin  = parse(pl.gpMargin);
+    var ebitda    = parse(pl.ebitda);
+    var pat       = parse(pl.pat);
+    var cash      = parse(kv.cash_balance) || parse(rd.closingCash);
+    var burn      = parse(kv.burn_rate);
+    var runway    = parse(kv.runway);
+    var arr       = parse(kv.arr)          || parse(rd.arr);
+    var debt      = parse(rd.existingDebt);
+    var interest  = parse(rd.interestCost);
+    var operCF    = parse(rd.operatingCF);
+    var freeCF    = parse(rd.freeCF);
+    var debtors   = parse(rd.debtors);
+    var creditors = parse(rd.creditors);
+    var inventory = parse(rd.inventory);
+    var ddays     = parse(rd.debtorDays);
+    var cdays     = parse(rd.creditorDays);
+    var idays     = parse(rd.inventoryDays);
+    var cac       = parse(rd.cac);
+    var ltv       = parse(rd.ltv);
+    var momGrowth = parse(rd.momGrowth);
+    var churn     = parse(rd.churnRate);
+    var nrr       = parse(rd.nrr);
 
     // ── P&L DERIVED ──
     if (revenue && gp)          calc.gpMarginCalc      = ((gp/revenue)*100).toFixed(1) + "%";
@@ -8683,8 +8683,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 </Card>
               ) : (<>
 
-                {/* Pre-compute ratios once */}
-                {(function() { try { window.__adminCalc = calcRatios(); } catch(ex) { window.__adminCalc = {}; } return null; }())}
+
 
                 {/* ══ 1: MONTH LABEL ═══════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
@@ -9005,22 +9004,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           val={reportData.dscr || ""}
                           onChange={v => setReportData(r => ({...r, dscr:v}))}
                           placeholder="e.g. 2.1x" mono/>
-                        {!reportData.dscr && (window.__adminCalc||{}).dscrCalc && (
-                          <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>
-                            {"⚡ Calculated: "}{(window.__adminCalc||{}).dscrCalc}{" — will auto-fill on Generate"}
-                          </div>
-                        )}
                       </div>
                       <div>
                         <AdminInput C={C} F={F} FM={FM} label="Interest Coverage Ratio"
                           val={reportData.interestCoverage || ""}
                           onChange={v => setReportData(r => ({...r, interestCoverage:v}))}
                           placeholder="e.g. 4.2x" mono/>
-                        {!reportData.interestCoverage && (window.__adminCalc||{}).interestCoverageCalc && (
-                          <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>
-                            {"⚡ Calculated: "}{(window.__adminCalc||{}).interestCoverageCalc}
-                          </div>
-                        )}
                       </div>
                       <AdminInput C={C} F={F} FM={FM} label="Interest Margin / Net Interest"
                         val={reportData.interestMargin || ""}
@@ -9047,11 +9036,6 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           val={reportData.debtEbitda || ""}
                           onChange={v => setReportData(r => ({...r, debtEbitda:v}))}
                           placeholder="e.g. 2.4x" mono/>
-                        {!reportData.debtEbitda && (window.__adminCalc||{}).debtEbitdaCalc && (
-                          <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>
-                            {"⚡ Calculated: "}{(window.__adminCalc||{}).debtEbitdaCalc}
-                          </div>
-                        )}
                       </div>
                       <AdminInput C={C} F={F} FM={FM} label="Working Capital"
                         val={reportData.workingCapital || ""}
@@ -9084,15 +9068,6 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                             val={reportData[f.key] || ""}
                             onChange={v => setReportData(r => ({...r, [f.key]:v}))}
                             placeholder={f.placeholder} mono/>
-                          {!reportData[f.key] && f.key==="ltvCac" && (window.__adminCalc||{}).ltvCacCalc && (
-                            <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>{"⚡ Calculated: "}{(window.__adminCalc||{}).ltvCacCalc}</div>
-                          )}
-                          {!reportData[f.key] && f.key==="burnMultiple" && (window.__adminCalc||{}).burnMultipleCalc && (
-                            <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>{"⚡ Calculated: "}{(window.__adminCalc||{}).burnMultipleCalc}</div>
-                          )}
-                          {!reportData[f.key] && f.key==="cacPayback" && (window.__adminCalc||{}).cacPaybackCalc && (
-                            <div style={{ fontFamily:F, fontSize:10, color:C.teal, marginTop:3 }}>{"⚡ Calculated: "}{(window.__adminCalc||{}).cacPaybackCalc}</div>
-                          )}
                         </div>
                       ))}
                     </div>
@@ -9576,43 +9551,11 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   </>)}
 
-                  {/* Show auto-calculated preview */}
-                  {(() => {
-                    const c = window.__adminCalc || {};
-                    const items = [
-                      c.interestCoverageCalc && { label:"Interest Coverage", value:c.interestCoverageCalc },
-                      c.debtEbitdaCalc       && { label:"Debt / EBITDA",     value:c.debtEbitdaCalc       },
-                      c.dscrCalc             && { label:"DSCR",              value:c.dscrCalc             },
-                      c.cccCalc              && { label:"CCC",               value:c.cccCalc              },
-                      c.debtorDaysCalc       && { label:"Debtor Days",       value:c.debtorDaysCalc       },
-                      c.creditorDaysCalc     && { label:"Creditor Days",     value:c.creditorDaysCalc     },
-                      c.ltvCacCalc           && { label:"LTV : CAC",         value:c.ltvCacCalc           },
-                      c.burnMultipleCalc     && { label:"Burn Multiple",     value:c.burnMultipleCalc     },
-                      c.cacPaybackCalc       && { label:"CAC Payback",       value:c.cacPaybackCalc       },
-                    ].filter(Boolean);
-                    if (items.length === 0) return null;
-                    return (
-                      <div style={{ padding:"12px 14px", borderRadius:10,
-                        background:`${C.teal}08`, border:`1px solid ${C.teal}20` }}>
-                        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.teal,
-                          textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>
-                          {"⚡ Auto-Calculated from above"}
-                        </div>
-                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }} className="inv-grid">
-                          {items.map((item, i) => (
-                            <div key={i} style={{ padding:"8px 12px", borderRadius:8,
-                              background:"rgba(255,255,255,0.7)", border:`1px solid ${C.teal}15` }}>
-                              <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginBottom:2 }}>{item.label}</div>
-                              <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:C.teal }}>{item.value}</div>
-                            </div>
-                          ))}
-                        </div>
-                        <div style={{ fontFamily:F, fontSize:11, color:C.teal, marginTop:8 }}>
-                          {"These will auto-fill into the report when you click Generate Analysis ↓"}
-                        </div>
-                      </div>
-                    );
-                  })()}
+                                    <div style={{ padding:"10px 14px", borderRadius:8,
+                    background:`${C.teal}08`, border:`1px solid ${C.teal}20`,
+                    fontFamily:F, fontSize:12, color:C.teal }}>
+                    {"⚡ Ratios auto-calculate when you click Generate Analysis below"}
+                  </div>
                 </Card>}
 
                 {/* ══ AI ANALYSIS GENERATOR ══════════════════════════════════ */}
