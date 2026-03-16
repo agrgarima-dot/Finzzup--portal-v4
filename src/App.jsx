@@ -5,7 +5,7 @@ import {
   XAxis, YAxis, CartesianGrid, Legend,
   Tooltip, ResponsiveContainer, ReferenceLine
 } from "recharts";
-import LOGO_SRC from "./logo.js";
+import LOGO_SRC from "./logo.png";
 
 // ─── TOKENS ──────────────────────────────────────────────────────────────────
 const C = {
