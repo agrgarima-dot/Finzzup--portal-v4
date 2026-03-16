@@ -7973,9 +7973,18 @@ function AdminPanel({ admin, onLogout }) {
 
   // ── AUTO-CALCULATE RATIOS FROM ENTERED DATA ─────────────────────────────────
   const calcRatios = () => {
+    if (!reportData) return {};
     const pl     = reportData?.plInputs || {};
     const rd     = reportData || {};
-    const kv     = kpis || {};
+    // Admin kpis is a form object {revenue, gross_margin, cash_balance...}
+    // Map it to match what calcRatios expects
+    const kv     = {
+      revenue:       kpis?.revenue       || "",
+      cash_balance:  kpis?.cash_balance  || "",
+      burn_rate:     kpis?.burn_rate     || "",
+      runway:        kpis?.runway        || "",
+      arr:           kpis?.arr           || "",
+    };
     const calc   = {};
 
     // Helper: parse numeric value from strings like "₹84L", "₹2.1 Cr", "41%", "4.2x"
@@ -9532,7 +9541,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 )}
 
                 {/* ══ RAW INPUTS → AUTO RATIOS ═══════════════════════════════ */}
-                <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}04` }}>
+                {reportData && <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}04` }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
                     {"⚡ Raw Inputs — Ratios Auto-Calculate"}
                   </div>
@@ -9617,10 +9626,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       </div>
                     );
                   })()}
-                </Card>
+                </Card>}
 
                 {/* ══ AI ANALYSIS GENERATOR ══════════════════════════════════ */}
-                <Card style={{ marginBottom:20, border:`1.5px solid ${C.purple}30`,
+                {reportData && <Card style={{ marginBottom:20, border:`1.5px solid ${C.purple}30`,
                   background:`linear-gradient(135deg,${C.purple}06,${C.blue}04)` }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
                     <div style={{ width:36, height:36, borderRadius:10,
@@ -9723,9 +9732,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       </div>
                     </div>
                   )}
-                </Card>
+                </Card>}
 
-                <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>
+                {reportData && <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
               </>)}
             </div>
           )}
@@ -10062,6 +10071,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   ))}
                 </div>
               )}
+            </div>
+          )}
+
+          {tab === "market" && (
+            <div style={{ maxWidth:900 }}>
+              <MarketIntel client={selected || {client_pack:"startup"}}/>
             </div>
           )}
 
