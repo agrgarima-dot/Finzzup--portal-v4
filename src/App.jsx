@@ -320,7 +320,7 @@ function Login({ onLogin }) {
     if (authErr) { setError(authErr.message); return; }
     // Fetch fresh client row from DB to ensure all fields (client_pack etc) are present
     const { data: freshClient } = await supabase
-      .from("clients").select("*").eq("email", form.email.trim()).single();
+      .from("clients").select("*").eq("email", form.email.trim()).maybeSingle();
     onLogin(freshClient || client);
   };
 
@@ -344,7 +344,7 @@ function Login({ onLogin }) {
     });
     if (authErr) { setLoading(false); setError("Incorrect email or password."); return; }
     const { data, error: dbErr } = await supabase
-      .from("clients").select("*").eq("email", form.email.trim()).single();
+      .from("clients").select("*").eq("email", form.email.trim()).maybeSingle();
     setLoading(false);
     if (dbErr || !data) { setError("Account not found. Please register first."); return; }
     onLogin(data);
@@ -7275,13 +7275,13 @@ function Portal({ client, onLogout }) {
       setDataLoading(true);
       const [kpiRes, actionRes, engRes, invRes, rdRes] = await Promise.all([
         supabase.from("kpis").select("*").eq("client_id", client.id)
-          .order("updated_at", { ascending:false }).limit(1).single(),
+          .order("updated_at", { ascending:false }).limit(1).maybeSingle(),
         supabase.from("action_items").select("*").eq("client_id", client.id)
           .order("created_at", { ascending:false }),
-        supabase.from("engagements").select("*").eq("client_id", client.id).single(),
+        supabase.from("engagements").select("*").eq("client_id", client.id).maybeSingle(),
         supabase.from("invoices").select("*").eq("client_id", client.id)
           .order("created_at", { ascending:false }),
-        supabase.from("report_data").select("*").eq("client_id", client.id).single(),
+        supabase.from("report_data").select("*").eq("client_id", client.id).maybeSingle(),
       ]);
       if (kpiRes.data)    setLiveKpis(kpiRes.data);
       if (actionRes.data) setLiveActions(actionRes.data);
@@ -7465,7 +7465,7 @@ function AdminLogin({ onLogin }) {
     if (authErr) { setLoading(false); setError("Invalid credentials."); return; }
     // Check if admin
     const { data: adminData } = await supabase
-      .from("admins").select("*").eq("email", form.email).single();
+      .from("admins").select("*").eq("email", form.email).maybeSingle();
     setLoading(false);
     if (!adminData) { await supabase.auth.signOut(); setError("Not authorised as admin."); return; }
     onLogin(adminData);
@@ -7721,7 +7721,7 @@ function AdminPanel({ admin, onLogout }) {
     setSelected(c); setSaved(false);
     // Load latest KPIs
     const { data: kpiData } = await supabase.from("kpis")
-      .select("*").eq("client_id", c.id).order("updated_at", { ascending:false }).limit(1).single();
+      .select("*").eq("client_id", c.id).order("updated_at", { ascending:false }).limit(1).maybeSingle();
     if (kpiData) setKpis(kpiData);
     else setKpis({ month:"", revenue:"", gross_margin:"", cash_balance:"", burn_rate:"", runway:"", arr:"", garima_note:"" });
     // Load actions
@@ -7730,7 +7730,7 @@ function AdminPanel({ admin, onLogout }) {
     setActions(actData || []);
     // Load engagement
     const { data: engData } = await supabase.from("engagements")
-      .select("*").eq("client_id", c.id).single();
+      .select("*").eq("client_id", c.id).maybeSingle();
     if (engData) setEngagement(engData);
     else setEngagement({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
     // Load documents
@@ -7747,7 +7747,7 @@ function AdminPanel({ admin, onLogout }) {
     setRequests(reqData || []);
     // Load report data
     const { data: rdData } = await supabase.from("report_data")
-      .select("*").eq("client_id", c.id).single();
+      .select("*").eq("client_id", c.id).maybeSingle();
     const defaults = defaultReportData(c.client_pack || "startup");
     if (rdData?.data) {
       try {
@@ -7817,7 +7817,7 @@ function AdminPanel({ admin, onLogout }) {
     setLoading(true);
     const payload = { client_id: selected.id, data: JSON.stringify(reportData), updated_at: new Date().toISOString() };
     // Check if exists first
-    const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).single();
+    const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).maybeSingle();
     if (existing?.id) {
       await supabase.from("report_data").update(payload).eq("id", existing.id);
     } else {
@@ -10029,7 +10029,7 @@ export default function App() {
       if (session?.user?.email) {
         if (isAdminRoute) {
           const { data: adminData } = await supabase
-            .from("admins").select("*").eq("email", session.user.email).single();
+            .from("admins").select("*").eq("email", session.user.email).maybeSingle();
           if (adminData) setAdmin(adminData);
         } else {
           // Check if this is a demo email — restore demo session without DB hit
@@ -10043,7 +10043,7 @@ export default function App() {
           } else {
             // Real client — fetch from Supabase
             const { data: clientData } = await supabase
-              .from("clients").select("*").eq("email", session.user.email).single();
+              .from("clients").select("*").eq("email", session.user.email).maybeSingle();
             if (clientData) setClient(clientData);
           }
         }
