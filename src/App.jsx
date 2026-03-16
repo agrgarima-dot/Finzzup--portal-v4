@@ -617,13 +617,13 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
         borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
         {!collapsed && (
           <img src={LOGO_SRC} alt="Finzzup"
-            style={{ height:38, width:"auto", objectFit:"contain", display:"block",
-              objectFit:"contain" }}/>
+            style={{ height:52, width:"auto", objectFit:"contain", display:"block",
+              filter:"brightness(0) invert(1)" }}/>
         )}
         {collapsed && (
           <img src={LOGO_SRC} alt="Finzzup"
-            style={{ height:28, width:28, objectFit:"contain", display:"block",
-              objectFit:"contain" }}/>
+            style={{ height:32, width:32, objectFit:"contain", display:"block",
+              filter:"brightness(0) invert(1)" }}/>
         )}
         <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
           cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
@@ -8196,7 +8196,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
         },
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001",
-          max_tokens: 3000,
+          max_tokens: 1500,
           messages: [{ role: "user", content: prompt }],
         }),
       });
@@ -8217,9 +8217,30 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
     }
   };
 
+  // Convert AI string response for varianceCommentary into the array format the UI expects
+  const normalizeAiDraft = (draft) => {
+    if (!draft) return draft;
+    const out = {...draft};
+    // varianceCommentary: AI returns a string, UI expects [{item, note, favorable}]
+    if (typeof out.varianceCommentary === "string") {
+      const lines = out.varianceCommentary
+        .split(/\n|\.(?=\s)/)
+        .map(s => s.trim())
+        .filter(Boolean)
+        .slice(0, 4);
+      out.varianceCommentary = lines.map(line => ({
+        item: line.replace(/^\d+[\.\)]\s*/, "").substring(0, 40),
+        note: line,
+        favorable: !line.toLowerCase().includes("miss") && !line.toLowerCase().includes("below") && !line.toLowerCase().includes("down"),
+      }));
+    }
+    return out;
+  };
+
   const applyDraft = (field) => {
     if (!aiDraft?.[field]) return;
-    const updates = {[field]: aiDraft[field]};
+    const normalized = normalizeAiDraft({[field]: aiDraft[field]});
+    const updates = normalized;
     if (field === "garimaNote") {
       updates.packNote   = aiDraft[field];
       updates.reportNote = aiDraft[field];
@@ -8230,15 +8251,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
 
   const applyAllDraft = () => {
     if (!aiDraft) return;
-    // garimaNote from AI maps to packNote in reportData (used by monthly report)
-    // also set reportNote as fallback
-    const mapped = {...aiDraft};
+    const mapped = normalizeAiDraft({...aiDraft});
     if (aiDraft.garimaNote) {
       mapped.packNote   = aiDraft.garimaNote;
       mapped.reportNote = aiDraft.garimaNote;
     }
     setReportData(r => ({...r, ...mapped}));
-    // Also update the garima_note KPI field so Dashboard note updates
     if (aiDraft.garimaNote) {
       setKpis(k => ({...k, garima_note: aiDraft.garimaNote}));
     }
@@ -8254,8 +8272,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
         display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ padding:"22px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
           <img src={LOGO_SRC} alt="Finzzup"
-            style={{ height:38, width:"auto", objectFit:"contain", display:"block",
-              objectFit:"contain" }}/>
+            style={{ height:52, width:"auto", objectFit:"contain", display:"block",
+              filter:"brightness(0) invert(1)" }}/>
           <div style={{ marginTop:10, padding:"4px 10px", borderRadius:100, display:"inline-block",
             background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.3)" }}>
             <span style={{ fontSize:10, fontWeight:700, color:"#FBBF24", letterSpacing:"0.1em" }}>ADMIN</span>
