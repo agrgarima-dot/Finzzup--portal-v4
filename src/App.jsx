@@ -87,7 +87,7 @@ const CartesianGrid = () => null;
 const Legend = () => null;
 const Tooltip = () => null;
 const ReferenceLine = () => null;
-import LOGO_SRC from "./logo.png";
+const LOGO_SRC = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 60'%3E%3Ctext x='10' y='45' font-family='sans-serif' font-weight='700' font-size='36' fill='%236366f1'%3EFinzzup%3C/text%3E%3C/svg%3E"; // inline SVG logo
 const F  = "'Plus Jakarta Sans', sans-serif";
 const FM = "'DM Mono', monospace";
 const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
