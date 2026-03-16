@@ -173,7 +173,8 @@ const BOARD_PACKS = [
   { name:"Board Pack — January 2026",  date:"22 Jan 2026", size:"2.1 MB", uploadedAt:"2026-01-22" },
   { name:"Board Pack — December 2025", date:"19 Dec 2025", size:"1.9 MB", uploadedAt:"2025-12-19" },
   { name:"Board Pack — November 2025", date:"21 Nov 2025", size:"2.0 MB", uploadedAt:"2025-11-21" },
-].map(p => ({ ...p, new: (new Date() - new Date(p.uploadedAt)) < 35 * 24 * 60 * 60 * 1000 }));
+];
+// "new" badge computed at render time, not module load
 
 const ENGAGEMENT = {
   type: "DCF Valuation — Section 56(2)(viib)",
@@ -2661,10 +2662,7 @@ const _archiveRaw = [
   { name:"January 2026",  date:"22 Jan 2026", size:"2.1 MB", uploadedAt:"2026-01-22" },
   { name:"December 2025", date:"19 Dec 2025", size:"1.9 MB", uploadedAt:"2025-12-19" },
 ];
-const ARCHIVE = _archiveRaw.map(p => ({
-  ...p,
-  new: (new Date() - new Date(p.uploadedAt)) < 35 * 24 * 60 * 60 * 1000,
-}));
+const ARCHIVE = _archiveRaw; // "new" badge computed at render time
 
 function PackPreview({ p, label }) {
   // Realistic mock preview content per month
@@ -2756,11 +2754,11 @@ function ArchiveRow({ p, label }) {
     <Card style={{ padding:"14px 18px" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:38, height:38, borderRadius:10, background:p.new?`${C.blue}12`:`${C.muted}0A`,
+          <div style={{ width:38, height:38, borderRadius:10, background:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?`${C.blue}12`:`${C.muted}0A`,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📄</div>
           <div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, display:"flex", alignItems:"center", gap:7 }}>
-              {label} — {p.name} {p.new && <Badge color={C.blue}>New</Badge>}
+              {label} — {p.name} {((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000) && <Badge color={C.blue}>New</Badge>}
             </div>
             <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{p.date} · {p.size}</div>
           </div>
@@ -2781,7 +2779,7 @@ function ArchiveRow({ p, label }) {
                 if (win) { win.document.write(decodeURIComponent(p.file_url.replace("data:text/html;charset=utf-8,",""))); win.document.close(); }
               } else { window.open(p.file_url, "_blank"); }
             }} style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.blue}`,
-                background:p.new?C.blue:"transparent", color:p.new?"white":C.blue,
+                background:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?C.blue:"transparent", color:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?"white":C.blue,
                 fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer",
                 touchAction:"manipulation" }}>
               {p.file_url.startsWith("data:text/html") ? "👁 View Report" : "↓ Download"}
