@@ -538,6 +538,7 @@ function getNav(client) {
     base.push({ id:"engagement", icon:"📋", label:"Valuation Status" });
   }
 
+  base.push({ id:"market",     icon:"🌐", label:"Market Intel" });
   base.push({ id:"calendar",   icon:"📅", label:"Book a Call"  });
   base.push({ id:"newrequest", icon:"➕", label:"New Request"  });
   base.push({ id:"documents",  icon:"📁", label:"My Documents" });
@@ -1362,9 +1363,6 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
         );
       })()}
 
-      {/* Live Market Data */}
-      <MarketWidget pack={ovPack} client={client}/>
-
       {/* Garima's note — pack-aware */}
       <Card style={{ marginBottom:24, borderLeft:`3px solid ${ovPack==="msme"?C.teal:ovPack==="corporate"?C.purple:C.blue}` }}>
         <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
@@ -1484,7 +1482,6 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
       `}</style>
 
       {/* Market Benchmarks / Competitor Context — pack-aware */}
-      <LiveMarketWidget pack={ovPack} kpis={displayKpis} reportData={reportData}/>
     </div>
   );
 }
@@ -3123,6 +3120,239 @@ function MarketWidget({ pack, client }) {
         ))}
         <style>{`.mkt-grid{grid-template-columns:repeat(${Math.min(items.length,4)},1fr)!important}@media(max-width:600px){.mkt-grid{grid-template-columns:1fr 1fr!important}}`}</style>
       </div>
+    </div>
+  );
+}
+
+
+// ─── MARKET INTELLIGENCE PAGE ─────────────────────────────────────────────────
+function MarketIntel({ client }) {
+  const pack  = client?.client_pack || client?.clientPack || "startup";
+  const m     = useMarketData();
+  const [aiInsight, setAiInsight] = React.useState("");
+  const [aiLoading, setAiLoading] = React.useState(false);
+
+  // Sector benchmarks — hardcoded industry medians (updated quarterly)
+  const sectorData = {
+    startup: [
+      { sector:"SaaS / B2B Tech",      grossMargin:"65–75%", ebitdaMargin:"15–25%", arr:"₹3–10 Cr (Series A)", burnMultiple:"<1.5x", cac:"₹8–15K", ltv:"₹60–120K" },
+      { sector:"D2C / Consumer",        grossMargin:"40–55%", ebitdaMargin:"5–12%",  arr:"₹5–20 Cr",            burnMultiple:"<2x",   cac:"₹500–2K",ltv:"₹5–15K"   },
+      { sector:"Fintech",               grossMargin:"55–70%", ebitdaMargin:"10–20%", arr:"₹2–8 Cr",             burnMultiple:"<1.8x", cac:"₹2–8K",  ltv:"₹20–60K"  },
+      { sector:"Edtech / SaaS",         grossMargin:"60–72%", ebitdaMargin:"8–18%",  arr:"₹1–6 Cr",             burnMultiple:"<2x",   cac:"₹3–10K", ltv:"₹15–50K"  },
+    ],
+    msme: [
+      { sector:"Manufacturing",         grossMargin:"22–35%", ebitdaMargin:"8–14%",  debtorDays:"35–50",        currentRatio:">1.3x", creditDays:"30–45" },
+      { sector:"Trading / Distribution",grossMargin:"12–22%", ebitdaMargin:"3–7%",   debtorDays:"25–40",        currentRatio:">1.2x", creditDays:"20–35" },
+      { sector:"Services / Consulting", grossMargin:"40–60%", ebitdaMargin:"12–22%", debtorDays:"20–35",        currentRatio:">1.5x", creditDays:"15–25" },
+      { sector:"FMCG / Food",           grossMargin:"28–42%", ebitdaMargin:"6–12%",  debtorDays:"15–30",        currentRatio:">1.4x", creditDays:"25–40" },
+    ],
+    corporate: [
+      { sector:"Listed Manufacturing",  grossMargin:"30–42%", ebitdaMargin:"12–18%", roce:"15–22%",  pe:"18–28x",  evEbitda:"10–14x" },
+      { sector:"Listed IT Services",    grossMargin:"28–36%", ebitdaMargin:"18–26%", roce:"25–40%",  pe:"25–40x",  evEbitda:"15–22x" },
+      { sector:"Listed FMCG",           grossMargin:"42–58%", ebitdaMargin:"18–28%", roce:"35–55%",  pe:"40–65x",  evEbitda:"28–40x" },
+      { sector:"Listed Pharma",         grossMargin:"55–68%", ebitdaMargin:"20–30%", roce:"18–28%",  pe:"22–35x",  evEbitda:"14–20x" },
+    ],
+  };
+
+  // Funding / market context by pack
+  const fundingContext = {
+    startup: [
+      { label:"Pre-Seed typical",   value:"₹50L – ₹2 Cr",     note:"Idea/MVP stage, friends & angels" },
+      { label:"Seed typical",       value:"₹2 – ₹8 Cr",       note:"Early traction, 6-12 months runway" },
+      { label:"Series A typical",   value:"₹15 – ₹60 Cr",     note:"₹3–10 Cr ARR, 18+ months runway" },
+      { label:"Series A multiple",  value:"5–8x ARR",          note:"2024–25 India market median" },
+      { label:"Investor IRR target",value:"25–35%",            note:"Indian VC benchmark" },
+      { label:"Time seed → Series A","value":"18–30 months",   note:"India median" },
+    ],
+    msme: [
+      { label:"CGTMSE limit",        value:"₹5 Cr",    note:"Collateral-free, govt guaranteed" },
+      { label:"PSB 59-min loan",     value:"Up to ₹5 Cr", note:"GST-linked fast approval" },
+      { label:"SIDBI direct",        value:"Up to ₹25 Cr",note:"3+ year track record needed" },
+      { label:"Bank WC OD rate",     value:"Repo + 3–4%", note:"Against debtors / stock" },
+      { label:"MSME NPL rate",       value:"~6.5%",     note:"RBI data — sector risk indicator" },
+      { label:"Udyam registrations", value:"4.5 Cr+",   note:"Active MSMEs in India (2025)" },
+    ],
+    corporate: [
+      { label:"Mainboard IPO min",   value:"₹100 Cr revenue", note:"SEBI general requirement" },
+      { label:"SME IPO min",         value:"₹10 Cr revenue",  note:"More accessible route" },
+      { label:"Nifty 500 avg PE",    value:"28–32x",          note:"Feb 2026 median" },
+      { label:"IPO avg listing gain",value:"18–25%",          note:"FY25 India average" },
+      { label:"D/E comfort (banks)", value:"<2.0x",           note:"For corporate lending" },
+      { label:"ICRA rating threshold","value":"BBB–",         note:"Minimum for bond issuance" },
+    ],
+  };
+
+  const sectors = sectorData[pack]   || sectorData.startup;
+  const funding  = fundingContext[pack] || fundingContext.startup;
+  const benchmarkHeaders = pack === "startup"
+    ? ["Sector","Gross Margin","EBITDA Margin","Series A ARR","Burn Multiple","CAC","LTV"]
+    : pack === "msme"
+    ? ["Sector","Gross Margin","EBITDA Margin","Debtor Days","Current Ratio","Creditor Days"]
+    : ["Sector","Gross Margin","EBITDA Margin","ROCE","P/E","EV/EBITDA"];
+
+  const benchmarkKeys = pack === "startup"
+    ? ["sector","grossMargin","ebitdaMargin","arr","burnMultiple","cac","ltv"]
+    : pack === "msme"
+    ? ["sector","grossMargin","ebitdaMargin","debtorDays","currentRatio","creditDays"]
+    : ["sector","grossMargin","ebitdaMargin","roce","pe","evEbitda"];
+
+  return (
+    <div style={{ padding:24 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+        flexWrap:"wrap", gap:12, marginBottom:24 }}>
+        <div>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, marginBottom:4 }}>
+            {"Market Intelligence"}
+          </div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>
+            {pack === "startup" ? "Funding benchmarks, sector multiples and investor expectations"
+            : pack === "msme"   ? "MSME lending landscape, sector benchmarks and working capital norms"
+            : "Listed company benchmarks, IPO market conditions and corporate finance norms"}
+          </div>
+        </div>
+        <div style={{ fontFamily:F, fontSize:10, color:C.dim }}>
+          {"Benchmarks updated Q1 2026"}
+        </div>
+      </div>
+
+      {/* Live rates strip */}
+      {m.loaded && !m.error && (
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12,
+          marginBottom:24 }} className="mkt-live">
+          {[
+            m.repo  && { label:"RBI Repo Rate", value:m.repo,
+              sub:`SBI lending ~${(parseFloat(m.repo)+2.5).toFixed(2)}%`, color:C.blue,  icon:"🏦" },
+            m.nifty && { label:"Nifty 50",      value:m.nifty,
+              sub: m.niftyChg ? `${parseFloat(m.niftyChg)>=0?"▲":"▼"} ${Math.abs(m.niftyChg)}% today` : "Live",
+              color:parseFloat(m.niftyChg)>=0?C.green:C.red, icon:"📈" },
+            m.usd   && { label:"USD / INR",      value:m.usd,   sub:"Live rate", color:C.purple,icon:"💱" },
+            m.sar   && { label:"SAR / INR",       value:m.sar,   sub:"Saudi Riyal",color:C.teal, icon:"🇸🇦" },
+          ].filter(Boolean).map((item,i) => (
+            <div key={i} style={{ padding:"12px 14px", borderRadius:12,
+              background:`${item.color}08`, border:`1px solid ${item.color}18` }}>
+              <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:4 }}>
+                <span>{item.icon}</span>
+                <span style={{ fontFamily:F, fontSize:10, color:C.muted, fontWeight:700,
+                  textTransform:"uppercase", letterSpacing:"0.05em" }}>{item.label}</span>
+              </div>
+              <div style={{ fontFamily:FM, fontSize:20, fontWeight:800, color:item.color }}>{item.value}</div>
+              <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:3 }}>{item.sub}</div>
+            </div>
+          ))}
+          {m.updatedAt && (
+            <div style={{ gridColumn:"1/-1", fontFamily:F, fontSize:10, color:C.dim,
+              textAlign:"right" }}>{"Live · updated "}{m.updatedAt}</div>
+          )}
+          <style>{`.mkt-live{grid-template-columns:1fr 1fr 1fr 1fr!important}@media(max-width:600px){.mkt-live{grid-template-columns:1fr 1fr!important}}`}</style>
+        </div>
+      )}
+
+      {/* Sector Benchmarks table */}
+      <Card style={{ marginBottom:20 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+          {pack === "startup" ? "Startup Sector Benchmarks"
+          : pack === "msme"   ? "MSME Sector Benchmarks"
+          : "Listed Company Benchmarks"}
+        </div>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>
+          {"Use these to position your client vs sector — include in board reports and investor decks"}
+        </div>
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
+            <thead>
+              <tr style={{ background:C.navy }}>
+                {benchmarkHeaders.map((h,i) => (
+                  <th key={i} style={{ padding:"9px 12px", textAlign:i===0?"left":"right",
+                    color:"white", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {sectors.map((row,i) => (
+                <tr key={i} style={{ background:i%2===0?C.bg2:C.bg }}>
+                  {benchmarkKeys.map((key,j) => (
+                    <td key={j} style={{ padding:"9px 12px",
+                      textAlign:j===0?"left":"right",
+                      fontWeight:j===0?700:400,
+                      fontSize:12, color:j===0?C.text:C.blue,
+                      borderBottom:`1px solid ${C.border}`,
+                      whiteSpace:"nowrap" }}>
+                      {row[key] || "—"}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* Funding / Market Context */}
+      <Card style={{ marginBottom:20 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+          {pack === "startup" ? "Funding Climate — India 2025–26"
+          : pack === "msme"   ? "MSME Lending Landscape"
+          : "Capital Markets Context"}
+        </div>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>
+          {"Context for advising your client on timing and positioning"}
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }} className="inv-grid">
+          {funding.map((item,i) => (
+            <div key={i} style={{ padding:"12px 14px", borderRadius:12,
+              background:C.bg2, border:`1px solid ${C.border}` }}>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600,
+                marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                {item.label}
+              </div>
+              <div style={{ fontFamily:FM, fontSize:18, fontWeight:800, color:C.blue }}>
+                {item.value}
+              </div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:3 }}>
+                {item.note}
+              </div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Compliance Calendar */}
+      <Card>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+          {"Upcoming Compliance Deadlines"}
+        </div>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>
+          {"Key dates this quarter — relevant for all your clients"}
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+          {[
+            { date:"7 Apr",  item:"TDS Payment — March deductions",         priority:"high"   },
+            { date:"10 Apr", item:"ESI Contribution — March",                priority:"medium" },
+            { date:"15 Apr", item:"Advance Tax — 1st Instalment FY26-27",   priority:"high"   },
+            { date:"30 Apr", item:"TDS Returns Q4 (Form 24Q / 26Q)",        priority:"high"   },
+            { date:"30 Apr", item:"Annual Return — Companies Act (MGT-7)",  priority:"medium" },
+            { date:"31 May", item:"GSTR-9 Annual Return FY25-26",           priority:"medium" },
+            { date:"30 Jun", item:"AGM — 6 months from year end",           priority:"medium" },
+            { date:"30 Sep", item:"Director KYC (DIR-3 KYC)",               priority:"low"    },
+          ].map((item,i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
+              padding:"10px 14px", borderRadius:10,
+              background: item.priority==="high" ? `${C.red}06` : item.priority==="medium" ? `${C.amber}06` : C.bg2,
+              border:`1px solid ${item.priority==="high"?C.red+"20":item.priority==="medium"?C.amber+"20":C.border}` }}>
+              <div style={{ width:52, fontFamily:FM, fontSize:12, fontWeight:700,
+                color: item.priority==="high"?C.red:item.priority==="medium"?C.amber:C.muted,
+                flexShrink:0 }}>{item.date}</div>
+              <div style={{ fontFamily:F, fontSize:13, color:C.text, flex:1 }}>{item.item}</div>
+              <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
+                color: item.priority==="high"?C.red:item.priority==="medium"?C.amber:C.green,
+                background: item.priority==="high"?`${C.red}12`:item.priority==="medium"?`${C.amber}12`:`${C.green}12`,
+                padding:"3px 10px", borderRadius:100, flexShrink:0 }}>
+                {item.priority==="high"?"Critical":item.priority==="medium"?"Important":"Routine"}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Card>
     </div>
   );
 }
@@ -6940,6 +7170,7 @@ function getPageTitle(page, client) {
     newrequest:  "New Request",
     invoices:    "Invoices",
     treasury:    "Treasury Management",
+    market:      "Market Intelligence",
     documents:   "My Documents",
     terms:       "Legal & Compliance",
   };
@@ -7113,6 +7344,7 @@ function Portal({ client, onLogout }) {
     engagement: <Engagement liveData={resolvedEngagement}/>,
     calendar:   <Calendar/>,
     newrequest: <NewRequest client={client} setPage={setPage}/>,
+    market:     <MarketIntel client={client}/>,
     invoices:   <Invoices   client={client} liveInvoices={isDemo ? null : liveInvoices}/>,
     documents:  <MyDocuments client={client}/>,
     treasury:   <Treasury   client={client} reportData={resolvedReportData}/>,
@@ -7666,6 +7898,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"treasury",   icon:"💎", label:"Treasury"        },
     { id:"documents",  icon:"📁", label:"Documents"       },
     { id:"requests",   icon:"📩", label:"Requests"        },
+    { id:"market",     icon:"🌐", label:"Market Intel"    },
   ];
 
   // Stable component references — prevents remount/focus-loss on every render
@@ -7813,11 +8046,26 @@ function AdminPanel({ admin, onLogout }) {
       calc.inventoryDaysCalc    = ((inventory / (revenue/30))).toFixed(0) + " days";
 
     // ── STARTUP UNIT ECONOMICS ──
-    if (ltv && cac && cac > 0)
-      calc.ltvCacCalc           = (ltv / cac).toFixed(1) + "x";
+    // Calculate CAC from raw inputs if available
+    const mktgSpend    = parse(rd.totalMktgSpend);
+    const newCusts     = parse(rd.newCustomers);
+    const avgRevCust   = parse(rd.avgRevPerCust);
+    const retentionMos = parse(rd.avgRetentionMos);
+    const derivedCac   = (mktgSpend && newCusts && newCusts > 0) ? mktgSpend / newCusts : cac;
+    const derivedLtv   = (avgRevCust && retentionMos) ? avgRevCust * retentionMos / 12 : ltv;
 
-    if (cac && ebitda && revenue)
-      calc.cacPaybackCalc       = ((cac / (revenue * (parse(pl.gpMargin)||40) / 100)) * 12).toFixed(0) + " months";
+    if (derivedCac && !cac)
+      calc.cacCalc              = "₹" + Math.round(derivedCac * 100).toLocaleString("en-IN");
+    if (derivedLtv && !ltv)
+      calc.ltvCalc              = "₹" + Math.round(derivedLtv * 1000).toLocaleString("en-IN");
+
+    if ((derivedLtv || ltv) && (derivedCac || cac) && (derivedCac || cac) > 0)
+      calc.ltvCacCalc           = ((derivedLtv||ltv) / (derivedCac||cac)).toFixed(1) + "x";
+
+    if ((derivedCac || cac) && ebitda && revenue) {
+      const margin = parse(pl.gpMargin) || 40;
+      calc.cacPaybackCalc       = (((derivedCac||cac) / (revenue * margin / 100)) * 12).toFixed(0) + " months";
+    }
 
     if (burn && arr && arr > 0)
       calc.burnMultipleCalc     = (burn / (arr / 12)).toFixed(2) + "x";
@@ -9282,6 +9530,94 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     ))}
                   </Card>
                 )}
+
+                {/* ══ RAW INPUTS → AUTO RATIOS ═══════════════════════════════ */}
+                <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}04` }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    {"⚡ Raw Inputs — Ratios Auto-Calculate"}
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    {"Enter these from the client's books (Tally / bank statement). All ratios — DSCR, Interest Coverage, Debt/EBITDA, CCC, LTV:CAC, Burn Multiple — calculate automatically when you click Generate Analysis."}
+                  </p>
+
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
+                    {"Balance Sheet Inputs"}
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+                    {[
+                      { key:"debtors",      label:"Trade Debtors (AR)",           placeholder:"e.g. ₹38.4L" },
+                      { key:"creditors",    label:"Trade Creditors (AP)",          placeholder:"e.g. ₹22.1L" },
+                      { key:"inventory",    label:"Inventory / Stock",             placeholder:"e.g. ₹15.8L or Nil" },
+                      { key:"existingDebt", label:"Total Existing Debt / Loans",   placeholder:"e.g. ₹45L or Nil" },
+                      { key:"interestCost", label:"Annual Interest Cost",          placeholder:"e.g. ₹5.2L or Nil" },
+                      { key:"operatingCF",  label:"Operating Cash Flow",           placeholder:"e.g. ₹18.4L" },
+                    ].map(f => (
+                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
+                        val={reportData[f.key] || ""}
+                        onChange={v => setReportData(r => ({...r, [f.key]:v}))}
+                        placeholder={f.placeholder} mono/>
+                    ))}
+                  </div>
+
+                  {selected.client_pack === "startup" && (<>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
+                      {"Unit Economics Inputs"}
+                    </div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+                      {[
+                        { key:"totalMktgSpend",  label:"Total Sales + Mktg Spend (month)", placeholder:"e.g. ₹8.4L" },
+                        { key:"newCustomers",    label:"New Customers Acquired",            placeholder:"e.g. 70" },
+                        { key:"avgRevPerCust",   label:"Avg Revenue per Customer",          placeholder:"e.g. ₹12,000/yr" },
+                        { key:"avgRetentionMos", label:"Avg Customer Lifetime (months)",    placeholder:"e.g. 24" },
+                        { key:"churnRate",       label:"Monthly Churn Rate",                placeholder:"e.g. 2.1%" },
+                        { key:"nrr",             label:"Net Revenue Retention",             placeholder:"e.g. 108%" },
+                      ].map(f => (
+                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
+                          val={reportData[f.key] || ""}
+                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
+                          placeholder={f.placeholder} mono/>
+                      ))}
+                    </div>
+                  </>)}
+
+                  {/* Show auto-calculated preview */}
+                  {(() => {
+                    const c = calcRatios();
+                    const items = [
+                      c.interestCoverageCalc && { label:"Interest Coverage", value:c.interestCoverageCalc },
+                      c.debtEbitdaCalc       && { label:"Debt / EBITDA",     value:c.debtEbitdaCalc       },
+                      c.dscrCalc             && { label:"DSCR",              value:c.dscrCalc             },
+                      c.cccCalc              && { label:"CCC",               value:c.cccCalc              },
+                      c.debtorDaysCalc       && { label:"Debtor Days",       value:c.debtorDaysCalc       },
+                      c.creditorDaysCalc     && { label:"Creditor Days",     value:c.creditorDaysCalc     },
+                      c.ltvCacCalc           && { label:"LTV : CAC",         value:c.ltvCacCalc           },
+                      c.burnMultipleCalc     && { label:"Burn Multiple",     value:c.burnMultipleCalc     },
+                      c.cacPaybackCalc       && { label:"CAC Payback",       value:c.cacPaybackCalc       },
+                    ].filter(Boolean);
+                    if (items.length === 0) return null;
+                    return (
+                      <div style={{ padding:"12px 14px", borderRadius:10,
+                        background:`${C.teal}08`, border:`1px solid ${C.teal}20` }}>
+                        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.teal,
+                          textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:10 }}>
+                          {"⚡ Auto-Calculated from above"}
+                        </div>
+                        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }} className="inv-grid">
+                          {items.map((item, i) => (
+                            <div key={i} style={{ padding:"8px 12px", borderRadius:8,
+                              background:"rgba(255,255,255,0.7)", border:`1px solid ${C.teal}15` }}>
+                              <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginBottom:2 }}>{item.label}</div>
+                              <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:C.teal }}>{item.value}</div>
+                            </div>
+                          ))}
+                        </div>
+                        <div style={{ fontFamily:F, fontSize:11, color:C.teal, marginTop:8 }}>
+                          {"These will auto-fill into the report when you click Generate Analysis ↓"}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </Card>
 
                 {/* ══ AI ANALYSIS GENERATOR ══════════════════════════════════ */}
                 <Card style={{ marginBottom:20, border:`1.5px solid ${C.purple}30`,
