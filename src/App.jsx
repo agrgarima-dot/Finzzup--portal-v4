@@ -3338,9 +3338,11 @@ function useLiveDocs(client) {
 function MSMEPackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
-    { id:"monthly",  icon:"📊", label:"Monthly Report"   },
-    { id:"variance", icon:"📉", label:"Variance Analysis"  },
-    { id:"cash",     icon:"💰", label:"Cash Health Score" },
+    { id:"monthly",  icon:"📊", label:"Monthly Report"    },
+    { id:"variance", icon:"📉", label:"Variance Analysis" },
+    { id:"cash",     icon:"💰", label:"Cash Health"       },
+    { id:"workingcap",icon:"⚙️", label:"Working Capital"  },
+    { id:"bankfin",  icon:"🏛️", label:"Bank Finance"      },
     { id:"packs",    icon:"📁", label:"Previous Packs"    },
   ];
   const data = CFO_PACK_DATA["msme"];
@@ -3536,7 +3538,306 @@ function MSMEPackContent({ reportData, kpis, client }) {
         </div>
       )}
 
-      {tab === "packs" && (
+            {tab === "workingcap" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+          {/* Question this tab answers */}
+          <div style={{ padding:"16px 20px", borderRadius:14,
+            background:`linear-gradient(135deg,${C.teal}10,${C.blue}06)`,
+            border:`1px solid ${C.teal}20` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              {"Are we collecting fast enough and paying smart?"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
+              {"Working capital efficiency determines how much cash is trapped in operations vs available to use. Every day saved in collections = real cash freed up."}
+            </div>
+          </div>
+
+          {/* CCC Calculation — the key insight */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              {"Cash Conversion Cycle"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>
+              {"How many days your cash is tied up before you collect it back"}
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:16 }}>
+              {[
+                { label:"Debtor Days", value: reportData?.debtorDays || "46", color:C.blue,  bad: parseInt(reportData?.debtorDays||"46") > 30 },
+                { label:"−", value:null, color:C.muted },
+                { label:"Creditor Days", value: reportData?.creditorDays || "31", color:C.purple, bad: false },
+                { label:"+", value:null, color:C.muted },
+                { label:"Inventory Days", value: reportData?.inventoryDays || "22", color:C.teal, bad: false },
+                { label:"=", value:null, color:C.muted },
+                { label:"CCC", value: reportData?.ccc || "37 days", color: parseInt(reportData?.ccc||"37")<=30?C.green:C.amber, bad: parseInt(reportData?.ccc||"37")>30 },
+              ].map((item, i) => item.value === null ? (
+                <div key={i} style={{ fontFamily:FM, fontSize:24, fontWeight:700, color:item.color }}>{item.label}</div>
+              ) : (
+                <div key={i} style={{ padding:"12px 16px", borderRadius:12, textAlign:"center",
+                  background: item.bad ? `${C.amber}08` : `${item.color}08`,
+                  border:`1px solid ${item.bad ? C.amber+"30" : item.color+"20"}` }}>
+                  <div style={{ fontFamily:FM, fontSize:22, fontWeight:800, color:item.color }}>{item.value}</div>
+                  <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3 }}>{item.label}</div>
+                </div>
+              ))}
+            </div>
+            <div style={{ padding:"10px 14px", borderRadius:10,
+              background: parseInt(reportData?.ccc||"37")<=30 ? `${C.green}08` : `${C.amber}08`,
+              border:`1px solid ${parseInt(reportData?.ccc||"37")<=30 ? C.green+"20" : C.amber+"25"}` }}>
+              <div style={{ fontFamily:F, fontSize:12, fontWeight:600,
+                color: parseInt(reportData?.ccc||"37")<=30 ? C.green : C.amber }}>
+                {parseInt(reportData?.ccc||"37") <= 30
+                  ? `✅ CCC at ${reportData?.ccc||"37 days"} — within target. Every additional day saved frees up approx. ${reportData?.cccCashImpact || "₹2.8L"} in working capital.`
+                  : `⚠️ CCC at ${reportData?.ccc||"37 days"} — above 30-day target. Reducing debtor days by 5 would free up approx. ${reportData?.cccCashImpact || "₹2.8L"} in cash immediately.`}
+              </div>
+            </div>
+          </Card>
+
+          {/* AR Aging — the action card */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              {"Debtors Aging — Who Owes What"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
+              {"Money already earned but not yet collected — this is your most urgent action"}
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {[
+                { band:"0–30 days",   value: reportData?.ar0to30   || "₹18.2L", pct:"47%", color:C.green,  action:"On track — follow standard reminder cycle" },
+                { band:"31–60 days",  value: reportData?.ar31to60  || "₹12.4L", pct:"32%", color:C.amber,  action:"Send formal reminder + confirm payment date" },
+                { band:"61–90 days",  value: reportData?.ar61to90  || "₹4.8L",  pct:"13%", color:C.red,    action:"Escalate to senior contact — consider credit hold" },
+                { band:"90+ days",    value: reportData?.ar90plus  || "₹2.9L",  pct:"8%",  color:C.red,    action:"Legal notice or write-off decision required" },
+              ].map((row, i) => (
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
+                  borderRadius:10, background:C.bg2, border:`1px solid ${C.border}` }}>
+                  <div style={{ width:3, height:36, borderRadius:2, background:row.color, flexShrink:0 }}/>
+                  <div style={{ width:90, fontFamily:F, fontSize:12, color:C.muted, fontWeight:600 }}>{row.band}</div>
+                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:row.color, width:70 }}>{row.value}</div>
+                  <div style={{ fontFamily:F, fontSize:10, color:C.dim,
+                    background:C.bg, padding:"2px 8px", borderRadius:100, marginRight:8 }}>{row.pct}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.text, flex:1, lineHeight:1.4 }}>{row.action}</div>
+                </div>
+              ))}
+            </div>
+            {reportData?.arNote && (
+              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:10,
+                background:`${C.amber}06`, border:`1px solid ${C.amber}20`,
+                fontFamily:F, fontSize:12, color:C.text, lineHeight:1.6 }}>
+                {"📝 "}{reportData.arNote}
+              </div>
+            )}
+          </Card>
+
+          {/* Working Capital Ratios — with benchmarks */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              {"Working Capital Ratios vs Benchmarks"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
+              {"How your efficiency ratios compare to MSME sector medians"}
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              {[
+                { label:"Current Ratio",        value: reportData?.currentRatio || "1.62x", benchmark: reportData?.benchCurrentRatio || "Sector avg: 1.5–2.0x", target:1.5, actual: parseFloat(reportData?.currentRatio||"1.62"), higher:true  },
+                { label:"Quick Ratio",           value: reportData?.quickRatio   || "1.18x", benchmark: reportData?.benchQuickRatio   || "Target: >1.0x",         target:1.0, actual: parseFloat(reportData?.quickRatio||"1.18"),   higher:true  },
+                { label:"Inventory Turnover",    value: reportData?.invTurnover  || "6.2x",  benchmark: reportData?.benchInvTurnover  || "MSME avg: 4–8x",         target:4,   actual: parseFloat(reportData?.invTurnover||"6.2"),   higher:true  },
+                { label:"Debtor Turnover",       value: reportData?.debtorTurn   || "7.8x",  benchmark: reportData?.benchDebtorTurn   || "Target: >10x",           target:10,  actual: parseFloat(reportData?.debtorTurn||"7.8"),    higher:true  },
+              ].map((r, i) => {
+                const good = r.higher ? r.actual >= r.target : r.actual <= r.target;
+                return (
+                  <div key={i} style={{ padding:"14px", borderRadius:12,
+                    background: good ? `${C.green}06` : `${C.amber}06`,
+                    border:`1px solid ${good ? C.green+"20" : C.amber+"25"}` }}>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700,
+                      textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6 }}>{r.label}</div>
+                    <div style={{ fontFamily:FM, fontSize:22, fontWeight:800,
+                      color: good ? C.green : C.amber, marginBottom:4 }}>{r.value}</div>
+                    <div style={{ fontFamily:F, fontSize:10, color:C.blue, lineHeight:1.5, marginBottom:4 }}>{r.benchmark}</div>
+                    <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color: good ? C.green : C.amber }}>
+                      {good ? "✅ Within benchmark" : "⚠️ Below benchmark — action needed"}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Garima's working capital note */}
+          {reportData?.wcNote && (
+            <Card style={{ borderLeft:`3px solid ${C.teal}` }}>
+              <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.teal,
+                textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
+                {"📝 Garima's Working Capital Assessment"}
+              </div>
+              <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:0 }}>
+                {reportData.wcNote}
+              </p>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {tab === "bankfin" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+          {/* Question this tab answers */}
+          <div style={{ padding:"16px 20px", borderRadius:14,
+            background:`linear-gradient(135deg,${C.blue}10,${C.purple}06)`,
+            border:`1px solid ${C.blue}18` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              {"Are you ready to borrow — and at what terms?"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
+              {"Banks don't just look at your revenue — they look at your repayment capacity, collateral, and financial hygiene. Here's exactly where you stand."}
+            </div>
+          </div>
+
+          {/* Loan Eligibility Score */}
+          <Card>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+              flexWrap:"wrap", gap:16, marginBottom:16 }}>
+              <div>
+                <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
+                  textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{"Bank Finance Readiness Score"}</div>
+                <div style={{ fontFamily:FM, fontWeight:800, fontSize:40, color:C.blue, lineHeight:1 }}>
+                  {reportData?.loanScore || "—"}
+                  <span style={{ fontSize:14, color:C.muted, fontWeight:500 }}>{"/100"}</span>
+                </div>
+                <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
+                  {!reportData?.loanScore ? "Score not yet assessed by Garima" :
+                    parseInt(reportData.loanScore) >= 75 ? "✅ Strong — eligible for most MSME schemes" :
+                    parseInt(reportData.loanScore) >= 55 ? "⚠️ Moderate — eligible with preparation" :
+                    "🔴 Early stage — address key gaps first"}
+                </div>
+              </div>
+              {reportData?.loanScore && <ScoreGauge score={parseInt(reportData.loanScore)} color={C.blue} size={90}/>}
+            </div>
+            {reportData?.loanScore && (
+              <div style={{ height:8, borderRadius:4, background:C.bg3 }}>
+                <div style={{ height:"100%", borderRadius:4, width:`${reportData.loanScore}%`,
+                  background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
+              </div>
+            )}
+          </Card>
+
+          {/* Key Ratios — what the bank will look at */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              {"What the Bank Will Scrutinise"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
+              {"These 4 ratios determine whether your loan gets approved — and at what rate"}
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+              {[
+                { label:"DSCR",               value:reportData?.dscr,             benchmark:"Must be >1.25x for approval",   what:"Can operating income service the loan EMI?",    good: reportData?.dscr ? parseFloat(reportData.dscr)>=1.25 : null },
+                { label:"Interest Coverage",  value:reportData?.interestCoverage, benchmark:"Banks want >3x",                 what:"EBIT ÷ interest — can you service existing debt?", good: reportData?.interestCoverage ? parseFloat(reportData.interestCoverage)>=3 : null },
+                { label:"Current Ratio",      value:reportData?.currentRatio,     benchmark:"Minimum 1.33x for working capital",what:"Short-term assets vs liabilities",              good: reportData?.currentRatio ? parseFloat(reportData.currentRatio)>=1.33 : null },
+                { label:"Debt / EBITDA",      value:reportData?.debtEbitda,       benchmark:"Banks prefer <4x for MSMEs",     what:"How many years of earnings to repay debt",      good: reportData?.debtEbitda ? parseFloat(reportData.debtEbitda)<=4 : null },
+              ].map((r, i) => (
+                <div key={i} style={{ padding:"16px", borderRadius:12,
+                  background: r.good===true ? `${C.green}06` : r.good===false ? `${C.red}06` : C.bg2,
+                  border:`1px solid ${r.good===true?C.green+"20":r.good===false?C.red+"20":C.border}` }}>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700,
+                    textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6 }}>{r.label}</div>
+                  <div style={{ fontFamily:FM, fontSize:24, fontWeight:800, marginBottom:4,
+                    color: r.good===true?C.green:r.good===false?C.red:C.dim }}>{r.value || "Not assessed"}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.blue, marginBottom:6, lineHeight:1.4 }}>{r.benchmark}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.dim, lineHeight:1.4, marginBottom: r.good!==null?6:0 }}>{r.what}</div>
+                  {r.good !== null && (
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700,
+                      color:r.good?C.green:C.red, background:r.good?`${C.green}10`:`${C.red}08`,
+                      padding:"3px 10px", borderRadius:100, display:"inline-block" }}>
+                      {r.good ? "✅ Meets threshold" : "❌ Below bank requirement"}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Auto-flagged issues */}
+          {(() => {
+            const flags = [];
+            if (reportData?.dscr && parseFloat(reportData.dscr)<1.25) flags.push({ text:`DSCR of ${reportData.dscr} is below the 1.25x minimum — banks will reject the application. Increase operating income or reduce existing debt first.`, severity:"high" });
+            if (reportData?.currentRatio && parseFloat(reportData.currentRatio)<1.33) flags.push({ text:`Current Ratio of ${reportData.currentRatio} is below 1.33x — the minimum for working capital loans. Reduce short-term liabilities or increase current assets.`, severity:"high" });
+            if (reportData?.debtEbitda && parseFloat(reportData.debtEbitda)>4) flags.push({ text:`Debt/EBITDA of ${reportData.debtEbitda} is high for an MSME. Banks may cap the loan amount or require additional collateral.`, severity:"medium" });
+            if (reportData?.interestCoverage && parseFloat(reportData.interestCoverage)<3) flags.push({ text:`Interest Coverage of ${reportData.interestCoverage} is below 3x. Lenders will question repayment comfort — focus on improving EBITDA.`, severity:"medium" });
+            return flags.length > 0 ? (
+              <Card style={{ borderLeft:`3px solid ${C.red}`, background:`${C.red}04` }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.red, marginBottom:12 }}>
+                  {"Issues to Fix Before Applying"}
+                </div>
+                {flags.map((f, i) => (
+                  <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px",
+                    borderRadius:8, background:"rgba(255,255,255,0.6)", marginBottom:8,
+                    border:`1px solid ${f.severity==="high"?C.red+"20":C.amber+"20"}` }}>
+                    <span style={{ color:f.severity==="high"?C.red:C.amber, flexShrink:0 }}>{"•"}</span>
+                    <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{f.text}</span>
+                  </div>
+                ))}
+              </Card>
+            ) : reportData?.dscr ? (
+              <Card style={{ borderLeft:`3px solid ${C.green}`, background:`${C.green}04` }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.green }}>
+                  {"✅ All key ratios within bank thresholds — you're ready to apply"}
+                </div>
+              </Card>
+            ) : null;
+          })()}
+
+          {/* Recommended Schemes for MSME */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"MSME Loan Schemes"}</div>
+            {[
+              { name:"CGTMSE (Collateral-free)", amount:"Up to ₹5 Cr",   rate:"Market rate",  note:"No collateral needed — govt guarantee. Best for MSMEs without assets.", hot:true,  color:C.teal   },
+              { name:"MUDRA Tarun / Shishu",     amount:"Up to ₹10L",    rate:"10–12%",       note:"Quick disbursement for small and micro enterprises.",                   hot:false, color:C.blue   },
+              { name:"PSB Loan in 59 Minutes",   amount:"Up to ₹5 Cr",   rate:"8.5–11.5%",   note:"GST-linked fast approval. Useful if you have 12 months GST history.",   hot:true,  color:C.purple },
+              { name:"SIDBI Direct Finance",      amount:"Up to ₹25 Cr",  rate:"9–12%",        note:"For established MSMEs with 3+ year track record.",                      hot:false, color:C.amber  },
+              { name:"Bank Working Capital OD",   amount:"Based on AR",   rate:"Repo + 3–4%",  note:"Overdraft against debtors — best for managing cash gaps.",              hot:false, color:C.muted  },
+            ].map((s, i) => (
+              <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12,
+                padding:"12px 14px", borderRadius:12, marginBottom:8,
+                background:C.bg2, border:`1px solid ${s.hot?s.color+"25":C.border}` }}>
+                <div style={{ width:8, height:8, borderRadius:"50%", background:s.color, flexShrink:0, marginTop:5 }}/>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
+                    <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{s.name}</span>
+                    {s.hot && <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
+                      color:s.color, background:`${s.color}15`, padding:"2px 8px", borderRadius:100 }}>{"RECOMMENDED"}</span>}
+                  </div>
+                  <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:2 }}>{s.amount}{" | "}{s.rate}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>{s.note}</div>
+                </div>
+              </div>
+            ))}
+          </Card>
+
+          {/* CTA */}
+          <Card style={{ background:`${C.blue}06`, borderColor:`${C.blue}15` }}>
+            <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:12 }}>
+              {"Garima can prepare your complete bank finance package — projections, ratios, application documents — and facilitate lender introductions."}
+            </p>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              <a href={WA} target="_blank" rel="noopener"
+                style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
+                  borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                  color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
+                {"💬 WhatsApp Garima"}
+              </a>
+              <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
+                style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
+                  borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
+                  color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                {"📄 Download Finance Report"}
+              </button>
+            </div>
+          </Card>
+
+        </div>
+      )}
+
+{tab === "packs" && (
         <div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
             Monthly packs prepared by Garima — updated by the 20th of each month.
@@ -3560,10 +3861,11 @@ function MSMEPackContent({ reportData, kpis, client }) {
 function CorporatePackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
-    { id:"monthly", icon:"📊", label:"Monthly Report"    },
-    { id:"variance",icon:"📉", label:"Variance Analysis"  },
-    { id:"ipo",     icon:"🏦", label:"IPO Readiness"     },
-    { id:"packs",   icon:"📁", label:"Previous Packs"    },
+    { id:"monthly",   icon:"📊", label:"Monthly Report"    },
+    { id:"variance",  icon:"📉", label:"Variance Analysis" },
+    { id:"governance",icon:"⚖️", label:"Board Governance"  },
+    { id:"ipo",       icon:"🏦", label:"IPO Readiness"     },
+    { id:"packs",     icon:"📁", label:"Previous Packs"    },
   ];
   const data = CFO_PACK_DATA["corporate"];
   const archiveDocs = useLiveDocs(client);
@@ -3713,7 +4015,131 @@ function CorporatePackContent({ reportData, kpis, client }) {
         </div>
       )}
 
-      {tab === "ipo" && (
+            {tab === "governance" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+          {/* Question this tab answers */}
+          <div style={{ padding:"16px 20px", borderRadius:14,
+            background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
+            border:`1px solid ${C.purple}18` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              {"Is the board operating at the standard investors and regulators expect?"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
+              {"Governance isn't just compliance — it's the difference between a company that survives management changes and one that doesn't. This tab tracks what matters."}
+            </div>
+          </div>
+
+          {/* Board Composition */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Board Composition"}</div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>{"Director mix and independence status"}</div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:14 }} className="inv-grid">
+              {[
+                { label:"Executive Directors",    value: reportData?.execDirectors    || "—", note:"Running day-to-day operations",            color:C.blue   },
+                { label:"Independent Directors",  value: reportData?.indepDirectors   || "—", note:"SEBI requires ≥1/3 of board for listed",   color:C.teal, flag: reportData?.indepDirectors === "0" },
+                { label:"Board Meetings (YTD)",   value: reportData?.boardMeetings    || "—", note:"Min 4 per year under Companies Act",        color:C.purple },
+              ].map((item, i) => (
+                <div key={i} style={{ padding:"14px", borderRadius:12,
+                  background: item.flag ? `${C.red}06` : C.bg2,
+                  border:`1px solid ${item.flag ? C.red+"20" : C.border}`, textAlign:"center" }}>
+                  <div style={{ fontFamily:FM, fontSize:24, fontWeight:800, color:item.flag?C.red:item.color }}>{item.value}</div>
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:4 }}>{item.label}</div>
+                  <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:3, lineHeight:1.4 }}>{item.note}</div>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          {/* Compliance Health */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
+              {"Compliance Health — Regulatory Obligations"}
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {[
+                { item:"ROC Annual Return (MGT-7)",          status: reportData?.rocStatus       || "pending", due:"30 Nov each year"                },
+                { item:"Audited Financials Filed (AOC-4)",   status: reportData?.aocStatus       || "pending", due:"30 Oct each year"                },
+                { item:"Board Resolution — last AGM",        status: reportData?.agmStatus       || "pending", due:"Within 6 months of year end"      },
+                { item:"Director KYC (DIR-3 KYC)",          status: reportData?.dirKycStatus    || "done",    due:"30 Sep each year"                },
+                { item:"Statutory Audit Completed",          status: reportData?.auditStatus     || "pending", due:"Before AGM"                      },
+                { item:"Related Party Transactions Approved",status: reportData?.rptStatus       || "pending", due:"Board approval required"          },
+                { item:"CSR Compliance (if applicable)",     status: reportData?.csrStatus       || "na",      due:"2% of avg net profit"             },
+                { item:"Ind AS Financial Statements",        status: reportData?.indAsStatus     || "pending", due:"As per applicable standards"      },
+              ].map((row, i) => {
+                const isDone = row.status === "done";
+                const isNA   = row.status === "na";
+                return (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
+                    borderRadius:10,
+                    background: isDone ? `${C.green}06` : isNA ? C.bg2 : `${C.amber}06`,
+                    border:`1px solid ${isDone?C.green+"20":isNA?C.border:C.amber+"25"}` }}>
+                    <span style={{ fontSize:14, flexShrink:0 }}>
+                      {isDone ? "✅" : isNA ? "➖" : "⏳"}
+                    </span>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:isDone?500:600 }}>{row.item}</div>
+                      <div style={{ fontFamily:F, fontSize:10, color:C.dim }}>{row.due}</div>
+                    </div>
+                    <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
+                      color:isDone?C.green:isNA?C.muted:C.amber,
+                      background:isDone?`${C.green}15`:isNA?C.bg:`${C.amber}15`,
+                      padding:"3px 10px", borderRadius:100 }}>
+                      {isDone?"Done":isNA?"N/A":"Pending"}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Ind AS Readiness */}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Ind AS Health Check"}</div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
+              {"Key standards that require attention — critical for audit sign-off and investor confidence"}
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              {[
+                { std:"Ind AS 116 — Leases",           status: reportData?.indAs116 || "review", note:"All operating leases must be capitalised on balance sheet" },
+                { std:"Ind AS 109 — Financial Instruments", status: reportData?.indAs109 || "review", note:"Fair value measurement of loans, derivatives, investments" },
+                { std:"Ind AS 115 — Revenue Recognition", status: reportData?.indAs115 || "done",   note:"Revenue recognition policy aligned with contracts" },
+                { std:"Ind AS 36 — Impairment",         status: reportData?.indAs36  || "review", note:"Annual impairment testing on goodwill and intangibles" },
+                { std:"Ind AS 12 — Deferred Tax",       status: reportData?.indAs12  || "done",   note:"Deferred tax assets and liabilities properly recognised" },
+                { std:"Related Party Disclosures",       status: reportData?.indAsRpt || "review", note:"All RPTs disclosed with arm's length justification" },
+              ].map((item, i) => {
+                const ok = item.status === "done";
+                return (
+                  <div key={i} style={{ padding:"12px", borderRadius:10,
+                    background: ok ? `${C.green}06` : `${C.amber}06`,
+                    border:`1px solid ${ok?C.green+"20":C.amber+"25"}` }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
+                      <span>{ok?"✅":"⚠️"}</span>
+                      <span style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text }}>{item.std}</span>
+                    </div>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.dim, lineHeight:1.5 }}>{item.note}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {/* Garima's governance note */}
+          {reportData?.governanceNote && (
+            <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
+              <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.purple,
+                textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
+                {"📝 Garima's Governance Assessment"}
+              </div>
+              <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:0 }}>
+                {reportData.governanceNote}
+              </p>
+            </Card>
+          )}
+        </div>
+      )}
+
+{tab === "ipo" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           <CorporateCFOPack data={data} reportData={reportData}/>
           <div style={{ textAlign:"center" }}>
@@ -7671,6 +8097,119 @@ function AdminPanel({ admin, onLogout }) {
                     ))}
                   </div>
                 </Card>
+
+                {/* ══ MSME: WORKING CAPITAL FIELDS ══════════════════════════════ */}
+                {selected.client_pack === "msme" && (
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"⚙️ Working Capital Data"}</div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      {"Shown on Working Capital tab — AR aging, CCC components, ratios."}
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                      {[
+                        { key:"debtorDays",    label:"Debtor Days",        placeholder:"e.g. 46 days" },
+                        { key:"creditorDays",  label:"Creditor Days",      placeholder:"e.g. 31 days" },
+                        { key:"inventoryDays", label:"Inventory Days",     placeholder:"e.g. 22 days" },
+                        { key:"ccc",           label:"Cash Conversion Cycle", placeholder:"e.g. 37 days" },
+                        { key:"cccCashImpact", label:"Cash per Day CCC",   placeholder:"e.g. ₹2.8L" },
+                        { key:"quickRatio",    label:"Quick Ratio",        placeholder:"e.g. 1.18x" },
+                        { key:"invTurnover",   label:"Inventory Turnover", placeholder:"e.g. 6.2x" },
+                        { key:"debtorTurn",    label:"Debtor Turnover",    placeholder:"e.g. 7.8x" },
+                        { key:"ar0to30",       label:"AR 0–30 days",       placeholder:"e.g. ₹18.2L" },
+                        { key:"ar31to60",      label:"AR 31–60 days",      placeholder:"e.g. ₹12.4L" },
+                        { key:"ar61to90",      label:"AR 61–90 days",      placeholder:"e.g. ₹4.8L" },
+                        { key:"ar90plus",      label:"AR 90+ days",        placeholder:"e.g. ₹2.9L" },
+                      ].map(f => (
+                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
+                          val={reportData[f.key] || ""}
+                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
+                          placeholder={f.placeholder} mono/>
+                      ))}
+                    </div>
+                    <AdminInput C={C} F={F} FM={FM} label="AR Collections Note"
+                      val={reportData.arNote || ""}
+                      onChange={v => setReportData(r => ({...r, arNote:v}))}
+                      placeholder="e.g. Client B (₹4.8L) overdue 90+ days — legal notice issued 12 Mar."/>
+                    <AdminInput C={C} F={F} FM={FM} label="Working Capital Assessment"
+                      val={reportData.wcNote || ""}
+                      onChange={v => setReportData(r => ({...r, wcNote:v}))}
+                      placeholder="e.g. CCC improved to 37 days but still above target. Debtor concentration in top 3 clients (64% of AR) is the primary risk — diversify collections."/>
+                  </Card>
+                )}
+
+                {/* ══ CORPORATE: GOVERNANCE FIELDS ═══════════════════════════════ */}
+                {selected.client_pack === "corporate" && (
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"⚖️ Board Governance Data"}</div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      {"Shown on Board Governance tab — compliance statuses, director counts, Ind AS health."}
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+                      {[
+                        { key:"execDirectors",   label:"Executive Directors",      placeholder:"e.g. 2" },
+                        { key:"indepDirectors",  label:"Independent Directors",    placeholder:"e.g. 1" },
+                        { key:"boardMeetings",   label:"Board Meetings YTD",       placeholder:"e.g. 3" },
+                      ].map(f => (
+                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
+                          val={reportData[f.key] || ""}
+                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
+                          placeholder={f.placeholder} mono/>
+                      ))}
+                    </div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Compliance Statuses (done / pending / na)"}</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+                      {[
+                        { key:"rocStatus",    label:"ROC Annual Return"    },
+                        { key:"aocStatus",    label:"AOC-4 Filing"         },
+                        { key:"agmStatus",    label:"AGM Board Resolution" },
+                        { key:"dirKycStatus", label:"Director KYC"         },
+                        { key:"auditStatus",  label:"Statutory Audit"      },
+                        { key:"rptStatus",    label:"RPT Approval"         },
+                        { key:"csrStatus",    label:"CSR Compliance"       },
+                        { key:"indAsStatus",  label:"Ind AS Statements"    },
+                      ].map(f => (
+                        <div key={f.key}>
+                          <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
+                          <select value={reportData[f.key] || "pending"}
+                            onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
+                            style={{ width:"100%", padding:"8px 10px", borderRadius:8,
+                              border:`1px solid ${C.border}`, background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
+                            <option value="done">✅ Done</option>
+                            <option value="pending">⏳ Pending</option>
+                            <option value="na">➖ N/A</option>
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Ind AS Status"}</div>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
+                      {[
+                        { key:"indAs116", label:"Ind AS 116 — Leases"      },
+                        { key:"indAs109", label:"Ind AS 109 — Fin Instruments" },
+                        { key:"indAs115", label:"Ind AS 115 — Revenue"      },
+                        { key:"indAs36",  label:"Ind AS 36 — Impairment"    },
+                        { key:"indAs12",  label:"Ind AS 12 — Deferred Tax"  },
+                        { key:"indAsRpt", label:"RPT Disclosures"           },
+                      ].map(f => (
+                        <div key={f.key}>
+                          <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
+                          <select value={reportData[f.key] || "review"}
+                            onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
+                            style={{ width:"100%", padding:"8px 10px", borderRadius:8,
+                              border:`1px solid ${C.border}`, background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
+                            <option value="done">✅ Compliant</option>
+                            <option value="review">⚠️ Needs Review</option>
+                            <option value="na">➖ Not Applicable</option>
+                          </select>
+                        </div>
+                      ))}
+                    </div>
+                    <AdminInput C={C} F={F} FM={FM} label="Governance Assessment"
+                      val={reportData.governanceNote || ""}
+                      onChange={v => setReportData(r => ({...r, governanceNote:v}))}
+                      placeholder="e.g. Company is broadly compliant. Key gaps: independent director appointment pending (required before next funding round) and Ind AS 116 lease capitalisation needs to be completed before audit sign-off."/>
+                  </Card>
+                )}
 
                 {/* ══ EXISTING: KEY METRICS ═════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
