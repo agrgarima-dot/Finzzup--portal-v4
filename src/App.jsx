@@ -3887,125 +3887,135 @@ function CorporatePackContent({ reportData, kpis, client }) {
       </div>
 
       {tab === "monthly" && (
-    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
-      {/* Board header */}
-      <div style={{ padding:"16px 20px", borderRadius:14,
-        background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
-        border:`1px solid ${C.purple}18` }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-          {"Board Report"}{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
-        </div>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>
-          {"Actuals vs Budget vs Prior Year · Prepared by Garima Agarwal CA"}
-        </div>
-      </div>
-
-      {/* KPI Summary strip — the instant read */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12 }} className="corp-kpi">
-        {[
-          { label:"Revenue",      value: reportData?.plInputs?.revenue    || "₹842L", budget: "₹810L",  color:C.blue,   good:true  },
-          { label:"EBITDA",       value: reportData?.plInputs?.ebitda     || "₹147L", budget: "₹115L",  color:C.teal,   good:true  },
-          { label:"EBITDA Margin",value: reportData?.plInputs?.ebitdaMargin|| "17.5%", budget: "14.2%",  color:C.purple, good:true  },
-          { label:"PAT",          value: reportData?.plInputs?.pat        || "₹81L",  budget: "₹56L",   color:C.green,  good:true  },
-        ].map((k,i) => (
-          <div key={i} style={{ padding:"14px", borderRadius:12, background:`${k.color}08`,
-            border:`1px solid ${k.color}20`, textAlign:"center" }}>
-            <div style={{ fontFamily:FM, fontSize:20, fontWeight:800, color:k.color }}>{k.value}</div>
-            <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:3 }}>{k.label}</div>
-            <div style={{ fontFamily:F, fontSize:10, color:k.good?C.green:C.red, marginTop:2 }}>
-              {k.good?"▲ ":"▼ "}{"vs budget "}{k.budget}
+          <div style={{ padding:"16px 20px", borderRadius:14,
+            background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
+            border:`1px solid ${C.purple}18` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              {"Board Report"}{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>
+              {"Actuals vs Budget vs Prior Year · Prepared by Garima Agarwal CA"}
             </div>
           </div>
-        ))}
-        <style>{`.corp-kpi{grid-template-columns:1fr 1fr 1fr 1fr!important}@media(max-width:600px){.corp-kpi{grid-template-columns:1fr 1fr!important}}`}</style>
-      </div>
 
-      {/* P&L Table — actuals vs budget vs PY */}
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-          {"P&L — Actuals vs Budget vs Prior Year"}
-        </div>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
-          {"Variance shown in absolute and percentage terms — board-ready format"}
-        </div>
-        <div style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
-            <thead>
-              <tr style={{ background:C.navy }}>
-                {["",`Actual${reportData?.monthLabel?` ${reportData.monthLabel}`:""}`,
-                  "Budget","Var (₹)","Var (%)",
-                  "Prior Year","YoY (%)"].map((h,i) => (
-                  <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"right",
-                    color:"white", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {(reportData?.corpPL || [
-                { row:"Revenue",            actual:"₹842L", budget:"₹810L", varAbs:"+₹32L", varPct:"+4.0%",  py:"₹720L",  yoy:"+16.9%", bold:true  },
-                { row:"COGS",               actual:"₹497L", budget:"₹490L", varAbs:"−₹7L",  varPct:"−1.4%", py:"₹446L",  yoy:"+11.4%", bold:false },
-                { row:"Gross Profit",       actual:"₹345L", budget:"₹320L", varAbs:"+₹25L", varPct:"+7.8%",  py:"₹274L",  yoy:"+25.9%", bold:true  },
-                { row:"GP Margin",          actual:"41.0%", budget:"39.5%", varAbs:"+1.5pp",varPct:"",       py:"38.1%",  yoy:"+2.9pp", bold:false },
-                { row:"Operating Expenses", actual:"₹198L", budget:"₹205L", varAbs:"+₹7L",  varPct:"+3.4%",  py:"₹185L",  yoy:"+7.0%",  bold:false },
-                { row:"EBITDA",             actual:"₹147L", budget:"₹115L", varAbs:"+₹32L", varPct:"+27.8%", py:"₹89L",   yoy:"+65.2%", bold:true  },
-                { row:"EBITDA Margin",      actual:"17.5%", budget:"14.2%", varAbs:"+3.3pp",varPct:"",       py:"12.4%",  yoy:"+5.1pp", bold:false },
-                { row:"Finance Costs",      actual:"₹22L",  budget:"₹22L",  varAbs:"—",     varPct:"—",      py:"₹24L",   yoy:"−8.3%",  bold:false },
-                { row:"PBT",                actual:"₹107L", budget:"₹75L",  varAbs:"+₹32L", varPct:"+42.7%", py:"₹49L",   yoy:"+118.4%",bold:true  },
-                { row:"PAT",                actual:"₹81L",  budget:"₹56L",  varAbs:"+₹25L", varPct:"+44.6%", py:"₹37L",   yoy:"+118.9%",bold:true  },
-              ]).map((r,i) => (
-                <tr key={i} style={{ background:i%2===0?C.bg2:C.bg }}>
-                  {[r.row, r.actual, r.budget, r.varAbs, r.varPct, r.py, r.yoy].map((cell,j) => (
-                    <td key={j} style={{ padding:"9px 12px", textAlign:j===0?"left":"right",
-                      fontWeight:r.bold||j===0?700:400, fontSize:12,
-                      color: j===3?(cell?.startsWith("+")&&!cell.includes("pp")?C.green:cell==="—"?C.dim:C.red):
-                             j===4?(cell?.startsWith("+")&&!cell.includes("pp")?C.green:cell===""||cell==="—"?C.dim:C.red):
-                             j===6?(cell?.startsWith("+")&&!cell.includes("pp")?C.green:cell==="—"?C.dim:C.red):C.text,
-                      borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap",
-                      background:r.bold?`${C.blue}04`:undefined }}>{cell}</td>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12 }} className="corp-kpi">
+            {[
+              { label:"Revenue",       value:reportData?.plInputs?.revenue      ||"₹842L", budget:"₹810L",  color:C.blue   },
+              { label:"EBITDA",        value:reportData?.plInputs?.ebitda       ||"₹147L", budget:"₹115L",  color:C.teal   },
+              { label:"EBITDA Margin", value:reportData?.plInputs?.ebitdaMargin ||"17.5%", budget:"14.2%",  color:C.purple },
+              { label:"PAT",           value:reportData?.plInputs?.pat          ||"₹81L",  budget:"₹56L",   color:C.green  },
+            ].map((k,i) => (
+              <div key={i} style={{ padding:"14px", borderRadius:12,
+                background:`${k.color}08`, border:`1px solid ${k.color}20`, textAlign:"center" }}>
+                <div style={{ fontFamily:FM, fontSize:20, fontWeight:800, color:k.color }}>{k.value}</div>
+                <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:3 }}>{k.label}</div>
+                <div style={{ fontFamily:F, fontSize:10, color:C.green, marginTop:2 }}>
+                  {"▲ vs budget "}{k.budget}
+                </div>
+              </div>
+            ))}
+            <style>{`.corp-kpi{grid-template-columns:1fr 1fr 1fr 1fr!important}@media(max-width:600px){.corp-kpi{grid-template-columns:1fr 1fr!important}}`}</style>
+          </div>
+
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              {"P&L — Actuals vs Budget vs Prior Year"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
+              {"Variance shown in absolute and percentage — board-ready format"}
+            </div>
+            <div style={{ overflowX:"auto" }}>
+              <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
+                <thead>
+                  <tr style={{ background:C.navy }}>
+                    {["", "Actual", "Budget", "Var (₹)", "Var (%)", "Prior Year", "YoY (%)"].map((h,i) => (
+                      <th key={i} style={{ padding:"10px 12px",
+                        textAlign:i===0?"left":"right",
+                        color:"white", fontWeight:700, fontSize:11, whiteSpace:"nowrap" }}>
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { row:"Revenue",            actual:"₹842L", budget:"₹810L", varAbs:"+₹32L", varPct:"+4.0%",  py:"₹720L", yoy:"+16.9%", bold:true  },
+                    { row:"COGS",               actual:"₹497L", budget:"₹490L", varAbs:"−₹7L",  varPct:"−1.4%", py:"₹446L", yoy:"+11.4%", bold:false },
+                    { row:"Gross Profit",       actual:"₹345L", budget:"₹320L", varAbs:"+₹25L", varPct:"+7.8%",  py:"₹274L", yoy:"+25.9%", bold:true  },
+                    { row:"GP Margin",          actual:"41.0%", budget:"39.5%", varAbs:"+1.5pp",varPct:"",       py:"38.1%", yoy:"+2.9pp", bold:false },
+                    { row:"Operating Expenses", actual:"₹198L", budget:"₹205L", varAbs:"+₹7L",  varPct:"+3.4%",  py:"₹185L", yoy:"+7.0%",  bold:false },
+                    { row:"EBITDA",             actual:"₹147L", budget:"₹115L", varAbs:"+₹32L", varPct:"+27.8%", py:"₹89L",  yoy:"+65.2%", bold:true  },
+                    { row:"EBITDA Margin",      actual:"17.5%", budget:"14.2%", varAbs:"+3.3pp",varPct:"",       py:"12.4%", yoy:"+5.1pp", bold:false },
+                    { row:"Finance Costs",      actual:"₹22L",  budget:"₹22L",  varAbs:"—",     varPct:"—",      py:"₹24L",  yoy:"−8.3%",  bold:false },
+                    { row:"PBT",                actual:"₹107L", budget:"₹75L",  varAbs:"+₹32L", varPct:"+42.7%", py:"₹49L",  yoy:"+118.4%",bold:true  },
+                    { row:"PAT",                actual:"₹81L",  budget:"₹56L",  varAbs:"+₹25L", varPct:"+44.6%", py:"₹37L",  yoy:"+118.9%",bold:true  },
+                  ].map((r,i) => (
+                    <tr key={i} style={{ background:i%2===0?C.bg2:C.bg }}>
+                      <td style={{ padding:"9px 12px", fontWeight:r.bold?700:400,
+                        fontSize:12, color:C.text, borderBottom:`1px solid ${C.border}`,
+                        background:r.bold?`${C.blue}04`:undefined }}>{r.row}</td>
+                      <td style={{ padding:"9px 12px", textAlign:"right", fontWeight:r.bold?700:400,
+                        fontSize:12, color:C.text, borderBottom:`1px solid ${C.border}`,
+                        background:r.bold?`${C.blue}04`:undefined, fontFamily:FM, whiteSpace:"nowrap" }}>{r.actual}</td>
+                      <td style={{ padding:"9px 12px", textAlign:"right", fontSize:12,
+                        color:C.muted, borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{r.budget}</td>
+                      <td style={{ padding:"9px 12px", textAlign:"right", fontSize:12,
+                        color:r.varAbs.startsWith("+")?C.green:r.varAbs==="—"?C.dim:C.red,
+                        borderBottom:`1px solid ${C.border}`, fontWeight:700, whiteSpace:"nowrap" }}>{r.varAbs}</td>
+                      <td style={{ padding:"9px 12px", textAlign:"right", fontSize:12,
+                        color:r.varPct.startsWith("+")?C.green:r.varPct===""||r.varPct==="—"?C.dim:C.red,
+                        borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{r.varPct}</td>
+                      <td style={{ padding:"9px 12px", textAlign:"right", fontSize:12,
+                        color:C.muted, borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{r.py}</td>
+                      <td style={{ padding:"9px 12px", textAlign:"right", fontSize:12,
+                        color:r.yoy.startsWith("+")?C.green:C.red,
+                        borderBottom:`1px solid ${C.border}`, fontWeight:600, whiteSpace:"nowrap" }}>{r.yoy}</td>
+                    </tr>
                   ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      {/* Garima's board commentary */}
-      <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
-          letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
-          {"📝 Garima's Board Commentary"}
-        </div>
-        <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
-          {reportData?.cashflowNote || reportData?.packNote || data.garimaNote}
-        </p>
-      </Card>
-
-      {/* Key highlights — what the board should focus on */}
-      {(reportData?.boardHighlight1 || reportData?.boardHighlight2 || reportData?.boardHighlight3) && (
-        <Card>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
-            {"Board Highlights — 3 Things That Matter This Month"}
-          </div>
-          {[reportData?.boardHighlight1, reportData?.boardHighlight2, reportData?.boardHighlight3]
-            .filter(Boolean).map((h, i) => (
-            <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px", marginBottom:8,
-              borderRadius:10, background:C.bg2, border:`1px solid ${C.border}`,
-              alignItems:"flex-start" }}>
-              <span style={{ fontFamily:FM, fontWeight:800, color:C.purple,
-                background:`${C.purple}12`, borderRadius:6, padding:"2px 8px",
-                fontSize:11, flexShrink:0, marginTop:1 }}>{i+1}</span>
-              <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{h}</span>
+                </tbody>
+              </table>
             </div>
-          ))}
-        </Card>
+          </Card>
+
+          <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
+              letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
+              {"📝 Garima's Board Commentary"}
+            </div>
+            <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
+              {reportData?.cashflowNote || reportData?.packNote || data.garimaNote}
+            </p>
+          </Card>
+
+          {reportData?.boardHighlight1 && (
+            <Card>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
+                {"Board Highlights — 3 Things That Matter This Month"}
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                {[reportData.boardHighlight1, reportData.boardHighlight2, reportData.boardHighlight3]
+                  .filter(Boolean)
+                  .map((h, i) => (
+                    <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px",
+                      borderRadius:10, background:C.bg2, border:`1px solid ${C.border}`,
+                      alignItems:"flex-start" }}>
+                      <span style={{ fontFamily:FM, fontWeight:800, color:C.purple,
+                        background:`${C.purple}12`, borderRadius:6, padding:"2px 8px",
+                        fontSize:11, flexShrink:0 }}>{i+1}</span>
+                      <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{h}</span>
+                    </div>
+                  ))
+                }
+              </div>
+            </Card>
+          )}
+
+        </div>
       )}
 
-    </div>
-  )}
-
-tab === "variance" && (
+      {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           {reportData?.variance?.some(r => r.item && (r.budget || r.actual)) ? (<>
             <Card>
@@ -4041,7 +4051,7 @@ tab === "variance" && (
               </div>
             </Card>
             {reportData?.varianceCommentary?.some(v => v.item) && (
-              <Card style={{ borderLeft:`3px solid $C.purple` }}>
+              <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>📝 Commentary</div>
                 {reportData.varianceCommentary.filter(v => v.item).map((v,i,arr) => (
                   <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
@@ -4188,155 +4198,91 @@ tab === "variance" && (
         </div>
       )}
 
-{tab === "ipo" && (
+      {tab === "ipo" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
-          {/* Question */}
           <div style={{ padding:"16px 20px", borderRadius:14,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-              {"How far are we from listing — and what's blocking us?"}
+              {"What needs to happen before you can list?"}
             </div>
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
-              {"IPO readiness isn't a single number — it's a multi-dimensional assessment of financials, governance, legal, and market positioning. This tab tells you exactly where you stand and what to fix."}
+              {"IPO readiness is about closing specific gaps — not a number. Here's a plain-language view of where you stand and what to focus on."}
             </div>
           </div>
 
-          {/* Overall score + status */}
+          {/* Gap tracker — the real value */}
           <Card>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              flexWrap:"wrap", gap:16, marginBottom:16 }}>
-              <div>
-                <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.purple,
-                  textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{"IPO Readiness Score"}</div>
-                <div style={{ fontFamily:FM, fontWeight:800, fontSize:44, color:C.purple, lineHeight:1 }}>
-                  {reportData?.score || data.ipoScore}
-                  <span style={{ fontSize:14, color:C.muted, fontWeight:500 }}>{"/100"}</span>
-                </div>
-                <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:6 }}>
-                  {parseInt(reportData?.score||data.ipoScore) >= 80
-                    ? "✅ Strong — begin merchant banker conversations"
-                    : parseInt(reportData?.score||data.ipoScore) >= 60
-                    ? "⚠️ Progressing — 12–18 months to readiness with focus"
-                    : "🔴 Early stage — address foundational gaps first"}
-                </div>
-              </div>
-              <ScoreGauge score={parseInt(reportData?.score||data.ipoScore)} color={C.purple} size={100}/>
-            </div>
-            <div style={{ height:8, borderRadius:4, background:C.bg3 }}>
-              <div style={{ height:"100%", borderRadius:4,
-                width:`${reportData?.score||data.ipoScore}%`,
-                background:`linear-gradient(90deg,${C.purple},${C.blue})`, transition:"width 0.6s" }}/>
-            </div>
-          </Card>
-
-          {/* Readiness breakdown by dimension */}
-          <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-              {"Readiness by Dimension"}
-            </div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Critical Gaps to Close"}</div>
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
-              {"SEBI and investment bankers will assess all 5 dimensions before recommending a listing"}
-            </div>
-            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-              {(Array.isArray(reportData?.scoreBreakdown) && reportData.scoreBreakdown.length > 0
-                ? reportData.scoreBreakdown
-                : data.ipoBreakdown
-              ).map((item, i) => (
-                <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:C.bg2,
-                  border:`1px solid ${C.border}` }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:item.comment?6:0 }}>
-                    <div style={{ flex:1 }}>
-                      <div style={{ display:"grid", gridTemplateColumns:"140px 1fr auto",
-                        gap:12, alignItems:"center" }}>
-                        <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                        <div style={{ height:8, borderRadius:4, background:C.bg3 }}>
-                          <div style={{ height:"100%", borderRadius:4, width:`${item.score}%`,
-                            background: item.score>=75?C.green:item.score>=55?C.amber:C.red,
-                            transition:"width 0.8s ease" }}/>
-                        </div>
-                        <span style={{ fontFamily:FM, fontSize:13, fontWeight:700,
-                          color: item.score>=75?C.green:item.score>=55?C.amber:C.red,
-                          minWidth:32, textAlign:"right" }}>{item.score}</span>
-                      </div>
-                    </div>
-                  </div>
-                  {item.comment && (
-                    <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:6,
-                      paddingLeft:152, lineHeight:1.5 }}>
-                      {item.score < 70 ? "⚠️ " : "💬 "}{item.comment}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          </Card>
-
-          {/* Critical gaps — what to fix and in what order */}
-          <Card style={{ borderLeft:`3px solid ${C.red}`, background:`${C.red}04` }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.red, marginBottom:12 }}>
-              {"Critical Gaps — Fix These Before Approaching a Merchant Banker"}
+              {"SEBI and merchant bankers will check all of these before accepting your DRHP"}
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {[
-                { gap:"3-year consecutive PAT profitability",          status: reportData?.ipoGap1 || "pending", note:"SEBI requires profit for at least 2 of the 3 preceding years for mainboard" },
-                { gap:"Independent director appointment",              status: reportData?.ipoGap2 || "pending", note:"Required before DRHP filing — min 1/3 of board" },
-                { gap:"Auditor upgrade (Big 4 or category 1)",        status: reportData?.ipoGap3 || "pending", note:"Merchant bankers and institutional investors expect category 1 auditors" },
-                { gap:"Ind AS restated financials (3 years)",          status: reportData?.ipoGap4 || "pending", note:"Mandatory for DRHP — often takes 6–9 months to prepare" },
-                { gap:"Legal and IP clean-up",                        status: reportData?.ipoGap5 || "pending", note:"All litigation disclosed, IP registered, contracts reviewed" },
-                { gap:"ESOP scheme formalised",                       status: reportData?.ipoGap6 || "done",    note:"Employee stock options must be documented and board-approved" },
+                { gap:"3-year consecutive PAT profitability",   status:reportData?.ipoGap1||"pending", note:"SEBI mainboard requires profit in at least 2 of 3 preceding years. SME IPO is more flexible." },
+                { gap:"Independent director on board",         status:reportData?.ipoGap2||"pending", note:"Mandatory before DRHP filing — minimum 1/3 of board must be independent." },
+                { gap:"Category 1 auditor appointed",          status:reportData?.ipoGap3||"pending", note:"Institutional investors and merchant bankers expect a recognised audit firm." },
+                { gap:"Ind AS financials restated (3 years)",  status:reportData?.ipoGap4||"pending", note:"Mandatory for DRHP. Budget 6–9 months — this is usually the longest lead item." },
+                { gap:"Legal and IP clean-up complete",        status:reportData?.ipoGap5||"pending", note:"All litigation disclosed, IP registered, key contracts reviewed and assignable." },
+                { gap:"ESOP scheme formalised",                status:reportData?.ipoGap6||"done",    note:"Employee stock options must be board-approved and documented before listing." },
               ].map((item, i) => {
                 const done = item.status === "done";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10,
-                    padding:"10px 14px", borderRadius:10,
-                    background: done ? `${C.green}06` : `${C.red}08`,
-                    border:`1px solid ${done?C.green+"20":C.red+"15"}` }}>
-                    <span style={{ fontSize:14, flexShrink:0, marginTop:1 }}>{done?"✅":"⭕"}</span>
-                    <div>
-                      <div style={{ fontFamily:F, fontSize:13, fontWeight:done?500:700,
-                        color: done?C.text:C.red, marginBottom:3 }}>{item.gap}</div>
+                    padding:"12px 14px", borderRadius:10,
+                    background: done ? `${C.green}06` : `${C.amber}06`,
+                    border:`1px solid ${done ? C.green+"20" : C.amber+"25"}` }}>
+                    <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{done ? "✅" : "⭕"}</span>
+                    <div style={{ flex:1 }}>
+                      <div style={{ fontFamily:F, fontSize:13, fontWeight:600,
+                        color: done ? C.text : C.text, marginBottom:3 }}>{item.gap}</div>
                       <div style={{ fontFamily:F, fontSize:11, color:C.dim, lineHeight:1.5 }}>{item.note}</div>
                     </div>
+                    <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
+                      color: done ? C.green : C.amber,
+                      background: done ? `${C.green}15` : `${C.amber}12`,
+                      padding:"3px 10px", borderRadius:100, flexShrink:0 }}>
+                      {done ? "Done" : "Pending"}
+                    </span>
                   </div>
                 );
               })}
             </div>
           </Card>
 
-          {/* IPO Timeline estimate */}
+          {/* Timeline */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
-              {"Estimated IPO Timeline"}
+              {"Realistic IPO Timeline from Today"}
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {[
-                { phase:"Now → 6 months",      action:"Address critical gaps — financials, governance, auditor", color:C.red    },
-                { phase:"6–12 months",          action:"Appoint merchant banker, begin DRHP preparation",       color:C.amber  },
-                { phase:"12–18 months",         action:"DRHP filing with SEBI, respond to observations",       color:C.blue   },
-                { phase:"18–24 months",         action:"IPO listing, price discovery, allotment",              color:C.green  },
+                { phase:"Now → 6 months",   action:"Address critical gaps — Ind AS restatement, independent director, auditor", color:C.red    },
+                { phase:"6 → 12 months",    action:"Appoint merchant banker, due diligence, DRHP preparation begins",           color:C.amber  },
+                { phase:"12 → 18 months",   action:"DRHP filing with SEBI, respond to observations, pre-IPO placement",        color:C.blue   },
+                { phase:"18 → 24 months",   action:"Roadshow, book building, listing on NSE/BSE",                               color:C.green  },
               ].map((item, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
                   padding:"10px 14px", borderRadius:10, background:C.bg2,
                   border:`1px solid ${C.border}` }}>
                   <div style={{ width:3, height:36, borderRadius:2, background:item.color, flexShrink:0 }}/>
-                  <div style={{ width:110, fontFamily:F, fontSize:11, fontWeight:700, color:item.color }}>{item.phase}</div>
-                  <div style={{ fontFamily:F, fontSize:12, color:C.text, flex:1 }}>{item.action}</div>
+                  <div style={{ width:110, fontFamily:F, fontSize:11, fontWeight:700, color:item.color, flexShrink:0 }}>{item.phase}</div>
+                  <div style={{ fontFamily:F, fontSize:12, color:C.text, flex:1, lineHeight:1.5 }}>{item.action}</div>
                 </div>
               ))}
             </div>
           </Card>
 
           {/* Garima's note */}
-          {(reportData?.cashflowNote || reportData?.packNote || data.garimaNote) && (
+          {(reportData?.ipoNote || reportData?.packNote || data.garimaNote) && (
             <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
                 letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
-                {"📝 Garima's IPO Readiness Assessment"}
+                {"📝 Garima's Assessment"}
               </div>
               <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
-                {reportData?.ipoNote || reportData?.cashflowNote || reportData?.packNote || data.garimaNote}
+                {reportData?.ipoNote || reportData?.packNote || data.garimaNote}
               </p>
             </Card>
           )}
@@ -4349,10 +4295,11 @@ tab === "variance" && (
               {"💬 Discuss IPO readiness with Garima"}
             </a>
           </div>
+
         </div>
       )}
 
-tab === "packs" && (
+      {tab === "packs" && (
         <div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
             Monthly board packs prepared by Garima — updated by the 20th of each month.
@@ -4362,16 +4309,19 @@ tab === "packs" && (
           </div>
           <Card style={{ marginTop:20, background:`${C.purple}06`, borderColor:`${C.purple}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
-              📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
-              Questions?{" "}
-              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+              {"📅 "}
+              <strong style={{ color:C.text }}>{"Packs uploaded by the 20th of each month."}</strong>
+              {" Questions? "}
+              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>{"💬 WhatsApp Garima"}</a>
             </div>
           </Card>
         </div>
       )}
+
     </div>
   );
 }
+
 
 function CFOPackContent({ reportData, client, kpis }) {
   const [tab, setTab] = useState("monthly");
