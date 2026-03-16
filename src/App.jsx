@@ -1,66 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
-// ─── CHART STUBS (no recharts dependency) ─────────────────────────────────────
-const ResponsiveContainer = ({ children, width, height }) => (
-  <div style={{ width: width||"100%", height: height||200, position:"relative" }}>{children}</div>
-);
-const _ChartBase = ({ data=[], height=180, children, margin={} }) => (
-  <div style={{ width:"100%", height, position:"relative", display:"flex", alignItems:"flex-end", gap:2, padding:"8px 4px 20px" }}>
-    {children}
-  </div>
-);
-// Simple bar chart renderer
-const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
-  const maxVal = Math.max(...data.flatMap(d => bars.map(b => Math.abs(d[b.key]||0))), 1);
-  return (
-    <div style={{ width:"100%", height, display:"flex", alignItems:"flex-end", gap:3, padding:"4px 0 20px" }}>
-      {data.map((d,i) => (
-        <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
-          {bars.map(b => (
-            <div key={b.key} style={{ width:"100%", height: Math.max(2,(Math.abs(d[b.key]||0)/maxVal)*(height-24)),
-              background: b.fill||"#3B6FF7", borderRadius:"3px 3px 0 0", opacity: b.opacity||1 }}/>
-          ))}
-          <div style={{ fontSize:9, color:"#9CA3AF", marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
-        </div>
-      ))}
-    </div>
-  );
-};
-// Simple line chart renderer  
-const SimpleLineChart = ({ data=[], lines=[], height=180 }) => {
-  const allVals = data.flatMap(d => lines.map(l => d[l.key]||0));
-  const maxVal = Math.max(...allVals, 1);
-  const minVal = Math.min(...allVals, 0);
-  const range = maxVal - minVal || 1;
-  const w = 100, h = height - 30;
-  return (
-    <div style={{ width:"100%", height, position:"relative" }}>
-      <svg viewBox={`0 0 ${data.length*20} ${h}`} style={{ width:"100%", height:h }} preserveAspectRatio="none">
-        {lines.map(l => {
-          const pts = data.map((d,i) => `${i*20+10},${h - ((d[l.key]||0)-minVal)/range*h}`).join(" ");
-          return <polyline key={l.key} points={pts} fill="none" stroke={l.stroke||"#3B6FF7"} strokeWidth="2"/>;
-        })}
-      </svg>
-      <div style={{ display:"flex", justifyContent:"space-between", padding:"0 4px" }}>
-        {data.map((d,i) => <span key={i} style={{ fontSize:9, color:"#9CA3AF" }}>{d.month||""}</span>)}
-      </div>
-    </div>
-  );
-};
-// Stubs for unused recharts components (keep JSX valid)
-const AreaChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
-const BarChart = ({children,...p}) => <SimpleBarChart data={p.data||[]} bars={[]} height={p.height||180}/>;
-const LineChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
-const Area = () => null;
-const Bar = () => null;
-const Line = () => null;
-const XAxis = () => null;
-const YAxis = () => null;
-const CartesianGrid = () => null;
-const Legend = () => null;
-const Tooltip = () => null;
-const ReferenceLine = () => null;
-import LOGO_SRC from "./logo.png";
 
 // ─── TOKENS ──────────────────────────────────────────────────────────────────
 const C = {
@@ -87,6 +26,68 @@ const C = {
   grad3:   "linear-gradient(135deg,#DB2777,#7C3AED)",
   grad4:   "linear-gradient(135deg,#D97706,#DB2777)",
 };
+
+// ─── CHART STUBS (no recharts dependency) ─────────────────────────────────────
+const ResponsiveContainer = ({ children, width, height }) => (
+  <div style={{ width: width||"100%", height: height||200, position:"relative" }}>{children}</div>
+);
+const _ChartBase = ({ data=[], height=180, children, margin={} }) => (
+  <div style={{ width:"100%", height, position:"relative", display:"flex", alignItems:"flex-end", gap:2, padding:"8px 4px 20px" }}>
+    {children}
+  </div>
+);
+// Simple bar chart renderer
+const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
+  var maxVal = Math.max(...data.flatMap(d => bars.map(b => Math.abs(d[b.key]||0))), 1);
+  return (
+    <div style={{ width:"100%", height, display:"flex", alignItems:"flex-end", gap:3, padding:"4px 0 20px" }}>
+      {data.map((d,i) => (
+        <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:1 }}>
+          {bars.map(b => (
+            <div key={b.key} style={{ width:"100%", height: Math.max(2,(Math.abs(d[b.key]||0)/maxVal)*(height-24)),
+              background: b.fill||"#3B6FF7", borderRadius:"3px 3px 0 0", opacity: b.opacity||1 }}/>
+          ))}
+          <div style={{ fontSize:9, color:"#9CA3AF", marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+// Simple line chart renderer  
+const SimpleLineChart = ({ data=[], lines=[], height=180 }) => {
+  var allVals = data.flatMap(d => lines.map(l => d[l.key]||0));
+  var maxVal = Math.max(...allVals, 1);
+  var minVal = Math.min(...allVals, 0);
+  var range = maxVal - minVal || 1;
+  var w = 100, h = height - 30;
+  return (
+    <div style={{ width:"100%", height, position:"relative" }}>
+      <svg viewBox={`0 0 ${data.length*20} ${h}`} style={{ width:"100%", height:h }} preserveAspectRatio="none">
+        {lines.map(l => {
+          var pts = data.map((d,i) => `${i*20+10},${h - ((d[l.key]||0)-minVal)/range*h}`).join(" ");
+          return <polyline key={l.key} points={pts} fill="none" stroke={l.stroke||"#3B6FF7"} strokeWidth="2"/>;
+        })}
+      </svg>
+      <div style={{ display:"flex", justifyContent:"space-between", padding:"0 4px" }}>
+        {data.map((d,i) => <span key={i} style={{ fontSize:9, color:"#9CA3AF" }}>{d.month||""}</span>)}
+      </div>
+    </div>
+  );
+};
+// Stubs for unused recharts components (keep JSX valid)
+const AreaChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
+const BarChart = ({children,...p}) => <SimpleBarChart data={p.data||[]} bars={[]} height={p.height||180}/>;
+const LineChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
+const Area = () => null;
+const Bar = () => null;
+const Line = () => null;
+const XAxis = () => null;
+const YAxis = () => null;
+const CartesianGrid = () => null;
+const Legend = () => null;
+const Tooltip = () => null;
+const ReferenceLine = () => null;
+import LOGO_SRC from "./logo.png";
 const F  = "'Plus Jakarta Sans', sans-serif";
 const FM = "'DM Mono', monospace";
 const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
@@ -270,8 +271,8 @@ const Badge = ({ children, color=C.blue, bg }) => (
 );
 
 const PriBadge = ({ p }) => {
-  const map = { High:[C.red,"#FEF2F2"], Medium:[C.amber,"#FFFBEB"], Low:[C.green,"#ECFDF5"] };
-  const [c,bg] = map[p]||map.Low;
+  var map = { High:[C.red,"#FEF2F2"], Medium:[C.amber,"#FFFBEB"], Low:[C.green,"#ECFDF5"] };
+  var [c,bg] = map[p]||map.Low;
   return <Badge color={c} bg={bg}>{p}</Badge>;
 };
 
@@ -334,13 +335,13 @@ function Login({ onLogin }) {
   // Check invite code — demo codes use local data, real codes hit Supabase
   const checkCode = async () => {
     if (!code.trim()) { setError("Please enter an invite code."); return; }
-    const upper = code.trim().toUpperCase();
+    var upper = code.trim().toUpperCase();
     setLoading(true); setError("");
 
     // ── Demo codes: bypass Supabase, log straight in with dummy data ──
     if (INVITE_CODES[upper]) {
-      const raw = INVITE_CODES[upper];
-      const demo = { ...raw, invite_code: upper, id: upper, isDemo: true,
+      var raw = INVITE_CODES[upper];
+      var demo = { ...raw, invite_code: upper, id: upper, isDemo: true,
         client_pack: raw.clientPack || raw.client_pack || "startup" };
       setLoading(false);
       onLogin(demo);   // straight to Portal, no password needed
@@ -348,12 +349,12 @@ function Login({ onLogin }) {
     }
 
     // ── Real codes: look up in Supabase clients table ──
-    const { data, error: err } = await supabase
+    var { data, error: err } = await supabase
       .from("clients")
       .select("*")
       .eq("invite_code", upper)
       .eq("active", true)
-      .single();
+      .maybeSingle();
     setLoading(false);
     if (err || !data) { setError("Invalid invite code. Please contact garima@finzzup.com"); return; }
     setClient(data);
@@ -367,7 +368,7 @@ function Login({ onLogin }) {
     if (form.password.length < 6)      { setError("Password must be at least 6 characters."); return; }
     if (form.password !== form.confirm) { setError("Passwords don't match."); return; }
     setLoading(true); setError("");
-    const { data: authData, error: authErr } = await supabase.auth.signUp({
+    var { data: authData, error: authErr } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
       options: { data: { client_id: client.id, invite_code: client.invite_code } }
@@ -375,7 +376,7 @@ function Login({ onLogin }) {
     setLoading(false);
     if (authErr) { setError(authErr.message); return; }
     // Fetch fresh client row from DB to ensure all fields (client_pack etc) are present
-    const { data: freshClient } = await supabase
+    var { data: freshClient } = await supabase
       .from("clients").select("*").eq("email", form.email.trim()).maybeSingle();
     onLogin(freshClient || client);
   };
@@ -386,7 +387,7 @@ function Login({ onLogin }) {
     setLoading(true); setError("");
 
     // ── Demo email shortcut (shouldn't normally reach here, but just in case) ──
-    const demoMatch = Object.values(INVITE_CODES).find(d => d.email === form.email.trim().toLowerCase());
+    var demoMatch = Object.values(INVITE_CODES).find(d => d.email === form.email.trim().toLowerCase());
     if (demoMatch) {
       setLoading(false);
       onLogin({ ...demoMatch, isDemo: true,
@@ -395,11 +396,11 @@ function Login({ onLogin }) {
     }
 
     // ── Real Supabase signin ──
-    const { error: authErr } = await supabase.auth.signInWithPassword({
+    var { error: authErr } = await supabase.auth.signInWithPassword({
       email: form.email.trim(), password: form.password
     });
     if (authErr) { setLoading(false); setError("Incorrect email or password."); return; }
-    const { data, error: dbErr } = await supabase
+    var { data, error: dbErr } = await supabase
       .from("clients").select("*").eq("email", form.email.trim()).maybeSingle();
     setLoading(false);
     if (dbErr || !data) { setError("Account not found. Please register first."); return; }
@@ -1138,21 +1139,21 @@ function useLiveMarketData(pack) {
   const [lastUpdated, setLast]= React.useState(null);
 
   React.useEffect(() => {
-    let cancelled = false;
+    var cancelled = false;
 
-    const fetchAll = async () => {
+    var fetchAll = async () => {
       setLoading(true);
       try {
         // ── RBI Rates via CORS proxy ─────────────────────────────────────────
         // RBI doesn't have a clean JSON API — we use a reliable finance API instead
         // frankfurter.app for exchange rates (free, no key needed)
-        const fxRes = await fetch("https://api.frankfurter.app/latest?from=INR&to=USD,SAR,AED,EUR,GBP");
-        const fxData = fxRes.ok ? await fxRes.json() : null;
+        var fxRes = await fetch("https://api.frankfurter.app/latest?from=INR&to=USD,SAR,AED,EUR,GBP");
+        var fxData = fxRes.ok ? await fxRes.json() : null;
 
         // For RBI repo rate we use a static value updated monthly
         // (RBI API requires registration — we'll use known current rate)
         // This gets updated in the code when RBI changes rates
-        const rbiRates = {
+        var rbiRates = {
           repo:        6.50,   // RBI Repo Rate % — update when RBI changes
           reverse:     6.25,   // Reverse Repo %
           cpi:         5.10,   // CPI Inflation % (latest)
@@ -1172,7 +1173,7 @@ function useLiveMarketData(pack) {
         // ── Sector Benchmarks via Screener/NSE proxy ─────────────────────────
         // Using curated sector median data (updated quarterly from public filings)
         // These reflect NSE-listed company medians as of Q3 FY26
-        const sectorData = {
+        var sectorData = {
           startup: {
             title: "Indian Startup Benchmarks (Series A–B)",
             source: "YC, Sequoia India, public filings",
@@ -1232,7 +1233,7 @@ function LiveMarketWidget({ pack, kpis, reportData }) {
   const enrichedBench = benchmarks ? {
     ...benchmarks,
     metrics: benchmarks.metrics.map(m => {
-      let yours = null;
+      var yours = null;
       if (m.key === "revenue")  yours = kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value;
       if (m.key === "gross_margin") yours = kpis?.find(k=>k.label?.toLowerCase().includes("margin"))?.value;
       if (m.key === "burn")     yours = kpis?.find(k=>k.label?.toLowerCase().includes("burn"))?.value;
@@ -1386,12 +1387,12 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
 
       {/* ── THIS MONTH'S STORY ── auto-generated from KPI directions */}
       {displayKpis.length > 0 && (() => {
-        const rev   = displayKpis.find(k=>k.label?.toLowerCase().includes("rev"));
-        const cash  = displayKpis.find(k=>k.label?.toLowerCase().includes("cash"));
-        const burn  = displayKpis.find(k=>k.label?.toLowerCase().includes("burn"));
-        const run   = displayKpis.find(k=>k.label?.toLowerCase().includes("runway"));
-        const mar   = displayKpis.find(k=>k.label?.toLowerCase().includes("margin"));
-        const lines = [];
+        var rev   = displayKpis.find(k=>k.label?.toLowerCase().includes("rev"));
+        var cash  = displayKpis.find(k=>k.label?.toLowerCase().includes("cash"));
+        var burn  = displayKpis.find(k=>k.label?.toLowerCase().includes("burn"));
+        var run   = displayKpis.find(k=>k.label?.toLowerCase().includes("runway"));
+        var mar   = displayKpis.find(k=>k.label?.toLowerCase().includes("margin"));
+        var lines = [];
         if (rev)  lines.push(rev.trend==="up"  ? `Revenue grew to ${rev.value} — growth trajectory intact.` : `Revenue dipped to ${rev.value} — monitor pipeline closely.`);
         if (mar)  lines.push(mar.trend==="up"  ? `Gross margin improved to ${mar.value} — unit economics strengthening.` : `Margin compressed to ${mar.value} — review cost structure.`);
         if (cash) lines.push(cash.trend==="down"? `Cash dropped to ${cash.value} — collections need attention.` : `Cash position healthy at ${cash.value}.`);
@@ -1614,7 +1615,7 @@ function CashFlow({ reportData, client, kpis }) {
   // ───────────────────────────────────────────────────────────────────────────
   if (pack === "startup") {
     const cfData = (() => {
-      const cf = reportData?.cashflow;
+      var cf = reportData?.cashflow;
       if (cf && cf.some(r => r.actual || r.forecast)) {
         return cf.map(r => ({
           month: r.month,
@@ -1632,8 +1633,8 @@ function CashFlow({ reportData, client, kpis }) {
           <SectionTitle sub="Burn rate, runway and 9-month cash position">Cash Flow</SectionTitle>
           <button
             onClick={() => {
-              const html = generateCashPDF({ client, reportData, kpis });
-              const w = window.open("","_blank");
+              var html = generateCashPDF({ client, reportData, kpis });
+              var w = window.open("","_blank");
               w.document.write(html);
               w.document.close();
               setTimeout(() => w.print(), 600);
@@ -1859,8 +1860,8 @@ function CashFlow({ reportData, client, kpis }) {
           <SectionTitle sub="Collections, payments, working capital and cash conversion">Cash Flow</SectionTitle>
           <button
             onClick={() => {
-              const html = generateCashPDF({ client, reportData, kpis });
-              const w = window.open("","_blank");
+              var html = generateCashPDF({ client, reportData, kpis });
+              var w = window.open("","_blank");
               w.document.write(html);
               w.document.close();
               setTimeout(() => w.print(), 600);
@@ -1979,8 +1980,8 @@ function CashFlow({ reportData, client, kpis }) {
           <SectionTitle sub="Operating, investing and financing cash flows — board-ready format">Cash Flow</SectionTitle>
           <button
             onClick={() => {
-              const html = generateCashPDF({ client, reportData, kpis });
-              const w = window.open("","_blank");
+              var html = generateCashPDF({ client, reportData, kpis });
+              var w = window.open("","_blank");
               w.document.write(html);
               w.document.close();
               setTimeout(() => w.print(), 600);
@@ -2085,7 +2086,7 @@ function CashFlow({ reportData, client, kpis }) {
                 ["Financing CF", "−₹5L",  "−₹5L",  "−₹5L",  "−₹15L" ],
                 ["Net CF",       "₹18L",  "₹33L",  "₹37L",  "₹88L"  ],
               ].map((r,i) => {
-                const bold = i===3;
+                var bold = i===3;
                 return (
                   <tr key={i} style={{ background:bold?`${C.blue}06`:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
                     {r.map((cell,j) => (
@@ -2124,7 +2125,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
     setItems(prev => prev.map(a => a.id===id ? {...a, done:!a.done} : a));
     // If connected to Supabase, update the record
     try {
-      const item = items.find(a => a.id === id);
+      var item = items.find(a => a.id === id);
       if (item && item.id && typeof item.id === "string") { // real Supabase UUID
         await supabase.from("action_items").update({ done: !item.done }).eq("id", id);
       }
@@ -2136,12 +2137,12 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
   // Auto-generate strategic alerts from KPI data
   const strategicAlerts = (() => {
     if (!kpis || kpis.length === 0) return [];
-    const alerts = [];
-    const run  = kpis.find(k=>k.label?.toLowerCase().includes("runway"));
-    const cash = kpis.find(k=>k.label?.toLowerCase().includes("cash"));
-    const burn = kpis.find(k=>k.label?.toLowerCase().includes("burn"));
-    const rev  = kpis.find(k=>k.label?.toLowerCase().includes("rev"));
-    const mar  = kpis.find(k=>k.label?.toLowerCase().includes("margin"));
+    var alerts = [];
+    var run  = kpis.find(k=>k.label?.toLowerCase().includes("runway"));
+    var cash = kpis.find(k=>k.label?.toLowerCase().includes("cash"));
+    var burn = kpis.find(k=>k.label?.toLowerCase().includes("burn"));
+    var rev  = kpis.find(k=>k.label?.toLowerCase().includes("rev"));
+    var mar  = kpis.find(k=>k.label?.toLowerCase().includes("margin"));
     if (run  && parseFloat(run.value)  < 3)  alerts.push({ text:`🔴 Runway is ${run.value} — raise capital or cut costs immediately. Every week counts.`,   priority:"High",   color:C.red    });
     if (run  && parseFloat(run.value)  < 6  && parseFloat(run.value) >= 3) alerts.push({ text:`⚠️ Runway at ${run.value} — start fundraise conversations now. 6 months is the minimum buffer.`, priority:"High", color:C.amber });
     if (burn && burn.trend === "down") alerts.push({ text:`Burn increased to ${burn.value} — review discretionary spend and defer non-essential hiring.`, priority:"Medium", color:C.amber });
@@ -2830,7 +2831,7 @@ function ArchiveRow({ p, label }) {
           {p.file_url ? (
             <button onClick={() => {
               if (p.file_url.startsWith("data:text/html")) {
-                const win = window.open("", "_blank");
+                var win = window.open("", "_blank");
                 if (win) { win.document.write(decodeURIComponent(p.file_url.replace("data:text/html;charset=utf-8,",""))); win.document.close(); }
               } else { window.open(p.file_url, "_blank"); }
             }} style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.blue}`,
@@ -3050,24 +3051,24 @@ function useMarketData() {
   });
 
   React.useEffect(() => {
-    const fetchAll = async () => {
+    var fetchAll = async () => {
       try {
         // 1. Forex rates (frankfurter.app — free, no key)
-        const fxRes  = await fetch("https://api.frankfurter.app/latest?from=INR");
-        const fxData = await fxRes.json();
-        const rates  = fxData?.rates || {};
+        var fxRes  = await fetch("https://api.frankfurter.app/latest?from=INR");
+        var fxData = await fxRes.json();
+        var rates  = fxData?.rates || {};
         // frankfurter gives INR→X so invert for X→INR
-        const usdInr = rates.USD ? (1 / rates.USD).toFixed(2) : null;
-        const sarInr = rates.SAR ? (1 / rates.SAR).toFixed(2) : null;
-        const aedInr = rates.AED ? (1 / rates.AED).toFixed(2) : null;
+        var usdInr = rates.USD ? (1 / rates.USD).toFixed(2) : null;
+        var sarInr = rates.SAR ? (1 / rates.SAR).toFixed(2) : null;
+        var aedInr = rates.AED ? (1 / rates.AED).toFixed(2) : null;
 
         // Nifty removed — CORS blocked from browser
-        let nifty = null, niftyChg = null;
+        var nifty = null, niftyChg = null;
 
         // 3. RBI Repo rate — hardcoded current value, update monthly
         // RBI API has CORS issues so we use a known current value
         // As of Feb 2026: 6.50% (RBI held in Feb 2026 MPC meeting)
-        const repoRate = "6.50%";
+        var repoRate = "6.50%";
 
         setMarket({
           repo:      repoRate,
@@ -3087,7 +3088,7 @@ function useMarketData() {
 
     fetchAll();
     // Refresh every 15 minutes
-    const interval = setInterval(fetchAll, 15 * 60 * 1000);
+    var interval = setInterval(fetchAll, 15 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -3909,7 +3910,7 @@ function useLiveDocs(client) {
       .order("created_at", { ascending: false })
       .then(({ data: docs }) => {
         if (docs?.length) {
-          const packDocs = docs.filter(d =>
+          var packDocs = docs.filter(d =>
             ["garima", "Garima", "Garima Agarwal"].includes(d.uploaded_by) ||
             d.name?.toLowerCase().includes("pack") ||
             d.name?.toLowerCase().includes("report") ||
@@ -4036,7 +4037,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>📅 Compliance Due Date Calendar — March 2026</div>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {COMPLIANCE_DATES.map((c,i) => {
-            const [col,bg] = c.status==="critical"?[C.red,"#FEF2F2"]:c.status==="due-soon"?[C.amber,"#FFFBEB"]:[C.blue,"#EEF3FE"];
+            var [col,bg] = c.status==="critical"?[C.red,"#FEF2F2"]:c.status==="due-soon"?[C.amber,"#FFFBEB"]:[C.blue,"#EEF3FE"];
             return (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", borderRadius:10, background:bg, border:`1px solid ${col}22` }}>
                 <div style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:col, minWidth:52, whiteSpace:"nowrap" }}>{c.due}</div>
@@ -4253,7 +4254,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 { label:"Inventory Turnover",    value: reportData?.invTurnover  || "6.2x",  benchmark: reportData?.benchInvTurnover  || "MSME avg: 4–8x",         target:4,   actual: parseFloat(reportData?.invTurnover||"6.2"),   higher:true  },
                 { label:"Debtor Turnover",       value: reportData?.debtorTurn   || "7.8x",  benchmark: reportData?.benchDebtorTurn   || "Target: >10x",           target:10,  actual: parseFloat(reportData?.debtorTurn||"7.8"),    higher:true  },
               ].map((r, i) => {
-                const good = r.higher ? r.actual >= r.target : r.actual <= r.target;
+                var good = r.higher ? r.actual >= r.target : r.actual <= r.target;
                 return (
                   <div key={i} style={{ padding:"14px", borderRadius:12,
                     background: good ? `${C.green}06` : `${C.amber}06`,
@@ -4435,7 +4436,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                   color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
                 {"💬 WhatsApp Garima"}
               </a>
-              <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
+              <button onClick={() => { var html = generateLoanPDF({ client, reportData, kpis }); var w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
                   borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
                   color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
@@ -4736,8 +4737,8 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { item:"CSR Compliance (if applicable)",     status: reportData?.csrStatus       || "na",      due:"2% of avg net profit"             },
                 { item:"Ind AS Financial Statements",        status: reportData?.indAsStatus     || "pending", due:"As per applicable standards"      },
               ].map((row, i) => {
-                const isDone = row.status === "done";
-                const isNA   = row.status === "na";
+                var isDone = row.status === "done";
+                var isNA   = row.status === "na";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
                     borderRadius:10,
@@ -4777,7 +4778,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { std:"Ind AS 12 — Deferred Tax",       status: reportData?.indAs12  || "done",   note:"Deferred tax assets and liabilities properly recognised" },
                 { std:"Related Party Disclosures",       status: reportData?.indAsRpt || "review", note:"All RPTs disclosed with arm's length justification" },
               ].map((item, i) => {
-                const ok = item.status === "done";
+                var ok = item.status === "done";
                 return (
                   <div key={i} style={{ padding:"12px", borderRadius:10,
                     background: ok ? `${C.green}06` : `${C.amber}06`,
@@ -4837,7 +4838,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { gap:"Legal and IP clean-up complete",        status:reportData?.ipoGap5||"pending", note:"All litigation disclosed, IP registered, key contracts reviewed and assignable." },
                 { gap:"ESOP scheme formalised",                status:reportData?.ipoGap6||"done",    note:"Employee stock options must be board-approved and documented before listing." },
               ].map((item, i) => {
-                const done = item.status === "done";
+                var done = item.status === "done";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10,
                     padding:"12px 14px", borderRadius:10,
@@ -5057,9 +5058,9 @@ function CFOPackContent({ reportData, client, kpis }) {
                     { m:"Cash Balance",    bud:"2.4Cr",act:"2.1Cr",fav:false, noCalc:true },
                     { m:"Headcount Cost",  bud:"95",  act:"88",  fav:true  },
                   ].map((r,i) => {
-                    const bv = parseFloat(r.bud), av = parseFloat(r.act);
-                    const varVal = r.noCalc ? "—" : (av - bv).toFixed(1);
-                    const varPct = r.noCalc ? "—" : ((av - bv)/bv*100).toFixed(1)+"%";
+                    var bv = parseFloat(r.bud), av = parseFloat(r.act);
+                    var varVal = r.noCalc ? "—" : (av - bv).toFixed(1);
+                    var varPct = r.noCalc ? "—" : ((av - bv)/bv*100).toFixed(1)+"%";
                     return (
                       <tr key={i} style={{ background:i%2===0?C.bg2:C.bg, borderBottom:`1px solid ${C.border}` }}>
                         <td style={{ padding:"10px 12px", fontWeight:600, color:C.text }}>{r.m}</td>
@@ -5549,7 +5550,7 @@ function CFOPackContent({ reportData, client, kpis }) {
             </p>
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
               <a href={WA} target="_blank" rel="noopener" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`, color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>{"💬 WhatsApp Garima"}</a>
-              <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w = window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
+              <button onClick={() => { var html = generateLoanPDF({ client, reportData, kpis }); var w = window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`, color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
                 {"📄 Download Full Report"}
               </button>
@@ -5636,7 +5637,7 @@ function CFOPacks({ client, reportData }) {
       .then(({ data: docs }) => {
         if (docs?.length) {
           // Show: Garima uploads + any client-generated packs (contain pack/report keywords)
-          const packDocs = docs.filter(d =>
+          var packDocs = docs.filter(d =>
             ["garima", "Garima", "Garima Agarwal"].includes(d.uploaded_by) ||
             d.name?.toLowerCase().includes("pack") ||
             d.name?.toLowerCase().includes("report") ||
@@ -6283,7 +6284,7 @@ function Invoices({ client, liveInvoices }) {
   const paid   = allInvoices.filter(i=>i.status==="paid");
 
   const InvoiceCard = ({ inv }) => {
-    const isUnpaid = inv.status === "unpaid";
+    var isUnpaid = inv.status === "unpaid";
     return (
       <div style={{ padding:"16px 18px", borderRadius:12,
         border:`1.5px solid ${isUnpaid ? C.amber+"50" : C.border}`,
@@ -6472,12 +6473,12 @@ function MyDocuments({ client }) {
     if (isDemo) { alert("Uploads are disabled in demo mode."); return; }
     if (file.size > 10 * 1024 * 1024) { alert("File too large — max 10MB."); return; }
     setUploading(true);
-    const path = `${client.id}/${Date.now()}-${file.name}`;
-    const { error: upErr } = await supabase.storage
+    var path = `${client.id}/${Date.now()}-${file.name}`;
+    var { error: upErr } = await supabase.storage
       .from("client-docs").upload(path, file);
     if (upErr) { alert("Upload failed: " + upErr.message); setUploading(false); return; }
-    const { data: urlData } = supabase.storage.from("client-docs").getPublicUrl(path);
-    const { data: docRow } = await supabase.from("documents").insert({
+    var { data: urlData } = supabase.storage.from("client-docs").getPublicUrl(path);
+    var { data: docRow } = await supabase.from("documents").insert({
       client_id:   client.id,
       name:        file.name,
       file_url:    urlData.publicUrl,
@@ -6497,18 +6498,18 @@ function MyDocuments({ client }) {
 
   const handleDownload = (doc) => {
     if (!doc.file_url) { alert("File URL not available."); return; }
-    const isReport = doc.doc_type === "report" || doc.file_url?.startsWith("data:text/html");
+    var isReport = doc.doc_type === "report" || doc.file_url?.startsWith("data:text/html");
     if (isReport) {
       // data URL reports — open in new tab so they render as a webpage
       // Then client can use browser Print → Save as PDF
-      const win = window.open("", "_blank");
+      var win = window.open("", "_blank");
       if (win) {
         win.document.write(decodeURIComponent(doc.file_url.replace("data:text/html;charset=utf-8,", "")));
         win.document.close();
       }
       return;
     }
-    const a = document.createElement("a");
+    var a = document.createElement("a");
     a.href = doc.file_url;
     a.download = doc.name;
     a.target = "_blank";
@@ -6519,7 +6520,7 @@ function MyDocuments({ client }) {
 
   const fileIcon = (name, docType) => {
     if (docType === "report") return "📊";
-    const ext = name?.split(".").pop()?.toLowerCase();
+    var ext = name?.split(".").pop()?.toLowerCase();
     if (["pdf"].includes(ext))                    return "📄";
     if (["xls","xlsx","csv"].includes(ext))       return "📊";
     if (["doc","docx"].includes(ext))             return "📝";
@@ -6618,7 +6619,7 @@ function MyDocuments({ client }) {
 
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {displayDocs.map((doc, i) => {
-            const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
+            var byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
             return (
               <div key={doc.id || i} style={{ display:"flex", alignItems:"center",
                 justifyContent:"space-between", padding:"12px 14px", borderRadius:10,
@@ -6925,7 +6926,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
 
   // KPI cards — 2 per row grid
   const kpiCards  = (kpis || []).map(k => {
-    const isUp = k.trend === "up";
+    var isUp = k.trend === "up";
     return `<div style="background:#f8faff;border:1px solid #e0e7ff;border-radius:10px;padding:16px 18px;break-inside:avoid">
       <div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">${k.label}</div>
       <div style="font-size:22px;font-weight:800;color:#111827;font-family:monospace;margin-bottom:4px">${k.value || "—"}</div>
@@ -6948,8 +6949,8 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
 
   const pendingActions = (actions || []).filter(a => !a.done);
   const actionRows = pendingActions.map(a => {
-    const col = a.priority==="High"?"#EF4444":a.priority==="Medium"?"#D97706":"#059669";
-    const bg  = a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#ECFDF5";
+    var col = a.priority==="High"?"#EF4444":a.priority==="Medium"?"#D97706":"#059669";
+    var bg  = a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#ECFDF5";
     return `<tr>
       <td style="padding:10px 14px;font-size:12px;color:#374151;border-bottom:1px solid #F3F4F6">${a.text}</td>
       <td style="padding:10px 14px;border-bottom:1px solid #F3F4F6">
@@ -7224,17 +7225,17 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
   const [error,    setError]    = React.useState("");
 
   const handleExecSummary = () => {
-    const html = generateExecSummaryPDF({ client, reportData, kpis });
-    const w = window.open("","_blank");
+    var html = generateExecSummaryPDF({ client, reportData, kpis });
+    var w = window.open("","_blank");
     w.document.write(html);
     w.document.close();
     setTimeout(() => w.print(), 600);
   };
   const handlePreview = () => {
-    const html = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
-    const blob = new Blob([html], { type:"text/html" });
-    const url  = URL.createObjectURL(blob);
-    const win  = window.open(url, "_blank");
+    var html = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
+    var blob = new Blob([html], { type:"text/html" });
+    var url  = URL.createObjectURL(blob);
+    var win  = window.open(url, "_blank");
     if (win) win.onload = () => setTimeout(() => win.print(), 500);
     setTimeout(() => URL.revokeObjectURL(url), 15000);
   };
@@ -7322,11 +7323,11 @@ function Portal({ client, onLogout }) {
   useEffect(() => {
     if (isDemo || !client?.id) return;
     // Safety: if client.id looks like an invite code string (not a UUID), skip fetch
-    const looksLikeUUID = /^[0-9a-f-]{36}$/i.test(client.id);
+    var looksLikeUUID = /^[0-9a-f-]{36}$/i.test(client.id);
     if (!looksLikeUUID) { console.warn("client.id is not a UUID — skipping live data fetch:", client.id); return; }
-    const fetchAll = async () => {
+    var fetchAll = async () => {
       setDataLoading(true);
-      const [kpiRes, actionRes, engRes, invRes, rdRes] = await Promise.all([
+      var [kpiRes, actionRes, engRes, invRes, rdRes] = await Promise.all([
         supabase.from("kpis").select("*").eq("client_id", client.id)
           .order("updated_at", { ascending:false }).limit(1).maybeSingle(),
         supabase.from("action_items").select("*").eq("client_id", client.id)
@@ -7512,12 +7513,12 @@ function AdminLogin({ onLogin }) {
   const signIn = async () => {
     if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
     setLoading(true); setError("");
-    const { error: authErr } = await supabase.auth.signInWithPassword({
+    var { error: authErr } = await supabase.auth.signInWithPassword({
       email: form.email, password: form.password
     });
     if (authErr) { setLoading(false); setError("Invalid credentials."); return; }
     // Check if admin
-    const { data: adminData } = await supabase
+    var { data: adminData } = await supabase
       .from("admins").select("*").eq("email", form.email).maybeSingle();
     setLoading(false);
     if (!adminData) { await supabase.auth.signOut(); setError("Not authorised as admin."); return; }
@@ -7763,48 +7764,48 @@ function AdminPanel({ admin, onLogout }) {
   useEffect(() => { fetchClients(); }, []);
 
   const fetchClients = async () => {
-    const { data } = await supabase.from("clients").select("*").order("created_at", { ascending:false });
+    var { data } = await supabase.from("clients").select("*").order("created_at", { ascending:false });
     setClients(data || []);
     // Pre-load all requests so the Requests tab works without selecting a client
-    const { data: allReqs } = await supabase.from("requests").select("*").order("created_at", { ascending:false });
+    var { data: allReqs } = await supabase.from("requests").select("*").order("created_at", { ascending:false });
     if (allReqs) setRequests(allReqs);
   };
 
   const selectClient = async (c) => {
     setSelected(c); setSaved(false);
     // Load latest KPIs
-    const { data: kpiData } = await supabase.from("kpis")
+    var { data: kpiData } = await supabase.from("kpis")
       .select("*").eq("client_id", c.id).order("updated_at", { ascending:false }).limit(1).maybeSingle();
     if (kpiData) setKpis(kpiData);
     else setKpis({ month:"", revenue:"", gross_margin:"", cash_balance:"", burn_rate:"", runway:"", arr:"", garima_note:"" });
     // Load actions
-    const { data: actData } = await supabase.from("action_items")
+    var { data: actData } = await supabase.from("action_items")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setActions(actData || []);
     // Load engagement
-    const { data: engData } = await supabase.from("engagements")
+    var { data: engData } = await supabase.from("engagements")
       .select("*").eq("client_id", c.id).maybeSingle();
     if (engData) setEngagement(engData);
     else setEngagement({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
     // Load documents
-    const { data: docData } = await supabase.from("documents")
+    var { data: docData } = await supabase.from("documents")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setDocs(docData || []);
     // Load invoices
-    const { data: invData } = await supabase.from("invoices")
+    var { data: invData } = await supabase.from("invoices")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setInvoices(invData || []);
     // Load requests
-    const { data: reqData } = await supabase.from("requests")
+    var { data: reqData } = await supabase.from("requests")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setRequests(reqData || []);
     // Load report data
-    const { data: rdData } = await supabase.from("report_data")
+    var { data: rdData } = await supabase.from("report_data")
       .select("*").eq("client_id", c.id).maybeSingle();
-    const defaults = defaultReportData(c.client_pack || "startup");
+    var defaults = defaultReportData(c.client_pack || "startup");
     if (rdData?.data) {
       try {
-        const parsed = JSON.parse(rdData.data);
+        var parsed = JSON.parse(rdData.data);
         setReportData({
           ...defaults,
           ...parsed,
@@ -7821,11 +7822,11 @@ function AdminPanel({ admin, onLogout }) {
   const saveKPIs = async () => {
     if (!selected) return;
     setLoading(true);
-    const payload = { ...kpis, client_id: selected.id, updated_at: new Date().toISOString() };
+    var payload = { ...kpis, client_id: selected.id, updated_at: new Date().toISOString() };
     if (kpis.id) {
       await supabase.from("kpis").update(payload).eq("id", kpis.id);
     } else {
-      const { data } = await supabase.from("kpis").insert(payload).select().single();
+      var { data } = await supabase.from("kpis").insert(payload).select().single();
       if (data) setKpis(data);
     }
     setLoading(false); setSaved(true);
@@ -7834,14 +7835,14 @@ function AdminPanel({ admin, onLogout }) {
 
   const addAction = async () => {
     if (!selected || !newAction.text) return;
-    const { data } = await supabase.from("action_items")
+    var { data } = await supabase.from("action_items")
       .insert({ ...newAction, client_id: selected.id }).select().single();
     if (data) setActions(prev => [data, ...prev]);
     setNewAction({ text:"", priority:"High", month:newAction.month });
   };
 
   const toggleAction = async (a) => {
-    const newDone = !a.done;
+    var newDone = !a.done;
     await supabase.from("action_items").update({ done: newDone }).eq("id", a.id);
     setActions(prev => prev.map(x => x.id===a.id ? {...x, done:newDone} : x));
   };
@@ -7857,7 +7858,7 @@ function AdminPanel({ admin, onLogout }) {
     if (engagement.id) {
       await supabase.from("engagements").update(engagement).eq("id", engagement.id);
     } else {
-      const { data } = await supabase.from("engagements")
+      var { data } = await supabase.from("engagements")
         .insert({ ...engagement, client_id: selected.id }).select().single();
       if (data) setEngagement(data);
     }
@@ -7868,9 +7869,9 @@ function AdminPanel({ admin, onLogout }) {
   const saveReportData = async () => {
     if (!selected || !reportData) return;
     setLoading(true);
-    const payload = { client_id: selected.id, data: JSON.stringify(reportData), updated_at: new Date().toISOString() };
+    var payload = { client_id: selected.id, data: JSON.stringify(reportData), updated_at: new Date().toISOString() };
     // Check if exists first
-    const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).maybeSingle();
+    var { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).maybeSingle();
     if (existing?.id) {
       await supabase.from("report_data").update(payload).eq("id", existing.id);
     } else {
@@ -7882,7 +7883,7 @@ function AdminPanel({ admin, onLogout }) {
   const addInvoice = async () => {
     if (!selected || !newInvoice.invoice_number || !newInvoice.amount) return;
     setLoading(true);
-    const { data } = await supabase.from("invoices").insert({
+    var { data } = await supabase.from("invoices").insert({
       ...newInvoice, client_id: selected.id
     }).select().single();
     if (data) setInvoices(prev => [data, ...prev]);
@@ -7897,7 +7898,7 @@ function AdminPanel({ admin, onLogout }) {
   };
 
   const markInvoicePaid = async (inv) => {
-    const newStatus = inv.status === "paid" ? "unpaid" : "paid";
+    var newStatus = inv.status === "paid" ? "unpaid" : "paid";
     await supabase.from("invoices").update({
       status: newStatus,
       paid_at: newStatus === "paid" ? new Date().toISOString() : null
@@ -7913,7 +7914,7 @@ function AdminPanel({ admin, onLogout }) {
 
   const createClient = async () => {
     if (!newClient.name || !newClient.email || !newClient.invite_code) return;
-    const { data, error } = await supabase.from("clients").insert(newClient).select().single();
+    var { data, error } = await supabase.from("clients").insert(newClient).select().single();
     if (error) { alert("Error: " + error.message); return; }
     setClients(prev => [data, ...prev]);
     setNewClient({ name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both" });
@@ -7921,8 +7922,8 @@ function AdminPanel({ admin, onLogout }) {
   };
 
   const genCode = () => {
-    const prefix = newClient.company?.slice(0,4).toUpperCase().replace(/\s/g,"") || "CLIE";
-    const year = new Date().getFullYear();
+    var prefix = newClient.company?.slice(0,4).toUpperCase().replace(/\s/g,"") || "CLIE";
+    var year = new Date().getFullYear();
     setNewClient(c => ({ ...c, invite_code: `${prefix}${year}` }));
   };
 
@@ -7949,15 +7950,15 @@ function AdminPanel({ admin, onLogout }) {
     setAiError("");
     setAiDraft(null);
 
-    const pack    = selected.client_pack || "startup";
-    const company = selected.company || selected.name || "the client";
-    const month   = reportData?.monthLabel || "current month";
+    var pack    = selected.client_pack || "startup";
+    var company = selected.company || selected.name || "the client";
+    var month   = reportData?.monthLabel || "current month";
 
     // Auto-calculate ratios from entered data
-    const calc = calcRatios();
+    var calc = calcRatios();
 
     // Auto-apply calculated ratios to reportData fields that aren't manually set
-    const autoFields = {};
+    var autoFields = {};
     if (calc.interestCoverageCalc && !reportData?.interestCoverage) autoFields.interestCoverage = calc.interestCoverageCalc;
     if (calc.debtEbitdaCalc && !reportData?.debtEbitda)             autoFields.debtEbitda       = calc.debtEbitdaCalc;
     if (calc.dscrCalc && !reportData?.dscr)                         autoFields.dscr             = calc.dscrCalc;
@@ -7971,7 +7972,7 @@ function AdminPanel({ admin, onLogout }) {
     if (Object.keys(autoFields).length > 0) setReportData(r => ({...r, ...autoFields}));
 
     // Build a rich context from all available data
-    const kpiSummary = [
+    var kpiSummary = [
       kpis.revenue      && `Revenue: ${kpis.revenue}`,
       kpis.gross_margin && `Gross Margin: ${kpis.gross_margin}`,
       kpis.cash_balance && `Cash Balance: ${kpis.cash_balance}`,
@@ -7980,7 +7981,7 @@ function AdminPanel({ admin, onLogout }) {
       kpis.arr          && `ARR: ${kpis.arr}`,
     ].filter(Boolean).join(", ");
 
-    const plSummary = reportData?.plInputs ? [
+    var plSummary = reportData?.plInputs ? [
       reportData.plInputs.revenue      && `Revenue: ${reportData.plInputs.revenue}`,
       reportData.plInputs.ebitda        && `EBITDA: ${reportData.plInputs.ebitda}`,
       reportData.plInputs.pat           && `PAT: ${reportData.plInputs.pat}`,
@@ -7988,7 +7989,7 @@ function AdminPanel({ admin, onLogout }) {
       reportData.plInputs.ebitdaMargin  && `EBITDA Margin: ${reportData.plInputs.ebitdaMargin}`,
     ].filter(Boolean).join(", ") : "";
 
-    const debtSummary = [
+    var debtSummary = [
       reportData?.existingDebt      && `Existing Debt: ${reportData.existingDebt}`,
       reportData?.dscr              && `DSCR: ${reportData.dscr}`,
       reportData?.currentRatio      && `Current Ratio: ${reportData.currentRatio}`,
@@ -7996,14 +7997,14 @@ function AdminPanel({ admin, onLogout }) {
       reportData?.debtEbitda        && `Debt/EBITDA: ${reportData.debtEbitda}`,
     ].filter(Boolean).join(", ");
 
-    const wcSummary = [
+    var wcSummary = [
       reportData?.debtorDays    && `Debtor Days: ${reportData.debtorDays}`,
       reportData?.creditorDays  && `Creditor Days: ${reportData.creditorDays}`,
       reportData?.ccc           && `CCC: ${reportData.ccc}`,
       reportData?.workingCapital&& `Working Capital: ${reportData.workingCapital}`,
     ].filter(Boolean).join(", ");
 
-    const packContext = pack === "startup"
+    var packContext = pack === "startup"
       ? `This is a startup on a CFO advisory pack. Key startup concerns: burn rate, runway, fundraising readiness, unit economics.`
       : pack === "msme"
       ? `This is an MSME on a working capital and bank finance pack. Key MSME concerns: collections, debtor days, bank loan eligibility, cash conversion cycle.`
@@ -8011,7 +8012,7 @@ function AdminPanel({ admin, onLogout }) {
 
 
   // ── AUTO-CALCULATE RATIOS FROM ENTERED DATA ─────────────────────────────────
-  const calcRatios = () => {
+  var calcRatios = () => {
     if (!reportData) return {};
     var pl     = reportData?.plInputs || {};
     var rd     = reportData || {};
@@ -8124,18 +8125,18 @@ function AdminPanel({ admin, onLogout }) {
   };
 
     // Build calculated ratios summary for prompt
-    const calcSummary = Object.entries(calc)
+    var calcSummary = Object.entries(calc)
       .map(([k,v]) => `${k.replace("Calc","")}: ${v}`)
       .join(", ");
 
     // Fetch live market context for AI
-    let marketContext = "";
+    var marketContext = "";
     try {
-      const fxRes  = await fetch("https://api.frankfurter.app/latest?from=INR");
-      const fxData = await fxRes.json();
-      const usd = fxData?.rates?.USD ? (1/fxData.rates.USD).toFixed(2) : null;
-      const sar = fxData?.rates?.SAR ? (1/fxData.rates.SAR).toFixed(2) : null;
-      const repoRate = "6.50";
+      var fxRes  = await fetch("https://api.frankfurter.app/latest?from=INR");
+      var fxData = await fxRes.json();
+      var usd = fxData?.rates?.USD ? (1/fxData.rates.USD).toFixed(2) : null;
+      var sar = fxData?.rates?.SAR ? (1/fxData.rates.SAR).toFixed(2) : null;
+      var repoRate = "6.50";
       marketContext = [
         `RBI Repo Rate: ${repoRate}%`,
         `SBI effective lending rate: ~${(parseFloat(repoRate)+2.5).toFixed(2)}%`,
@@ -8144,7 +8145,7 @@ function AdminPanel({ admin, onLogout }) {
       ].filter(Boolean).join(", ");
     } catch(e) { /* non-critical */ }
 
-    const prompt = `You are Garima Agarwal, a Chartered Accountant and CFO advisor writing monthly financial analysis for your client ${company} for ${month}.
+    var prompt = `You are Garima Agarwal, a Chartered Accountant and CFO advisor writing monthly financial analysis for your client ${company} for ${month}.
 
 ${packContext}
 
@@ -8180,13 +8181,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
 }`;
 
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_KEY;
+      var apiKey = import.meta.env.VITE_ANTHROPIC_KEY;
       if (!apiKey) {
         setAiError("API key not configured. Add VITE_ANTHROPIC_KEY to your Vercel environment variables.");
         setAiGen(false);
         return;
       }
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      var res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -8201,13 +8202,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
         }),
       });
       if (!res.ok) {
-        const err = await res.json();
+        var err = await res.json();
         throw new Error(err?.error?.message || `API error ${res.status}`);
       }
-      const data = await res.json();
-      const raw = data?.content?.[0]?.text || "";
-      const clean = raw.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
+      var data = await res.json();
+      var raw = data?.content?.[0]?.text || "";
+      var clean = raw.replace(/```json|```/g, "").trim();
+      var parsed = JSON.parse(clean);
       setAiDraft(parsed);
     } catch(e) {
       setAiError("Generation failed — check your numbers are filled in and try again.");
@@ -8219,7 +8220,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
 
   const applyDraft = (field) => {
     if (!aiDraft?.[field]) return;
-    const updates = {[field]: aiDraft[field]};
+    var updates = {[field]: aiDraft[field]};
     if (field === "garimaNote") {
       updates.packNote   = aiDraft[field];
       updates.reportNote = aiDraft[field];
@@ -8232,7 +8233,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
     if (!aiDraft) return;
     // garimaNote from AI maps to packNote in reportData (used by monthly report)
     // also set reportNote as fallback
-    const mapped = {...aiDraft};
+    var mapped = {...aiDraft};
     if (aiDraft.garimaNote) {
       mapped.packNote   = aiDraft.garimaNote;
       mapped.reportNote = aiDraft.garimaNote;
@@ -8273,7 +8274,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               Active Client
             </div>
             <select value={selected?.id || ""} onChange={e => {
-              const c = clients.find(x => x.id===e.target.value);
+              var c = clients.find(x => x.id===e.target.value);
               if (c) selectClient(c);
             }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, fontSize:12,
               background:"#1a2744", border:"1px solid rgba(255,255,255,0.2)",
@@ -8856,23 +8857,23 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       </thead>
                       <tbody>
                         {(reportData.variance || []).map((row, i) => {
-                          const bv = parseFloat(row.budget), av = parseFloat(row.actual);
-                          const varNum = (!row.noCalc && !isNaN(bv) && !isNaN(av)) ? (av-bv).toFixed(1) : "—";
-                          const varPct = (!row.noCalc && !isNaN(bv) && !isNaN(av) && bv!==0)
+                          var bv = parseFloat(row.budget), av = parseFloat(row.actual);
+                          var varNum = (!row.noCalc && !isNaN(bv) && !isNaN(av)) ? (av-bv).toFixed(1) : "—";
+                          var varPct = (!row.noCalc && !isNaN(bv) && !isNaN(av) && bv!==0)
                             ? ((av-bv)/Math.abs(bv)*100).toFixed(1)+"%" : "";
-                          const isBold = ["Gross Profit","EBITDA","Net Profit"].some(k => row.metric.includes(k));
+                          var isBold = ["Gross Profit","EBITDA","Net Profit"].some(k => row.metric.includes(k));
                           return (
                             <tr key={i} style={{ background:isBold?`${C.blue}06`:i%2===0?"#FFFFFF":C.bg, borderBottom:`1px solid ${C.border}` }}>
                               <td style={{ padding:"10px 12px", fontWeight:isBold?700:500, fontSize:13, color:C.text }}>{row.metric}</td>
                               <td style={{ padding:"6px 8px" }}>
                                 <InlineInput value={row.budget}
-                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],budget:v}; setReportData(r=>({...r,variance:arr})); }}
+                                  onCommit={v => { var arr=[...reportData.variance]; arr[i]={...arr[i],budget:v}; setReportData(r=>({...r,variance:arr})); }}
                                   placeholder="budget"
                                   style={{ textAlign:"right", color:C.muted, background:C.bg }}/>
                               </td>
                               <td style={{ padding:"6px 8px" }}>
                                 <InlineInput value={row.actual}
-                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],actual:v}; setReportData(r=>({...r,variance:arr})); }}
+                                  onCommit={v => { var arr=[...reportData.variance]; arr[i]={...arr[i],actual:v}; setReportData(r=>({...r,variance:arr})); }}
                                   placeholder="actual"
                                   style={{ textAlign:"right", fontWeight:700, color:C.text, background:"#F0F4FF" }}/>
                               </td>
@@ -8882,7 +8883,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                                 {varPct && <div style={{ fontSize:10, opacity:0.7 }}>{row.fav?"+":""}{varPct}</div>}
                               </td>
                               <td style={{ padding:"8px", textAlign:"center" }}>
-                                <button onClick={() => { const v=[...reportData.variance]; v[i]={...v[i],fav:!v[i].fav}; setReportData(r=>({...r,variance:v})); }}
+                                <button onClick={() => { var v=[...reportData.variance]; v[i]={...v[i],fav:!v[i].fav}; setReportData(r=>({...r,variance:v})); }}
                                   style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:F, fontSize:12, fontWeight:700,
                                     background:row.fav?`${C.green}15`:`${C.red}15`, color:row.fav?C.green:C.red }}>
                                   {row.fav?"✅ Fav":"⚠️ Unfav"}
@@ -8905,19 +8906,19 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         <div>
                           <label style={{ fontSize:10, fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:5, fontFamily:F }}>Heading</label>
                           <InlineInput value={row.item}
-                            onCommit={v => { const arr=[...reportData.varianceCommentary]; arr[i]={...arr[i],item:v}; setReportData(r=>({...r,varianceCommentary:arr})); }}
+                            onCommit={v => { var arr=[...reportData.varianceCommentary]; arr[i]={...arr[i],item:v}; setReportData(r=>({...r,varianceCommentary:arr})); }}
                             placeholder="e.g. Revenue beat"
                             style={{ fontSize:13, fontFamily:F, color:C.text, background:C.bg }}/>
                         </div>
                         <div>
                           <label style={{ fontSize:10, fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:5, fontFamily:F }}>Commentary</label>
                           <InlineInput value={row.note}
-                            onCommit={v => { const arr=[...reportData.varianceCommentary]; arr[i]={...arr[i],note:v}; setReportData(r=>({...r,varianceCommentary:arr})); }}
+                            onCommit={v => { var arr=[...reportData.varianceCommentary]; arr[i]={...arr[i],note:v}; setReportData(r=>({...r,varianceCommentary:arr})); }}
                             placeholder="e.g. New contracts signed in Feb drove +6.1% MoM"
                             style={{ fontSize:13, fontFamily:F, color:C.text, background:C.bg }}/>
                         </div>
                         <div style={{ paddingTop:22 }}>
-                          <button onClick={() => { const v=[...reportData.varianceCommentary]; v[i]={...v[i],favorable:!v[i].favorable}; setReportData(r=>({...r,varianceCommentary:v})); }}
+                          <button onClick={() => { var v=[...reportData.varianceCommentary]; v[i]={...v[i],favorable:!v[i].favorable}; setReportData(r=>({...r,varianceCommentary:v})); }}
                             style={{ padding:"8px 10px", borderRadius:8, border:"none", cursor:"pointer", fontSize:14, fontWeight:700,
                               background:row.favorable?`${C.green}15`:`${C.red}15`, color:row.favorable?C.green:C.red }}>
                             {row.favorable?"✅":"⚠️"}
@@ -8962,13 +8963,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                             <td style={{ padding:"8px 10px", fontFamily:FM, fontSize:13, fontWeight:700, color:C.text, width:80 }}>{row.month}</td>
                             <td style={{ padding:"6px 10px" }}>
                               <InlineInput value={row.actual}
-                                onCommit={v => { const cf=[...reportData.cashflow]; cf[i]={...cf[i],actual:v}; setReportData(r=>({...r,cashflow:cf})); }}
+                                onCommit={v => { var cf=[...reportData.cashflow]; cf[i]={...cf[i],actual:v}; setReportData(r=>({...r,cashflow:cf})); }}
                                 placeholder="e.g. 220"
                                 style={{ color:C.blue, background:"#EFF6FF" }}/>
                             </td>
                             <td style={{ padding:"6px 10px" }}>
                               <InlineInput value={row.forecast}
-                                onCommit={v => { const cf=[...reportData.cashflow]; cf[i]={...cf[i],forecast:v}; setReportData(r=>({...r,cashflow:cf})); }}
+                                onCommit={v => { var cf=[...reportData.cashflow]; cf[i]={...cf[i],forecast:v}; setReportData(r=>({...r,cashflow:cf})); }}
                                 placeholder="e.g. 195"
                                 style={{ color:C.purple, background:"#F5F0FF" }}/>
                             </td>
@@ -8995,10 +8996,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{item.label}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10 }}>
                         <InlineInput value={item.score}
-                          onCommit={v => { const sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],score:v}; setReportData(r=>({...r,scoreBreakdown:sb})); }}
+                          onCommit={v => { var sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],score:v}; setReportData(r=>({...r,scoreBreakdown:sb})); }}
                           placeholder="Score 0-100" style={{ fontFamily:FM, color:C.blue, background:"#F0F4FF" }}/>
                         <InlineInput value={item.comment}
-                          onCommit={v => { const sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],comment:v}; setReportData(r=>({...r,scoreBreakdown:sb})); }}
+                          onCommit={v => { var sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],comment:v}; setReportData(r=>({...r,scoreBreakdown:sb})); }}
                           placeholder="Comment shown to client..." style={{ fontFamily:F, color:C.text, background:C.bg }}/>
                       </div>
                     </div>
@@ -9362,13 +9363,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       background:C.bg, border:`1px solid ${C.border}` }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.muted }}>{m.label}</div>
                       <InlineInput value={m.value}
-                        onCommit={v => { const ms=[...reportData.metrics]; ms[i]={...ms[i],value:v}; setReportData(r=>({...r,metrics:ms})); }}
+                        onCommit={v => { var ms=[...reportData.metrics]; ms[i]={...ms[i],value:v}; setReportData(r=>({...r,metrics:ms})); }}
                         placeholder="Value" style={{ fontFamily:FM, color:C.blue, background:"#F0F4FF" }}/>
                       <InlineInput value={m.note}
-                        onCommit={v => { const ms=[...reportData.metrics]; ms[i]={...ms[i],note:v}; setReportData(r=>({...r,metrics:ms})); }}
+                        onCommit={v => { var ms=[...reportData.metrics]; ms[i]={...ms[i],note:v}; setReportData(r=>({...r,metrics:ms})); }}
                         placeholder="Note..." style={{ fontFamily:F, color:C.text, background:C.bg }}/>
                       <button onClick={() => {
-                        const ms=[...reportData.metrics]; ms[i]={...ms[i],flag:!ms[i].flag};
+                        var ms=[...reportData.metrics]; ms[i]={...ms[i],flag:!ms[i].flag};
                         setReportData(r=>({...r,metrics:ms}));
                       }} style={{ padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
                         background:m.flag?`${C.red}15`:`${C.green}15`,
@@ -9389,7 +9390,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </p>
                   {(reportData.checklist || []).map((item, i) => (
                     <div key={i} onClick={() => {
-                      const cl=[...reportData.checklist]; cl[i]={...cl[i],done:!cl[i].done};
+                      var cl=[...reportData.checklist]; cl[i]={...cl[i],done:!cl[i].done};
                       setReportData(r=>({...r,checklist:cl}));
                     }} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
                       borderRadius:10, marginBottom:8, cursor:"pointer",
@@ -9422,12 +9423,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           { key:"bench",  placeholder:"Benchmark",      color:C.bg,     fc:C.text },
                         ].map(col => (
                           <InlineInput key={col.key} value={b[col.key]}
-                            onCommit={v => { const bm=[...reportData.benchmarks]; bm[i]={...bm[i],[col.key]:v}; setReportData(r=>({...r,benchmarks:bm})); }}
+                            onCommit={v => { var bm=[...reportData.benchmarks]; bm[i]={...bm[i],[col.key]:v}; setReportData(r=>({...r,benchmarks:bm})); }}
                             placeholder={col.placeholder}
                             style={{ fontFamily:FM, color:col.fc, background:col.color }}/>
                         ))}
                         <button onClick={() => {
-                          const bm=[...reportData.benchmarks]; bm[i]={...bm[i],ok:!bm[i].ok};
+                          var bm=[...reportData.benchmarks]; bm[i]={...bm[i],ok:!bm[i].ok};
                           setReportData(r=>({...r,benchmarks:bm}));
                         }} style={{ padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
                           background:b.ok?`${C.green}15`:`${C.amber}15`,
@@ -9757,18 +9758,18 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr auto", gap:8,
                       marginBottom:10, padding:"10px 12px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
                       <InlineInput value={p.bank} placeholder="Bank / FD name"
-                        onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],bank:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
+                        onCommit={v=>{ var cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],bank:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
                         style={{ fontFamily:F, color:C.text }}/>
                       <InlineInput value={p.balance} placeholder="₹ balance"
-                        onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],balance:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
+                        onCommit={v=>{ var cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],balance:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
                         style={{ fontFamily:FM, color:C.blue, background:"#EEF3FE" }}/>
                       <InlineInput value={p.rate} placeholder="rate p.a."
-                        onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],rate:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
+                        onCommit={v=>{ var cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],rate:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
                         style={{ fontFamily:FM, color:C.green }}/>
                       <InlineInput value={p.note||""} placeholder="note (optional)"
-                        onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],note:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
+                        onCommit={v=>{ var cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],note:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
                         style={{ fontFamily:F, color:C.muted }}/>
-                      <button onClick={()=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],flag:!cp[i].flag}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
+                      <button onClick={()=>{ var cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],flag:!cp[i].flag}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
                         style={{ padding:"6px 10px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:F, fontSize:11, fontWeight:700,
                           background:p.flag?`${C.amber}15`:`${C.green}15`, color:p.flag?C.amber:C.green }}>
                         {p.flag?"⚠️":"✅"}
@@ -9787,16 +9788,16 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:8,
                       marginBottom:10, padding:"10px 12px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
                       <InlineInput value={m.item} placeholder="FD / instrument name"
-                        onCommit={v=>{ const ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],item:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
+                        onCommit={v=>{ var ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],item:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
                         style={{ fontFamily:F, color:C.text }}/>
                       <InlineInput value={m.maturity} placeholder="Maturity date"
-                        onCommit={v=>{ const ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],maturity:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
+                        onCommit={v=>{ var ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],maturity:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
                         style={{ fontFamily:FM, color:C.muted }}/>
                       <InlineInput value={m.amount} placeholder="Amount"
-                        onCommit={v=>{ const ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],amount:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
+                        onCommit={v=>{ var ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],amount:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
                         style={{ fontFamily:FM, color:C.blue, background:"#EEF3FE" }}/>
                       <AdminSelect C={C} F={F} label="" val={m.action||"Renew"}
-                        onChange={v=>{ const ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],action:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
+                        onChange={v=>{ var ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],action:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
                         options={[{value:"Renew",label:"Renew"},{value:"Redeem",label:"Redeem"},{value:"Auto-renew",label:"Auto-renew"},{value:"Partial",label:"Partial"}]}/>
                     </div>
                   ))}
@@ -9812,10 +9813,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:10,
                       marginBottom:10, padding:"10px 12px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}`, alignItems:"center" }}>
                       <AdminSelect C={C} F={F} label="" val={r.priority||"Medium"}
-                        onChange={v=>{ const rs=[...(reportData.treasury?.recommendations||[])]; rs[i]={...rs[i],priority:v}; setReportData(rd=>({...rd,treasury:{...(rd.treasury||{}),recommendations:rs}})); }}
+                        onChange={v=>{ var rs=[...(reportData.treasury?.recommendations||[])]; rs[i]={...rs[i],priority:v}; setReportData(rd=>({...rd,treasury:{...(rd.treasury||{}),recommendations:rs}})); }}
                         options={[{value:"High",label:"🔴 High"},{value:"Medium",label:"🟡 Medium"},{value:"Low",label:"🟢 Low"}]}/>
                       <InlineInput value={r.text} placeholder="e.g. Renew SBI FD Tranche 1 — lock in 7.1% before April RBI review"
-                        onCommit={v=>{ const rs=[...(reportData.treasury?.recommendations||[])]; rs[i]={...rs[i],text:v}; setReportData(rd=>({...rd,treasury:{...(rd.treasury||{}),recommendations:rs}})); }}
+                        onCommit={v=>{ var rs=[...(reportData.treasury?.recommendations||[])]; rs[i]={...rs[i],text:v}; setReportData(rd=>({...rd,treasury:{...(rd.treasury||{}),recommendations:rs}})); }}
                         style={{ fontFamily:F, color:C.text }}/>
                     </div>
                   ))}
@@ -9874,7 +9875,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
                     <input type="file" style={{ display:"none" }}
                       onChange={async (e) => {
-                        const file = e.target.files[0];
+                        var file = e.target.files[0];
                         if (!file || !selected) return;
                         if (file.size > 10 * 1024 * 1024) {
                           alert("File too large — max 10MB per upload.");
@@ -9882,16 +9883,16 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           return;
                         }
                         setDocLoading(true);
-                        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-                        const path = `${selected.id}/${Date.now()}-${safeName}`;
-                        const { error: upErr } = await supabase.storage
+                        var safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
+                        var path = `${selected.id}/${Date.now()}-${safeName}`;
+                        var { error: upErr } = await supabase.storage
                           .from("client-docs").upload(path, file);
                         if (upErr) { alert("Upload failed: " + upErr.message); setDocLoading(false); return; }
-                        const { data: urlData } = supabase.storage
+                        var { data: urlData } = supabase.storage
                           .from("client-docs").getPublicUrl(path);
-                        const docTypeEl = document.getElementById("doc-type-select");
-                        const docType = docTypeEl ? docTypeEl.value : "general";
-                        const { data: docRow, error: insertErr } = await supabase.from("documents").insert({
+                        var docTypeEl = document.getElementById("doc-type-select");
+                        var docType = docTypeEl ? docTypeEl.value : "general";
+                        var { data: docRow, error: insertErr } = await supabase.from("documents").insert({
                           client_id: selected.id,
                           name: file.name,
                           file_url: urlData.publicUrl,
@@ -10030,7 +10031,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           <select
                             value={r.status || "new"}
                             onChange={async (e) => {
-                              const newStatus = e.target.value;
+                              var newStatus = e.target.value;
                               await supabase.from("requests").update({ status: newStatus }).eq("id", r.id);
                               setRequests(prev => prev.map(x => x.id===r.id ? {...x, status:newStatus} : x));
                             }}
@@ -10081,21 +10082,21 @@ export default function App() {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (session?.user?.email) {
         if (isAdminRoute) {
-          const { data: adminData } = await supabase
+          var { data: adminData } = await supabase
             .from("admins").select("*").eq("email", session.user.email).maybeSingle();
           if (adminData) setAdmin(adminData);
         } else {
           // Check if this is a demo email — restore demo session without DB hit
-          const demoMatch = Object.entries(INVITE_CODES).find(
+          var demoMatch = Object.entries(INVITE_CODES).find(
             ([, d]) => d.email === session.user.email
           );
           if (demoMatch) {
-            const [code, demo] = demoMatch;
+            var [code, demo] = demoMatch;
             setClient({ ...demo, invite_code: code, id: code, isDemo: true,
               client_pack: demo.clientPack || demo.client_pack || "startup" });
           } else {
             // Real client — fetch from Supabase
-            const { data: clientData } = await supabase
+            var { data: clientData } = await supabase
               .from("clients").select("*").eq("email", session.user.email).maybeSingle();
             if (clientData) setClient(clientData);
           }
@@ -10104,7 +10105,7 @@ export default function App() {
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+    var { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event) => {
         if (event === "SIGNED_OUT") { setClient(null); setAdmin(null); }
       }
