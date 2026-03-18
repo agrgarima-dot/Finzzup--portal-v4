@@ -582,7 +582,7 @@ function Login({ onLogin }) {
             <a href="#" style={{ color:C.blue, textDecoration:"none" }}>Terms & Conditions</a>
             {" · "}
             <a href="#" style={{ color:C.blue, textDecoration:"none" }}>Privacy Policy</a>
-            {" · "}© 2026 Finzzup Advisory LLP
+            {" · "}© 2026 Garima Agarwal, CA (M.No. 160944)
           </span>
         </p>
       </div>
@@ -643,16 +643,14 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
         borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
         {!collapsed && (
-          <div style={{ background:"white", borderRadius:10, padding:"6px 12px", display:"inline-block" }}>
-            <img src={LOGO_SRC} alt="Finzzup"
-              style={{ height:36, width:"auto", objectFit:"contain", display:"block" }}/>
-          </div>
+          <img src={LOGO_SRC} alt="Finzzup"
+            style={{ height:48, width:"auto", objectFit:"contain", display:"block",
+              filter:"brightness(1.3) saturate(1.8) contrast(1.1)" }}/>
         )}
         {collapsed && (
-          <div style={{ background:"white", borderRadius:8, padding:"4px", display:"inline-block" }}>
-            <img src={LOGO_SRC} alt="Finzzup"
-              style={{ height:28, width:28, objectFit:"contain", display:"block" }}/>
-          </div>
+          <img src={LOGO_SRC} alt="Finzzup"
+            style={{ height:32, width:32, objectFit:"contain", display:"block",
+              filter:"brightness(1.3) saturate(1.8) contrast(1.1)" }}/>
         )}
         <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
           cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
@@ -5991,7 +5989,7 @@ function downloadInvoicePDF(inv, client) {
   <div>
     <div class="brand">Finzzup</div>
     <div class="brand-tag">Build. Value. Scale.</div>
-    <div class="from">Finzzup Advisory LLP<br/>garima@finzzup.com<br/>Mumbai, India</div>
+    <div class="from">Finzzup — Garima Agarwal, CA<br/>garima@finzzup.com<br/>Mumbai, India</div>
   </div>
   <div>
     <div style="font-size:10px;color:#6B7DB3;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px">Invoice</div>
@@ -6016,7 +6014,7 @@ function downloadInvoicePDF(inv, client) {
   <div class="total-val">${inv.amount}</div>
 </div>
 <div class="footer">
-  <strong>Finzzup Advisory LLP</strong> · GSTIN: [Add GSTIN] · PAN: [Add PAN]<br/>
+  <strong>Finzzup — Garima Agarwal, CA</strong> · GSTIN: [Add GSTIN] · PAN: [Add PAN]<br/>
   Bank: [Bank Name] · A/C No: [Account Number] · IFSC: [IFSC Code]<br/>
   To pay: transfer to the above account and WhatsApp UTR to +91 98335 85810<br/>
   Queries: garima@finzzup.com — This is a system-generated invoice.
@@ -6367,7 +6365,7 @@ function Invoices({ client, liveInvoices }) {
           <div>
             <div style={{ fontFamily:FM, fontSize:11, opacity:0.5, marginBottom:4, letterSpacing:"0.08em" }}>INVOICE</div>
             <div style={{ fontFamily:FM, fontWeight:700, fontSize:22, marginBottom:6 }}>{selected.id}</div>
-            <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>Finzzup Advisory LLP</div>
+            <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>Finzzup — Garima Agarwal, CA</div>
             <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>garima@finzzup.com</div>
           </div>
           <div style={{ textAlign:"right" }}>
@@ -6862,7 +6860,7 @@ function Terms() {
   const [tab, setTab] = useState("terms");
   return (
     <div style={{ padding:24, maxWidth:720 }}>
-      <SectionTitle sub="Legal documentation for Finzzup Advisory LLP">Legal & Compliance</SectionTitle>
+      <SectionTitle sub="Legal documentation for Finzzup — Garima Agarwal, CA (M.No. 160944)">Legal & Compliance</SectionTitle>
 
       <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
         {[["terms","📄 Terms & Conditions"],["privacy","🔒 Privacy Policy"],["copyright","© Copyright"]].map(([id,lbl]) => (
@@ -6879,7 +6877,7 @@ function Terms() {
         <Card style={{ lineHeight:1.8 }}>
           <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:16 }}>Last updated: January 2026</div>
           {[
-            { h:"1. Services", t:"Finzzup Advisory LLP ('Finzzup') provides financial advisory, valuation, and CFO services to clients. All engagements are governed by a separate Engagement Letter, which supersedes these general terms where there is any conflict." },
+            { h:"1. Services", t:"Finzzup is a registered trademark of Garima Agarwal, Chartered Accountant (Membership No. 160944). All CFO advisory services, financial analysis, and valuation services are provided by Garima Agarwal, CA. All engagements are governed by a separate Engagement Letter, which supersedes these general terms where there is any conflict." },
             { h:"2. Proposals and Pricing", t:"All prices quoted are indicative. A formal proposal with a fixed scope and price will be sent within 24 hours of a service request. Engagements begin only upon signed acceptance of the proposal and receipt of the advance payment." },
             { h:"3. Confidentiality", t:"Finzzup maintains strict confidentiality of all client data, financial information, and business information shared. Data is used solely for the purpose of the engagement and is never shared with third parties without explicit written consent." },
             { h:"4. Intellectual Property", t:"All deliverables produced by Finzzup (reports, models, presentations) remain the property of the client upon full payment. Finzzup retains the right to use anonymized methodologies and frameworks for other engagements." },
@@ -6905,7 +6903,7 @@ function Terms() {
             { h:"4. Data Retention", t:"We retain client data for 7 years as required under Indian accounting and tax regulations. Upon request, we can delete non-statutory data within 30 days." },
             { h:"5. Cookies", t:"This portal uses functional cookies only for authentication. We do not use tracking or advertising cookies." },
             { h:"6. Your Rights", t:"You have the right to access, correct, or delete your personal data at any time. Contact garima@finzzup.com for any data-related requests." },
-            { h:"7. Contact", t:"For privacy concerns, contact: Garima Agarwal · garima@finzzup.com · Finzzup Advisory LLP, Mumbai, India." },
+            { h:"7. Contact", t:"For privacy concerns, contact: Garima Agarwal, CA (M.No. 160944) · garima@finzzup.com · Finzzup, Mumbai, India." },
           ].map((s,i) => (
             <div key={i} style={{ marginBottom:20 }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>{s.h}</div>
@@ -6918,12 +6916,12 @@ function Terms() {
       {tab === "copyright" && (
         <Card style={{ lineHeight:1.8 }}>
           <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>
-            © 2024–2026 Finzzup Advisory LLP. All rights reserved.
+            © 2024–2026 Finzzup. All rights reserved. Finzzup is a registered trademark of Garima Agarwal, Chartered Accountant (Membership No. 160944).
           </div>
           {[
             { h:"Reports & Deliverables", t:"All valuation reports, financial models, MIS packs, board packs, and other deliverables produced by Finzzup are protected by copyright. Upon full payment, clients receive a non-exclusive licence to use the deliverables for their own business purposes." },
-            { h:"Portal Content", t:"The content, design, and functionality of this client portal are proprietary to Finzzup Advisory LLP. Unauthorised reproduction, distribution, or modification is prohibited." },
-            { h:"Trademark", t:"'Finzzup' and the Finzzup logo are trademarks of Finzzup Advisory LLP. Use of these marks without prior written consent is not permitted." },
+            { h:"Portal Content", t:"The content, design, and functionality of this client portal are proprietary to Finzzup. Finzzup is a registered trademark of Garima Agarwal. All CFO advisory services and financial analysis are provided by Garima Agarwal, Chartered Accountant (Membership No. 160944). This portal is a proprietary client reporting platform of Finzzup. Unauthorised reproduction, distribution, or modification is prohibited." },
+            { h:"Trademark", t:"'Finzzup' is a registered trademark of Garima Agarwal. Use of this mark without prior written consent is not permitted." },
             { h:"Third-Party Tools", t:"This portal uses Supabase, Recharts, and Google Fonts under their respective licences. Calendly is used for scheduling under its commercial licence." },
           ].map((s,i) => (
             <div key={i} style={{ marginBottom:20 }}>
@@ -8300,10 +8298,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
       <aside style={{ width:220, minHeight:"100vh", background:C.navy, flexShrink:0,
         display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ padding:"22px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ background:"white", borderRadius:10, padding:"6px 12px", display:"inline-block" }}>
-            <img src={LOGO_SRC} alt="Finzzup"
-              style={{ height:36, width:"auto", objectFit:"contain", display:"block" }}/>
-          </div>
+          <img src={LOGO_SRC} alt="Finzzup"
+            style={{ height:48, width:"auto", objectFit:"contain", display:"block",
+              filter:"brightness(1.3) saturate(1.8) contrast(1.1)" }}/>
           <div style={{ marginTop:10, padding:"4px 10px", borderRadius:100, display:"inline-block",
             background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.3)" }}>
             <span style={{ fontSize:10, fontWeight:700, color:"#FBBF24", letterSpacing:"0.1em" }}>ADMIN</span>
