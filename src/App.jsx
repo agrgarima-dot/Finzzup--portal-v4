@@ -281,7 +281,7 @@ const Logo = ({ size=32, darkText=false, showTagline=false }) => {
   return (
     <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
       <img src={LOGO_SRC} alt="Finzzup"
-        style={{ height: size * 1.4, width:"auto", objectFit:"contain", display:"block" }}/>
+        style={{ height: size * 1.4, maxwidth:"140", objectFit:"contain", display:"block" }}/>
       {showTagline && (
         <div style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:9,
           color: darkText ? "#9CA3AF" : "rgba(255,255,255,0.5)",
