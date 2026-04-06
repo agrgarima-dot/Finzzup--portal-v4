@@ -4976,6 +4976,9 @@ function CorporatePackContent({ reportData, kpis, client }) {
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.purple}/>}
 
       {tab === "packs" && (
+        <div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
+            Monthly board packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Corporate Pack"/>)}
