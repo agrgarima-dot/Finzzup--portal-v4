@@ -10583,4 +10583,3 @@ export default function App() {
   if (!client) return <Login onLogin={setClient}/>;
   return <Portal client={client} onLogout={handleLogout}/>;
 }
-
