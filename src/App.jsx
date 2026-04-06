@@ -4508,7 +4508,10 @@ function MSMEPackContent({ reportData, kpis, client }) {
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.teal}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.teal}/>}
 
-{tab === "packs" && (
+      {tab === "packs" && (
+        <div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
+            Monthly packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
