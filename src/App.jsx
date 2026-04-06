@@ -277,18 +277,60 @@ const PriBadge = ({ p }) => {
 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
 
-const Logo = ({ size=32, darkText=false, showTagline=false }) => {
+// ─── SVG LOGO COMPONENT ───────────────────────────────────────────────────────
+const FinzzupIcon = ({ size=44, collapsed=false }) => (
+  <svg width={collapsed ? size*0.8 : size} height={collapsed ? size*0.8 : size}
+    viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="icon-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#2563EB"/>
+        <stop offset="100%" stopColor="#7C3AED"/>
+      </linearGradient>
+    </defs>
+    <rect width="44" height="44" rx="11" fill="url(#icon-grad)"/>
+    <path d="M11 9h22v5.5H17.5v6.5H26v5.5h-8.5V35H11V9Z" fill="white"/>
+  </svg>
+);
+
+const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapsed=false }) => {
+  const iconSize = size * 1.35;
+  if (collapsed) {
+    return <FinzzupIcon size={iconSize} collapsed/>;
+  }
   return (
-    <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-start" }}>
-      <img src={LOGO_SRC} alt="Finzzup"
-        style={{ height: size * 1.4, maxwidth:"140", objectFit:"contain", display:"block" }}/>
-      {showTagline && (
-        <div style={{ fontFamily:"'Plus Jakarta Sans', sans-serif", fontSize:9,
-          color: darkText ? "#9CA3AF" : "rgba(255,255,255,0.5)",
-          marginTop:2, letterSpacing:"0.06em", textTransform:"uppercase" }}>
-          Build. Value. Scale.
+    <div style={{ display:"flex", alignItems:"center", gap: size * 0.35 }}>
+      <FinzzupIcon size={iconSize}/>
+      <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+        <div style={{
+          fontFamily:"'Plus Jakarta Sans', sans-serif",
+          fontWeight:900,
+          fontSize: size * 0.72,
+          lineHeight:1,
+          letterSpacing:"-0.03em",
+          display:"flex",
+          alignItems:"baseline",
+        }}>
+          <span style={{ color: dark ? "white" : "#111827" }}>Finz</span>
+          <span style={{ background:"linear-gradient(90deg,#2563EB,#7C3AED)",
+            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent",
+            backgroundClip:"text" }}>zup</span>
+          <span style={{ fontSize: size * 0.35, color: dark ? "rgba(255,255,255,0.5)" : "#9CA3AF",
+            WebkitTextFillColor: dark ? "rgba(255,255,255,0.5)" : "#9CA3AF",
+            fontWeight:400, marginLeft:1, alignSelf:"flex-start", marginTop:2 }}>™</span>
         </div>
-      )}
+        {showTagline && (
+          <div style={{
+            fontFamily:"'Plus Jakarta Sans', sans-serif",
+            fontSize: Math.max(8, size * 0.22),
+            fontWeight:600,
+            color: dark ? "rgba(255,255,255,0.4)" : (darkText ? "#9CA3AF" : "rgba(255,255,255,0.4)"),
+            letterSpacing:"0.12em",
+            textTransform:"uppercase",
+          }}>
+            Build · Value · Scale
+          </div>
+        )}
+      </div>
     </div>
   );
 };
@@ -416,15 +458,10 @@ function Login({ onLogin }) {
 
       <div style={{ width:"100%", maxWidth:420, position:"relative" }}>
         <div style={{ textAlign:"center", marginBottom:32 }}>
-          <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:6 }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <img src={LOGO_SRC} alt="Finzzup" style={{ height:64, width:"auto", objectFit:"contain" }}/>
-            </div>
-            <p style={{ fontSize:12, color:C.muted, margin:0, letterSpacing:"0.03em" }}>
-              Build. Value. Scale.
-            </p>
+          <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:8 }}>
+            <Logo size={36} dark={false} showTagline={true} darkText={true}/>
           </div>
-          <p style={{ fontSize:13, color:C.muted, marginTop:8 }}>Secure Client Portal</p>
+          <p style={{ fontSize:13, color:C.muted, marginTop:12 }}>Secure Client Portal</p>
         </div>
 
         <Card style={{ padding:32 }}>
@@ -642,16 +679,8 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
       <div style={{ padding: collapsed ? "20px 0" : "22px 20px", display:"flex",
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
         borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-        {!collapsed && (
-          <img src={LOGO_SRC} alt="Finzzup"
-            style={{ height:48, width:"auto", objectFit:"contain", display:"block",
-              filter:"brightness(1.3) saturate(1.8) contrast(1.1)" }}/>
-        )}
-        {collapsed && (
-          <img src={LOGO_SRC} alt="Finzzup"
-            style={{ height:32, width:32, objectFit:"contain", display:"block",
-              filter:"brightness(1.3) saturate(1.8) contrast(1.1)" }}/>
-        )}
+        {!collapsed && <Logo size={28} dark={true} showTagline={false}/>}
+        {collapsed && <Logo size={24} dark={true} collapsed={true}/>}
         <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
           cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
           {collapsed ? "→" : "←"}
@@ -3964,12 +3993,14 @@ function useLiveDocs(client) {
 function MSMEPackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
-    { id:"monthly",  icon:"📊", label:"Monthly Report"    },
-    { id:"variance", icon:"📉", label:"Variance Analysis" },
-    { id:"cash",     icon:"💰", label:"Cash Health"       },
+    { id:"monthly",   icon:"📊", label:"Monthly Report"    },
+    { id:"variance",  icon:"📉", label:"Variance Analysis" },
+    { id:"cash",      icon:"💰", label:"Cash Health"       },
     { id:"workingcap",icon:"⚙️", label:"Working Capital"  },
-    { id:"bankfin",  icon:"🏛️", label:"Bank Finance"      },
-    { id:"packs",    icon:"📁", label:"Previous Packs"    },
+    { id:"bankfin",   icon:"🏛️", label:"Bank Finance"      },
+    { id:"fundutil",  icon:"💸", label:"Fund Utilisation"  },
+    { id:"verticalpnl",icon:"📈",label:"Vertical P&L"      },
+    { id:"packs",     icon:"📁", label:"Previous Packs"    },
   ];
   const data = CFO_PACK_DATA["msme"];
   const archiveDocs = useLiveDocs(client);
@@ -4474,10 +4505,10 @@ function MSMEPackContent({ reportData, kpis, client }) {
         </div>
       )}
 
+      {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.teal}/>}
+      {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.teal}/>}
+
 {tab === "packs" && (
-        <div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
-            Monthly packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
@@ -4498,11 +4529,13 @@ function MSMEPackContent({ reportData, kpis, client }) {
 function CorporatePackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
-    { id:"monthly",   icon:"📊", label:"Monthly Report"    },
-    { id:"variance",  icon:"📉", label:"Variance Analysis" },
-    { id:"governance",icon:"⚖️", label:"Board Governance"  },
-    { id:"ipo",       icon:"🏦", label:"IPO Readiness"     },
-    { id:"packs",     icon:"📁", label:"Previous Packs"    },
+    { id:"monthly",    icon:"📊", label:"Monthly Report"    },
+    { id:"variance",   icon:"📉", label:"Variance Analysis" },
+    { id:"governance", icon:"⚖️", label:"Board Governance"  },
+    { id:"ipo",        icon:"🏦", label:"IPO Readiness"     },
+    { id:"fundutil",   icon:"💰", label:"Fund Utilisation"  },
+    { id:"verticalpnl",icon:"📈", label:"Vertical P&L"      },
+    { id:"packs",      icon:"📁", label:"Previous Packs"    },
   ];
   const data = CFO_PACK_DATA["corporate"];
   const archiveDocs = useLiveDocs(client);
@@ -4936,10 +4969,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
         </div>
       )}
 
+      {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.purple}/>}
+      {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.purple}/>}
+
       {tab === "packs" && (
-        <div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
-            Monthly board packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Corporate Pack"/>)}
@@ -4960,6 +4993,360 @@ function CorporatePackContent({ reportData, kpis, client }) {
 }
 
 
+// ─── FUND UTILISATION COMPONENT ──────────────────────────────────────────────
+function FundUtilisation({ reportData, accentColor }) {
+  const acc = accentColor || C.blue;
+  const defaultFunds = [
+    { category:"Salaries & People", allocated:0, deployed:0 },
+    { category:"Marketing & Growth", allocated:0, deployed:0 },
+    { category:"Technology & Product", allocated:0, deployed:0 },
+    { category:"Operations & Logistics", allocated:0, deployed:0 },
+    { category:"General & Admin", allocated:0, deployed:0 },
+  ];
+  const [totalRaised, setTotalRaised] = React.useState(
+    reportData?.fundUtil?.totalRaised || ""
+  );
+  const [funds, setFunds] = React.useState(
+    reportData?.fundUtil?.categories || defaultFunds
+  );
+
+  const totalAllocated = funds.reduce((s,f) => s + (parseFloat(f.allocated)||0), 0);
+  const totalDeployed = funds.reduce((s,f) => s + (parseFloat(f.deployed)||0), 0);
+  const raised = parseFloat(totalRaised) || 0;
+  const unallocated = raised - totalAllocated;
+  const deployedPct = totalAllocated > 0 ? Math.round((totalDeployed/totalAllocated)*100) : 0;
+  const runwayMonths = totalDeployed > 0 && raised > 0
+    ? Math.round((raised - totalDeployed) / (totalDeployed / Math.max(funds.length,1)))
+    : null;
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      <Card>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
+          💰 Fund Utilisation Tracker
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
+          <div style={{ padding:"14px 16px", borderRadius:12, background:`${acc}10`, border:`1px solid ${acc}25` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:acc, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Total Raised</div>
+            <input
+              type="number"
+              placeholder="Enter amount (₹)"
+              value={totalRaised}
+              onChange={e => setTotalRaised(e.target.value)}
+              style={{ width:"100%", border:"none", background:"transparent", fontSize:18, fontWeight:700,
+                color:C.text, fontFamily:FM, marginTop:4, outline:"none" }}
+            />
+          </div>
+          <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Deployed</div>
+            <div style={{ fontSize:18, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
+              {totalDeployed > 0 ? `₹${(totalDeployed/100000).toFixed(1)}L` : "—"}
+              {deployedPct > 0 && <span style={{ fontSize:12, color:C.muted, fontFamily:F, marginLeft:6 }}>{deployedPct}%</span>}
+            </div>
+          </div>
+          <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.orange||"#F59E0B"}10`, border:`1px solid ${C.orange||"#F59E0B"}25` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.orange||"#F59E0B", textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Unallocated</div>
+            <div style={{ fontSize:18, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
+              {raised > 0 ? `₹${(unallocated/100000).toFixed(1)}L` : "—"}
+            </div>
+          </div>
+          <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.purple}10`, border:`1px solid ${C.purple}25` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Est. Runway</div>
+            <div style={{ fontSize:18, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
+              {runwayMonths ? `${runwayMonths}mo` : "—"}
+            </div>
+          </div>
+        </div>
+
+        {/* Category breakdown */}
+        <div style={{ fontSize:12, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F, marginBottom:12 }}>
+          Allocation by Category
+        </div>
+        {funds.map((f,i) => {
+          const pct = totalAllocated > 0 ? Math.round(((parseFloat(f.allocated)||0)/totalAllocated)*100) : 0;
+          const depPct = (parseFloat(f.allocated)||0) > 0
+            ? Math.round(((parseFloat(f.deployed)||0)/(parseFloat(f.allocated)||1))*100) : 0;
+          return (
+            <div key={i} style={{ marginBottom:16, paddingBottom:16,
+              borderBottom: i < funds.length-1 ? `1px solid ${C.border}` : "none" }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{f.category}</div>
+                <div style={{ fontSize:11, color:C.muted, fontFamily:F }}>{pct}% of total</div>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
+                <div>
+                  <div style={{ fontSize:10, color:C.muted, fontFamily:F, marginBottom:2 }}>Allocated (₹)</div>
+                  <input type="number" placeholder="0"
+                    value={f.allocated || ""}
+                    onChange={e => {
+                      const nf = [...funds];
+                      nf[i] = {...nf[i], allocated: e.target.value};
+                      setFunds(nf);
+                    }}
+                    style={{ width:"100%", padding:"6px 10px", borderRadius:8,
+                      border:`1px solid ${C.border}`, fontFamily:F, fontSize:13, color:C.text,
+                      background:C.bg2, outline:"none" }}
+                  />
+                </div>
+                <div>
+                  <div style={{ fontSize:10, color:C.muted, fontFamily:F, marginBottom:2 }}>Deployed (₹)</div>
+                  <input type="number" placeholder="0"
+                    value={f.deployed || ""}
+                    onChange={e => {
+                      const nf = [...funds];
+                      nf[i] = {...nf[i], deployed: e.target.value};
+                      setFunds(nf);
+                    }}
+                    style={{ width:"100%", padding:"6px 10px", borderRadius:8,
+                      border:`1px solid ${C.border}`, fontFamily:F, fontSize:13, color:C.text,
+                      background:C.bg2, outline:"none" }}
+                  />
+                </div>
+              </div>
+              {/* Progress bar */}
+              <div style={{ height:6, borderRadius:3, background:C.border, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${Math.min(depPct,100)}%`,
+                  background: depPct > 90 ? C.red : depPct > 60 ? C.orange||"#F59E0B" : acc,
+                  borderRadius:3, transition:"width 0.3s" }}/>
+              </div>
+              <div style={{ fontSize:10, color:C.muted, fontFamily:F, marginTop:3 }}>
+                {depPct}% deployed
+              </div>
+            </div>
+          );
+        })}
+      </Card>
+    </div>
+  );
+}
+
+// ─── VERTICAL P&L COMPONENT ───────────────────────────────────────────────────
+function VerticalPnL({ reportData, accentColor }) {
+  const acc = accentColor || C.blue;
+  const defaultVerticals = [
+    { name:"Vertical / Region 1", revenue:0, cogs:0, opex:0 },
+    { name:"Vertical / Region 2", revenue:0, cogs:0, opex:0 },
+    { name:"Vertical / Region 3", revenue:0, cogs:0, opex:0 },
+  ];
+  const [verticals, setVerticals] = React.useState(
+    reportData?.verticalPnL || defaultVerticals
+  );
+  const [month, setMonth] = React.useState(reportData?.monthLabel || "");
+
+  const updateVertical = (i, field, value) => {
+    const nv = [...verticals];
+    nv[i] = {...nv[i], [field]: value};
+    setVerticals(nv);
+  };
+
+  const addVertical = () => {
+    setVerticals([...verticals, { name:"New Vertical", revenue:0, cogs:0, opex:0 }]);
+  };
+
+  const calcGP = v => (parseFloat(v.revenue)||0) - (parseFloat(v.cogs)||0);
+  const calcContrib = v => calcGP(v) - (parseFloat(v.opex)||0);
+  const calcMargin = v => {
+    const r = parseFloat(v.revenue)||0;
+    return r > 0 ? Math.round((calcContrib(v)/r)*100) : 0;
+  };
+
+  const totalRevenue = verticals.reduce((s,v) => s + (parseFloat(v.revenue)||0), 0);
+  const totalContrib = verticals.reduce((s,v) => s + calcContrib(v), 0);
+  const bestVertical = [...verticals].sort((a,b) => calcContrib(b) - calcContrib(a))[0];
+  const worstVertical = [...verticals].sort((a,b) => calcContrib(a) - calcContrib(b))[0];
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      <Card>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
+            📊 Vertical / Regional P&L
+          </div>
+          <input
+            type="text"
+            placeholder="Month (e.g. Mar 2026)"
+            value={month}
+            onChange={e => setMonth(e.target.value)}
+            style={{ padding:"6px 12px", borderRadius:8, border:`1px solid ${C.border}`,
+              fontFamily:F, fontSize:12, color:C.text, background:C.bg2, outline:"none" }}
+          />
+        </div>
+
+        {/* Summary cards */}
+        {totalRevenue > 0 && (
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:20 }}>
+            <div style={{ padding:"12px 14px", borderRadius:12, background:`${acc}10`, border:`1px solid ${acc}25` }}>
+              <div style={{ fontSize:10, fontWeight:700, color:acc, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Total Revenue</div>
+              <div style={{ fontSize:16, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
+                ₹{(totalRevenue/100000).toFixed(1)}L
+              </div>
+            </div>
+            <div style={{ padding:"12px 14px", borderRadius:12, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
+              <div style={{ fontSize:10, fontWeight:700, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Best Performer</div>
+              <div style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:F, marginTop:4 }}>
+                {bestVertical?.name}
+              </div>
+            </div>
+            <div style={{ padding:"12px 14px", borderRadius:12, background:`${C.red}10`, border:`1px solid ${C.red}25` }}>
+              <div style={{ fontSize:10, fontWeight:700, color:C.red, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Needs Attention</div>
+              <div style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:F, marginTop:4 }}>
+                {worstVertical?.name}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Vertical rows */}
+        {verticals.map((v,i) => {
+          const gp = calcGP(v);
+          const contrib = calcContrib(v);
+          const margin = calcMargin(v);
+          const revenueShare = totalRevenue > 0
+            ? Math.round(((parseFloat(v.revenue)||0)/totalRevenue)*100) : 0;
+
+          return (
+            <div key={i} style={{ marginBottom:20, padding:"16px", borderRadius:12,
+              background:C.bg2, border:`1px solid ${C.border}` }}>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                <input
+                  type="text"
+                  value={v.name}
+                  onChange={e => updateVertical(i, "name", e.target.value)}
+                  style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text,
+                    border:"none", background:"transparent", outline:"none", flex:1 }}
+                />
+                <div style={{ fontSize:11, color:C.muted, fontFamily:F }}>
+                  {revenueShare}% of total revenue
+                </div>
+              </div>
+
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:12 }}>
+                {[
+                  { label:"Revenue (₹)", field:"revenue" },
+                  { label:"COGS (₹)", field:"cogs" },
+                  { label:"OpEx (₹)", field:"opex" },
+                ].map(({ label, field }) => (
+                  <div key={field}>
+                    <div style={{ fontSize:10, color:C.muted, fontFamily:F, marginBottom:2 }}>{label}</div>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={v[field] || ""}
+                      onChange={e => updateVertical(i, field, e.target.value)}
+                      style={{ width:"100%", padding:"6px 10px", borderRadius:8,
+                        border:`1px solid ${C.border}`, fontFamily:F, fontSize:13,
+                        color:C.text, background:C.bg, outline:"none" }}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
+                <div style={{ padding:"8px 10px", borderRadius:8,
+                  background: gp >= 0 ? `${C.green}10` : `${C.red}10` }}>
+                  <div style={{ fontSize:10, color:C.muted, fontFamily:F }}>Gross Profit</div>
+                  <div style={{ fontSize:13, fontWeight:700,
+                    color: gp >= 0 ? C.green : C.red, fontFamily:FM }}>
+                    ₹{(gp/100000).toFixed(1)}L
+                  </div>
+                </div>
+                <div style={{ padding:"8px 10px", borderRadius:8,
+                  background: contrib >= 0 ? `${C.green}10` : `${C.red}10` }}>
+                  <div style={{ fontSize:10, color:C.muted, fontFamily:F }}>Contribution</div>
+                  <div style={{ fontSize:13, fontWeight:700,
+                    color: contrib >= 0 ? C.green : C.red, fontFamily:FM }}>
+                    ₹{(contrib/100000).toFixed(1)}L
+                  </div>
+                </div>
+                <div style={{ padding:"8px 10px", borderRadius:8,
+                  background: margin >= 0 ? `${acc}10` : `${C.red}10` }}>
+                  <div style={{ fontSize:10, color:C.muted, fontFamily:F }}>Margin %</div>
+                  <div style={{ fontSize:13, fontWeight:700,
+                    color: margin >= 15 ? C.green : margin >= 0 ? C.orange||"#F59E0B" : C.red,
+                    fontFamily:FM }}>
+                    {margin}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+
+        <button onClick={addVertical} style={{
+          width:"100%", padding:"10px", borderRadius:10,
+          border:`1.5px dashed ${C.border}`, background:"transparent",
+          fontFamily:F, fontSize:13, fontWeight:600, color:C.muted, cursor:"pointer" }}>
+          + Add Vertical / Region
+        </button>
+      </Card>
+
+      {/* Summary table */}
+      {totalRevenue > 0 && (
+        <Card>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>
+            Comparative Summary
+          </div>
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
+              <thead>
+                <tr style={{ borderBottom:`2px solid ${C.border}` }}>
+                  {["Vertical","Revenue","Gross Profit","Contribution","Margin %"].map(h => (
+                    <th key={h} style={{ padding:"8px 10px", textAlign:"left",
+                      color:C.muted, fontWeight:700, fontSize:11, textTransform:"uppercase" }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[...verticals]
+                  .sort((a,b) => calcContrib(b) - calcContrib(a))
+                  .map((v,i) => {
+                    const gp = calcGP(v);
+                    const contrib = calcContrib(v);
+                    const margin = calcMargin(v);
+                    return (
+                      <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
+                        <td style={{ padding:"10px", fontWeight:600, color:C.text }}>{v.name}</td>
+                        <td style={{ padding:"10px", color:C.text }}>₹{((parseFloat(v.revenue)||0)/100000).toFixed(1)}L</td>
+                        <td style={{ padding:"10px", color: gp >= 0 ? C.green : C.red, fontWeight:600 }}>
+                          ₹{(gp/100000).toFixed(1)}L
+                        </td>
+                        <td style={{ padding:"10px", color: contrib >= 0 ? C.green : C.red, fontWeight:600 }}>
+                          ₹{(contrib/100000).toFixed(1)}L
+                        </td>
+                        <td style={{ padding:"10px" }}>
+                          <span style={{
+                            padding:"2px 8px", borderRadius:100, fontSize:11, fontWeight:700,
+                            background: margin >= 15 ? `${C.green}15` : margin >= 0 ? "#FEF3C715" : `${C.red}15`,
+                            color: margin >= 15 ? C.green : margin >= 0 ? "#D97706" : C.red
+                          }}>
+                            {margin}%
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                <tr style={{ borderTop:`2px solid ${C.border}`, background:C.bg2 }}>
+                  <td style={{ padding:"10px", fontWeight:700, color:C.text }}>Total</td>
+                  <td style={{ padding:"10px", fontWeight:700, color:C.text }}>₹{(totalRevenue/100000).toFixed(1)}L</td>
+                  <td colSpan={2} style={{ padding:"10px", fontWeight:700,
+                    color: totalContrib >= 0 ? C.green : C.red }}>
+                    Contribution: ₹{(totalContrib/100000).toFixed(1)}L
+                  </td>
+                  <td style={{ padding:"10px", fontWeight:700, color:C.text }}>
+                    {totalRevenue > 0 ? Math.round((totalContrib/totalRevenue)*100) : 0}%
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 function CFOPackContent({ reportData, client, kpis }) {
   const [tab, setTab] = useState("monthly");
   const tabs = [
@@ -4968,6 +5355,8 @@ function CFOPackContent({ reportData, client, kpis }) {
     { id:"uniteco",    icon:"📐", label:"Unit Economics"      },
     { id:"fundraise",  icon:"🎯", label:"Fundraise Readiness" },
     { id:"loan",       icon:"🏦", label:"Loan Readiness"      },
+    { id:"fundutil",   icon:"💰", label:"Fund Utilisation"    },
+    { id:"verticalpnl",icon:"📈", label:"Vertical P&L"        },
     { id:"boardpacks", icon:"📁", label:"Board Packs"         },
   ];
   const data = CFO_PACK_DATA["startup"];
@@ -5586,6 +5975,9 @@ function CFOPackContent({ reportData, client, kpis }) {
 
         </div>
       )}
+
+      {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.blue}/>}
+      {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.blue}/>}
 
       {tab === "boardpacks" && (
         <div>
@@ -6877,7 +7269,7 @@ function Terms() {
         <Card style={{ lineHeight:1.8 }}>
           <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:16 }}>Last updated: January 2026</div>
           {[
-            { h:"1. Services", t:"Finzzup is a registered trademark of Garima Agarwal, Chartered Accountant (Membership No. 160944). All CFO advisory services, financial analysis, and valuation services are provided by Garima Agarwal, CA. All engagements are governed by a separate Engagement Letter, which supersedes these general terms where there is any conflict." },
+            { h:"1. Services", t:"Finzzup™ is a trademark of Garima Agarwal, Chartered Accountant (Membership No. 160944) (TM Application Nos. 7636571 & 7636572). All CFO advisory services, financial analysis, and valuation services are provided by Garima Agarwal, CA. All engagements are governed by a separate Engagement Letter, which supersedes these general terms where there is any conflict." },
             { h:"2. Proposals and Pricing", t:"All prices quoted are indicative. A formal proposal with a fixed scope and price will be sent within 24 hours of a service request. Engagements begin only upon signed acceptance of the proposal and receipt of the advance payment." },
             { h:"3. Confidentiality", t:"Finzzup maintains strict confidentiality of all client data, financial information, and business information shared. Data is used solely for the purpose of the engagement and is never shared with third parties without explicit written consent." },
             { h:"4. Intellectual Property", t:"All deliverables produced by Finzzup (reports, models, presentations) remain the property of the client upon full payment. Finzzup retains the right to use anonymized methodologies and frameworks for other engagements." },
@@ -6916,12 +7308,12 @@ function Terms() {
       {tab === "copyright" && (
         <Card style={{ lineHeight:1.8 }}>
           <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>
-            © 2024–2026 Finzzup. All rights reserved. Finzzup is a registered trademark of Garima Agarwal, Chartered Accountant (Membership No. 160944).
+            © 2024–2026 Finzzup™. All rights reserved. Finzzup is a trademark of Garima Agarwal, Chartered Accountant (Membership No. 160944). TM Application Nos. 7636571 & 7636572.
           </div>
           {[
             { h:"Reports & Deliverables", t:"All valuation reports, financial models, MIS packs, board packs, and other deliverables produced by Finzzup are protected by copyright. Upon full payment, clients receive a non-exclusive licence to use the deliverables for their own business purposes." },
-            { h:"Portal Content", t:"The content, design, and functionality of this client portal are proprietary to Finzzup. Finzzup is a registered trademark of Garima Agarwal. All CFO advisory services and financial analysis are provided by Garima Agarwal, Chartered Accountant (Membership No. 160944). This portal is a proprietary client reporting platform of Finzzup. Unauthorised reproduction, distribution, or modification is prohibited." },
-            { h:"Trademark", t:"'Finzzup' is a registered trademark of Garima Agarwal. Use of this mark without prior written consent is not permitted." },
+            { h:"Portal Content", t:"The content, design, and functionality of this client portal are proprietary to Finzzup™. Finzzup is a trademark of Garima Agarwal (TM Application Nos. 7636571 & 7636572). All CFO advisory services and financial analysis are provided by Garima Agarwal, Chartered Accountant (Membership No. 160944). This portal is a proprietary client reporting platform of Finzzup. Unauthorised reproduction, distribution, or modification is prohibited." },
+            { h:"Trademark", t:"'Finzzup™' is a trademark of Garima Agarwal (TM Application Nos. 7636571 & 7636572, Classes 36 & 42). Use of this mark without prior written consent is not permitted." },
             { h:"Third-Party Tools", t:"This portal uses Supabase, Recharts, and Google Fonts under their respective licences. Calendly is used for scheduling under its commercial licence." },
           ].map((s,i) => (
             <div key={i} style={{ marginBottom:20 }}>
@@ -7556,9 +7948,10 @@ function AdminLogin({ onLogin }) {
       justifyContent:"center", padding:20, fontFamily:F }}>
       <div style={{ width:"100%", maxWidth:400 }}>
         <div style={{ textAlign:"center", marginBottom:32 }}>
-          <img src={LOGO_SRC} alt="Finzzup"
-            style={{ height:60, width:"auto", objectFit:"contain", display:"block" }}/>
-          <div style={{ marginTop:10, display:"inline-block", padding:"4px 14px", borderRadius:100,
+          <div style={{ display:"flex", justifyContent:"center", marginBottom:10 }}>
+            <Logo size={32} dark={true} showTagline={false}/>
+          </div>
+          <div style={{ display:"inline-block", padding:"4px 14px", borderRadius:100,
             background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.3)" }}>
             <span style={{ fontSize:11, fontWeight:700, color:"#FBBF24", letterSpacing:"0.1em" }}>ADMIN ACCESS</span>
           </div>
@@ -8298,9 +8691,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
       <aside style={{ width:220, minHeight:"100vh", background:C.navy, flexShrink:0,
         display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.06)" }}>
         <div style={{ padding:"22px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-          <img src={LOGO_SRC} alt="Finzzup"
-            style={{ height:48, width:"auto", objectFit:"contain", display:"block",
-              filter:"brightness(1.3) saturate(1.8) contrast(1.1)" }}/>
+          <Logo size={28} dark={true} showTagline={false}/>
           <div style={{ marginTop:10, padding:"4px 10px", borderRadius:100, display:"inline-block",
             background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.3)" }}>
             <span style={{ fontSize:10, fontWeight:700, color:"#FBBF24", letterSpacing:"0.1em" }}>ADMIN</span>
@@ -10166,9 +10557,9 @@ export default function App() {
     <div style={{ minHeight:"100vh", background:isAdminRoute?"#0A1128":C.bg,
       display:"flex", alignItems:"center", justifyContent:"center", fontFamily:F }}>
       <div style={{ textAlign:"center" }}>
-        <img src={LOGO_SRC} alt="Finzzup"
-          style={{ height:60, width:"auto", objectFit:"contain", display:"block",
-            objectFit:"contain" }}/>
+        <div style={{ display:"flex", justifyContent:"center" }}>
+          <Logo size={36} dark={isAdminRoute} showTagline={false}/>
+        </div>
         <p style={{ color:C.muted, fontSize:13, marginTop:12 }}>Loading…</p>
       </div>
     </div>
@@ -10186,3 +10577,4 @@ export default function App() {
   if (!client) return <Login onLogin={setClient}/>;
   return <Portal client={client} onLogout={handleLogout}/>;
 }
+
