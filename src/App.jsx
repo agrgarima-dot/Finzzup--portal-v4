@@ -684,32 +684,32 @@ function getNav(client) {
   const type = client?.type || "both";
 
   const base = [
-    { id:"overview",  icon:"home",      label:"Overview"  },
-    { id:"dashboard", icon:"dashboard", label:"Dashboard" },
+    { id:"overview",  icon:"🏠", label:"Overview"  },
+    { id:"dashboard", icon:"📊", label:"Dashboard" },
   ];
 
   if (type === "cfo" || type === "both") {
-    base.push({ id:"cashflow", icon:"cashflow", label:"Cash Flow"    });
-    base.push({ id:"actions",  icon:"actions",  label:"Action Items" });
+    base.push({ id:"cashflow", icon:"💵", label:"Cash Flow"    });
+    if (pack === "msme" || pack === "corporate") {
+      base.push({ id:"treasury", icon:"🏛️", label:"Treasury" });
+    }
+    base.push({ id:"actions",  icon:"✅", label:"Action Items" });
   }
 
   const reportLabel = pack === "msme" ? "MSME Report"
     : pack === "corporate" ? "Board Report"
     : "CFO Report";
-  base.push({ id:"myreport", icon:"report", label:reportLabel });
+  base.push({ id:"myreport", icon:"📋", label:reportLabel });
 
   if (type === "valuation" || type === "both") {
-    base.push({ id:"engagement", icon:"valuation", label:"Valuation Status" });
+    base.push({ id:"engagement", icon:"⚖️", label:"Valuation Status" });
   }
 
-  base.push({ id:"market",     icon:"market",    label:"Market Intel"  });
-  base.push({ id:"calendar",   icon:"calendar",  label:"Book a Call"   });
-  base.push({ id:"newrequest", icon:"plus",      label:"New Request"   });
-  base.push({ id:"documents",  icon:"documents", label:"My Documents"  });
-  base.push({ id:"invoices",   icon:"invoice",   label:"Invoices", badge:2 });
-  if (pack === "msme" || pack === "corporate") {
-    base.push({ id:"treasury", icon:"treasury",  label:"Treasury" });
-  }
+  base.push({ id:"market",     icon:"🌐", label:"Market Intel"  });
+  base.push({ id:"calendar",   icon:"📅", label:"Book a Call"   });
+  base.push({ id:"newrequest", icon:"➕", label:"New Request"   });
+  base.push({ id:"documents",  icon:"📁", label:"My Documents"  });
+  base.push({ id:"invoices",   icon:"🧾", label:"Invoices", badge:2 });
   return base;
 }
 
@@ -726,7 +726,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
         {collapsed && <Logo size={24} dark={true} collapsed={true}/>}
         <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
           cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
-          <Icon name={collapsed?"expand":"collapse"} size={16} color="rgba(255,255,255,0.4)"/>
+          {collapsed ? "→" : "←"}
         </button>
       </div>
 
@@ -752,7 +752,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
             border:"none", cursor:"pointer", borderLeft: page===n.id ? `3px solid ${C.blue}` : "3px solid transparent",
             transition:"all 0.15s", fontFamily:F,
           }}>
-            <Icon name={n.icon} size={17} color={page===n.id ? "white" : "rgba(255,255,255,0.45)"}/>
+            <span style={{ fontSize:16, opacity: page===n.id ? 1 : 0.55 }}>{n.icon}</span>
             {!collapsed && <span style={{ fontSize:13, fontWeight:600, flex:1, textAlign:"left",
               color: page===n.id ? "white" : "rgba(255,255,255,0.5)" }}>
               {n.label}
@@ -775,14 +775,14 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
             width:"100%", padding:"8px 12px", justifyContent:"flex-start",
             background:"none", border:"none", cursor:"pointer", borderRadius:8,
             fontFamily:F, fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.25)", marginBottom:4 }}>
-            <Icon name="report" size={13} color="rgba(255,255,255,0.25)"/> Terms & Privacy
+            <span>📜</span> Terms & Privacy
           </button>
         )}
         <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
           width:"100%", padding: collapsed?"10px 0":"10px 12px", justifyContent:collapsed?"center":"flex-start",
           background:"none", border:"none", cursor:"pointer", borderRadius:8,
           fontFamily:F, fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
-          <Icon name="logout" size={16} color="rgba(255,255,255,0.35)"/>
+          <span style={{ fontSize:16 }}>🚪</span>
           {!collapsed && "Sign Out"}
         </button>
       </div>
@@ -807,9 +807,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
           <button onClick={() => setOpen(o => !o)}
             style={{ position:"relative", background:"none", border:"none", cursor:"pointer",
               width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={count>0?C.blue:C.muted} strokeWidth="2" strokeLinecap="round">
-              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-            </svg>
+            <span style={{ fontSize:18, opacity: count>0?1:0.6 }}>🔔</span>
             {count > 0 && (
               <span style={{ position:"absolute", top:0, right:0, width:14, height:14,
                 background:C.red, borderRadius:"50%", fontSize:8, fontWeight:900,
@@ -3767,40 +3765,80 @@ function useLiveDocs(client) {
 
 function MSMEPackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
-  const tabs = [
-    { id:"monthly",   icon:"dashboard", label:"Monthly Report"    },
-    { id:"variance",  icon:"trend_down", label:"Variance Analysis" },
-    { id:"cash",      icon:"cashflow", label:"Cash Health"       },
-    { id:"workingcap",icon:"settings", label:"Working Capital"  },
-    { id:"bankfin",   icon:"🏛️", label:"Bank Finance"      },
-    { id:"fundutil",  icon:"cashflow", label:"Fund Utilisation"  },
-    { id:"verticalpnl",icon:"rev",label:"Vertical P&L"      },
-    { id:"scenario",  icon:"scenario", label:"Scenarios"         },
-    { id:"bizintel",  icon:"bi", label:"BI Analysis"      },
-    { id:"spend",     icon:"info", label:"Spend Intel"       },
-    { id:"packs",     icon:"documents", label:"Previous Packs"    },
+
+  // Grouped nav — cleaner than 11 pills in a row
+  const groups = [
+    {
+      label: "Financial Reports",
+      items: [
+        { id:"monthly",    icon:"dashboard",  label:"Monthly Report"    },
+        { id:"variance",   icon:"trend_down", label:"Variance Analysis" },
+        { id:"verticalpnl",icon:"rev",        label:"Vertical P&L"      },
+      ]
+    },
+    {
+      label: "Cash & Working Capital",
+      items: [
+        { id:"cash",       icon:"cashflow",   label:"Cash Health"       },
+        { id:"workingcap", icon:"chart_bar",  label:"Working Capital"   },
+        { id:"fundutil",   icon:"treasury",   label:"Fund Utilisation"  },
+      ]
+    },
+    {
+      label: "Strategy & Planning",
+      items: [
+        { id:"scenario",   icon:"scenario",   label:"Scenarios"         },
+        { id:"bizintel",   icon:"bi",         label:"BI Analysis"       },
+        { id:"spend",      icon:"chart_pie",  label:"Spend Intel"       },
+        { id:"bankfin",    icon:"bank",       label:"Bank Finance"      },
+      ]
+    },
+    {
+      label: "Documents",
+      items: [
+        { id:"packs",      icon:"documents",  label:"Previous Packs"    },
+      ]
+    },
   ];
+
   const data = CFO_PACK_DATA["msme"];
   const archiveDocs = useLiveDocs(client);
 
   return (
-    <div>
-      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding:"9px 18px", borderRadius:100, border:"none", cursor:"pointer",
-            fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
-            background: tab===t.id ? C.teal : C.bg2,
-            color: tab===t.id ? "white" : C.muted,
-            outline: `1.5px solid ${tab===t.id ? C.teal : C.border}`,
-            boxShadow: tab===t.id ? `0 4px 14px ${C.teal}35` : "none",
-            touchAction:"manipulation",
-          }}>
-              <Icon name={t.icon} size={14} color="currentColor" style={{verticalAlign:"middle",marginRight:5}}/>
-              {t.label}
-            </button>
+    <div style={{ display:"flex", gap:0, minHeight:"60vh" }}>
+
+      {/* ── Left nav sidebar ── */}
+      <div style={{ width:200, flexShrink:0, borderRight:`1px solid ${C.border}`,
+        paddingTop:8, paddingBottom:24, background:C.bg2 }}>
+        {groups.map((g, gi) => (
+          <div key={gi} style={{ marginBottom:4 }}>
+            <div style={{ padding:"10px 16px 4px", fontFamily:F, fontSize:10,
+              fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.1em" }}>
+              {g.label}
+            </div>
+            {g.items.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                display:"flex", alignItems:"center", gap:9,
+                width:"100%", padding:"9px 16px",
+                background: tab===t.id ? `${C.teal}12` : "transparent",
+                border:"none", borderLeft: tab===t.id ? `3px solid ${C.teal}` : "3px solid transparent",
+                cursor:"pointer", fontFamily:F, fontSize:13, fontWeight: tab===t.id ? 700 : 500,
+                color: tab===t.id ? C.teal : C.muted,
+                transition:"all 0.12s", textAlign:"left",
+              }}>
+                <Icon name={t.icon} size={15} color={tab===t.id ? C.teal : C.dim}/>
+                {t.label}
+              </button>
+            ))}
+            {gi < groups.length-1 && (
+              <div style={{ margin:"6px 16px 2px", borderTop:`1px solid ${C.border}` }}/>
+            )}
+          </div>
         ))}
       </div>
+
+      {/* ── Content area ── */}
+      <div style={{ flex:1, minWidth:0, padding:"24px 24px 32px", overflowY:"auto" }}>
 
       {tab === "monthly" && (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
@@ -4302,52 +4340,92 @@ function MSMEPackContent({ reportData, kpis, client }) {
           </div>
           <Card style={{ marginTop:20, background:`${C.teal}06`, borderColor:`${C.teal}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
-              📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
+              <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
               Questions?{" "}
-              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
             </div>
           </Card>
         </div>
       )}
-    </div>
+      </div>{/* end content area */}
+    </div>{/* end flex layout */}
   );
 }
 
 function CorporatePackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
-  const tabs = [
-    { id:"monthly",    icon:"dashboard", label:"Monthly Report"    },
-    { id:"variance",   icon:"trend_down", label:"Variance Analysis" },
-    { id:"governance", icon:"valuation", label:"Board Governance"  },
-    { id:"ipo",        icon:"bank", label:"IPO Readiness"     },
-    { id:"fundutil",   icon:"cashflow", label:"Fund Utilisation"  },
-    { id:"verticalpnl",icon:"rev", label:"Vertical P&L"      },
-    { id:"scenario",   icon:"scenario", label:"Scenarios"         },
-    { id:"spend",      icon:"info", label:"Spend Intel"       },
-    { id:"bizintel",   icon:"bi", label:"BI Analysis"       },
-    { id:"packs",      icon:"documents", label:"Previous Packs"    },
+
+  const groups = [
+    {
+      label: "Financial Reports",
+      items: [
+        { id:"monthly",    icon:"dashboard",  label:"Monthly Report"    },
+        { id:"variance",   icon:"trend_down", label:"Variance Analysis" },
+        { id:"verticalpnl",icon:"rev",        label:"Vertical P&L"      },
+      ]
+    },
+    {
+      label: "Governance & Growth",
+      items: [
+        { id:"governance", icon:"valuation",  label:"Board Governance"  },
+        { id:"ipo",        icon:"bank",       label:"IPO Readiness"     },
+        { id:"fundutil",   icon:"treasury",   label:"Fund Utilisation"  },
+      ]
+    },
+    {
+      label: "Strategy & Planning",
+      items: [
+        { id:"scenario",   icon:"scenario",   label:"Scenarios"         },
+        { id:"bizintel",   icon:"bi",         label:"BI Analysis"       },
+        { id:"spend",      icon:"chart_pie",  label:"Spend Intel"       },
+      ]
+    },
+    {
+      label: "Documents",
+      items: [
+        { id:"packs",      icon:"documents",  label:"Previous Packs"    },
+      ]
+    },
   ];
+
   const data = CFO_PACK_DATA["corporate"];
   const archiveDocs = useLiveDocs(client);
 
   return (
-    <div>
-      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding:"9px 18px", borderRadius:100, border:"none", cursor:"pointer",
-            fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
-            background: tab===t.id ? C.purple : C.bg2,
-            color: tab===t.id ? "white" : C.muted,
-            outline: `1.5px solid ${tab===t.id ? C.purple : C.border}`,
-            boxShadow: tab===t.id ? `0 4px 14px ${C.purple}35` : "none",
-            touchAction:"manipulation",
-          }}>
-              <Icon name={t.icon} size={14} color="currentColor" style={{verticalAlign:"middle",marginRight:5}}/>
-              {t.label}
-            </button>
+    <div style={{ display:"flex", gap:0, minHeight:"60vh" }}>
+
+      {/* Left nav sidebar */}
+      <div style={{ width:200, flexShrink:0, borderRight:`1px solid ${C.border}`,
+        paddingTop:8, paddingBottom:24, background:C.bg2 }}>
+        {groups.map((g, gi) => (
+          <div key={gi} style={{ marginBottom:4 }}>
+            <div style={{ padding:"10px 16px 4px", fontFamily:F, fontSize:10,
+              fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.1em" }}>
+              {g.label}
+            </div>
+            {g.items.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                display:"flex", alignItems:"center", gap:9,
+                width:"100%", padding:"9px 16px",
+                background: tab===t.id ? `${C.purple}12` : "transparent",
+                border:"none", borderLeft: tab===t.id ? `3px solid ${C.purple}` : "3px solid transparent",
+                cursor:"pointer", fontFamily:F, fontSize:13, fontWeight: tab===t.id ? 700 : 500,
+                color: tab===t.id ? C.purple : C.muted,
+                transition:"all 0.12s", textAlign:"left",
+              }}>
+                <Icon name={t.icon} size={15} color={tab===t.id ? C.purple : C.dim}/>
+                {t.label}
+              </button>
+            ))}
+            {gi < groups.length-1 && (
+              <div style={{ margin:"6px 16px 2px", borderTop:`1px solid ${C.border}` }}/>
+            )}
+          </div>
         ))}
       </div>
+
+      {/* Content area */}
+      <div style={{ flex:1, minWidth:0, padding:"24px 24px 32px", overflowY:"auto" }}>
 
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
@@ -4778,16 +4856,15 @@ function CorporatePackContent({ reportData, kpis, client }) {
           </div>
           <Card style={{ marginTop:20, background:`${C.purple}06`, borderColor:`${C.purple}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
-              {"📅 "}
-              <strong style={{ color:C.text }}>{"Packs uploaded by the 20th of each month."}</strong>
+              <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>
               {" Questions? "}
-              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>{"💬 WhatsApp Garima"}</a>
+              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
             </div>
           </Card>
         </div>
       )}
-
-    </div>
+      </div>{/* end content area */}
+    </div>{/* end flex layout */}
   );
 }
 
@@ -4795,9 +4872,9 @@ function CorporatePackContent({ reportData, kpis, client }) {
 // ─── BUSINESS INTELLIGENCE ────────────────────────────────────────────────────
 function BusinessIntelligence({ reportData, accentColor, client }) {
   const acc = accentColor || C.blue;
-  const [view, setView] = React.useState("overview"); // overview | geography | department | cashflow
-  const [aiInsight, setAiInsight] = React.useState("");
-  const [loadingAI, setLoadingAI] = React.useState(false);
+  const [view, setView] = React.useState("geography"); // geography | department
+
+
 
   // ── Parse helpers ──────────────────────────────────────────────────────────
   const parse = (val) => {
@@ -5087,20 +5164,22 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
       `}</style>
 
       {/* View toggle */}
-      <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:8 }}>
         {[
-          { id:"overview",   label:"🔍 Analysis"    },
-          { id:"geography",  label:"🌏 Geography"   },
-          { id:"department", label:"🏢 Department"  },
-          { id:"cashflow",   label:"💵 Cash Trend"  },
+          { id:"geography",  label:"Geography",  icon:"bi"      },
+          { id:"department", label:"Department",  icon:"users"   },
         ].map(v => (
           <button key={v.id} onClick={() => setView(v.id)} style={{
-            padding:"8px 16px", borderRadius:20, border:"none", cursor:"pointer",
+            padding:"8px 18px", borderRadius:20, border:"none", cursor:"pointer",
             fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
             background: view===v.id ? acc : C.bg2,
             color: view===v.id ? "white" : C.muted,
             outline:`1.5px solid ${view===v.id ? acc : C.border}`,
-          }}>{v.label}</button>
+            display:"flex", alignItems:"center", gap:6,
+          }}>
+            <Icon name={v.icon} size={14} color="currentColor"/>
+            {v.label}
+          </button>
         ))}
       </div>
 
@@ -5114,117 +5193,6 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
         </Card>
       )}
 
-      {/* ── ANALYSIS VIEW ── */}
-      {view === "overview" && hasData && (<>
-
-        {/* KPI snapshot from P&L */}
-        <div className="bi-4col">
-          <StatCard label="Revenue" value={fmt(rev)} icon="💰"
-            color={acc} sub={revGrowth ? `${parseFloat(revGrowth)>=0?"▲":"▼"} ${Math.abs(revGrowth)}% vs last month` : ""}/>
-          <StatCard label="Gross Profit" value={fmt(gp)} icon="📈"
-            color={parseFloat(gpMargin)>=30?C.green:parseFloat(gpMargin)>=20?"#D97706":C.red}
-            sub={`${gpMargin}% margin`}/>
-          <StatCard label="EBITDA" value={fmt(ebitda)} icon="⚡"
-            color={parseFloat(ebitdaMargin)>=0?C.green:C.red}
-            sub={`${ebitdaMargin}% margin`}/>
-          <StatCard label="Net Profit" value={fmt(pat)} icon="🏦"
-            color={parseFloat(patMargin)>=0?C.green:C.red}
-            sub={`${patMargin}% margin`}/>
-        </div>
-
-        {/* Flags */}
-        {flags.length > 0 && (
-          <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>
-              🚦 Key Signals
-            </div>
-            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {flags.map((f,i) => (
-                <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start",
-                  padding:"10px 14px", borderRadius:10,
-                  background: f.type==="danger"?"#FEF2F2":f.type==="success"?"#F0FDF4":"#FFFBEB",
-                  border:`1px solid ${f.type==="danger"?"#FECACA":f.type==="success"?"#BBF7D0":"#FDE68A"}` }}>
-                  <span style={{ fontSize:16 }}>{f.icon}</span>
-                  <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.5 }}>{f.text}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* Variance analysis */}
-        {variance.filter(v=>v.budget&&v.actual).length > 0 && (
-          <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Budget vs Actual</div>
-            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {variance.filter(v=>v.budget&&v.actual).map((v,i) => {
-                const budget = parse(v.budget), actual = parse(v.actual);
-                const diff = budget > 0 ? (((actual-budget)/Math.abs(budget))*100).toFixed(1) : null;
-                const unfav = v.fav ? actual < budget : actual > budget;
-                return (
-                  <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-                    padding:"8px 12px", borderRadius:8, background:C.bg2 }}>
-                    <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{v.metric}</span>
-                    <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-                      <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>Budget: {v.budget}</span>
-                      <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:700 }}>Actual: {v.actual}</span>
-                      {diff && (
-                        <span style={{ fontFamily:F, fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:100,
-                          background: !unfav?`${C.green}15`:`${C.red}15`,
-                          color: !unfav?C.green:C.red }}>
-                          {!unfav?"▲":"▼"} {Math.abs(diff)}%
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
-
-        {/* Benchmarks */}
-        {benchmarks.filter(b=>b.yours).length > 0 && (
-          <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>🏆 Industry Benchmarks</div>
-            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {benchmarks.filter(b=>b.yours).map((b,i) => (
-                <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr auto auto auto", gap:12,
-                  alignItems:"center", padding:"8px 12px", borderRadius:8, background:C.bg2 }}>
-                  <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{b.metric}</span>
-                  <span style={{ fontFamily:F, fontSize:12, fontWeight:700, color:acc }}>You: {b.yours}</span>
-                  <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>Median: {b.median||"—"}</span>
-                  <span style={{ fontSize:14 }}>{b.ok?"✅":"⚠️"}</span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
-
-        {/* AI Analysis */}
-        <Card>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>AI CFO Analysis</div>
-            <button onClick={generateAI} disabled={loadingAI} style={{
-              padding:"7px 16px", borderRadius:20, border:"none",
-              background: !loadingAI ? acc : C.border,
-              color:"white", fontFamily:F, fontSize:12, fontWeight:600,
-              cursor: !loadingAI ? "pointer" : "not-allowed" }}>
-              {loadingAI ? "Analysing..." : "Generate Analysis"}
-            </button>
-          </div>
-          {aiInsight ? (
-            <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8,
-              whiteSpace:"pre-wrap", background:C.bg2, borderRadius:10, padding:"14px 16px" }}>
-              {aiInsight}
-            </div>
-          ) : (
-            <div style={{ fontFamily:F, fontSize:13, color:C.muted, textAlign:"center", padding:"20px 0" }}>
-              Click Generate Analysis for AI-powered CFO insights based on your actual data.
-            </div>
-          )}
-        </Card>
-      </>)}
 
       {/* ── GEOGRAPHY VIEW ── */}
       {view === "geography" && (<>
@@ -5326,66 +5294,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
         </>)}
       </>)}
 
-      {/* ── CASH TREND VIEW ── */}
-      {view === "cashflow" && (<>
-        {cashflow.filter(m=>m.actual).length === 0 ? (
-          <Card>
-            <div style={{ textAlign:"center", padding:"24px 0", fontFamily:F, fontSize:13, color:C.muted }}>
-              No cash flow data entered yet.
-            </div>
-          </Card>
-        ) : (
-          <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>💵 Cash Flow Trend</div>
-            {(() => {
-              const allMonths = cashflow.filter(m => m.actual || m.forecast);
-              const maxVal = Math.max(...allMonths.map(m => Math.max(parse(m.actual||0), parse(m.forecast||0))));
-              return (
-                <div>
-                  <div style={{ display:"flex", gap:6, alignItems:"flex-end", height:160, marginBottom:8 }}>
-                    {allMonths.map((m,i) => {
-                      const act = parse(m.actual), fore = parse(m.forecast);
-                      const actH = maxVal>0 ? (act/maxVal)*140 : 0;
-                      const foreH = maxVal>0 ? (fore/maxVal)*140 : 0;
-                      return (
-                        <div key={i} style={{ flex:1, display:"flex", flexDirection:"column", alignItems:"center", gap:2 }}>
-                          <div style={{ display:"flex", gap:2, alignItems:"flex-end", height:140 }}>
-                            {act > 0 && <div style={{ width:14, height:actH, background:acc, borderRadius:"3px 3px 0 0", minHeight:2 }}/>}
-                            {fore > 0 && <div style={{ width:14, height:foreH, background:`${acc}50`, borderRadius:"3px 3px 0 0", minHeight:2, border:`1px dashed ${acc}` }}/>}
-                          </div>
-                          <div style={{ fontFamily:F, fontSize:9, color:C.muted, textAlign:"center" }}>{m.month}</div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div style={{ display:"flex", gap:16, marginTop:8 }}>
-                    <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                      <div style={{ width:12, height:12, borderRadius:2, background:acc }}/>
-                      <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>Actual</span>
-                    </div>
-                    <div style={{ display:"flex", gap:6, alignItems:"center" }}>
-                      <div style={{ width:12, height:12, borderRadius:2, background:`${acc}50`, border:`1px dashed ${acc}` }}/>
-                      <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>Forecast</span>
-                    </div>
-                  </div>
-                  <div style={{ marginTop:16, display:"flex", flexDirection:"column", gap:6 }}>
-                    {allMonths.filter(m=>m.actual).map((m,i) => (
-                      <div key={i} style={{ display:"flex", justifyContent:"space-between",
-                        padding:"6px 10px", borderRadius:8, background:C.bg2 }}>
-                        <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{m.month}</span>
-                        <div style={{ display:"flex", gap:16 }}>
-                          {m.actual && <span style={{ fontFamily:F, fontSize:12, color:acc, fontWeight:700 }}>Actual: {m.actual}</span>}
-                          {m.forecast && <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>Forecast: {m.forecast}</span>}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              );
-            })()}
-          </Card>
-        )}
-      </>)}
+
     </div>
   );
 }
@@ -6152,41 +6061,79 @@ function VerticalPnL({ reportData, accentColor }) {
 
 function CFOPackContent({ reportData, client, kpis }) {
   const [tab, setTab] = useState("monthly");
-  const tabs = [
-    { id:"monthly",    icon:"dashboard", label:"Monthly Report"      },
-    { id:"variance",   icon:"trend_down", label:"Variance Analysis"   },
-    { id:"uniteco",    icon:"chart_bar", label:"Unit Economics"      },
-    { id:"fundraise",  icon:"scenario", label:"Fundraise Readiness" },
-    { id:"loan",       icon:"bank", label:"Loan Readiness"      },
-    { id:"fundutil",   icon:"cashflow", label:"Fund Utilisation"    },
-    { id:"verticalpnl",icon:"rev", label:"Vertical P&L"        },
-    { id:"scenario",   icon:"scenario", label:"Scenarios"           },
-    { id:"spend",      icon:"info", label:"Spend Intel"         },
-    { id:"bizintel",   icon:"bi", label:"BI Analysis"         },
-    { id:"boardpacks", icon:"documents", label:"Board Packs"         },
+
+  const groups = [
+    {
+      label: "Financial Reports",
+      items: [
+        { id:"monthly",    icon:"dashboard",  label:"Monthly Report"      },
+        { id:"variance",   icon:"trend_down", label:"Variance Analysis"   },
+        { id:"verticalpnl",icon:"rev",        label:"Vertical P&L"        },
+        { id:"uniteco",    icon:"chart_bar",  label:"Unit Economics"      },
+      ]
+    },
+    {
+      label: "Fundraise & Finance",
+      items: [
+        { id:"fundraise",  icon:"flag",       label:"Fundraise Readiness" },
+        { id:"loan",       icon:"bank",       label:"Loan Readiness"      },
+        { id:"fundutil",   icon:"treasury",   label:"Fund Utilisation"    },
+      ]
+    },
+    {
+      label: "Strategy & Planning",
+      items: [
+        { id:"scenario",   icon:"scenario",   label:"Scenarios"           },
+        { id:"bizintel",   icon:"bi",         label:"BI Analysis"         },
+        { id:"spend",      icon:"chart_pie",  label:"Spend Intel"         },
+      ]
+    },
+    {
+      label: "Documents",
+      items: [
+        { id:"boardpacks", icon:"documents",  label:"Board Packs"         },
+      ]
+    },
   ];
+
   const data = CFO_PACK_DATA["startup"];
   const archiveDocs = useLiveDocs(client);
 
   return (
-    <div>
-      {/* Tab bar */}
-      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
-        {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{
-            padding:"9px 18px", borderRadius:100, border:"none", cursor:"pointer",
-            fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
-            background: tab===t.id ? C.blue : C.bg2,
-            color: tab===t.id ? "white" : C.muted,
-            outline: `1.5px solid ${tab===t.id ? C.blue : C.border}`,
-            boxShadow: tab===t.id ? `0 4px 14px ${C.blue}35` : "none",
-            touchAction:"manipulation",
-          }}>
-              <Icon name={t.icon} size={14} color="currentColor" style={{verticalAlign:"middle",marginRight:5}}/>
-              {t.label}
-            </button>
+    <div style={{ display:"flex", gap:0, minHeight:"60vh" }}>
+
+      {/* Left nav sidebar */}
+      <div style={{ width:200, flexShrink:0, borderRight:`1px solid ${C.border}`,
+        paddingTop:8, paddingBottom:24, background:C.bg2 }}>
+        {groups.map((g, gi) => (
+          <div key={gi} style={{ marginBottom:4 }}>
+            <div style={{ padding:"10px 16px 4px", fontFamily:F, fontSize:10,
+              fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.1em" }}>
+              {g.label}
+            </div>
+            {g.items.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)} style={{
+                display:"flex", alignItems:"center", gap:9,
+                width:"100%", padding:"9px 16px",
+                background: tab===t.id ? `${C.blue}12` : "transparent",
+                border:"none", borderLeft: tab===t.id ? `3px solid ${C.blue}` : "3px solid transparent",
+                cursor:"pointer", fontFamily:F, fontSize:13, fontWeight: tab===t.id ? 700 : 500,
+                color: tab===t.id ? C.blue : C.muted,
+                transition:"all 0.12s", textAlign:"left",
+              }}>
+                <Icon name={t.icon} size={15} color={tab===t.id ? C.blue : C.dim}/>
+                {t.label}
+              </button>
+            ))}
+            {gi < groups.length-1 && (
+              <div style={{ margin:"6px 16px 2px", borderTop:`1px solid ${C.border}` }}/>
+            )}
+          </div>
         ))}
       </div>
+
+      {/* Content area */}
+      <div style={{ flex:1, minWidth:0, padding:"24px 24px 32px", overflowY:"auto" }}>
 
       {/* Monthly Report tab */}
       {tab === "monthly" && (
@@ -6807,14 +6754,15 @@ function CFOPackContent({ reportData, client, kpis }) {
           </div>
           <Card style={{ marginTop:20, background:`${C.blue}06`, borderColor:`${C.blue}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
-              📅 <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
+              <strong style={{ color:C.text }}>Packs uploaded by the 20th of each month.</strong>{" "}
               Questions?{" "}
-              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>💬 WhatsApp Garima</a>
+              <a href={WA} target="_blank" rel="noopener" style={{ color:C.green, fontWeight:700 }}>WhatsApp Garima</a>
             </div>
           </Card>
         </div>
       )}
-    </div>
+      </div>{/* end content area */}
+    </div>{/* end flex layout */}
   );
 }
 
@@ -7351,7 +7299,7 @@ function NewRequest({ client, setPage }) {
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{s.name}</div>
                   <Badge color={s.tagColor}>{s.tag}</Badge>
                 </div>
-                <div style={{ fontFamily:FM, fontWeight:700, fontSize:18, color:C.blue, marginBottom:4 }}>{s.price}</div>
+                <div style={{ fontFamily:FM, fontWeight:700, fontSize:14, color:C.blue, marginBottom:4 }}>{s.price}</div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.desc}</div>
               </div>
             ))}
@@ -7359,7 +7307,7 @@ function NewRequest({ client, setPage }) {
           <button onClick={() => { if (!selected) { alert("Please select a service."); return; } setStep(2); }}
             style={{ padding:"14px 32px", borderRadius:12, border:"none",
               background: selected ? C.grad1 : C.bg3, color: selected ? "white" : C.muted,
-              fontFamily:F, fontWeight:700, fontSize:15, cursor: selected ? "pointer" : "default",
+              fontFamily:F, fontWeight:700, fontSize:13, cursor: selected ? "pointer" : "default",
               boxShadow: selected ? "0 6px 20px rgba(59,111,247,0.28)" : "none", transition:"all 0.2s" }}>
             Continue →
           </button>
@@ -7387,7 +7335,7 @@ function NewRequest({ client, setPage }) {
               <input value={form[f.key] || f.val}
                 onChange={e => setForm(fv=>({...fv,[f.key]:e.target.value}))}
                 type={f.type} placeholder={f.ph}
-                style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:15,
+                style={{ width:"100%", padding:"10px 13px", borderRadius:10, fontSize:13,
                   border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                   background:C.bg, outline:"none", boxSizing:"border-box" }}
                 onFocus={e => e.target.style.borderColor = C.blue}
@@ -7403,7 +7351,7 @@ function NewRequest({ client, setPage }) {
             <textarea rows={3} value={form.notes}
               onChange={e => setForm(f=>({...f,notes:e.target.value}))}
               placeholder="Any specific requirements, timelines, or questions..."
-              style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:14,
+              style={{ width:"100%", padding:"10px 13px", borderRadius:10, fontSize:13,
                 border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                 background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
             />
@@ -7524,8 +7472,8 @@ function Invoices({ client, liveInvoices }) {
         <div style={{ display:"flex", alignItems:"center", gap:14 }}>
           <div style={{ width:40, height:40, borderRadius:10,
             background: isUnpaid ? `${C.amber}15` : `${C.green}15`,
-            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
-            {isUnpaid ? "⏳" : "✅"}
+            display:"flex", alignItems:"center", justifyContent:"center" }}>
+            <Icon name={isUnpaid?"runway":"check"} size={16} color={isUnpaid?C.amber:C.green}/>
           </div>
           <div>
             <div style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:C.muted, marginBottom:2 }}>{inv.id}</div>
@@ -7536,7 +7484,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
         </div>
         <div style={{ textAlign:"right" }}>
-          <div style={{ fontFamily:FM, fontSize:20, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
+          <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
             {inv.amount}
           </div>
           <div style={{ display:"flex", gap:8, marginTop:8, justifyContent:"flex-end" }}>
@@ -9502,18 +9450,18 @@ function AdminPanel({ admin, onLogout }) {
   };
 
   const ADMIN_TABS = [
-    { id:"clients",    icon:"users",     label:"All Clients"     },
-    { id:"addclient",  icon:"plus",      label:"Add Client"      },
-    { id:"kpis",       icon:"dashboard", label:"Update KPIs"     },
-    { id:"actions",    icon:"actions",   label:"Action Items"    },
-    { id:"engagement", icon:"valuation", label:"Valuation"       },
-    { id:"invoices",   icon:"invoice",   label:"Invoices"        },
-    { id:"reportdata", icon:"report",    label:"Report Data"     },
-    { id:"treasury",   icon:"treasury",  label:"Treasury"        },
-    { id:"analytics",  icon:"bi",        label:"BI & Scenarios"  },
-    { id:"documents",  icon:"documents", label:"Documents"       },
-    { id:"requests",   icon:"request",   label:"Requests"        },
-    { id:"market",     icon:"market",    label:"Market Intel"    },
+    { id:"clients",    icon:"👥", label:"All Clients"     },
+    { id:"addclient",  icon:"➕", label:"Add Client"      },
+    { id:"kpis",       icon:"📊", label:"Update KPIs"     },
+    { id:"actions",    icon:"✅", label:"Action Items"    },
+    { id:"engagement", icon:"⚖️", label:"Valuation"       },
+    { id:"invoices",   icon:"🧾", label:"Invoices"        },
+    { id:"reportdata", icon:"📈", label:"Report Data"     },
+    { id:"treasury",   icon:"🏛️", label:"Treasury"        },
+    { id:"analytics",  icon:"🌏", label:"BI & Scenarios"  },
+    { id:"documents",  icon:"📁", label:"Documents"       },
+    { id:"requests",   icon:"📩", label:"Requests"        },
+    { id:"market",     icon:"🌐", label:"Market Intel"    },
   ];
 
   // Stable component references — prevents remount/focus-loss on every render
@@ -9883,7 +9831,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               border:"none", cursor:"pointer",
               borderLeft:tab===t.id?"3px solid #FBBF24":"3px solid transparent",
               fontFamily:F }}>
-              <Icon name={t.icon} size={16} color={tab===t.id?"#FBBF24":"rgba(255,255,255,0.45)"}/>
+              <span style={{ fontSize:15, opacity: tab===t.id ? 1 : 0.5 }}>{t.icon}</span>
               <span style={{ fontSize:13, fontWeight:600,
                 color:tab===t.id?"#FBBF24":"rgba(255,255,255,0.5)" }}>{t.label}</span>
             </button>
