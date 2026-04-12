@@ -4347,8 +4347,8 @@ function MSMEPackContent({ reportData, kpis, client }) {
           </Card>
         </div>
       )}
-      </div>{/* end content area */}
-    </div>{/* end flex layout */}
+      </div>
+    </div>
   );
 }
 
@@ -4863,8 +4863,8 @@ function CorporatePackContent({ reportData, kpis, client }) {
           </Card>
         </div>
       )}
-      </div>{/* end content area */}
-    </div>{/* end flex layout */}
+      </div>
+    </div>
   );
 }
 
@@ -6761,8 +6761,8 @@ function CFOPackContent({ reportData, client, kpis }) {
           </Card>
         </div>
       )}
-      </div>{/* end content area */}
-    </div>{/* end flex layout */}
+      </div>
+    </div>
   );
 }
 
