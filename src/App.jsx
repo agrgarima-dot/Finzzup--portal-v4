@@ -5772,38 +5772,39 @@ function SpendIntelligence({ reportData, accentColor, client }) {
   const pack = client?.client_pack || client?.clientPack || "startup";
 
   const defaultDepts = [
-    { name:"Marketing & Sales",   actual:"", budget:"", benchmark:15, icon:"📣" },
-    { name:"Technology / Product",actual:"", budget:"", benchmark:20, icon:"💻" },
-    { name:"Operations",          actual:"", budget:"", benchmark:25, icon:"settings" },
-    { name:"HR & People",         actual:"", budget:"", benchmark:20, icon:"👥" },
-    { name:"Admin & G&A",         actual:"", budget:"", benchmark:10, icon:"users" },
-    { name:"Finance & Legal",     actual:"", budget:"", benchmark:5,  icon:"valuation" },
+    { name:"Marketing & Sales",   benchmark:15, icon:"📣" },
+    { name:"Technology / Product",benchmark:20, icon:"💻" },
+    { name:"Operations",          benchmark:25, icon:"⚙️" },
+    { name:"HR & People",         benchmark:20, icon:"👥" },
+    { name:"Admin & G&A",         benchmark:10, icon:"🏢" },
+    { name:"Finance & Legal",     benchmark:5,  icon:"⚖️" },
   ];
 
-  const [depts, setDepts] = React.useState(
-    defaultDepts.map(d => ({...d,
-      actual: reportData?.spendDepts?.[d.name]?.actual || "",
-      budget: reportData?.spendDepts?.[d.name]?.budget || "",
-    }))
-  );
-  const [totalRevenue, setTotalRevenue] = React.useState(
-    reportData?.spendRevenue || reportData?.pl?.revenue?.actual?.replace(/[^0-9.]/g,"") || ""
-  );
+  // Pull from admin-entered data — clients don't enter this themselves
+  const depts = defaultDepts.map(d => ({
+    ...d,
+    actual: parseFloat(reportData?.spendDepts?.[d.name]?.actual || 0),
+    budget: parseFloat(reportData?.spendDepts?.[d.name]?.budget || 0),
+  }));
+
+  const rev = parseFloat(reportData?.spendRevenue || reportData?.pl?.revenue?.actual?.replace(/[^0-9.]/g,"") || 0);
+  const totalSpend = depts.reduce((s,d) => s + (d.actual||0), 0);
+  const hasData = depts.some(d => d.actual > 0);
+
   const [aiInsight, setAiInsight] = React.useState("");
   const [loadingInsight, setLoadingInsight] = React.useState(false);
 
-  const updateDept = (i, field, val) => {
-    const nd = [...depts];
-    nd[i] = { ...nd[i], [field]: val };
-    setDepts(nd);
+  const fmt = (n) => {
+    if (!n) return "—";
+    if (n >= 10000000) return `₹${(n/10000000).toFixed(1)}Cr`;
+    if (n >= 100000)   return `₹${(n/100000).toFixed(1)}L`;
+    if (n >= 1000)     return `₹${(n/1000).toFixed(0)}K`;
+    return `₹${n.toFixed(0)}`;
   };
 
-  const totalSpend = depts.reduce((s,d) => s + (parseFloat(d.actual)||0), 0);
-  const rev = parseFloat(totalRevenue) || 0;
-
   const getFlag = (d) => {
-    if (!d.actual || !totalRevenue) return null;
-    const pct = rev > 0 ? ((parseFloat(d.actual)||0)/rev)*100 : 0;
+    if (!d.actual || !rev) return null;
+    const pct = (d.actual / rev) * 100;
     const diff = pct - d.benchmark;
     if (diff > 10) return { label:"Overspending", color:C.red };
     if (diff > 5)  return { label:"Watch",        color:"#D97706" };
@@ -5812,24 +5813,19 @@ function SpendIntelligence({ reportData, accentColor, client }) {
   };
 
   const generateInsight = async () => {
-    if (!totalRevenue) return;
+    if (!rev) return;
     setLoadingInsight(true);
-    const deptSummary = depts
-      .filter(d => d.actual)
-      .map(d => {
-        const pct = rev > 0 ? (((parseFloat(d.actual)||0)/rev)*100).toFixed(1) : 0;
-        return `${d.name}: ₹${d.actual} (${pct}% of revenue, benchmark ${d.benchmark}%)`;
-      }).join("\n");
-
+    const summary = depts.filter(d => d.actual > 0)
+      .map(d => `${d.name}: ${fmt(d.actual)} (${((d.actual/rev)*100).toFixed(1)}% of revenue, benchmark ${d.benchmark}%)`)
+      .join("\n");
     try {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
-          model:"claude-sonnet-4-20250514",
-          max_tokens:1000,
-          system:"You are a CFO advisor. Analyse department spend and give 3-4 specific, actionable recommendations. Be concise, use Indian business context, mention ₹ amounts where relevant. Format as short bullet points.",
-          messages:[{ role:"user", content:`Company revenue: ₹${totalRevenue}\nIndustry: ${pack}\n\nDepartment spend:\n${deptSummary}\n\nGive specific recommendations on where they should cut, invest more, or optimise.` }]
+          model:"claude-sonnet-4-20250514", max_tokens:800,
+          system:"You are a CFO advisor. Analyse department spend vs benchmarks and give 3-4 sharp, actionable recommendations. Indian business context. Short bullet points with emoji.",
+          messages:[{ role:"user", content:`Revenue: ${fmt(rev)}\nIndustry: ${pack}\n\n${summary}` }]
         })
       });
       const data = await res.json();
@@ -5838,142 +5834,140 @@ function SpendIntelligence({ reportData, accentColor, client }) {
     setLoadingInsight(false);
   };
 
-  return (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-          📊 Spend Intelligence
+  if (!hasData) return (
+    <Card>
+      <div style={{ textAlign:"center", padding:"32px 0" }}>
+        <div style={{ fontSize:32, marginBottom:12 }}>📊</div>
+        <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text, marginBottom:6 }}>
+          No spend data available yet
         </div>
-        <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>
-          Department-wise spend analysis vs benchmarks.
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>
+          Garima will update your department spend breakdown in the next pack.
         </div>
-        <div style={{ marginBottom:16 }}>
-          <div style={{ fontSize:11, fontWeight:600, color:C.muted, fontFamily:F, marginBottom:4 }}>
-            Monthly Revenue (₹) — for % calculation
-          </div>
-          <input type="number" placeholder="Enter monthly revenue"
-            value={totalRevenue}
-            onChange={e => setTotalRevenue(e.target.value)}
-            style={{ width:"100%", maxWidth:280, padding:"8px 12px", borderRadius:8,
-              border:`1.5px solid ${C.border}`, fontFamily:F, fontSize:13,
-              color:C.text, background:C.bg2, outline:"none" }}/>
-        </div>
+      </div>
+    </Card>
+  );
 
-        {/* Department rows */}
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {depts.map((d,i) => {
-            const flag = getFlag(d);
-            const pct = rev > 0 && d.actual ? (((parseFloat(d.actual)||0)/rev)*100).toFixed(1) : null;
-            const budgetPct = d.budget && d.actual
-              ? Math.min(((parseFloat(d.actual)/parseFloat(d.budget))*100), 150)
-              : null;
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+      {/* Header summary */}
+      {rev > 0 && (
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }} className="spend-hdr">
+          {[
+            { label:"Monthly Revenue",  val: fmt(rev),        color: acc          },
+            { label:"Total Spend",       val: fmt(totalSpend), color: C.text       },
+            { label:"Spend / Revenue",   val: `${((totalSpend/rev)*100).toFixed(1)}%`,
+              color: (totalSpend/rev)>0.7 ? C.red : (totalSpend/rev)>0.5 ? "#D97706" : C.green },
+          ].map((s,i) => (
+            <div key={i} style={{ padding:"14px 16px", borderRadius:12, background:"white",
+              border:`1px solid ${C.border}` }}>
+              <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.muted,
+                textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{s.label}</div>
+              <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.val}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Department breakdown */}
+      <Card>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
+          Department Spend vs Benchmarks
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+          {depts.filter(d => d.actual > 0).map((d, i) => {
+            const flag     = getFlag(d);
+            const pct      = rev > 0 ? ((d.actual/rev)*100).toFixed(1) : null;
+            const budgetPct= d.budget > 0 ? Math.min((d.actual/d.budget)*100, 150) : null;
+            const barW     = rev > 0 ? Math.min((d.actual/rev)*100 / d.benchmark * 100, 150) : 0;
 
             return (
-              <div key={i} style={{ padding:"12px 14px", borderRadius:12,
+              <div key={i} style={{ padding:"14px 16px", borderRadius:12,
                 background:C.bg2, border:`1px solid ${C.border}` }}>
+                {/* Row header */}
                 <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                   <span style={{ fontSize:18 }}>{d.icon}</span>
-                  <div style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text, flex:1 }}>{d.name}</div>
+                  <div style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text, flex:1 }}>
+                    {d.name}
+                  </div>
+                  <div style={{ fontFamily:F, fontSize:14, fontWeight:800, color:C.text }}>
+                    {fmt(d.actual)}
+                  </div>
                   {flag && (
-                    <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px",
+                    <span style={{ fontSize:10, fontWeight:700, padding:"2px 10px",
                       borderRadius:100, background:`${flag.color}15`, color:flag.color,
-                      letterSpacing:"0.05em" }}>
+                      letterSpacing:"0.05em", flexShrink:0 }}>
                       {flag.label}
                     </span>
                   )}
                 </div>
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
-                  <div>
-                    <div style={{ fontSize:10, color:C.muted, fontFamily:F, marginBottom:3 }}>Actual Spend (₹)</div>
-                    <input type="number" placeholder="0"
-                      value={d.actual}
-                      onChange={e => updateDept(i,"actual",e.target.value)}
-                      style={{ width:"100%", padding:"6px 10px", borderRadius:8,
-                        border:`1px solid ${C.border}`, fontFamily:F, fontSize:13,
-                        color:C.text, background:"white", outline:"none" }}/>
+
+                {/* Progress bar — actual vs benchmark */}
+                <div style={{ marginBottom:6 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                    <span style={{ fontFamily:F, fontSize:10, color:C.muted }}>
+                      {pct ? `${pct}% of revenue` : ""}
+                    </span>
+                    <span style={{ fontFamily:F, fontSize:10, color:C.dim }}>
+                      benchmark {d.benchmark}%
+                    </span>
                   </div>
-                  <div>
-                    <div style={{ fontSize:10, color:C.muted, fontFamily:F, marginBottom:3 }}>Budget (₹)</div>
-                    <input type="number" placeholder="0"
-                      value={d.budget}
-                      onChange={e => updateDept(i,"budget",e.target.value)}
-                      style={{ width:"100%", padding:"6px 10px", borderRadius:8,
-                        border:`1px solid ${C.border}`, fontFamily:F, fontSize:13,
-                        color:C.text, background:"white", outline:"none" }}/>
+                  <div style={{ height:6, borderRadius:3, background:C.border, overflow:"hidden", position:"relative" }}>
+                    <div style={{ height:"100%", width:`${Math.min(parseFloat(pct)||0, 50)}%`,
+                      background: flag?.color === C.red ? C.red : flag?.color === "#D97706" ? "#D97706" : acc,
+                      borderRadius:3, transition:"width 0.4s" }}/>
+                    {/* Benchmark marker */}
+                    <div style={{ position:"absolute", top:0, left:`${Math.min(d.benchmark,50)}%`,
+                      width:2, height:"100%", background:"rgba(0,0,0,0.25)" }}/>
                   </div>
                 </div>
-                {/* Progress vs budget */}
+
+                {/* Budget comparison */}
                 {budgetPct !== null && (
-                  <div>
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-                      <span style={{ fontSize:10, color:C.muted, fontFamily:F }}>vs Budget</span>
-                      <span style={{ fontSize:10, fontWeight:700, fontFamily:F,
-                        color: budgetPct > 100 ? C.red : C.green }}>{budgetPct.toFixed(0)}%</span>
-                    </div>
-                    <div style={{ height:5, borderRadius:3, background:C.border, overflow:"hidden" }}>
-                      <div style={{ height:"100%", width:`${Math.min(budgetPct,100)}%`,
-                        background: budgetPct > 100 ? C.red : budgetPct > 85 ? "#D97706" : C.green,
-                        borderRadius:3 }}/>
-                    </div>
-                  </div>
-                )}
-                {pct && (
-                  <div style={{ marginTop:6, fontSize:11, color:C.muted, fontFamily:F }}>
-                    <span style={{ fontWeight:700, color:acc }}>{pct}%</span> of revenue
-                    {" · "}benchmark <span style={{ fontWeight:600 }}>{d.benchmark}%</span>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>
+                      vs Budget {fmt(d.budget)}
+                    </span>
+                    <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
+                      color: budgetPct > 110 ? C.red : budgetPct > 95 ? "#D97706" : C.green }}>
+                      {budgetPct.toFixed(0)}% utilised
+                    </span>
                   </div>
                 )}
               </div>
             );
           })}
         </div>
-
-        {/* Total */}
-        {totalSpend > 0 && (
-          <div style={{ marginTop:14, padding:"12px 16px", borderRadius:12,
-            background:`${acc}08`, border:`1.5px solid ${acc}20`,
-            display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-            <span style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text }}>Total Spend</span>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ fontFamily:F, fontWeight:800, fontSize:16, color:acc }}>
-                ₹{(totalSpend/100000).toFixed(1)}L
-              </div>
-              {rev > 0 && (
-                <div style={{ fontSize:11, color:C.muted, fontFamily:F }}>
-                  {((totalSpend/rev)*100).toFixed(1)}% of revenue
-                </div>
-              )}
-            </div>
-          </div>
-        )}
       </Card>
 
-      {/* AI Insight */}
+      {/* AI Recommendations */}
       <Card>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
-            🤖 AI Spend Recommendations
+            AI Spend Recommendations
           </div>
-          <button onClick={generateInsight} disabled={!totalRevenue || loadingInsight}
+          <button onClick={generateInsight} disabled={loadingInsight}
             style={{ padding:"7px 16px", borderRadius:20, border:"none",
-              background: totalRevenue && !loadingInsight ? acc : C.border,
+              background: !loadingInsight ? acc : C.border,
               color:"white", fontFamily:F, fontSize:12, fontWeight:600,
-              cursor: totalRevenue && !loadingInsight ? "pointer" : "not-allowed" }}>
-            {loadingInsight ? "Analysing..." : "Generate Insights"}
+              cursor: !loadingInsight ? "pointer" : "not-allowed" }}>
+            {loadingInsight ? "Analysing..." : "Generate"}
           </button>
         </div>
         {aiInsight ? (
-          <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.7,
-            whiteSpace:"pre-wrap", background:C.bg2, borderRadius:10, padding:"12px 14px" }}>
+          <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8,
+            whiteSpace:"pre-wrap", background:C.bg2, borderRadius:10, padding:"14px 16px" }}>
             {aiInsight}
           </div>
         ) : (
-          <div style={{ fontFamily:F, fontSize:13, color:C.muted, textAlign:"center",
-            padding:"24px 0" }}>
-            Enter spend data above then click Generate Insights for AI recommendations.
+          <div style={{ fontFamily:F, fontSize:13, color:C.muted, textAlign:"center", padding:"20px 0" }}>
+            Click Generate for AI-powered spend recommendations based on your data.
           </div>
         )}
       </Card>
+
+      <style>{`.spend-hdr{grid-template-columns:repeat(3,1fr)!important}@media(max-width:600px){.spend-hdr{grid-template-columns:1fr!important}}`}</style>
     </div>
   );
 }
