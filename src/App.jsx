@@ -4000,6 +4000,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
     { id:"bankfin",   icon:"🏛️", label:"Bank Finance"      },
     { id:"fundutil",  icon:"💸", label:"Fund Utilisation"  },
     { id:"verticalpnl",icon:"📈",label:"Vertical P&L"      },
+    { id:"scenario",  icon:"🎯", label:"Scenarios"         },
+    { id:"bizintel",  icon:"🌏", label:"BI Analysis"      },
+    { id:"spend",     icon:"💡", label:"Spend Intel"       },
     { id:"packs",     icon:"📁", label:"Previous Packs"    },
   ];
   const data = CFO_PACK_DATA["msme"];
@@ -4507,6 +4510,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
 
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.teal}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.teal}/>}
+      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.teal}/>}
+      {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.teal} client={client}/> }
+      {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.teal} client={client}/>}
 
       {tab === "packs" && (
         <div>
@@ -4538,6 +4544,9 @@ function CorporatePackContent({ reportData, kpis, client }) {
     { id:"ipo",        icon:"🏦", label:"IPO Readiness"     },
     { id:"fundutil",   icon:"💰", label:"Fund Utilisation"  },
     { id:"verticalpnl",icon:"📈", label:"Vertical P&L"      },
+    { id:"scenario",   icon:"🎯", label:"Scenarios"         },
+    { id:"spend",      icon:"💡", label:"Spend Intel"       },
+    { id:"bizintel",   icon:"🌏", label:"BI Analysis"       },
     { id:"packs",      icon:"📁", label:"Previous Packs"    },
   ];
   const data = CFO_PACK_DATA["corporate"];
@@ -4974,6 +4983,9 @@ function CorporatePackContent({ reportData, kpis, client }) {
 
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.purple}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.purple}/>}
+      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.purple}/>}
+      {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
+      {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
 
       {tab === "packs" && (
         <div>
@@ -4998,6 +5010,822 @@ function CorporatePackContent({ reportData, kpis, client }) {
   );
 }
 
+
+// ─── BUSINESS INTELLIGENCE ────────────────────────────────────────────────────
+function BusinessIntelligence({ reportData, accentColor, client }) {
+  const acc = accentColor || C.blue;
+  const [view, setView] = React.useState("geography"); // geography | department
+
+  // ── Geography data — both India + Global shown together ──
+  const indiaRegions = [
+    { name:"North", icon:"🏔️", color:"#2563EB" },
+    { name:"South", icon:"🌴", color:"#7C3AED" },
+    { name:"West",  icon:"🌊", color:"#059669" },
+    { name:"East",  icon:"🌿", color:"#D97706" },
+    { name:"Metro", icon:"🏙️", color:"#0891B2" },
+  ];
+  const globalRegions = [
+    { name:"India",  icon:"🇮🇳", color:"#FF6B35" },
+    { name:"GCC",    icon:"🌙",  color:"#2563EB" },
+    { name:"USA",    icon:"🇺🇸", color:"#7C3AED" },
+    { name:"Europe", icon:"🇪🇺", color:"#059669" },
+    { name:"Other",  icon:"🌍",  color:"#9CA3AF" },
+  ];
+
+  const [indiaData,  setIndiaData]  = React.useState(
+    indiaRegions.map(r => ({...r,
+      revenue: reportData?.geoIndia?.[r.name]?.revenue || "",
+      cost:    reportData?.geoIndia?.[r.name]?.cost    || ""
+    }))
+  );
+  const [globalData, setGlobalData] = React.useState(
+    globalRegions.map(r => ({...r,
+      revenue: reportData?.geoGlobal?.[r.name]?.revenue || "",
+      cost:    reportData?.geoGlobal?.[r.name]?.cost    || ""
+    }))
+  );
+
+  const updateIndia  = (idx, field, val) => setIndiaData(d  => d.map((r,i)  => i===idx ? {...r,[field]:val} : r));
+  const updateGlobal = (idx, field, val) => setGlobalData(d => d.map((r,i)  => i===idx ? {...r,[field]:val} : r));
+
+  const totalIndiaRev   = indiaData.reduce((s,r)  => s+(parseFloat(r.revenue)||0), 0);
+  const totalIndiaCost  = indiaData.reduce((s,r)  => s+(parseFloat(r.cost)||0),    0);
+  const totalGlobalRev  = globalData.reduce((s,r) => s+(parseFloat(r.revenue)||0), 0);
+  const totalGlobalCost = globalData.reduce((s,r) => s+(parseFloat(r.cost)||0),    0);
+
+  // ── Department data ──
+  const defaultDepts = [
+    { name:"Sales",       icon:"💼", color:"#2563EB" },
+    { name:"Marketing",   icon:"📣", color:"#7C3AED" },
+    { name:"Technology",  icon:"💻", color:"#059669" },
+    { name:"Operations",  icon:"⚙️", color:"#D97706" },
+    { name:"HR & Admin",  icon:"👥", color:"#EF4444" },
+    { name:"Finance",     icon:"📊", color:"#0891B2" },
+  ];
+  const [depts, setDepts] = React.useState(
+    defaultDepts.map(d => ({...d,
+      revenue: reportData?.depts?.[d.name]?.revenue || "",
+      cost:    reportData?.depts?.[d.name]?.cost    || "",
+    }))
+  );
+  const updateDept = (idx, field, val) => {
+    setDepts(dd => dd.map((d,i) => i===idx ? {...d,[field]:val} : d));
+  };
+  const totalDeptRev  = depts.reduce((s,d) => s+(parseFloat(d.revenue)||0), 0);
+  const totalDeptCost = depts.reduce((s,d) => s+(parseFloat(d.cost)||0), 0);
+
+  const fmt = (n) => {
+    if (!n) return "—";
+    const abs = Math.abs(n), sign = n<0?"-":"";
+    if (abs>=10000000) return `${sign}₹${(abs/10000000).toFixed(1)}Cr`;
+    if (abs>=100000)   return `${sign}₹${(abs/100000).toFixed(1)}L`;
+    if (abs>=1000)     return `${sign}₹${(abs/1000).toFixed(0)}K`;
+    return `${sign}₹${abs.toFixed(0)}`;
+  };
+
+  const pct = (val, total) => total > 0 ? ((parseFloat(val)||0)/total*100).toFixed(1) : 0;
+
+  // Simple bar using divs (no external chart lib needed)
+  const BarChart = ({ data, valueKey, total, colorKey }) => (
+    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+      {data.filter(d => parseFloat(d[valueKey]||0) > 0).map((d,i) => {
+        const p = pct(d[valueKey], total);
+        return (
+          <div key={i}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+              <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>
+                {d.icon} {d.name}
+              </span>
+              <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>
+                {fmt(parseFloat(d[valueKey]||0))} <span style={{color:acc,fontWeight:700}}>{p}%</span>
+              </span>
+            </div>
+            <div style={{ height:8, borderRadius:4, background:C.border, overflow:"hidden" }}>
+              <div style={{
+                height:"100%", width:`${p}%`,
+                background: d.color || acc,
+                borderRadius:4, transition:"width 0.4s ease"
+              }}/>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  // Donut chart using SVG
+  const DonutChart = ({ data, valueKey, total }) => {
+    const COLORS = ["#2563EB","#7C3AED","#059669","#D97706","#EF4444","#0891B2"];
+    const size = 160, cx = 80, cy = 80, r = 58, innerR = 36;
+    const items = data.filter(d => parseFloat(d[valueKey]||0) > 0);
+    if (!items.length) return (
+      <div style={{ width:size, height:size, borderRadius:"50%",
+        background:C.bg2, display:"flex", alignItems:"center", justifyContent:"center",
+        fontFamily:F, fontSize:12, color:C.muted }}>No data</div>
+    );
+    let cumAngle = -Math.PI/2;
+    const slices = items.map((d, i) => {
+      const val = parseFloat(d[valueKey]||0);
+      const angle = (val/total) * 2 * Math.PI;
+      const startAngle = cumAngle;
+      cumAngle += angle;
+      const x1 = cx + r * Math.cos(startAngle);
+      const y1 = cy + r * Math.sin(startAngle);
+      const x2 = cx + r * Math.cos(cumAngle);
+      const y2 = cy + r * Math.sin(cumAngle);
+      const xi1 = cx + innerR * Math.cos(startAngle);
+      const yi1 = cy + innerR * Math.sin(startAngle);
+      const xi2 = cx + innerR * Math.cos(cumAngle);
+      const yi2 = cy + innerR * Math.sin(cumAngle);
+      const large = angle > Math.PI ? 1 : 0;
+      return {
+        d: `M${xi1},${yi1} L${x1},${y1} A${r},${r} 0 ${large} 1 ${x2},${y2} L${xi2},${yi2} A${innerR},${innerR} 0 ${large} 0 ${xi1},${yi1} Z`,
+        color: d.color || COLORS[i % COLORS.length],
+        name: d.name, pct: (val/total*100).toFixed(0)
+      };
+    });
+
+    return (
+      <div style={{ display:"flex", alignItems:"center", gap:20, flexWrap:"wrap" }}>
+        <svg width={size} height={size}>
+          {slices.map((s,i) => (
+            <path key={i} d={s.d} fill={s.color} stroke="white" strokeWidth="2"/>
+          ))}
+          <text x={cx} y={cy-6} textAnchor="middle"
+            style={{ fontFamily:F, fontSize:11, fill:C.muted }}>Total</text>
+          <text x={cx} y={cy+10} textAnchor="middle"
+            style={{ fontFamily:F, fontSize:13, fontWeight:700, fill:C.text }}>
+            {fmt(total)}
+          </text>
+        </svg>
+        <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+          {slices.map((s,i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:6 }}>
+              <div style={{ width:10, height:10, borderRadius:2, background:s.color, flexShrink:0 }}/>
+              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>{s.name}</span>
+              <span style={{ fontFamily:F, fontSize:12, fontWeight:700, color:s.color, marginLeft:4 }}>{s.pct}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  // Input table
+  const InputTable = ({ data, onUpdate, showRevenue=true, showCost=true }) => (
+    <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+      {data.map((d,i) => (
+        <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr",
+          gap:8, alignItems:"center", padding:"8px 12px", borderRadius:10,
+          background:C.bg2, border:`1px solid ${C.border}` }}>
+          <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>
+            {d.icon} {d.name}
+          </div>
+          {showRevenue && (
+            <input type="number" placeholder="Revenue ₹"
+              value={d.revenue}
+              onChange={e => onUpdate(i,"revenue",e.target.value)}
+              style={{ padding:"6px 10px", borderRadius:8, border:`1px solid ${C.border}`,
+                fontFamily:F, fontSize:12, color:C.text, background:"white", outline:"none" }}/>
+          )}
+          {showCost && (
+            <input type="number" placeholder="Cost ₹"
+              value={d.cost}
+              onChange={e => onUpdate(i,"cost",e.target.value)}
+              style={{ padding:"6px 10px", borderRadius:8, border:`1px solid ${C.border}`,
+                fontFamily:F, fontSize:12, color:C.text, background:"white", outline:"none" }}/>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+
+  const activeData      = depts;
+  const activeDeptRev   = totalDeptRev;
+  const activeDeptCost  = totalDeptCost;
+
+  const SectionHeader = ({ children }) => (
+    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:12 }}>{children}</div>
+  );
+
+  const TotalsRow = ({ revTotal, costTotal }) => (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr",
+      gap:8, padding:"10px 12px", marginTop:8, borderRadius:10,
+      background:`${acc}08`, border:`1px solid ${acc}20` }}>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Total</div>
+      <div style={{ fontFamily:F, fontWeight:800, fontSize:13, color:acc }}>{fmt(revTotal)}</div>
+      <div style={{ fontFamily:F, fontWeight:800, fontSize:13, color:C.red }}>{fmt(costTotal)}</div>
+    </div>
+  );
+
+  const ColHeaders = ({ label }) => (
+    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr",
+      gap:8, marginBottom:8, padding:"0 12px" }}>
+      {[label,"Revenue (₹)","Cost (₹)"].map(h => (
+        <div key={h} style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+          textTransform:"uppercase", letterSpacing:"0.08em" }}>{h}</div>
+      ))}
+    </div>
+  );
+
+  const ProfitTable = ({ data, label }) => {
+    const rows = data.filter(d => parseFloat(d.revenue||0)>0 || parseFloat(d.cost||0)>0)
+      .sort((a,b) => (parseFloat(b.revenue||0)-parseFloat(b.cost||0))-(parseFloat(a.revenue||0)-parseFloat(a.cost||0)));
+    if (!rows.length) return null;
+    return (
+      <div style={{ overflowX:"auto" }}>
+        <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
+          <thead>
+            <tr style={{ borderBottom:`2px solid ${C.border}` }}>
+              {[label,"Revenue","Cost","Gross Profit","Margin"].map(h => (
+                <th key={h} style={{ padding:"8px 10px", textAlign:"left",
+                  color:C.muted, fontWeight:700, fontSize:11, textTransform:"uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((d,i) => {
+              const rev=parseFloat(d.revenue||0), cost=parseFloat(d.cost||0), gp=rev-cost;
+              const margin = rev>0 ? ((gp/rev)*100).toFixed(1) : "—";
+              return (
+                <tr key={i} style={{ borderBottom:`1px solid ${C.border}`,
+                  background:i%2===0?"white":C.bg2 }}>
+                  <td style={{ padding:"9px 10px", fontWeight:600, color:C.text }}>{d.icon} {d.name}</td>
+                  <td style={{ padding:"9px 10px", color:C.green, fontWeight:600 }}>{fmt(rev)}</td>
+                  <td style={{ padding:"9px 10px", color:C.red,   fontWeight:600 }}>{fmt(cost)}</td>
+                  <td style={{ padding:"9px 10px", color:gp>=0?C.green:C.red, fontWeight:700 }}>{fmt(gp)}</td>
+                  <td style={{ padding:"9px 10px" }}>
+                    {margin!=="—" && (
+                      <span style={{ padding:"2px 8px", borderRadius:100, fontSize:11, fontWeight:700,
+                        background:parseFloat(margin)>=20?`${C.green}15`:parseFloat(margin)>=0?`${acc}15`:`${C.red}15`,
+                        color:parseFloat(margin)>=20?C.green:parseFloat(margin)>=0?acc:C.red
+                      }}>{margin}%</span>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    );
+  };
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      <style>{`.bi-grid{grid-template-columns:1fr 1fr!important}@media(max-width:700px){.bi-grid{grid-template-columns:1fr!important}}`}</style>
+
+      {/* View toggle */}
+      <div style={{ display:"flex", gap:8 }}>
+        {[
+          { id:"geography",  label:"🌏 Geography" },
+          { id:"department", label:"🏢 Department" },
+        ].map(v => (
+          <button key={v.id} onClick={() => setView(v.id)} style={{
+            padding:"8px 18px", borderRadius:20, border:"none", cursor:"pointer",
+            fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
+            background: view===v.id ? acc : C.bg2,
+            color: view===v.id ? "white" : C.muted,
+            outline:`1.5px solid ${view===v.id ? acc : C.border}`,
+          }}>{v.label}</button>
+        ))}
+      </div>
+
+      {/* ── GEOGRAPHY VIEW — India + Global both shown ── */}
+      {view === "geography" && (
+        <>
+          {/* India Regions */}
+          <Card>
+            <SectionHeader>🇮🇳 India Regions — Revenue & Cost</SectionHeader>
+            <ColHeaders label="Region"/>
+            <InputTable data={indiaData} onUpdate={updateIndia}/>
+            <TotalsRow revTotal={totalIndiaRev} costTotal={totalIndiaCost}/>
+          </Card>
+
+          {(totalIndiaRev > 0 || totalIndiaCost > 0) && (
+            <>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }} className="bi-grid">
+                <Card>
+                  <SectionHeader>Revenue by India Region</SectionHeader>
+                  <DonutChart data={indiaData} valueKey="revenue" total={totalIndiaRev}/>
+                </Card>
+                <Card>
+                  <SectionHeader>Cost by India Region</SectionHeader>
+                  <DonutChart data={indiaData} valueKey="cost" total={totalIndiaCost}/>
+                </Card>
+              </div>
+              <Card>
+                <SectionHeader>India Region — Bar Comparison</SectionHeader>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }} className="bi-grid">
+                  <div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:8 }}>Revenue</div>
+                    <BarChart data={indiaData} valueKey="revenue" total={totalIndiaRev}/>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:8 }}>Cost</div>
+                    <BarChart data={indiaData} valueKey="cost" total={totalIndiaCost}/>
+                  </div>
+                </div>
+              </Card>
+              <Card>
+                <SectionHeader>India Region — Profit Contribution</SectionHeader>
+                <ProfitTable data={indiaData} label="Region"/>
+              </Card>
+            </>
+          )}
+
+          {/* Global Regions */}
+          <Card>
+            <SectionHeader>🌍 Global Regions — Revenue & Cost</SectionHeader>
+            <ColHeaders label="Region"/>
+            <InputTable data={globalData} onUpdate={updateGlobal}/>
+            <TotalsRow revTotal={totalGlobalRev} costTotal={totalGlobalCost}/>
+          </Card>
+
+          {(totalGlobalRev > 0 || totalGlobalCost > 0) && (
+            <>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }} className="bi-grid">
+                <Card>
+                  <SectionHeader>Revenue by Global Region</SectionHeader>
+                  <DonutChart data={globalData} valueKey="revenue" total={totalGlobalRev}/>
+                </Card>
+                <Card>
+                  <SectionHeader>Cost by Global Region</SectionHeader>
+                  <DonutChart data={globalData} valueKey="cost" total={totalGlobalCost}/>
+                </Card>
+              </div>
+              <Card>
+                <SectionHeader>Global Region — Bar Comparison</SectionHeader>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }} className="bi-grid">
+                  <div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:8 }}>Revenue</div>
+                    <BarChart data={globalData} valueKey="revenue" total={totalGlobalRev}/>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:8 }}>Cost</div>
+                    <BarChart data={globalData} valueKey="cost" total={totalGlobalCost}/>
+                  </div>
+                </div>
+              </Card>
+              <Card>
+                <SectionHeader>Global Region — Profit Contribution</SectionHeader>
+                <ProfitTable data={globalData} label="Region"/>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+
+      {/* ── DEPARTMENT VIEW ── */}
+      {view === "department" && (
+        <>
+          <Card>
+            <SectionHeader>🏢 Department — Revenue & Cost</SectionHeader>
+            <ColHeaders label="Department"/>
+            <InputTable data={depts} onUpdate={updateDept}/>
+            <TotalsRow revTotal={totalDeptRev} costTotal={totalDeptCost}/>
+          </Card>
+
+          {(totalDeptRev > 0 || totalDeptCost > 0) && (
+            <>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 }} className="bi-grid">
+                <Card>
+                  <SectionHeader>Revenue by Department</SectionHeader>
+                  <DonutChart data={depts} valueKey="revenue" total={totalDeptRev}/>
+                </Card>
+                <Card>
+                  <SectionHeader>Cost by Department</SectionHeader>
+                  <DonutChart data={depts} valueKey="cost" total={totalDeptCost}/>
+                </Card>
+              </div>
+              <Card>
+                <SectionHeader>Department — Bar Comparison</SectionHeader>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }} className="bi-grid">
+                  <div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:8 }}>Revenue</div>
+                    <BarChart data={depts} valueKey="revenue" total={totalDeptRev}/>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:8 }}>Cost</div>
+                    <BarChart data={depts} valueKey="cost" total={totalDeptCost}/>
+                  </div>
+                </div>
+              </Card>
+              <Card>
+                <SectionHeader>Department — Profit Contribution</SectionHeader>
+                <ProfitTable data={depts} label="Department"/>
+              </Card>
+            </>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+// ─── SCENARIO MODELLING ───────────────────────────────────────────────────────
+function ScenarioModelling({ reportData, accentColor }) {
+  const acc = accentColor || C.blue;
+
+  // Base revenue and cost from reportData if available
+  const baseRev  = parseFloat((reportData?.pl?.revenue?.actual  || "").replace(/[^0-9.]/g,"")) || 0;
+  const baseCost = parseFloat((reportData?.pl?.opex?.actual     || "").replace(/[^0-9.]/g,"")) || 0;
+  const baseCogs = parseFloat((reportData?.pl?.cogs?.actual     || "").replace(/[^0-9.]/g,"")) || 0;
+
+  const [base, setBase] = React.useState({
+    revenue: reportData?.scenarioBase?.revenue || baseRev || "",
+    cogs:    reportData?.scenarioBase?.cogs    || baseCogs || "",
+    opex:    reportData?.scenarioBase?.opex    || baseCost || "",
+    label:   "Monthly (₹)"
+  });
+
+  const [scenarios, setScenarios] = React.useState([
+    { name:"Base Case",  color:"#059669", revGrowth:0,   costChange:0,   cogsChange:0   },
+    { name:"Stress Case",color:"#D97706", revGrowth:-20, costChange:10,  cogsChange:5   },
+    { name:"Worst Case", color:"#EF4444", revGrowth:-40, costChange:20,  cogsChange:10  },
+  ]);
+
+  const updateScenario = (i, field, val) => {
+    const ns = [...scenarios];
+    ns[i] = { ...ns[i], [field]: val };
+    setScenarios(ns);
+  };
+
+  const calc = (s) => {
+    const rev  = (parseFloat(base.revenue)||0) * (1 + (parseFloat(s.revGrowth)||0)/100);
+    const cogs = (parseFloat(base.cogs)||0)    * (1 + (parseFloat(s.cogsChange)||0)/100);
+    const opex = (parseFloat(base.opex)||0)    * (1 + (parseFloat(s.costChange)||0)/100);
+    const gp   = rev - cogs;
+    const ebitda = gp - opex;
+    const margin = rev > 0 ? ((ebitda/rev)*100).toFixed(1) : 0;
+    return { rev, cogs, opex, gp, ebitda, margin };
+  };
+
+  const fmt = (n) => {
+    if (!n) return "—";
+    const abs = Math.abs(n);
+    const sign = n < 0 ? "-" : "";
+    if (abs >= 10000000) return `${sign}₹${(abs/10000000).toFixed(1)}Cr`;
+    if (abs >= 100000)   return `${sign}₹${(abs/100000).toFixed(1)}L`;
+    if (abs >= 1000)     return `${sign}₹${(abs/1000).toFixed(0)}K`;
+    return `${sign}₹${abs.toFixed(0)}`;
+  };
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      {/* Base inputs */}
+      <Card>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+          📐 Scenario Modelling
+        </div>
+        <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>
+          Enter your base month figures then adjust each scenario.
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
+          {[
+            { label:"Base Revenue (₹)", field:"revenue" },
+            { label:"Base COGS (₹)",    field:"cogs"    },
+            { label:"Base OpEx (₹)",    field:"opex"    },
+          ].map(({ label, field }) => (
+            <div key={field}>
+              <div style={{ fontSize:11, color:C.muted, fontFamily:F, marginBottom:4, fontWeight:600 }}>{label}</div>
+              <input type="number" placeholder="0"
+                value={base[field]}
+                onChange={e => setBase(b => ({...b, [field]: e.target.value}))}
+                style={{ width:"100%", padding:"8px 10px", borderRadius:8,
+                  border:`1.5px solid ${C.border}`, fontFamily:F, fontSize:13,
+                  color:C.text, background:C.bg2, outline:"none" }}/>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* Scenario cards */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }} className="scenario-grid">
+        {scenarios.map((s, i) => {
+          const r = calc(s);
+          return (
+            <div key={i} style={{ borderRadius:14, overflow:"hidden",
+              border:`1.5px solid ${s.color}30`, background:"white",
+              boxShadow:`0 2px 12px ${s.color}15` }}>
+              {/* Scenario header */}
+              <div style={{ padding:"10px 14px", background:`${s.color}12`,
+                borderBottom:`1px solid ${s.color}20` }}>
+                <input value={s.name} onChange={e => updateScenario(i,"name",e.target.value)}
+                  style={{ fontFamily:F, fontWeight:700, fontSize:13, color:s.color,
+                    border:"none", background:"transparent", outline:"none", width:"100%" }}/>
+              </div>
+
+              {/* Sliders */}
+              <div style={{ padding:"12px 14px", display:"flex", flexDirection:"column", gap:10 }}>
+                {[
+                  { label:"Revenue %", field:"revGrowth",  min:-80, max:100 },
+                  { label:"Cost %",    field:"costChange", min:-50, max:100 },
+                  { label:"COGS %",    field:"cogsChange", min:-50, max:100 },
+                ].map(({ label, field, min, max }) => (
+                  <div key={field}>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                      <span style={{ fontSize:11, fontFamily:F, color:C.muted, fontWeight:600 }}>{label}</span>
+                      <span style={{ fontSize:11, fontFamily:F, fontWeight:700,
+                        color: parseFloat(s[field]||0) >= 0 ? C.green : C.red }}>
+                        {parseFloat(s[field]||0) >= 0 ? "+" : ""}{s[field]||0}%
+                      </span>
+                    </div>
+                    <input type="range" min={min} max={max} value={s[field]||0}
+                      onChange={e => updateScenario(i, field, parseFloat(e.target.value))}
+                      style={{ width:"100%", accentColor: s.color }}/>
+                  </div>
+                ))}
+              </div>
+
+              {/* Results */}
+              <div style={{ padding:"12px 14px", borderTop:`1px solid ${C.border}`,
+                display:"flex", flexDirection:"column", gap:6 }}>
+                {[
+                  { label:"Revenue",  val: r.rev,    positive: true  },
+                  { label:"Gross P.", val: r.gp,     positive: r.gp >= 0 },
+                  { label:"EBITDA",   val: r.ebitda, positive: r.ebitda >= 0 },
+                ].map(({ label, val, positive }) => (
+                  <div key={label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                    <span style={{ fontSize:11, fontFamily:F, color:C.muted }}>{label}</span>
+                    <span style={{ fontSize:12, fontFamily:F, fontWeight:700,
+                      color: positive ? C.green : C.red }}>{fmt(val)}</span>
+                  </div>
+                ))}
+                <div style={{ marginTop:4, padding:"6px 10px", borderRadius:8,
+                  background:`${s.color}12`, textAlign:"center" }}>
+                  <span style={{ fontSize:12, fontFamily:F, fontWeight:700, color:s.color }}>
+                    {r.margin}% EBITDA Margin
+                  </span>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <style>{`.scenario-grid{grid-template-columns:repeat(3,1fr)!important}@media(max-width:640px){.scenario-grid{grid-template-columns:1fr!important}}`}</style>
+
+      {/* Comparison table */}
+      {(parseFloat(base.revenue)||0) > 0 && (
+        <Card>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>
+            Scenario Comparison
+          </div>
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
+              <thead>
+                <tr style={{ borderBottom:`2px solid ${C.border}` }}>
+                  {["Metric", ...scenarios.map(s => s.name)].map(h => (
+                    <th key={h} style={{ padding:"8px 12px", textAlign:"left",
+                      color:C.muted, fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {["Revenue","Gross Profit","EBITDA","EBITDA Margin"].map((metric, mi) => (
+                  <tr key={metric} style={{ borderBottom:`1px solid ${C.border}`,
+                    background: mi % 2 === 0 ? "white" : C.bg2 }}>
+                    <td style={{ padding:"9px 12px", fontWeight:600, color:C.text }}>{metric}</td>
+                    {scenarios.map((s,si) => {
+                      const r = calc(s);
+                      const val = metric === "Revenue" ? r.rev
+                        : metric === "Gross Profit" ? r.gp
+                        : metric === "EBITDA" ? r.ebitda
+                        : null;
+                      const margin = metric === "EBITDA Margin";
+                      const positive = margin ? parseFloat(r.margin) >= 0 : (val||0) >= 0;
+                      return (
+                        <td key={si} style={{ padding:"9px 12px",
+                          color: margin ? s.color : positive ? C.green : C.red,
+                          fontWeight:700 }}>
+                          {margin ? `${r.margin}%` : fmt(val)}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── SPEND INTELLIGENCE ───────────────────────────────────────────────────────
+function SpendIntelligence({ reportData, accentColor, client }) {
+  const acc = accentColor || C.blue;
+  const pack = client?.client_pack || client?.clientPack || "startup";
+
+  const defaultDepts = [
+    { name:"Marketing & Sales",   actual:"", budget:"", benchmark:15, icon:"📣" },
+    { name:"Technology / Product",actual:"", budget:"", benchmark:20, icon:"💻" },
+    { name:"Operations",          actual:"", budget:"", benchmark:25, icon:"⚙️" },
+    { name:"HR & People",         actual:"", budget:"", benchmark:20, icon:"👥" },
+    { name:"Admin & G&A",         actual:"", budget:"", benchmark:10, icon:"🏢" },
+    { name:"Finance & Legal",     actual:"", budget:"", benchmark:5,  icon:"⚖️" },
+  ];
+
+  const [depts, setDepts] = React.useState(
+    defaultDepts.map(d => ({...d,
+      actual: reportData?.spendDepts?.[d.name]?.actual || "",
+      budget: reportData?.spendDepts?.[d.name]?.budget || "",
+    }))
+  );
+  const [totalRevenue, setTotalRevenue] = React.useState(
+    reportData?.spendRevenue || reportData?.pl?.revenue?.actual?.replace(/[^0-9.]/g,"") || ""
+  );
+  const [aiInsight, setAiInsight] = React.useState("");
+  const [loadingInsight, setLoadingInsight] = React.useState(false);
+
+  const updateDept = (i, field, val) => {
+    const nd = [...depts];
+    nd[i] = { ...nd[i], [field]: val };
+    setDepts(nd);
+  };
+
+  const totalSpend = depts.reduce((s,d) => s + (parseFloat(d.actual)||0), 0);
+  const rev = parseFloat(totalRevenue) || 0;
+
+  const getFlag = (d) => {
+    if (!d.actual || !totalRevenue) return null;
+    const pct = rev > 0 ? ((parseFloat(d.actual)||0)/rev)*100 : 0;
+    const diff = pct - d.benchmark;
+    if (diff > 10) return { label:"Overspending", color:C.red };
+    if (diff > 5)  return { label:"Watch",        color:"#D97706" };
+    if (diff < -8) return { label:"Underfunded",  color:C.blue };
+    return { label:"On Track", color:C.green };
+  };
+
+  const generateInsight = async () => {
+    if (!totalRevenue) return;
+    setLoadingInsight(true);
+    const deptSummary = depts
+      .filter(d => d.actual)
+      .map(d => {
+        const pct = rev > 0 ? (((parseFloat(d.actual)||0)/rev)*100).toFixed(1) : 0;
+        return `${d.name}: ₹${d.actual} (${pct}% of revenue, benchmark ${d.benchmark}%)`;
+      }).join("\n");
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          model:"claude-sonnet-4-20250514",
+          max_tokens:1000,
+          system:"You are a CFO advisor. Analyse department spend and give 3-4 specific, actionable recommendations. Be concise, use Indian business context, mention ₹ amounts where relevant. Format as short bullet points.",
+          messages:[{ role:"user", content:`Company revenue: ₹${totalRevenue}\nIndustry: ${pack}\n\nDepartment spend:\n${deptSummary}\n\nGive specific recommendations on where they should cut, invest more, or optimise.` }]
+        })
+      });
+      const data = await res.json();
+      setAiInsight(data?.content?.[0]?.text || "");
+    } catch { setAiInsight("Could not generate insights. Please try again."); }
+    setLoadingInsight(false);
+  };
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+      <Card>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+          📊 Spend Intelligence
+        </div>
+        <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>
+          Department-wise spend analysis vs benchmarks.
+        </div>
+        <div style={{ marginBottom:16 }}>
+          <div style={{ fontSize:11, fontWeight:600, color:C.muted, fontFamily:F, marginBottom:4 }}>
+            Monthly Revenue (₹) — for % calculation
+          </div>
+          <input type="number" placeholder="Enter monthly revenue"
+            value={totalRevenue}
+            onChange={e => setTotalRevenue(e.target.value)}
+            style={{ width:"100%", maxWidth:280, padding:"8px 12px", borderRadius:8,
+              border:`1.5px solid ${C.border}`, fontFamily:F, fontSize:13,
+              color:C.text, background:C.bg2, outline:"none" }}/>
+        </div>
+
+        {/* Department rows */}
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {depts.map((d,i) => {
+            const flag = getFlag(d);
+            const pct = rev > 0 && d.actual ? (((parseFloat(d.actual)||0)/rev)*100).toFixed(1) : null;
+            const budgetPct = d.budget && d.actual
+              ? Math.min(((parseFloat(d.actual)/parseFloat(d.budget))*100), 150)
+              : null;
+
+            return (
+              <div key={i} style={{ padding:"12px 14px", borderRadius:12,
+                background:C.bg2, border:`1px solid ${C.border}` }}>
+                <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
+                  <span style={{ fontSize:18 }}>{d.icon}</span>
+                  <div style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text, flex:1 }}>{d.name}</div>
+                  {flag && (
+                    <span style={{ fontSize:10, fontWeight:700, padding:"2px 8px",
+                      borderRadius:100, background:`${flag.color}15`, color:flag.color,
+                      letterSpacing:"0.05em" }}>
+                      {flag.label}
+                    </span>
+                  )}
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
+                  <div>
+                    <div style={{ fontSize:10, color:C.muted, fontFamily:F, marginBottom:3 }}>Actual Spend (₹)</div>
+                    <input type="number" placeholder="0"
+                      value={d.actual}
+                      onChange={e => updateDept(i,"actual",e.target.value)}
+                      style={{ width:"100%", padding:"6px 10px", borderRadius:8,
+                        border:`1px solid ${C.border}`, fontFamily:F, fontSize:13,
+                        color:C.text, background:"white", outline:"none" }}/>
+                  </div>
+                  <div>
+                    <div style={{ fontSize:10, color:C.muted, fontFamily:F, marginBottom:3 }}>Budget (₹)</div>
+                    <input type="number" placeholder="0"
+                      value={d.budget}
+                      onChange={e => updateDept(i,"budget",e.target.value)}
+                      style={{ width:"100%", padding:"6px 10px", borderRadius:8,
+                        border:`1px solid ${C.border}`, fontFamily:F, fontSize:13,
+                        color:C.text, background:"white", outline:"none" }}/>
+                  </div>
+                </div>
+                {/* Progress vs budget */}
+                {budgetPct !== null && (
+                  <div>
+                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                      <span style={{ fontSize:10, color:C.muted, fontFamily:F }}>vs Budget</span>
+                      <span style={{ fontSize:10, fontWeight:700, fontFamily:F,
+                        color: budgetPct > 100 ? C.red : C.green }}>{budgetPct.toFixed(0)}%</span>
+                    </div>
+                    <div style={{ height:5, borderRadius:3, background:C.border, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${Math.min(budgetPct,100)}%`,
+                        background: budgetPct > 100 ? C.red : budgetPct > 85 ? "#D97706" : C.green,
+                        borderRadius:3 }}/>
+                    </div>
+                  </div>
+                )}
+                {pct && (
+                  <div style={{ marginTop:6, fontSize:11, color:C.muted, fontFamily:F }}>
+                    <span style={{ fontWeight:700, color:acc }}>{pct}%</span> of revenue
+                    {" · "}benchmark <span style={{ fontWeight:600 }}>{d.benchmark}%</span>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Total */}
+        {totalSpend > 0 && (
+          <div style={{ marginTop:14, padding:"12px 16px", borderRadius:12,
+            background:`${acc}08`, border:`1.5px solid ${acc}20`,
+            display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+            <span style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text }}>Total Spend</span>
+            <div style={{ textAlign:"right" }}>
+              <div style={{ fontFamily:F, fontWeight:800, fontSize:16, color:acc }}>
+                ₹{(totalSpend/100000).toFixed(1)}L
+              </div>
+              {rev > 0 && (
+                <div style={{ fontSize:11, color:C.muted, fontFamily:F }}>
+                  {((totalSpend/rev)*100).toFixed(1)}% of revenue
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* AI Insight */}
+      <Card>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
+            🤖 AI Spend Recommendations
+          </div>
+          <button onClick={generateInsight} disabled={!totalRevenue || loadingInsight}
+            style={{ padding:"7px 16px", borderRadius:20, border:"none",
+              background: totalRevenue && !loadingInsight ? acc : C.border,
+              color:"white", fontFamily:F, fontSize:12, fontWeight:600,
+              cursor: totalRevenue && !loadingInsight ? "pointer" : "not-allowed" }}>
+            {loadingInsight ? "Analysing..." : "Generate Insights"}
+          </button>
+        </div>
+        {aiInsight ? (
+          <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.7,
+            whiteSpace:"pre-wrap", background:C.bg2, borderRadius:10, padding:"12px 14px" }}>
+            {aiInsight}
+          </div>
+        ) : (
+          <div style={{ fontFamily:F, fontSize:13, color:C.muted, textAlign:"center",
+            padding:"24px 0" }}>
+            Enter spend data above then click Generate Insights for AI recommendations.
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
 
 // ─── FUND UTILISATION COMPONENT ──────────────────────────────────────────────
 function FundUtilisation({ reportData, accentColor }) {
@@ -5363,6 +6191,9 @@ function CFOPackContent({ reportData, client, kpis }) {
     { id:"loan",       icon:"🏦", label:"Loan Readiness"      },
     { id:"fundutil",   icon:"💰", label:"Fund Utilisation"    },
     { id:"verticalpnl",icon:"📈", label:"Vertical P&L"        },
+    { id:"scenario",   icon:"🎯", label:"Scenarios"           },
+    { id:"spend",      icon:"💡", label:"Spend Intel"         },
+    { id:"bizintel",   icon:"🌏", label:"BI Analysis"         },
     { id:"boardpacks", icon:"📁", label:"Board Packs"         },
   ];
   const data = CFO_PACK_DATA["startup"];
@@ -5984,6 +6815,9 @@ function CFOPackContent({ reportData, client, kpis }) {
 
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.blue}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.blue}/>}
+      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.blue}/>}
+      {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
+      {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
 
       {tab === "boardpacks" && (
         <div>
@@ -7858,8 +8692,253 @@ function Portal({ client, onLogout }) {
           {pages[page]}
         </main>
       </div>
-      <style>{`@keyframes progress{0%{width:0%;left:0}50%{width:60%;left:20%}100%{width:0%;left:100%}}`}</style>
+      <style>{`@keyframes progress{0%{width:0%;left:0}50%{width:60%;left:20%}100%{width:0%;left:100%}}
+@keyframes popIn{0%{opacity:0;transform:scale(0.85) translateY(10px)}100%{opacity:1;transform:scale(1) translateY(0)}}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(124,58,237,0.4)}50%{box-shadow:0 0 0 8px rgba(124,58,237,0)}}
+@keyframes typing{0%,100%{opacity:0.3}50%{opacity:1}}
+`}</style>
+      <AIChatbot client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>
     </div>
+  );
+}
+
+// ─── AI CHATBOT ───────────────────────────────────────────────────────────────
+function AIChatbot({ client, reportData, kpis }) {
+  const [open, setOpen] = React.useState(false);
+  const [msgs, setMsgs] = React.useState([
+    { role:"assistant", text:`Hi${client?.name ? ` ${client.name.split(" ")[0]}` : ""}! 👋 I'm Garima's AI assistant. Ask me anything about your finances, valuations, or CFO advisory.` }
+  ]);
+  const [input, setInput] = React.useState("");
+  const [loading, setLoading] = React.useState(false);
+  const [showBubble, setShowBubble] = React.useState(true);
+  const bottomRef = React.useRef(null);
+
+  // Hide welcome bubble after 4s
+  React.useEffect(() => {
+    const t = setTimeout(() => setShowBubble(false), 4000);
+    return () => clearTimeout(t);
+  }, []);
+
+  React.useEffect(() => {
+    if (open) bottomRef.current?.scrollIntoView({ behavior:"smooth" });
+  }, [msgs, open]);
+
+  const sendMessage = async () => {
+    const text = input.trim();
+    if (!text || loading) return;
+    setInput("");
+    setMsgs(m => [...m, { role:"user", text }]);
+    setLoading(true);
+
+    // Build context from client data
+    const ctx = [
+      client?.name ? `Client: ${client.name}` : "",
+      client?.company ? `Company: ${client.company}` : "",
+      client?.client_pack ? `Pack: ${client.client_pack}` : "",
+      reportData?.pl?.revenue?.actual ? `Revenue: ${reportData.pl.revenue.actual}` : "",
+      reportData?.pl?.ebitda?.actual ? `EBITDA: ${reportData.pl.ebitda.actual}` : "",
+      reportData?.pl?.pat?.actual ? `Net Profit: ${reportData.pl.pat.actual}` : "",
+      (kpis||[]).length ? `KPIs: ${(kpis||[]).map(k=>`${k.label}=${k.value}`).join(", ")}` : "",
+    ].filter(Boolean).join("\n");
+
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST",
+        headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: `You are Garima's AI CFO assistant on the Finzzup portal. Garima Agarwal is a CA, IBBI Registered Valuer and Fractional CFO. You help clients understand their finances, valuations and CFO advisory topics. Be concise, friendly and professional. Use Indian financial context (₹, Indian accounting standards). ${ctx ? `Client context:\n${ctx}` : ""}`,
+          messages: [{ role:"user", content: text }]
+        })
+      });
+      const data = await res.json();
+      const reply = data?.content?.[0]?.text || "I couldn't process that. Please try again.";
+      setMsgs(m => [...m, { role:"assistant", text: reply }]);
+    } catch {
+      setMsgs(m => [...m, { role:"assistant", text:"Something went wrong. Please try again." }]);
+    }
+    setLoading(false);
+  };
+
+  // Avatar SVG — abstract AI
+  const Avatar = ({ size=36, pulse=false }) => (
+    <div style={{
+      width:size, height:size, borderRadius:"50%", flexShrink:0,
+      background:"linear-gradient(135deg,#2563EB,#7C3AED)",
+      display:"flex", alignItems:"center", justifyContent:"center",
+      animation: pulse ? "pulse 2s infinite" : "none",
+      boxShadow:"0 2px 12px rgba(124,58,237,0.4)"
+    }}>
+      <svg width={size*0.55} height={size*0.55} viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="8" r="3" fill="white" opacity="0.9"/>
+        <path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.9"/>
+        <circle cx="18" cy="8" r="1.5" fill="white" opacity="0.6"/>
+        <circle cx="6"  cy="8" r="1.5" fill="white" opacity="0.6"/>
+        <path d="M18 8c0-3-2-5-6-5S6 5 6 8" stroke="white" strokeWidth="1.5" fill="none" opacity="0.5"/>
+      </svg>
+    </div>
+  );
+
+  return (
+    <>
+      {/* Welcome bubble */}
+      {showBubble && !open && (
+        <div style={{
+          position:"fixed", bottom:90, right:24, zIndex:9998,
+          background:"white", borderRadius:12, padding:"10px 14px",
+          boxShadow:"0 4px 20px rgba(0,0,0,0.12)", maxWidth:220,
+          fontSize:13, color:"#374151", fontFamily:F, lineHeight:1.5,
+          animation:"popIn 0.3s ease",
+          border:"1px solid rgba(124,58,237,0.15)"
+        }}>
+          <strong style={{color:C.purple}}>Ask Garima's AI ✨</strong><br/>
+          Get instant CFO insights
+          <div style={{
+            position:"absolute", bottom:-6, right:20,
+            width:12, height:12, background:"white",
+            transform:"rotate(45deg)",
+            borderRight:"1px solid rgba(124,58,237,0.15)",
+            borderBottom:"1px solid rgba(124,58,237,0.15)"
+          }}/>
+        </div>
+      )}
+
+      {/* Floating button */}
+      {!open && (
+        <button onClick={() => { setOpen(true); setShowBubble(false); }} style={{
+          position:"fixed", bottom:24, right:24, zIndex:9999,
+          width:56, height:56, borderRadius:"50%", border:"none",
+          cursor:"pointer", padding:0,
+          background:"linear-gradient(135deg,#2563EB,#7C3AED)",
+          boxShadow:"0 4px 20px rgba(124,58,237,0.45)",
+          animation:"pulse 2.5s infinite",
+          display:"flex", alignItems:"center", justifyContent:"center",
+          transition:"transform 0.2s"
+        }}>
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="3" fill="white" opacity="0.95"/>
+            <path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.95"/>
+            <circle cx="18.5" cy="7.5" r="1.8" fill="white" opacity="0.6"/>
+            <circle cx="5.5"  cy="7.5" r="1.8" fill="white" opacity="0.6"/>
+          </svg>
+        </button>
+      )}
+
+      {/* Chat window */}
+      {open && (
+        <div style={{
+          position:"fixed", bottom:24, right:24, zIndex:9999,
+          width:360, height:520, borderRadius:20,
+          background:"white", boxShadow:"0 8px 40px rgba(0,0,0,0.18)",
+          display:"flex", flexDirection:"column", overflow:"hidden",
+          animation:"popIn 0.25s ease",
+          border:"1px solid rgba(124,58,237,0.12)"
+        }}>
+          {/* Header */}
+          <div style={{
+            padding:"14px 16px", display:"flex", alignItems:"center", gap:10,
+            background:"linear-gradient(135deg,#2563EB,#7C3AED)",
+            flexShrink:0
+          }}>
+            <Avatar size={38}/>
+            <div style={{ flex:1 }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>Garima's AI Assistant</div>
+              <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.75)" }}>Powered by Finzzup · Online</div>
+            </div>
+            <button onClick={() => setOpen(false)} style={{
+              background:"rgba(255,255,255,0.15)", border:"none", borderRadius:"50%",
+              width:28, height:28, cursor:"pointer", color:"white", fontSize:16,
+              display:"flex", alignItems:"center", justifyContent:"center"
+            }}>×</button>
+          </div>
+
+          {/* Messages */}
+          <div style={{ flex:1, overflowY:"auto", padding:"16px 14px", display:"flex", flexDirection:"column", gap:12 }}>
+            {msgs.map((m, i) => (
+              <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-start",
+                flexDirection: m.role==="user" ? "row-reverse" : "row" }}>
+                {m.role === "assistant" && <Avatar size={28}/>}
+                {m.role === "user" && (
+                  <div style={{
+                    width:28, height:28, borderRadius:"50%", flexShrink:0,
+                    background:C.bg2, display:"flex", alignItems:"center",
+                    justifyContent:"center", fontSize:12, fontWeight:700, color:C.muted
+                  }}>
+                    {client?.name ? client.name[0].toUpperCase() : "U"}
+                  </div>
+                )}
+                <div style={{
+                  maxWidth:"75%", padding:"9px 12px", borderRadius:14,
+                  background: m.role==="user"
+                    ? "linear-gradient(135deg,#2563EB,#7C3AED)"
+                    : C.bg2,
+                  color: m.role==="user" ? "white" : C.text,
+                  fontFamily:F, fontSize:13, lineHeight:1.55,
+                  borderBottomRightRadius: m.role==="user" ? 4 : 14,
+                  borderBottomLeftRadius: m.role==="assistant" ? 4 : 14,
+                }}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+
+            {loading && (
+              <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+                <Avatar size={28}/>
+                <div style={{ padding:"10px 14px", borderRadius:14, borderBottomLeftRadius:4, background:C.bg2 }}>
+                  <div style={{ display:"flex", gap:4, alignItems:"center" }}>
+                    {[0,1,2].map(i => (
+                      <div key={i} style={{
+                        width:6, height:6, borderRadius:"50%", background:C.purple,
+                        animation:`typing 1.2s ease ${i*0.2}s infinite`
+                      }}/>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={bottomRef}/>
+          </div>
+
+          {/* Input */}
+          <div style={{
+            padding:"12px 14px", borderTop:`1px solid ${C.border}`,
+            display:"flex", gap:8, alignItems:"center", flexShrink:0,
+            background:"white"
+          }}>
+            <input
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
+              placeholder="Ask about your finances..."
+              style={{
+                flex:1, padding:"9px 12px", borderRadius:20,
+                border:`1.5px solid ${C.border}`, fontFamily:F, fontSize:13,
+                outline:"none", color:C.text, background:C.bg2,
+                transition:"border 0.2s"
+              }}
+              onFocus={e => e.target.style.borderColor = C.purple}
+              onBlur={e => e.target.style.borderColor = C.border}
+            />
+            <button onClick={sendMessage} disabled={!input.trim() || loading} style={{
+              width:36, height:36, borderRadius:"50%", border:"none",
+              background: input.trim() && !loading
+                ? "linear-gradient(135deg,#2563EB,#7C3AED)"
+                : C.border,
+              cursor: input.trim() && !loading ? "pointer" : "not-allowed",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              transition:"background 0.2s", flexShrink:0
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path d="M22 2L11 13M22 2L15 22L11 13M22 2L2 9L11 13"
+                  stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -8361,6 +9440,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"invoices",   icon:"🧾", label:"Invoices"        },
     { id:"reportdata", icon:"📈", label:"Report Data"     },
     { id:"treasury",   icon:"💎", label:"Treasury"        },
+    { id:"analytics",  icon:"🌏", label:"BI & Scenarios"  },
     { id:"documents",  icon:"📁", label:"Documents"       },
     { id:"requests",   icon:"📩", label:"Requests"        },
     { id:"market",     icon:"🌐", label:"Market Intel"    },
@@ -10164,6 +11244,166 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
             </div>
           )}
 
+          {/* ── BI & SCENARIOS ── */}
+          {tab === "analytics" && (
+            <div style={{ maxWidth:700 }}>
+              {!selected || !reportData ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+                </Card>
+              ) : (<>
+
+                {/* ══ GEOGRAPHY — INDIA REGIONS ══════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🇮🇳 India Regions — Revenue & Cost</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Populates the <strong>BI Analysis → Geography</strong> tab. Enter monthly figures in ₹.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 1fr", gap:8, marginBottom:8 }}>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase" }}>Region</div>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase" }}>Revenue (₹)</div>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase" }}>Cost (₹)</div>
+                  </div>
+                  {["North","South","West","East","Metro"].map(region => (
+                    <div key={region} style={{ display:"grid", gridTemplateColumns:"120px 1fr 1fr", gap:8, marginBottom:8 }}>
+                      <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text, display:"flex", alignItems:"center" }}>{region}</div>
+                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.geoIndia?.[region]?.revenue || ""}
+                        onChange={v => setReportData(r => ({...r, geoIndia:{...(r.geoIndia||{}), [region]:{...(r.geoIndia?.[region]||{}), revenue:v}}}))}
+                        placeholder="₹0" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.geoIndia?.[region]?.cost || ""}
+                        onChange={v => setReportData(r => ({...r, geoIndia:{...(r.geoIndia||{}), [region]:{...(r.geoIndia?.[region]||{}), cost:v}}}))}
+                        placeholder="₹0" mono/>
+                    </div>
+                  ))}
+                </Card>
+
+                {/* ══ GEOGRAPHY — GLOBAL REGIONS ══════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🌍 Global Regions — Revenue & Cost</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Cross-border split — especially useful for Gulf and India clients.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 1fr", gap:8, marginBottom:8 }}>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase" }}>Region</div>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase" }}>Revenue (₹)</div>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase" }}>Cost (₹)</div>
+                  </div>
+                  {[
+                    { name:"India",  icon:"🇮🇳" },
+                    { name:"GCC",    icon:"🌙"  },
+                    { name:"USA",    icon:"🇺🇸" },
+                    { name:"Europe", icon:"🇪🇺" },
+                    { name:"Other",  icon:"🌍"  },
+                  ].map(r => (
+                    <div key={r.name} style={{ display:"grid", gridTemplateColumns:"120px 1fr 1fr", gap:8, marginBottom:8 }}>
+                      <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text, display:"flex", alignItems:"center" }}>{r.icon} {r.name}</div>
+                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.geoGlobal?.[r.name]?.revenue || ""}
+                        onChange={v => setReportData(rd => ({...rd, geoGlobal:{...(rd.geoGlobal||{}), [r.name]:{...(rd.geoGlobal?.[r.name]||{}), revenue:v}}}))}
+                        placeholder="₹0" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.geoGlobal?.[r.name]?.cost || ""}
+                        onChange={v => setReportData(rd => ({...rd, geoGlobal:{...(rd.geoGlobal||{}), [r.name]:{...(rd.geoGlobal?.[r.name]||{}), cost:v}}}))}
+                        placeholder="₹0" mono/>
+                    </div>
+                  ))}
+                </Card>
+
+                {/* ══ DEPARTMENT ANALYSIS ═══════════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏢 Department — Revenue & Cost</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Populates the <strong>BI Analysis → Department</strong> tab. Enter monthly figures.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr 1fr", gap:8, marginBottom:8 }}>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase" }}>Department</div>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase" }}>Revenue (₹)</div>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase" }}>Cost (₹)</div>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase" }}>Budget (₹)</div>
+                  </div>
+                  {[
+                    { name:"Sales",       icon:"💼" },
+                    { name:"Marketing",   icon:"📣" },
+                    { name:"Technology",  icon:"💻" },
+                    { name:"Operations",  icon:"⚙️" },
+                    { name:"HR & Admin",  icon:"👥" },
+                    { name:"Finance",     icon:"📊" },
+                  ].map(d => (
+                    <div key={d.name} style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr 1fr", gap:8, marginBottom:8 }}>
+                      <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, display:"flex", alignItems:"center" }}>{d.icon} {d.name}</div>
+                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.depts?.[d.name]?.revenue || ""}
+                        onChange={v => setReportData(r => ({...r, depts:{...(r.depts||{}), [d.name]:{...(r.depts?.[d.name]||{}), revenue:v}}}))}
+                        placeholder="₹0" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.depts?.[d.name]?.cost || ""}
+                        onChange={v => setReportData(r => ({...r, depts:{...(r.depts||{}), [d.name]:{...(r.depts?.[d.name]||{}), cost:v}}}))}
+                        placeholder="₹0" mono/>
+                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.depts?.[d.name]?.budget || ""}
+                        onChange={v => setReportData(r => ({...r, depts:{...(r.depts||{}), [d.name]:{...(r.depts?.[d.name]||{}), budget:v}}}))}
+                        placeholder="₹0" mono/>
+                    </div>
+                  ))}
+                </Card>
+
+                {/* ══ SCENARIO MODELLING BASE ═══════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🎯 Scenario Modelling — Base Figures</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Pre-fills the base inputs for the <strong>Scenarios tab</strong>. Client can then adjust sliders.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Base Revenue (₹)"
+                      val={reportData?.scenarioBase?.revenue || ""}
+                      onChange={v => setReportData(r => ({...r, scenarioBase:{...(r.scenarioBase||{}), revenue:v}}))}
+                      placeholder="e.g. 5000000" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Base COGS (₹)"
+                      val={reportData?.scenarioBase?.cogs || ""}
+                      onChange={v => setReportData(r => ({...r, scenarioBase:{...(r.scenarioBase||{}), cogs:v}}))}
+                      placeholder="e.g. 2000000" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Base OpEx (₹)"
+                      val={reportData?.scenarioBase?.opex || ""}
+                      onChange={v => setReportData(r => ({...r, scenarioBase:{...(r.scenarioBase||{}), opex:v}}))}
+                      placeholder="e.g. 1500000" mono/>
+                  </div>
+                </Card>
+
+                {/* ══ SPEND INTELLIGENCE ════════════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>💡 Spend Intelligence — Department Budgets</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Pre-fills the <strong>Spend Intel tab</strong> with actual vs budget data for AI analysis.
+                  </p>
+                  <AdminInput C={C} F={F} FM={FM} label="Monthly Revenue (₹) — for % benchmarks"
+                    val={reportData?.spendRevenue || ""}
+                    onChange={v => setReportData(r => ({...r, spendRevenue:v}))}
+                    placeholder="e.g. 5000000" mono/>
+                  <div style={{ marginTop:12 }}>
+                    {[
+                      { name:"Marketing & Sales",   bench:15 },
+                      { name:"Technology / Product",bench:20 },
+                      { name:"Operations",          bench:25 },
+                      { name:"HR & People",         bench:20 },
+                      { name:"Admin & G&A",         bench:10 },
+                      { name:"Finance & Legal",     bench:5  },
+                    ].map(d => (
+                      <div key={d.name} style={{ display:"grid", gridTemplateColumns:"160px 1fr 1fr", gap:8, marginBottom:8, alignItems:"center" }}>
+                        <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text }}>{d.name}</div>
+                        <AdminInput C={C} F={F} FM={FM} label="Actual (₹)"
+                          val={reportData?.spendDepts?.[d.name]?.actual || ""}
+                          onChange={v => setReportData(r => ({...r, spendDepts:{...(r.spendDepts||{}), [d.name]:{...(r.spendDepts?.[d.name]||{}), actual:v}}}))}
+                          placeholder="₹0" mono/>
+                        <AdminInput C={C} F={F} FM={FM} label="Budget (₹)"
+                          val={reportData?.spendDepts?.[d.name]?.budget || ""}
+                          onChange={v => setReportData(r => ({...r, spendDepts:{...(r.spendDepts||{}), [d.name]:{...(r.spendDepts?.[d.name]||{}), budget:v}}}))}
+                          placeholder="₹0" mono/>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+
+                <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save Analytics Data"/>
+              </>)}
+            </div>
+          )}
+
           {/* ── TREASURY ── */}
           {tab === "treasury" && (
             <div style={{ maxWidth:700 }}>
@@ -10583,3 +11823,4 @@ export default function App() {
   if (!client) return <Login onLogin={setClient}/>;
   return <Portal client={client} onLogout={handleLogout}/>;
 }
+
