@@ -119,7 +119,7 @@ const INVITE_CODES = {
 
 // ─── DEMO DATA ────────────────────────────────────────────────────────────────
 const KPIs = [
-  { label:"Revenue",      value:"₹8.4 Cr",  prev:"₹7.9 Cr",  trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"rev"    },
+  { label:"Revenue",      value:"₹8.4 Cr",  prev:"₹7.9 Cr",  trend:"up",   color:C.blue,   bg:"#EEF3FE", emoji:"📈"    },
   { label:"Gross Margin", value:"41%",       prev:"38%",       trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin" },
   { label:"Cash Balance", value:"₹2.1 Cr",  prev:"₹2.6 Cr",  trend:"down", color:C.amber,  bg:"#FEF7E7", icon:"cash"   },
   { label:"Burn Rate",    value:"₹48L/mo",  prev:"₹52L/mo",  trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"burn"   },
@@ -597,7 +597,7 @@ function Login({ onLogin }) {
                 {[
                   { code:"DEMO-STARTUP", label:"Startup / CFO Client", icon:"🚀", color:C.blue   },
                   { code:"DEMO-MSME",    label:"MSME Client",           icon:"users", color:C.teal   },
-                  { code:"DEMO-CORP",    label:"Corporate Client",       icon:"bank", color:C.purple },
+                  { code:"DEMO-CORP",    label:"Corporate Client",       emoji:"🏦", color:C.purple },
                 ].map(d => (
                   <button key={d.code} onClick={() => setCode(d.code)}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -899,9 +899,9 @@ const OVERVIEW_ENGAGEMENTS = [
 const PACK_CONFIG = {
   startup: {
     overviewKpis: [
-      { label:"Monthly Revenue", value:"₹71L",  prev:"₹63L",  pct:"+12.7%", up:true,  color:C.blue,   bg:"#EEF3FE", icon:"rev" },
-      { label:"ARR",             value:"₹850L", prev:"₹649L", pct:"+31%",   up:true,  color:C.purple, bg:"#F3EFFF", icon:"scenario" },
-      { label:"Cash Balance",    value:"₹610L", prev:"₹583L", pct:"+₹27L",  up:true,  color:C.teal,   bg:"#E6FAF7", icon:"bank" },
+      { label:"Monthly Revenue", value:"₹71L",  prev:"₹63L",  pct:"+12.7%", up:true,  color:C.blue,   bg:"#EEF3FE", emoji:"📈" },
+      { label:"ARR",             value:"₹850L", prev:"₹649L", pct:"+31%",   up:true,  color:C.purple, bg:"#F3EFFF", emoji:"🎯" },
+      { label:"Cash Balance",    value:"₹610L", prev:"₹583L", pct:"+₹27L",  up:true,  color:C.teal,   bg:"#E6FAF7", emoji:"🏦" },
     ],
     benchmarkTitle: "Market Benchmarks — SaaS / Fintech Sector",
     benchmarkCols: ["Metric","Your Value","Sector Median","Series A Benchmark","Status"],
@@ -925,8 +925,8 @@ const PACK_CONFIG = {
   },
   msme: {
     overviewKpis: [
-      { label:"Monthly Revenue",    value:"₹84L",  prev:"₹79L",  pct:"+6.1%",  up:true,  color:C.blue,   bg:"#EEF3FE", icon:"rev" },
-      { label:"Working Capital",    value:"₹32.4L",prev:"₹30.1L",pct:"+₹2.3L", up:true,  color:C.teal,   bg:"#E6FAF7", icon:"bank" },
+      { label:"Monthly Revenue",    value:"₹84L",  prev:"₹79L",  pct:"+6.1%",  up:true,  color:C.blue,   bg:"#EEF3FE", emoji:"📈" },
+      { label:"Working Capital",    value:"₹32.4L",prev:"₹30.1L",pct:"+₹2.3L", up:true,  color:C.teal,   bg:"#E6FAF7", emoji:"🏦" },
       { label:"Debtor Days",        value:"46 days",prev:"51 days",pct:"−5 days",up:true,  color:C.green,  bg:"#ECFDF5", icon:"calendar" },
     ],
     benchmarkTitle: "Working Capital Benchmarks — MSME / Export Sector",
@@ -951,9 +951,9 @@ const PACK_CONFIG = {
   },
   corporate: {
     overviewKpis: [
-      { label:"Revenue (Feb)",   value:"₹842L", prev:"₹810L", pct:"+4.0%",   up:true,  color:C.blue,   bg:"#EEF3FE", icon:"rev" },
+      { label:"Revenue (Feb)",   value:"₹842L", prev:"₹810L", pct:"+4.0%",   up:true,  color:C.blue,   bg:"#EEF3FE", emoji:"📈" },
       { label:"EBITDA",          value:"₹147L", prev:"₹115L", pct:"+27.8%",  up:true,  color:C.purple, bg:"#F3EFFF", icon:"margin" },
-      { label:"PAT",             value:"₹81L",  prev:"₹56L",  pct:"+44.6%",  up:true,  color:C.green,  bg:"#ECFDF5", icon:"bank" },
+      { label:"PAT",             value:"₹81L",  prev:"₹56L",  pct:"+44.6%",  up:true,  color:C.green,  bg:"#ECFDF5", emoji:"🏦" },
     ],
     benchmarkTitle: "Market Benchmarks — Mid-Cap / Pre-IPO Sector",
     benchmarkCols: ["Metric","Your Value","Sector Median","IPO Threshold","Status"],
@@ -998,9 +998,9 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
     <div style={{ padding:24 }}>
       {/* Hero Banner — pack-aware */}
       <div style={{ marginBottom:20, padding:"22px 28px", borderRadius:18,
-        background: ovPack==="msme"      ? "linear-gradient(135deg,#065f46 0%,#059669 60%,#0891B2 100%)"
+        background: ovPack==="msme"      ? "linear-gradient(135deg,#1B3A6B 0%,#2563EB 60%,#7C3AED 100%)"
                   : ovPack==="corporate" ? "linear-gradient(135deg,#4C1D95 0%,#7C3AED 60%,#DB2777 100%)"
-                  : "linear-gradient(135deg,#1a3a8f 0%,#3B6FF7 60%,#7C5CF5 100%)",
+                  : "linear-gradient(135deg,#1a3a8f 0%,#2563EB 60%,#7C3AED 100%)",
         color:"white", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", right:-30, top:-30, width:180, height:180,
           borderRadius:"50%", background:"rgba(255,255,255,0.05)" }}/>
@@ -1459,7 +1459,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
   const displayKpis = kpis || KPIs;
   const pack    = client?.client_pack || client?.clientPack || "startup";
   const packCfg = PACK_CONFIG[pack] || PACK_CONFIG.startup;
-  const accent  = pack==="msme" ? C.teal : pack==="corporate" ? C.purple : C.blue;
+  const accent  = pack==="msme" ? C.blue : pack==="corporate" ? C.purple : C.blue;
   const pl      = reportData?.pl || {};
 
   // Month story — auto generated
@@ -3211,11 +3211,11 @@ function MarketWidget({ pack, client }) {
 
   const items = [
     m.repo     && { label:"RBI Repo Rate",  value:m.repo,     color:C.blue,
-                    note:"SBI lending = Repo + 2–3%",          icon:"bank" },
+                    note:"SBI lending = Repo + 2–3%",          emoji:"🏦" },
     m.nifty    && { label:"Nifty 50",       value:m.nifty,
                     color: m.niftyChg >= 0 ? C.green : C.red,
                     note: m.niftyChg ? `${m.niftyChg >= 0 ? "▲" : "▼"} ${Math.abs(m.niftyChg)}% today` : "Today",
-                    icon:"rev" },
+                    emoji:"📈" },
     (isCrossBorder || true) && m.usd && { label:"USD / INR", value:m.usd, color:C.purple,
                     note:"Live rate",                           icon:"💱" },
     (isCrossBorder) && m.sar && { label:"SAR / INR", value:m.sar, color:C.teal,
@@ -3362,10 +3362,10 @@ function MarketIntel({ client }) {
           marginBottom:24 }} className="mkt-live">
           {[
             m.repo  && { label:"RBI Repo Rate", value:m.repo,
-              sub:`SBI lending ~${(parseFloat(m.repo)+2.5).toFixed(2)}%`, color:C.blue,  icon:"bank" },
+              sub:`SBI lending ~${(parseFloat(m.repo)+2.5).toFixed(2)}%`, color:C.blue,  emoji:"🏦" },
             m.nifty && { label:"Nifty 50",      value:m.nifty,
               sub: m.niftyChg ? `${parseFloat(m.niftyChg)>=0?"▲":"▼"} ${Math.abs(m.niftyChg)}% today` : "Live",
-              color:parseFloat(m.niftyChg)>=0?C.green:C.red, icon:"rev" },
+              color:parseFloat(m.niftyChg)>=0?C.green:C.red, emoji:"📈" },
             m.usd   && { label:"USD / INR",      value:m.usd,   sub:"Live rate", color:C.purple,icon:"💱" },
             m.sar   && { label:"SAR / INR",       value:m.sar,   sub:"Saudi Riyal",color:C.teal, icon:"🇸🇦" },
           ].filter(Boolean).map((item,i) => (
@@ -4036,6 +4036,107 @@ function useLiveDocs(client) {
   return archiveDocs;
 }
 
+// ─── PACK LAYOUT — sidebar on desktop, dropdown on mobile ─────────────────────
+function PackLayout({ tab, setTab, groups, accent, children }) {
+  const [open, setOpen] = React.useState(false);
+  const allItems = groups.flatMap(g => g.items);
+  const current  = allItems.find(t => t.id === tab);
+  const dropRef  = React.useRef(null);
+
+  // Close on outside click
+  React.useEffect(() => {
+    const handler = (e) => {
+      if (dropRef.current && !dropRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  return (
+    <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
+
+      {/* ── Dropdown nav — always shown ── */}
+      <div style={{ padding:"14px 20px 0", background:"#F9FAFB",
+        borderBottom:"1px solid #E5E7EB" }}>
+        <div ref={dropRef} style={{ position:"relative", maxWidth:320 }}>
+
+          {/* Trigger button */}
+          <button onClick={() => setOpen(o => !o)} style={{
+            width:"100%", padding:"10px 14px", borderRadius:10,
+            border:`1.5px solid ${open ? accent : "#E5E7EB"}`,
+            background:"white", display:"flex", alignItems:"center",
+            justifyContent:"space-between", cursor:"pointer",
+            fontFamily:F, boxShadow: open ? `0 0 0 3px ${accent}20` : "none",
+            transition:"all 0.15s",
+          }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+              <span style={{ fontSize:16 }}>{current?.emoji}</span>
+              <div style={{ textAlign:"left" }}>
+                <div style={{ fontSize:11, fontWeight:600, color:"#9CA3AF",
+                  textTransform:"uppercase", letterSpacing:"0.08em", lineHeight:1 }}>
+                  {groups.find(g => g.items.some(t => t.id === tab))?.label}
+                </div>
+                <div style={{ fontSize:13, fontWeight:700, color:"#111827", marginTop:2 }}>
+                  {current?.label}
+                </div>
+              </div>
+            </div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+              stroke={accent} strokeWidth="2.5" strokeLinecap="round"
+              style={{ transform: open ? "rotate(180deg)" : "none", transition:"transform 0.2s", flexShrink:0 }}>
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+
+          {/* Dropdown panel */}
+          {open && (
+            <div style={{ position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:200,
+              background:"white", borderRadius:14, border:`1px solid #E5E7EB`,
+              boxShadow:"0 12px 40px rgba(0,0,0,0.14)", overflow:"hidden", minWidth:260 }}>
+              {groups.map((g, gi) => (
+                <div key={gi}>
+                  <div style={{ padding:"9px 14px 5px", fontSize:10, fontWeight:700,
+                    color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.1em",
+                    background:"#F9FAFB", borderBottom:"1px solid #F3F4F6" }}>
+                    {g.label}
+                  </div>
+                  {g.items.map(t => (
+                    <button key={t.id} onClick={() => { setTab(t.id); setOpen(false); }}
+                      style={{ display:"flex", alignItems:"center", gap:10, width:"100%",
+                        padding:"10px 14px", border:"none",
+                        background: tab===t.id ? `${accent}10` : "white",
+                        borderLeft: tab===t.id ? `3px solid ${accent}` : "3px solid transparent",
+                        cursor:"pointer", fontFamily:F, textAlign:"left",
+                        transition:"background 0.1s" }}
+                      onMouseEnter={e => { if(tab!==t.id) e.currentTarget.style.background="#F9FAFB"; }}
+                      onMouseLeave={e => { if(tab!==t.id) e.currentTarget.style.background="white"; }}>
+                      <span style={{ fontSize:15, opacity: tab===t.id ? 1 : 0.65 }}>{t.emoji}</span>
+                      <span style={{ fontSize:13, fontWeight: tab===t.id ? 700 : 500,
+                        color: tab===t.id ? accent : "#374151" }}>{t.label}</span>
+                      {tab===t.id && (
+                        <svg style={{ marginLeft:"auto" }} width="14" height="14" viewBox="0 0 24 24"
+                          fill="none" stroke={accent} strokeWidth="2.5" strokeLinecap="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      )}
+                    </button>
+                  ))}
+                  {gi < groups.length-1 && <div style={{ borderTop:"1px solid #F3F4F6" }}/>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Content area ── */}
+      <div style={{ padding:"20px 20px 32px" }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
 function MSMEPackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
 
@@ -4044,32 +4145,32 @@ function MSMEPackContent({ reportData, kpis, client }) {
     {
       label: "Financial Reports",
       items: [
-        { id:"monthly",    icon:"dashboard",  label:"Monthly Report"    },
-        { id:"variance",   icon:"trend_down", label:"Variance Analysis" },
-        { id:"verticalpnl",icon:"rev",        label:"Vertical P&L"      },
+        { id:"monthly",    emoji:"📊",  label:"Monthly Report"    },
+        { id:"variance",   emoji:"📉", label:"Variance Analysis" },
+        { id:"verticalpnl",emoji:"📈",        label:"Vertical P&L"      },
       ]
     },
     {
       label: "Cash & Working Capital",
       items: [
-        { id:"cash",       icon:"cashflow",   label:"Cash Health"       },
-        { id:"workingcap", icon:"chart_bar",  label:"Working Capital"   },
-        { id:"fundutil",   icon:"treasury",   label:"Fund Utilisation"  },
+        { id:"cash",       emoji:"💵",   label:"Cash Health"       },
+        { id:"workingcap", emoji:"📊",  label:"Working Capital"   },
+        { id:"fundutil",   emoji:"🏛️",   label:"Fund Utilisation"  },
       ]
     },
     {
       label: "Strategy & Planning",
       items: [
-        { id:"scenario",   icon:"scenario",   label:"Scenarios"         },
-        { id:"bizintel",   icon:"bi",         label:"BI Analysis"       },
-        { id:"spend",      icon:"chart_pie",  label:"Spend Intel"       },
-        { id:"bankfin",    icon:"bank",       label:"Bank Finance"      },
+        { id:"scenario",   emoji:"🎯",   label:"Scenarios"         },
+        { id:"bizintel",   emoji:"🌏",         label:"BI Analysis"       },
+        { id:"spend",      emoji:"📊",  label:"Spend Intel"       },
+        { id:"bankfin",    emoji:"🏦",       label:"Bank Finance"      },
       ]
     },
     {
       label: "Documents",
       items: [
-        { id:"packs",      icon:"documents",  label:"Previous Packs"    },
+        { id:"packs",      emoji:"📁",  label:"Previous Packs"    },
       ]
     },
   ];
@@ -4078,40 +4179,8 @@ function MSMEPackContent({ reportData, kpis, client }) {
   const archiveDocs = useLiveDocs(client);
 
   return (
-    <div style={{ display:"flex", gap:0, minHeight:"60vh" }}>
-
-      {/* ── Left nav sidebar ── */}
-      <div style={{ width:200, flexShrink:0, borderRight:`1px solid ${C.border}`,
-        paddingTop:8, paddingBottom:24, background:C.bg2 }}>
-        {groups.map((g, gi) => (
-          <div key={gi} style={{ marginBottom:4 }}>
-            <div style={{ padding:"10px 16px 4px", fontFamily:F, fontSize:10,
-              fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.1em" }}>
-              {g.label}
-            </div>
-            {g.items.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{
-                display:"flex", alignItems:"center", gap:9,
-                width:"100%", padding:"9px 16px",
-                background: tab===t.id ? `${C.teal}12` : "transparent",
-                border:"none", borderLeft: tab===t.id ? `3px solid ${C.teal}` : "3px solid transparent",
-                cursor:"pointer", fontFamily:F, fontSize:13, fontWeight: tab===t.id ? 700 : 500,
-                color: tab===t.id ? C.teal : C.muted,
-                transition:"all 0.12s", textAlign:"left",
-              }}>
-                <Icon name={t.icon} size={15} color={tab===t.id ? C.teal : C.dim}/>
-                {t.label}
-              </button>
-            ))}
-            {gi < groups.length-1 && (
-              <div style={{ margin:"6px 16px 2px", borderTop:`1px solid ${C.border}` }}/>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* ── Content area ── */}
-      <div style={{ flex:1, minWidth:0, padding:"24px 24px 32px", overflowY:"auto" }}>
+    <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.teal}>
+      <div>
 
       {tab === "monthly" && (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
@@ -4599,7 +4668,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
 
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.teal}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.teal}/>}
-      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.teal}/>}
+      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.teal} client={client}/>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.teal} client={client}/> }
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.teal} client={client}/>}
 
@@ -4621,7 +4690,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
         </div>
       )}
       </div>
-    </div>
+    </PackLayout>
   );
 }
 
@@ -4632,31 +4701,31 @@ function CorporatePackContent({ reportData, kpis, client }) {
     {
       label: "Financial Reports",
       items: [
-        { id:"monthly",    icon:"dashboard",  label:"Monthly Report"    },
-        { id:"variance",   icon:"trend_down", label:"Variance Analysis" },
-        { id:"verticalpnl",icon:"rev",        label:"Vertical P&L"      },
+        { id:"monthly",    emoji:"📊",  label:"Monthly Report"    },
+        { id:"variance",   emoji:"📉", label:"Variance Analysis" },
+        { id:"verticalpnl",emoji:"📈",        label:"Vertical P&L"      },
       ]
     },
     {
       label: "Governance & Growth",
       items: [
-        { id:"governance", icon:"valuation",  label:"Board Governance"  },
-        { id:"ipo",        icon:"bank",       label:"IPO Readiness"     },
-        { id:"fundutil",   icon:"treasury",   label:"Fund Utilisation"  },
+        { id:"governance", emoji:"⚖️",  label:"Board Governance"  },
+        { id:"ipo",        emoji:"🏦",       label:"IPO Readiness"     },
+        { id:"fundutil",   emoji:"🏛️",   label:"Fund Utilisation"  },
       ]
     },
     {
       label: "Strategy & Planning",
       items: [
-        { id:"scenario",   icon:"scenario",   label:"Scenarios"         },
-        { id:"bizintel",   icon:"bi",         label:"BI Analysis"       },
-        { id:"spend",      icon:"chart_pie",  label:"Spend Intel"       },
+        { id:"scenario",   emoji:"🎯",   label:"Scenarios"         },
+        { id:"bizintel",   emoji:"🌏",         label:"BI Analysis"       },
+        { id:"spend",      emoji:"📊",  label:"Spend Intel"       },
       ]
     },
     {
       label: "Documents",
       items: [
-        { id:"packs",      icon:"documents",  label:"Previous Packs"    },
+        { id:"packs",      emoji:"📁",  label:"Previous Packs"    },
       ]
     },
   ];
@@ -4665,40 +4734,8 @@ function CorporatePackContent({ reportData, kpis, client }) {
   const archiveDocs = useLiveDocs(client);
 
   return (
-    <div style={{ display:"flex", gap:0, minHeight:"60vh" }}>
-
-      {/* Left nav sidebar */}
-      <div style={{ width:200, flexShrink:0, borderRight:`1px solid ${C.border}`,
-        paddingTop:8, paddingBottom:24, background:C.bg2 }}>
-        {groups.map((g, gi) => (
-          <div key={gi} style={{ marginBottom:4 }}>
-            <div style={{ padding:"10px 16px 4px", fontFamily:F, fontSize:10,
-              fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.1em" }}>
-              {g.label}
-            </div>
-            {g.items.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{
-                display:"flex", alignItems:"center", gap:9,
-                width:"100%", padding:"9px 16px",
-                background: tab===t.id ? `${C.purple}12` : "transparent",
-                border:"none", borderLeft: tab===t.id ? `3px solid ${C.purple}` : "3px solid transparent",
-                cursor:"pointer", fontFamily:F, fontSize:13, fontWeight: tab===t.id ? 700 : 500,
-                color: tab===t.id ? C.purple : C.muted,
-                transition:"all 0.12s", textAlign:"left",
-              }}>
-                <Icon name={t.icon} size={15} color={tab===t.id ? C.purple : C.dim}/>
-                {t.label}
-              </button>
-            ))}
-            {gi < groups.length-1 && (
-              <div style={{ margin:"6px 16px 2px", borderTop:`1px solid ${C.border}` }}/>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Content area */}
-      <div style={{ flex:1, minWidth:0, padding:"24px 24px 32px", overflowY:"auto" }}>
+    <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.purple}>
+      <div>
 
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
@@ -5115,7 +5152,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
 
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.purple}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.purple}/>}
-      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.purple}/>}
+      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.purple} client={client}/>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
 
@@ -5137,7 +5174,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
         </div>
       )}
       </div>
-    </div>
+    </PackLayout>
   );
 }
 
@@ -5225,7 +5262,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     { name:"Technology",  icon:"💻", color:"#059669"  },
     { name:"Operations",  icon:"settings", color:"#D97706"  },
     { name:"HR & Admin",  icon:"👥", color:"#EF4444"  },
-    { name:"Finance",     icon:"dashboard", color:"#0891B2"  },
+    { name:"Finance",     emoji:"📊", color:"#0891B2"  },
   ].map(d => ({...d,
     revenue: parse(reportData?.depts?.[d.name]?.revenue),
     cost:    parse(reportData?.depts?.[d.name]?.cost),
@@ -5239,7 +5276,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
   if (revGrowth !== null && parseFloat(revGrowth) > 15)
     flags.push({ type:"success", icon:"🚀", text:`Strong revenue growth of ${revGrowth}% MoM` });
   if (parseFloat(gpMargin) < 30)
-    flags.push({ type:"warning", icon:"trend_down", text:`Gross margin at ${gpMargin}% — below healthy threshold of 30%` });
+    flags.push({ type:"warning", emoji:"📉", text:`Gross margin at ${gpMargin}% — below healthy threshold of 30%` });
   if (parseFloat(ebitdaMargin) < 0)
     flags.push({ type:"danger",  icon:"🔴", text:`EBITDA negative at ${ebitdaMargin}% — business burning cash at operating level` });
   if (ebitdaGrowth !== null && parseFloat(ebitdaGrowth) > 20)
@@ -5252,13 +5289,13 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     const diff = ((actual - budget) / Math.abs(budget) * 100).toFixed(1);
     const unfav = v.fav ? actual < budget : actual > budget;
     if (unfav && Math.abs(diff) > 10)
-      flags.push({ type:"warning", icon:"dashboard", text:`${v.metric}: ${Math.abs(diff)}% ${unfav ? "below" : "above"} budget` });
+      flags.push({ type:"warning", emoji:"📊", text:`${v.metric}: ${Math.abs(diff)}% ${unfav ? "below" : "above"} budget` });
   });
 
   // Dept flags
   deptList.forEach(d => {
     if (d.budget > 0 && d.cost > d.budget * 1.15)
-      flags.push({ type:"warning", icon:"cashflow", text:`${d.name} overspending budget by ${(((d.cost-d.budget)/d.budget)*100).toFixed(0)}%` });
+      flags.push({ type:"warning", emoji:"💵", text:`${d.name} overspending budget by ${(((d.cost-d.budget)/d.budget)*100).toFixed(0)}%` });
   });
 
   // ── Reusable chart components ─────────────────────────────────────────────
@@ -5410,7 +5447,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     ].filter(Boolean).join("\n");
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
@@ -5439,7 +5476,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
       {/* View toggle */}
       <div style={{ display:"flex", gap:8 }}>
         {[
-          { id:"geography",  label:"Geography",  icon:"bi"      },
+          { id:"geography",  label:"Geography",  emoji:"🌏"      },
           { id:"department", label:"Department",  icon:"users"   },
         ].map(v => (
           <button key={v.id} onClick={() => setView(v.id)} style={{
@@ -5575,196 +5612,339 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
 
 
 // ─── SCENARIO MODELLING ───────────────────────────────────────────────────────
-function ScenarioModelling({ reportData, accentColor }) {
-  const acc = accentColor || C.blue;
+function ScenarioModelling({ reportData, accentColor, client }) {
+  const acc    = accentColor || C.blue;
+  const pack   = client?.client_pack || client?.clientPack || "startup";
 
-  // Base revenue and cost from reportData if available
-  const baseRev  = parseFloat((reportData?.pl?.revenue?.actual  || "").replace(/[^0-9.]/g,"")) || 0;
-  const baseCost = parseFloat((reportData?.pl?.opex?.actual     || "").replace(/[^0-9.]/g,"")) || 0;
-  const baseCogs = parseFloat((reportData?.pl?.cogs?.actual     || "").replace(/[^0-9.]/g,"")) || 0;
-
-  const [base, setBase] = React.useState({
-    revenue: reportData?.scenarioBase?.revenue || baseRev || "",
-    cogs:    reportData?.scenarioBase?.cogs    || baseCogs || "",
-    opex:    reportData?.scenarioBase?.opex    || baseCost || "",
-    label:   "Monthly (₹)"
-  });
-
-  const [scenarios, setScenarios] = React.useState([
-    { name:"Base Case",  color:"#059669", revGrowth:0,   costChange:0,   cogsChange:0   },
-    { name:"Stress Case",color:"#D97706", revGrowth:-20, costChange:10,  cogsChange:5   },
-    { name:"Worst Case", color:"#EF4444", revGrowth:-40, costChange:20,  cogsChange:10  },
-  ]);
-
-  const updateScenario = (i, field, val) => {
-    const ns = [...scenarios];
-    ns[i] = { ...ns[i], [field]: val };
-    setScenarios(ns);
-  };
-
-  const calc = (s) => {
-    const rev  = (parseFloat(base.revenue)||0) * (1 + (parseFloat(s.revGrowth)||0)/100);
-    const cogs = (parseFloat(base.cogs)||0)    * (1 + (parseFloat(s.cogsChange)||0)/100);
-    const opex = (parseFloat(base.opex)||0)    * (1 + (parseFloat(s.costChange)||0)/100);
-    const gp   = rev - cogs;
-    const ebitda = gp - opex;
-    const margin = rev > 0 ? ((ebitda/rev)*100).toFixed(1) : 0;
-    return { rev, cogs, opex, gp, ebitda, margin };
+  // Pull base figures from admin-entered P&L data
+  const parse = (v) => {
+    if (!v) return 0;
+    const s = String(v).replace(/[₹,\s]/g,"");
+    let n = parseFloat(s); if (isNaN(n)) return 0;
+    if (s.toLowerCase().includes("cr"))  n *= 10000000;
+    else if (s.toLowerCase().includes("l")) n *= 100000;
+    else if (s.toLowerCase().includes("k")) n *= 1000;
+    return n;
   };
 
   const fmt = (n) => {
-    if (!n) return "—";
-    const abs = Math.abs(n);
-    const sign = n < 0 ? "-" : "";
+    if (!n && n !== 0) return "—";
+    const abs = Math.abs(n), sign = n < 0 ? "-" : "";
     if (abs >= 10000000) return `${sign}₹${(abs/10000000).toFixed(1)}Cr`;
     if (abs >= 100000)   return `${sign}₹${(abs/100000).toFixed(1)}L`;
     if (abs >= 1000)     return `${sign}₹${(abs/1000).toFixed(0)}K`;
     return `${sign}₹${abs.toFixed(0)}`;
   };
 
+  const baseRev  = parse(reportData?.scenarioBase?.revenue || reportData?.pl?.revenue?.actual);
+  const baseCogs = parse(reportData?.scenarioBase?.cogs    || reportData?.pl?.cogs?.actual);
+  const baseOpex = parse(reportData?.scenarioBase?.opex    || reportData?.pl?.opex?.actual);
+  const cashBal  = parse(reportData?.pl?.cashBalance || "");
+  const burnRate = parse(reportData?.pl?.burnRate || "");
+
+  const hasData = baseRev > 0;
+
+  // Three fixed scenarios — meaningful, not arbitrary sliders
+  const SCENARIOS = [
+    {
+      id: "base",
+      name: "Base Case",
+      subtitle: "Current trajectory continues",
+      color: "#059669",
+      bg: "#F0FDF4",
+      revDelta: 0,
+      cogsDelta: 0,
+      opexDelta: 0,
+      icon: "📊",
+    },
+    {
+      id: "stress",
+      name: "Revenue Stress",
+      subtitle: "20% revenue decline, costs sticky",
+      color: "#D97706",
+      bg: "#FFFBEB",
+      revDelta: -20,
+      cogsDelta: -8,   // COGS partially variable
+      opexDelta: 5,    // Opex tends to increase under stress
+      icon: "⚠️",
+    },
+    {
+      id: "worst",
+      name: "Downturn",
+      subtitle: "40% revenue drop, emergency cuts",
+      color: "#EF4444",
+      bg: "#FEF2F2",
+      revDelta: -40,
+      cogsDelta: -20,
+      opexDelta: -15,  // Assumes cost-cutting measures
+      icon: "🔴",
+    },
+  ];
+
+  const calc = (s) => {
+    const rev   = baseRev   * (1 + s.revDelta/100);
+    const cogs  = baseCogs  * (1 + s.cogsDelta/100);
+    const opex  = baseOpex  * (1 + s.opexDelta/100);
+    const gp    = rev - cogs;
+    const ebitda = gp - opex;
+    const gpMargin     = rev > 0 ? (gp/rev*100)     : 0;
+    const ebitdaMargin = rev > 0 ? (ebitda/rev*100) : 0;
+    // Runway: how many months does cash last at this burn rate?
+    const effectiveBurn = opex + Math.max(0, cogs - rev*0.5); // rough
+    const runway = cashBal > 0 && effectiveBurn > 0
+      ? (cashBal / Math.abs(Math.min(ebitda, -effectiveBurn))).toFixed(1)
+      : null;
+    return { rev, cogs, opex, gp, ebitda, gpMargin, ebitdaMargin, runway };
+  };
+
+  // AI analysis state
+  const [aiAnalysis, setAiAnalysis] = React.useState("");
+  const [loadingAI, setLoadingAI]   = React.useState(false);
+  const [activeScenario, setActiveScenario] = React.useState("stress");
+
+  const generateAnalysis = async (scenarioId) => {
+    const s = SCENARIOS.find(s => s.id === scenarioId);
+    const r = calc(s);
+    setLoadingAI(true);
+    setActiveScenario(scenarioId);
+
+    const context = [
+      `Company type: ${pack}`,
+      `Scenario: ${s.name} — ${s.subtitle}`,
+      `Base Revenue: ${fmt(baseRev)} → Scenario Revenue: ${fmt(r.rev)} (${s.revDelta > 0 ? "+" : ""}${s.revDelta}%)`,
+      `Gross Profit: ${fmt(r.gp)} (${r.gpMargin.toFixed(1)}% margin)`,
+      `EBITDA: ${fmt(r.ebitda)} (${r.ebitdaMargin.toFixed(1)}% margin)`,
+      r.ebitda < 0 ? `Monthly cash burn: ${fmt(Math.abs(r.ebitda))}` : "",
+      cashBal ? `Current cash balance: ${fmt(cashBal)}` : "",
+      r.runway ? `Implied runway: ~${r.runway} months` : "",
+    ].filter(Boolean).join("\n");
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 900,
+          system: `You are a CFO advisor giving a CEO a crisp scenario briefing. 
+For the given scenario, provide:
+1. The KEY RISK in 1 sentence
+2. IMMEDIATE ACTIONS — 3 specific things the CEO should do NOW (numbered)
+3. WATCH METRICS — 2 numbers to track weekly
+Be direct. Use ₹ amounts. Indian business context. No fluff.`,
+          messages: [{ role: "user", content: context }],
+        }),
+      });
+      const data = await res.json();
+      setAiAnalysis(data?.content?.[0]?.text || "Could not generate analysis.");
+    } catch {
+      setAiAnalysis("API error. Please try again.");
+    }
+    setLoadingAI(false);
+  };
+
+  if (!hasData) return (
+    <Card>
+      <div style={{ textAlign:"center", padding:"32px 0" }}>
+        <div style={{ fontSize:32, marginBottom:12 }}>📐</div>
+        <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text, marginBottom:6 }}>
+          No financial data available
+        </div>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>
+          Garima will add your base P&L figures to enable scenario analysis.
+        </div>
+      </div>
+    </Card>
+  );
+
+  const baseCalc = calc(SCENARIOS[0]);
+
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-      {/* Base inputs */}
-      <Card>
+
+      {/* Header */}
+      <div style={{ padding:"16px 20px", borderRadius:14,
+        background:`linear-gradient(135deg,${acc}12,${acc}06)`,
+        border:`1px solid ${acc}20` }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-          📐 Scenario Modelling
+          Scenario Analysis
         </div>
-        <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>
-          Enter your base month figures then adjust each scenario.
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>
+          Based on {reportData?.monthLabel || "current"} actuals — Revenue {fmt(baseRev)} · COGS {fmt(baseCogs)} · OpEx {fmt(baseOpex)}
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}>
-          {[
-            { label:"Base Revenue (₹)", field:"revenue" },
-            { label:"Base COGS (₹)",    field:"cogs"    },
-            { label:"Base OpEx (₹)",    field:"opex"    },
-          ].map(({ label, field }) => (
-            <div key={field}>
-              <div style={{ fontSize:11, color:C.muted, fontFamily:F, marginBottom:4, fontWeight:600 }}>{label}</div>
-              <input type="number" placeholder="0"
-                value={base[field]}
-                onChange={e => setBase(b => ({...b, [field]: e.target.value}))}
-                style={{ width:"100%", padding:"8px 10px", borderRadius:8,
-                  border:`1.5px solid ${C.border}`, fontFamily:F, fontSize:13,
-                  color:C.text, background:C.bg2, outline:"none" }}/>
-            </div>
-          ))}
-        </div>
-      </Card>
+      </div>
 
-      {/* Scenario cards */}
+      {/* Three scenario cards */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }} className="scenario-grid">
-        {scenarios.map((s, i) => {
+        {SCENARIOS.map((s) => {
           const r = calc(s);
+          const isActive = activeScenario === s.id;
           return (
-            <div key={i} style={{ borderRadius:14, overflow:"hidden",
-              border:`1.5px solid ${s.color}30`, background:"white",
-              boxShadow:`0 2px 12px ${s.color}15` }}>
-              {/* Scenario header */}
-              <div style={{ padding:"10px 14px", background:`${s.color}12`,
+            <div key={s.id} style={{ borderRadius:16, overflow:"hidden",
+              border:`2px solid ${isActive ? s.color : C.border}`,
+              boxShadow: isActive ? `0 4px 20px ${s.color}25` : "none",
+              transition:"all 0.2s", background:"white" }}>
+
+              {/* Card header */}
+              <div style={{ padding:"12px 16px", background:s.bg,
                 borderBottom:`1px solid ${s.color}20` }}>
-                <input value={s.name} onChange={e => updateScenario(i,"name",e.target.value)}
-                  style={{ fontFamily:F, fontWeight:700, fontSize:13, color:s.color,
-                    border:"none", background:"transparent", outline:"none", width:"100%" }}/>
+                <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:2 }}>
+                  <span style={{ fontSize:16 }}>{s.icon}</span>
+                  <div style={{ fontFamily:F, fontWeight:800, fontSize:13, color:s.color }}>
+                    {s.name}
+                  </div>
+                </div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, lineHeight:1.4 }}>
+                  {s.subtitle}
+                </div>
               </div>
 
-              {/* Sliders */}
-              <div style={{ padding:"12px 14px", display:"flex", flexDirection:"column", gap:10 }}>
+              {/* Metrics */}
+              <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:8 }}>
                 {[
-                  { label:"Revenue %", field:"revGrowth",  min:-80, max:100 },
-                  { label:"Cost %",    field:"costChange", min:-50, max:100 },
-                  { label:"COGS %",    field:"cogsChange", min:-50, max:100 },
-                ].map(({ label, field, min, max }) => (
-                  <div key={field}>
-                    <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-                      <span style={{ fontSize:11, fontFamily:F, color:C.muted, fontWeight:600 }}>{label}</span>
-                      <span style={{ fontSize:11, fontFamily:F, fontWeight:700,
-                        color: parseFloat(s[field]||0) >= 0 ? C.green : C.red }}>
-                        {parseFloat(s[field]||0) >= 0 ? "+" : ""}{s[field]||0}%
-                      </span>
+                  { label:"Revenue",    val:r.rev,    base:baseRev,       delta:s.revDelta   },
+                  { label:"Gross Profit",val:r.gp,   base:baseCalc.gp,   delta:null         },
+                  { label:"EBITDA",     val:r.ebitda, base:baseCalc.ebitda,delta:null        },
+                ].map((row,i) => {
+                  const isNeg = row.val < 0;
+                  const diffFromBase = baseCalc[['rev','gp','ebitda'][i]] > 0
+                    ? ((row.val - baseCalc[['rev','gp','ebitda'][i]]) / Math.abs(baseCalc[['rev','gp','ebitda'][i]]) * 100).toFixed(0)
+                    : null;
+                  return (
+                    <div key={i}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:2 }}>
+                        <span style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600 }}>
+                          {row.label}
+                        </span>
+                        {s.id !== "base" && diffFromBase && (
+                          <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
+                            color: parseFloat(diffFromBase) >= 0 ? C.green : C.red }}>
+                            {parseFloat(diffFromBase) >= 0 ? "▲" : "▼"}{Math.abs(diffFromBase)}%
+                          </span>
+                        )}
+                      </div>
+                      <div style={{ fontFamily:F, fontSize:18, fontWeight:800,
+                        color: isNeg ? C.red : i === 0 ? s.color : C.text }}>
+                        {fmt(row.val)}
+                      </div>
                     </div>
-                    <input type="range" min={min} max={max} value={s[field]||0}
-                      onChange={e => updateScenario(i, field, parseFloat(e.target.value))}
-                      style={{ width:"100%", accentColor: s.color }}/>
-                  </div>
-                ))}
-              </div>
+                  );
+                })}
 
-              {/* Results */}
-              <div style={{ padding:"12px 14px", borderTop:`1px solid ${C.border}`,
-                display:"flex", flexDirection:"column", gap:6 }}>
-                {[
-                  { label:"Revenue",  val: r.rev,    positive: true  },
-                  { label:"Gross P.", val: r.gp,     positive: r.gp >= 0 },
-                  { label:"EBITDA",   val: r.ebitda, positive: r.ebitda >= 0 },
-                ].map(({ label, val, positive }) => (
-                  <div key={label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-                    <span style={{ fontSize:11, fontFamily:F, color:C.muted }}>{label}</span>
-                    <span style={{ fontSize:12, fontFamily:F, fontWeight:700,
-                      color: positive ? C.green : C.red }}>{fmt(val)}</span>
-                  </div>
-                ))}
-                <div style={{ marginTop:4, padding:"6px 10px", borderRadius:8,
-                  background:`${s.color}12`, textAlign:"center" }}>
-                  <span style={{ fontSize:12, fontFamily:F, fontWeight:700, color:s.color }}>
-                    {r.margin}% EBITDA Margin
+                {/* EBITDA margin badge */}
+                <div style={{ padding:"6px 10px", borderRadius:8, background:
+                  r.ebitdaMargin >= 15 ? `${C.green}12` : r.ebitdaMargin >= 0 ? `${C.amber}12` : `${C.red}12`,
+                  display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:2 }}>
+                  <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>EBITDA margin</span>
+                  <span style={{ fontFamily:F, fontSize:13, fontWeight:800,
+                    color: r.ebitdaMargin >= 15 ? C.green : r.ebitdaMargin >= 0 ? "#D97706" : C.red }}>
+                    {r.ebitdaMargin.toFixed(1)}%
                   </span>
                 </div>
+
+                {/* Runway if negative */}
+                {r.ebitda < 0 && cashBal > 0 && (
+                  <div style={{ padding:"6px 10px", borderRadius:8, background:`${C.red}08`,
+                    border:`1px solid ${C.red}20` }}>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.red, fontWeight:600 }}>
+                      Cash runway: ~{(cashBal / Math.abs(r.ebitda)).toFixed(1)} months
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Analyse button */}
+              <div style={{ padding:"0 16px 14px" }}>
+                <button onClick={() => generateAnalysis(s.id)}
+                  disabled={loadingAI && activeScenario === s.id}
+                  style={{ width:"100%", padding:"9px", borderRadius:10, border:"none",
+                    background: isActive ? s.color : `${s.color}15`,
+                    color: isActive ? "white" : s.color,
+                    fontFamily:F, fontSize:12, fontWeight:700, cursor:"pointer",
+                    transition:"all 0.15s" }}>
+                  {loadingAI && activeScenario === s.id ? "Analysing..." : "Get CFO Insights →"}
+                </button>
               </div>
             </div>
           );
         })}
       </div>
-      <style>{`.scenario-grid{grid-template-columns:repeat(3,1fr)!important}@media(max-width:640px){.scenario-grid{grid-template-columns:1fr!important}}`}</style>
+      <style>{`.scenario-grid{grid-template-columns:repeat(3,1fr)!important}@media(max-width:700px){.scenario-grid{grid-template-columns:1fr!important}}`}</style>
 
       {/* Comparison table */}
-      {(parseFloat(base.revenue)||0) > 0 && (
-        <Card>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>
-            Scenario Comparison
-          </div>
-          <div style={{ overflowX:"auto" }}>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
-              <thead>
-                <tr style={{ borderBottom:`2px solid ${C.border}` }}>
-                  {["Metric", ...scenarios.map(s => s.name)].map(h => (
-                    <th key={h} style={{ padding:"8px 12px", textAlign:"left",
-                      color:C.muted, fontWeight:700, fontSize:11, textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {["Revenue","Gross Profit","EBITDA","EBITDA Margin"].map((metric, mi) => (
-                  <tr key={metric} style={{ borderBottom:`1px solid ${C.border}`,
-                    background: mi % 2 === 0 ? "white" : C.bg2 }}>
-                    <td style={{ padding:"9px 12px", fontWeight:600, color:C.text }}>{metric}</td>
-                    {scenarios.map((s,si) => {
-                      const r = calc(s);
-                      const val = metric === "Revenue" ? r.rev
-                        : metric === "Gross Profit" ? r.gp
-                        : metric === "EBITDA" ? r.ebitda
-                        : null;
-                      const margin = metric === "EBITDA Margin";
-                      const positive = margin ? parseFloat(r.margin) >= 0 : (val||0) >= 0;
-                      return (
-                        <td key={si} style={{ padding:"9px 12px",
-                          color: margin ? s.color : positive ? C.green : C.red,
-                          fontWeight:700 }}>
-                          {margin ? `${r.margin}%` : fmt(val)}
-                        </td>
-                      );
-                    })}
-                  </tr>
+      <Card>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+          Side-by-Side Comparison
+        </div>
+        <div style={{ overflowX:"auto" }}>
+          <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
+            <thead>
+              <tr style={{ borderBottom:`2px solid ${C.border}` }}>
+                {["Metric", ...SCENARIOS.map(s => s.name)].map(h => (
+                  <th key={h} style={{ padding:"8px 12px", textAlign:"left",
+                    color:C.muted, fontWeight:700, fontSize:11,
+                    textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</th>
                 ))}
-              </tbody>
-            </table>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label:"Revenue",       key:"rev"         },
+                { label:"Gross Profit",  key:"gp"          },
+                { label:"EBITDA",        key:"ebitda"       },
+                { label:"GP Margin",     key:"gpMargin",    pct:true },
+                { label:"EBITDA Margin", key:"ebitdaMargin",pct:true },
+              ].map((row, ri) => (
+                <tr key={row.key} style={{ borderBottom:`1px solid ${C.border}`,
+                  background: ri%2===0 ? "white" : C.bg2 }}>
+                  <td style={{ padding:"10px 12px", fontWeight:600, color:C.text }}>{row.label}</td>
+                  {SCENARIOS.map((s) => {
+                    const r = calc(s);
+                    const val = r[row.key];
+                    const isNeg = val < 0;
+                    return (
+                      <td key={s.id} style={{ padding:"10px 12px", fontWeight:700,
+                        color: isNeg ? C.red : s.id === "base" ? C.green : s.color }}>
+                        {row.pct ? `${val.toFixed(1)}%` : fmt(val)}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </Card>
+
+      {/* AI CFO Insights */}
+      {aiAnalysis && (
+        <Card style={{ border:`1.5px solid ${SCENARIOS.find(s=>s.id===activeScenario)?.color}30` }}>
+          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
+            <div style={{ width:36, height:36, borderRadius:10,
+              background:`${SCENARIOS.find(s=>s.id===activeScenario)?.color}15`,
+              display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
+              {SCENARIOS.find(s=>s.id===activeScenario)?.icon}
+            </div>
+            <div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
+                CFO Insights — {SCENARIOS.find(s=>s.id===activeScenario)?.name}
+              </div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>
+                Based on your actual {reportData?.monthLabel || "current"} data
+              </div>
+            </div>
+          </div>
+          <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.85,
+            whiteSpace:"pre-wrap", background:C.bg2, borderRadius:10, padding:"14px 16px" }}>
+            {aiAnalysis}
           </div>
         </Card>
       )}
     </div>
   );
 }
+
+
 
 // ─── SPEND INTELLIGENCE ───────────────────────────────────────────────────────
 function SpendIntelligence({ reportData, accentColor, client }) {
@@ -5819,7 +5999,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
       .map(d => `${d.name}: ${fmt(d.actual)} (${((d.actual/rev)*100).toFixed(1)}% of revenue, benchmark ${d.benchmark}%)`)
       .join("\n");
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
@@ -6333,32 +6513,32 @@ function CFOPackContent({ reportData, client, kpis }) {
     {
       label: "Financial Reports",
       items: [
-        { id:"monthly",    icon:"dashboard",  label:"Monthly Report"      },
-        { id:"variance",   icon:"trend_down", label:"Variance Analysis"   },
-        { id:"verticalpnl",icon:"rev",        label:"Vertical P&L"        },
-        { id:"uniteco",    icon:"chart_bar",  label:"Unit Economics"      },
+        { id:"monthly",    emoji:"📊",  label:"Monthly Report"      },
+        { id:"variance",   emoji:"📉", label:"Variance Analysis"   },
+        { id:"verticalpnl",emoji:"📈",        label:"Vertical P&L"        },
+        { id:"uniteco",    emoji:"📊",  label:"Unit Economics"      },
       ]
     },
     {
       label: "Fundraise & Finance",
       items: [
-        { id:"fundraise",  icon:"flag",       label:"Fundraise Readiness" },
-        { id:"loan",       icon:"bank",       label:"Loan Readiness"      },
-        { id:"fundutil",   icon:"treasury",   label:"Fund Utilisation"    },
+        { id:"fundraise",  emoji:"🚩",       label:"Fundraise Readiness" },
+        { id:"loan",       emoji:"🏦",       label:"Loan Readiness"      },
+        { id:"fundutil",   emoji:"🏛️",   label:"Fund Utilisation"    },
       ]
     },
     {
       label: "Strategy & Planning",
       items: [
-        { id:"scenario",   icon:"scenario",   label:"Scenarios"           },
-        { id:"bizintel",   icon:"bi",         label:"BI Analysis"         },
-        { id:"spend",      icon:"chart_pie",  label:"Spend Intel"         },
+        { id:"scenario",   emoji:"🎯",   label:"Scenarios"           },
+        { id:"bizintel",   emoji:"🌏",         label:"BI Analysis"         },
+        { id:"spend",      emoji:"📊",  label:"Spend Intel"         },
       ]
     },
     {
       label: "Documents",
       items: [
-        { id:"boardpacks", icon:"documents",  label:"Board Packs"         },
+        { id:"boardpacks", emoji:"📁",  label:"Board Packs"         },
       ]
     },
   ];
@@ -6367,41 +6547,8 @@ function CFOPackContent({ reportData, client, kpis }) {
   const archiveDocs = useLiveDocs(client);
 
   return (
-    <div style={{ display:"flex", gap:0, minHeight:"60vh" }}>
-
-      {/* Left nav sidebar */}
-      <div style={{ width:200, flexShrink:0, borderRight:`1px solid ${C.border}`,
-        paddingTop:8, paddingBottom:24, background:C.bg2 }}>
-        {groups.map((g, gi) => (
-          <div key={gi} style={{ marginBottom:4 }}>
-            <div style={{ padding:"10px 16px 4px", fontFamily:F, fontSize:10,
-              fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.1em" }}>
-              {g.label}
-            </div>
-            {g.items.map(t => (
-              <button key={t.id} onClick={() => setTab(t.id)} style={{
-                display:"flex", alignItems:"center", gap:9,
-                width:"100%", padding:"9px 16px",
-                background: tab===t.id ? `${C.blue}12` : "transparent",
-                border:"none", borderLeft: tab===t.id ? `3px solid ${C.blue}` : "3px solid transparent",
-                cursor:"pointer", fontFamily:F, fontSize:13, fontWeight: tab===t.id ? 700 : 500,
-                color: tab===t.id ? C.blue : C.muted,
-                transition:"all 0.12s", textAlign:"left",
-              }}>
-                <Icon name={t.icon} size={15} color={tab===t.id ? C.blue : C.dim}/>
-                {t.label}
-              </button>
-            ))}
-            {gi < groups.length-1 && (
-              <div style={{ margin:"6px 16px 2px", borderTop:`1px solid ${C.border}` }}/>
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Content area */}
-      <div style={{ flex:1, minWidth:0, padding:"24px 24px 32px", overflowY:"auto" }}>
-
+    <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.blue}>
+      <div>
       {/* Monthly Report tab */}
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
@@ -7001,7 +7148,7 @@ function CFOPackContent({ reportData, client, kpis }) {
 
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.blue}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.blue}/>}
-      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.blue}/>}
+      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.blue} client={client}/>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
 
@@ -7029,7 +7176,7 @@ function CFOPackContent({ reportData, client, kpis }) {
         </div>
       )}
       </div>
-    </div>
+    </PackLayout>
   );
 }
 
@@ -7037,8 +7184,8 @@ function BoardPacksTabbed() {
   const [tab, setTab] = useState("msme");
   const tabs = [
     { id:"msme",      label:"MSME Pack",     icon:"users", color:C.blue   },
-    { id:"corporate", label:"Corporate Pack", icon:"bank", color:C.purple },
-    { id:"cfo",       label:"CFO Pack",       icon:"dashboard", color:C.teal   },
+    { id:"corporate", label:"Corporate Pack", emoji:"🏦", color:C.purple },
+    { id:"cfo",       label:"CFO Pack",       emoji:"📊", color:C.teal   },
   ];
   const content = { msme:<MSMEPackContent/>, corporate:<CorporatePackContent/>, cfo:<CFOPackContent/> };
   return (
@@ -8190,8 +8337,8 @@ function Treasury({ client, reportData }) {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="tr-grid">
             {[
               { label:"Total Cash",      value:TREASURY_DATA.totalCash, icon:"💵", color:C.blue   },
-              { label:"Invested in FDs", value:`${TREASURY_DATA.investedPct}%`, icon:"rev", color:C.teal   },
-              { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,   icon:"bank", color:C.green  },
+              { label:"Invested in FDs", value:`${TREASURY_DATA.investedPct}%`, emoji:"📈", color:C.teal   },
+              { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,   emoji:"🏦", color:C.green  },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
                 <div style={{ fontSize:24, marginBottom:10 }}>{s.icon}</div>
@@ -8798,11 +8945,11 @@ function Portal({ client, onLogout }) {
   const prevK = liveReportData?.prevKpis || {};
   const resolvedKpis = (!isDemo && liveKpis) ? [
     { label: client?.client_pack==="msme"?"Revenue":"Revenue",
-      value:liveKpis.revenue||"—", prev:prevK.revenue||"—", trend:"up", color:C.blue, bg:"#EEF3FE", icon:"rev" },
+      value:liveKpis.revenue||"—", prev:prevK.revenue||"—", trend:"up", color:C.blue, bg:"#EEF3FE", emoji:"📈" },
     { label: client?.client_pack==="msme"?"Working Capital":client?.client_pack==="corporate"?"Gross Margin":"Gross Margin",
       value:liveKpis.gross_margin||"—", prev:prevK.gross_margin||"—", trend:"up", color:C.teal, bg:"#E6FAF7", icon:"margin" },
     { label: client?.client_pack==="corporate"?"EBITDA":"Cash Balance",
-      value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"down", color:C.amber, bg:"#FEF7E7", icon:"bank" },
+      value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"down", color:C.amber, bg:"#FEF7E7", emoji:"🏦" },
     { label: client?.client_pack==="msme"?"Debtor Days":client?.client_pack==="corporate"?"PAT":"Burn Rate",
       value:liveKpis.burn_rate||"—", prev:prevK.burn_rate||"—", trend:"up", color:C.purple, bg:"#F3EFFF", icon: client?.client_pack==="msme"?"📅":"🔥" },
     { label: client?.client_pack==="corporate"?"Debt/Equity":"Runway",
@@ -8991,6 +9138,7 @@ function Portal({ client, onLogout }) {
 
 // ─── AI CHATBOT ───────────────────────────────────────────────────────────────
 function AIChatbot({ client, reportData, kpis }) {
+  const GARIMA_AVATAR = "data:image/png;base64,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";
   const [open, setOpen] = React.useState(false);
   const [msgs, setMsgs] = React.useState([
     { role:"assistant", text:`Hi${client?.name ? ` ${client.name.split(" ")[0]}` : ""}! 👋 I'm Garima's AI assistant. Ask me anything about your finances, valuations, or CFO advisory.` }
@@ -9029,7 +9177,7 @@ function AIChatbot({ client, reportData, kpis }) {
     ].filter(Boolean).join("\n");
 
     try {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
@@ -9052,18 +9200,13 @@ function AIChatbot({ client, reportData, kpis }) {
   const Avatar = ({ size=36, pulse=false }) => (
     <div style={{
       width:size, height:size, borderRadius:"50%", flexShrink:0,
-      background:"linear-gradient(135deg,#2563EB,#7C3AED)",
-      display:"flex", alignItems:"center", justifyContent:"center",
+      overflow:"hidden",
+      border:"2px solid rgba(124,58,237,0.4)",
       animation: pulse ? "pulse 2s infinite" : "none",
-      boxShadow:"0 2px 12px rgba(124,58,237,0.4)"
+      boxShadow:"0 2px 12px rgba(124,58,237,0.4)",
+      background:"linear-gradient(135deg,#2563EB,#7C3AED)",
     }}>
-      <svg width={size*0.55} height={size*0.55} viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="8" r="3" fill="white" opacity="0.9"/>
-        <path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" opacity="0.9"/>
-        <circle cx="18" cy="8" r="1.5" fill="white" opacity="0.6"/>
-        <circle cx="6"  cy="8" r="1.5" fill="white" opacity="0.6"/>
-        <path d="M18 8c0-3-2-5-6-5S6 5 6 8" stroke="white" strokeWidth="1.5" fill="none" opacity="0.5"/>
-      </svg>
+      <img src={GARIMA_AVATAR} alt="Garima" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top" }}/>
     </div>
   );
 
@@ -9079,8 +9222,8 @@ function AIChatbot({ client, reportData, kpis }) {
           animation:"popIn 0.3s ease",
           border:"1px solid rgba(124,58,237,0.15)"
         }}>
-          <strong style={{color:C.purple}}>Ask Garima's AI ✨</strong><br/>
-          Get instant CFO insights
+          <strong style={{color:C.purple}}>Ask Garima ✨</strong><br/>
+          Your AI CFO is here
           <div style={{
             position:"absolute", bottom:-6, right:20,
             width:12, height:12, background:"white",
@@ -9095,20 +9238,13 @@ function AIChatbot({ client, reportData, kpis }) {
       {!open && (
         <button onClick={() => { setOpen(true); setShowBubble(false); }} style={{
           position:"fixed", bottom:24, right:24, zIndex:9999,
-          width:56, height:56, borderRadius:"50%", border:"none",
-          cursor:"pointer", padding:0,
-          background:"linear-gradient(135deg,#2563EB,#7C3AED)",
+          width:56, height:56, borderRadius:"50%", border:"2px solid rgba(124,58,237,0.5)",
+          cursor:"pointer", padding:0, overflow:"hidden",
           boxShadow:"0 4px 20px rgba(124,58,237,0.45)",
           animation:"pulse 2.5s infinite",
-          display:"flex", alignItems:"center", justifyContent:"center",
           transition:"transform 0.2s"
         }}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="8" r="3" fill="white" opacity="0.95"/>
-            <path d="M6 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="white" strokeWidth="2.5" strokeLinecap="round" fill="none" opacity="0.95"/>
-            <circle cx="18.5" cy="7.5" r="1.8" fill="white" opacity="0.6"/>
-            <circle cx="5.5"  cy="7.5" r="1.8" fill="white" opacity="0.6"/>
-          </svg>
+          <img src={GARIMA_AVATAR} alt="Ask Garima" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top" }}/>
         </button>
       )}
 
@@ -9130,8 +9266,8 @@ function AIChatbot({ client, reportData, kpis }) {
           }}>
             <Avatar size={38}/>
             <div style={{ flex:1 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>Garima's AI Assistant</div>
-              <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.75)" }}>Powered by Finzzup · Online</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>Ask Garima</div>
+              <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.75)" }}>CA · IBBI Valuer · CFO Advisor · Online</div>
             </div>
             <button onClick={() => setOpen(false)} style={{
               background:"rgba(255,255,255,0.15)", border:"none", borderRadius:"50%",
@@ -9973,19 +10109,16 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
 }`;
 
     try {
-      const apiKey = import.meta.env.VITE_ANTHROPIC_KEY;
+      const apiKey = true; // Key is handled server-side via /api/chat
       if (!apiKey) {
         setAiError("API key not configured. Add VITE_ANTHROPIC_KEY to your Vercel environment variables.");
         setAiGen(false);
         return;
       }
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
+      const res = await fetch("/api/chat", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-api-key": apiKey,
-          "anthropic-version": "2023-06-01",
-          "anthropic-dangerous-direct-browser-access": "true",
         },
         body: JSON.stringify({
           model: "claude-haiku-4-5-20251001",
@@ -11613,7 +11746,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     { name:"Technology",  icon:"💻" },
                     { name:"Operations",  icon:"settings" },
                     { name:"HR & Admin",  icon:"👥" },
-                    { name:"Finance",     icon:"dashboard" },
+                    { name:"Finance",     emoji:"📊" },
                   ].map(d => (
                     <div key={d.name} style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr 1fr", gap:8, marginBottom:8 }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, display:"flex", alignItems:"center" }}>{d.icon} {d.name}</div>
