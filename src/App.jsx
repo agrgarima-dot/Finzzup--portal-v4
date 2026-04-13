@@ -9188,10 +9188,14 @@ function AIChatbot({ client, reportData, kpis }) {
         })
       });
       const data = await res.json();
-      const reply = data?.content?.[0]?.text || "I couldn't process that. Please try again.";
-      setMsgs(m => [...m, { role:"assistant", text: reply }]);
-    } catch {
-      setMsgs(m => [...m, { role:"assistant", text:"Something went wrong. Please try again." }]);
+      if (!res.ok) {
+        setMsgs(m => [...m, { role:"assistant", text:`Error ${res.status}: ${data?.error || "Unknown error"}. Check that api/chat.js is deployed to your Vercel project.` }]);
+      } else {
+        const reply = data?.content?.[0]?.text || "I couldn't process that. Please try again.";
+        setMsgs(m => [...m, { role:"assistant", text: reply }]);
+      }
+    } catch(err) {
+      setMsgs(m => [...m, { role:"assistant", text:`Connection error: ${err.message}. Make sure api/chat.js exists in your GitHub repo root.` }]);
     }
     setLoading(false);
   };
