@@ -91,6 +91,25 @@ const F  = "'Plus Jakarta Sans', sans-serif";
 const FM = "'DM Mono', monospace";
 const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
 
+// ─── JURISDICTION HELPERS ─────────────────────────────────────────────────────
+const isUAE         = c => c?.jurisdiction === "UAE" || c?.jurisdiction === "Cross-Border";
+const isCrossBorder = c => c?.jurisdiction === "Cross-Border";
+const isIndia       = c => !c?.jurisdiction || c?.jurisdiction === "India";
+const sym           = c => isUAE(c) ? "AED" : "₹";
+const fmtAED        = (v, showSym=true) => {
+  if (!v && v !== 0) return "—";
+  const n = Number(v);
+  const s = showSym ? "AED " : "";
+  if (Math.abs(n) >= 1000000) return `${s}${(n/1000000).toFixed(2)}M`;
+  if (Math.abs(n) >= 1000)    return `${s}${(n/1000).toFixed(1)}K`;
+  return `${s}${n.toLocaleString()}`;
+};
+const AED_TO_INR  = 22.8;
+const fmtDual     = (aed) => `AED ${Number(aed).toLocaleString()} (≈ ₹${(Number(aed)*AED_TO_INR).toLocaleString()})`;
+const ctDeadline  = (fye="31 Dec") => fye === "31 Dec" ? "30 Sep" : "31 Dec";
+const UAE_DISCLAIMER = "This portal provides financial insights and tracking. Final tax compliance, filings, and advice should be reviewed with a licensed UAE auditor/tax advisor.";
+
+
 // ─── INVITE CODES → client data ──────────────────────────────────────────────
 // 🔧 When you connect Supabase, replace this with a DB lookup
 const INVITE_CODES = {
@@ -114,6 +133,22 @@ const INVITE_CODES = {
   "DEMO-CORP": {
     name: "Anita Desai", company: "Horizon Manufacturing Ltd (Corporate)",
     type: "both", clientPack: "corporate", email: "demo-corp@finzzup.com",
+    jurisdiction: "India",
+  },
+  "DEMO-UAE": {
+    name: "Ahmed Al Rashidi", company: "Rashidi Trading LLC (DMCC)",
+    type: "both", clientPack: "startup", email: "demo-uae@finzzup.com",
+    jurisdiction: "UAE", freezone: "DMCC",
+    trnVAT: "100345678900003", trnCT: "900012345678901",
+    vatRegistered: true, qfzpStatus: true, sbrEligible: true,
+    financialYearEnd: "31 Dec",
+  },
+  "DEMO-XBORDER": {
+    name: "Priya Shah", company: "Shah Industries (India + UAE)",
+    type: "both", clientPack: "msme", email: "demo-xborder@finzzup.com",
+    jurisdiction: "Cross-Border", freezone: "JAFZA",
+    trnVAT: "100987654300001", vatRegistered: true,
+    qfzpStatus: false, sbrEligible: true, financialYearEnd: "31 Mar",
   },
 };
 
@@ -125,6 +160,17 @@ const KPIs = [
   { label:"Burn Rate",    value:"₹48L/mo",  prev:"₹52L/mo",  trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"burn"   },
   { label:"Runway",       value:"4.4 mo",   prev:"5.0 mo",   trend:"down", color:C.pink,   bg:"#FEF0F7", icon:"runway" },
   { label:"ARR",          value:"₹6.2 Cr",  prev:"₹5.4 Cr",  trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"arr"    },
+];
+
+const KPIs_UAE = [
+  { label:"Revenue",           value:"AED 1.85M", prev:"AED 1.40M", trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"rev"      },
+  { label:"Gross Margin",      value:"45%",        prev:"42%",        trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin"   },
+  { label:"Cash Balance",      value:"AED 620K",   prev:"AED 580K",   trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"cash"     },
+  { label:"Burn Rate",         value:"AED 75K/mo", prev:"AED 82K/mo", trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"burn"     },
+  { label:"Runway",            value:"8.3 mo",     prev:"7.1 mo",     trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"runway"   },
+  { label:"VAT Payable",       value:"AED 92.5K",  prev:"AED 78K",    trend:"down", color:C.amber,  bg:"#FEF7E7", icon:"invoice"  },
+  { label:"CT Effective Rate", value:"0%",          prev:"0%",         trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"chart_pie"},
+  { label:"QFZP Score",        value:"82/100",      prev:"75/100",     trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"star"     },
 ];
 
 // ─── SVG ICON SYSTEM ──────────────────────────────────────────────────────────
@@ -269,6 +315,16 @@ const ACTIONS_BY_PACK = {
     { id:3, text:"File advance tax Q4 — deadline 15 March",                      priority:"High",   done:false },
     { id:4, text:"Share draft board pack with CFO for review by 12 March",       priority:"Medium", done:true  },
     { id:5, text:"Update related-party transaction disclosures for annual report",priority:"Low",    done:false },
+  ],
+  uae: [
+    { id:1, text:"File VAT return for Q1 — deadline 28 April",                        priority:"High",   done:false },
+    { id:2, text:"Elect Small Business Relief (SBR) in CT return — 0% tax",          priority:"High",   done:false },
+    { id:3, text:"Prepare QFZP substance documentation (staff, lease, activities)",   priority:"High",   done:false },
+    { id:4, text:"Review related-party transactions for CT arm's-length compliance",  priority:"High",   done:false },
+    { id:5, text:"Delay non-essential spend — cash tight due to Q1 VAT payment",     priority:"Medium", done:false },
+    { id:6, text:"Renew DMCC trade license — due 15 May",                             priority:"Medium", done:false },
+    { id:7, text:"Prepare audited financials — mandatory for QFZP status",            priority:"Medium", done:false },
+    { id:8, text:"Check de-minimis rule: non-qualifying income < 5% or AED 5M",     priority:"Low",    done:true  },
   ],
 };
 const ACTIONS = ACTIONS_BY_PACK.startup; // fallback
@@ -595,9 +651,11 @@ function Login({ onLogin }) {
                 letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>🔍 Try a demo account</div>
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 {[
-                  { code:"DEMO-STARTUP", label:"Startup / CFO Client", icon:"🚀", color:C.blue   },
-                  { code:"DEMO-MSME",    label:"MSME Client",           icon:"users", color:C.teal   },
-                  { code:"DEMO-CORP",    label:"Corporate Client",       emoji:"🏦", color:C.purple },
+                  { code:"DEMO-STARTUP",  label:"Startup / CFO Client",    icon:"🚀", color:C.blue   },
+                  { code:"DEMO-MSME",     label:"MSME Client",              icon:"🏢", color:C.teal   },
+                  { code:"DEMO-CORP",     label:"Corporate Client",          icon:"🏦", color:C.purple },
+                  { code:"DEMO-UAE",      label:"UAE / Dubai Client",        icon:"🇦🇪", color:"#00732F"},
+                  { code:"DEMO-XBORDER", label:"Cross-Border India + UAE",  icon:"🌐", color:C.amber  },
                 ].map(d => (
                   <button key={d.code} onClick={() => setCode(d.code)}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -682,6 +740,7 @@ function Login({ onLogin }) {
 function getNav(client) {
   const pack = client?.client_pack || client?.clientPack || "startup";
   const type = client?.type || "both";
+  const uae  = isUAE(client);
 
   const base = [
     { id:"overview",  icon:"🏠", label:"Overview"  },
@@ -690,7 +749,7 @@ function getNav(client) {
 
   if (type === "cfo" || type === "both") {
     base.push({ id:"cashflow", icon:"💵", label:"Cash Flow"    });
-    if (pack === "msme" || pack === "corporate") {
+    if (pack === "msme" || pack === "corporate" || uae) {
       base.push({ id:"treasury", icon:"🏛️", label:"Treasury" });
     }
     base.push({ id:"actions",  icon:"✅", label:"Action Items" });
@@ -703,6 +762,15 @@ function getNav(client) {
 
   if (type === "valuation" || type === "both") {
     base.push({ id:"engagement", icon:"⚖️", label:"Valuation Status" });
+  }
+
+  // ── UAE-specific modules (only shown for UAE/Cross-Border clients) ──
+  if (uae) {
+    base.push({ id:"vat",        icon:"🧾", label:"VAT Dashboard"   });
+    base.push({ id:"corptax",    icon:"🏛️", label:"Corporate Tax"   });
+    base.push({ id:"compliance", icon:"📅", label:"Compliance Cal." });
+    base.push({ id:"qfzp",       icon:"🏙️", label:"QFZP / Free Zone"});
+    base.push({ id:"auditready", icon:"✅", label:"Audit Readiness" });
   }
 
   base.push({ id:"market",     icon:"🌐", label:"Market Intel"  });
@@ -8290,10 +8358,36 @@ function MyDocuments({ client }) {
 // ─── TREASURY MANAGEMENT ─────────────────────────────────────────────────────
 function Treasury({ client, reportData }) {
   const [tab, setTab] = useState("overview");
+  const uae = isUAE(client);
 
   // Use live admin-entered data if available, else fall back to defaults
   const rd = reportData?.treasury;
-  const TREASURY_DATA = {
+
+  const UAE_T = {
+    totalCash:   rd?.totalCash   || "AED 620K",
+    investedPct: rd?.investedPct || 55,
+    yieldPA:     rd?.yieldPA     || "AED 22K",
+    dso: 38, dpo: 28, dio: 15,
+    cashPositions: (rd?.cashPositions?.some(p=>p.bank)) ? rd.cashPositions : [
+      { bank:"Emirates NBD — Current A/C",  balance:"AED 210K", type:"Operating",    rate:"0%",   flag:false },
+      { bank:"Mashreq — Term Deposit",       balance:"AED 300K", type:"Term Deposit", rate:"5.2%", flag:false },
+      { bank:"ADCB — Islamic Wakala",        balance:"AED 80K",  type:"Islamic Inv.", rate:"4.8%", flag:false },
+      { bank:"FAB — Current A/C",            balance:"AED 30K",  type:"Reserve",      rate:"0%",   flag:true,  note:"Consider moving to Wakala" },
+    ],
+    maturitySchedule: (rd?.maturitySchedule?.some(m=>m.item)) ? rd.maturitySchedule : [
+      { item:"Mashreq Term Deposit",    maturity:"15 Apr 2026", amount:"AED 150K", action:"Renew"      },
+      { item:"ADCB Islamic Wakala",     maturity:"30 Apr 2026", amount:"AED 80K",  action:"Redeem"     },
+      { item:"Mashreq TD — Tranche 2", maturity:"31 May 2026", amount:"AED 150K", action:"Auto-renew" },
+    ],
+    recommendations: (rd?.recommendations?.some(r=>r.text)) ? rd.recommendations : [
+      { priority:"High",   text:"Hold AED 92.5K cash reserve for Q1 VAT payment due 28 April — don't lock in FDs." },
+      { priority:"High",   text:"Renew Mashreq TD at 5.2% — UAE rates stabilising. Lock in before potential CBUAE cut." },
+      { priority:"Medium", text:"Move FAB idle AED 30K to ADCB Wakala — earn 4.8% profit share on Islamic structure." },
+      { priority:"Low",    text:"Consider ENBD Emirates Islamic Murabaha for April surplus — projected AED 50K." },
+    ],
+  };
+
+  const TREASURY_DATA = uae ? UAE_T : {
     totalCash:    rd?.totalCash    || "₹50.4L",
     investedPct:  rd?.investedPct  || 65,
     yieldPA:      rd?.yieldPA      || "₹3.2L",
@@ -8318,7 +8412,26 @@ function Treasury({ client, reportData }) {
 
   return (
     <div style={{ padding:24 }}>
-      <SectionTitle sub="Cash visibility, FD tracking, and yield optimisation.">Treasury Management</SectionTitle>
+      <SectionTitle sub={uae ? "Multi-currency cash, term deposits, and yield optimisation." : "Cash visibility, FD tracking, and yield optimisation."}>
+        {uae ? "Treasury Management (AED)" : "Treasury Management"}
+      </SectionTitle>
+
+      {/* UAE: Cash Conversion Cycle */}
+      {uae && (
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
+          {[
+            { label:"Days Sales Outstanding (DSO)", value:`${UAE_T.dso} days`, color:C.blue,  icon:"📤" },
+            { label:"Days Payable Outstanding (DPO)",value:`${UAE_T.dpo} days`, color:C.green, icon:"📥" },
+            { label:"Cash Conversion Cycle",         value:`${UAE_T.dso - UAE_T.dpo + UAE_T.dio} days`, color:C.amber, icon:"🔄" },
+          ].map((s,i) => (
+            <Card key={i} style={{ padding:18 }}>
+              <div style={{ fontSize:20, marginBottom:8 }}>{s.icon}</div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+              <div style={{ fontFamily:F, fontSize:18, fontWeight:800, color:s.color }}>{s.value}</div>
+            </Card>
+          ))}
+        </div>
+      )}
 
       <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
         {[["overview","💰 Overview"],["maturity","📅 Maturity Schedule"],["recommendations","💡 Recommendations"]].map(([id,lbl]) => (
@@ -8336,13 +8449,13 @@ function Treasury({ client, reportData }) {
         <>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="tr-grid">
             {[
-              { label:"Total Cash",      value:TREASURY_DATA.totalCash, icon:"💵", color:C.blue   },
-              { label:"Invested in FDs", value:`${TREASURY_DATA.investedPct}%`, emoji:"📈", color:C.teal   },
-              { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,   emoji:"🏦", color:C.green  },
+              { label:"Total Cash",      value:TREASURY_DATA.totalCash,              icon:"💵", color:C.blue  },
+              { label:uae?"In Term Deposits":"Invested in FDs", value:`${TREASURY_DATA.investedPct}%`, icon:"📈", color:C.teal  },
+              { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,                icon:"🏦", color:C.green },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
                 <div style={{ fontSize:24, marginBottom:10 }}>{s.icon}</div>
-                <div style={{ fontFamily:FM, fontSize:22, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
+                <div style={{ fontFamily:F, fontSize:22, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.label}</div>
               </Card>
             ))}
@@ -8419,6 +8532,626 @@ function Treasury({ client, reportData }) {
           </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+    </div>
+  );
+}
+
+// ─── UAE DISCLAIMER BANNER ────────────────────────────────────────────────────
+function UAEDisclaimer() {
+  return (
+    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:10,
+      background:"#FFF7ED", border:"1px solid #FED7AA",
+      display:"flex", gap:10, alignItems:"flex-start" }}>
+      <span style={{ fontSize:16, flexShrink:0 }}>⚠️</span>
+      <p style={{ fontFamily:F, fontSize:12, color:"#92400E", lineHeight:1.6, margin:0 }}>
+        {UAE_DISCLAIMER}
+      </p>
+    </div>
+  );
+}
+
+// ─── VAT DASHBOARD ────────────────────────────────────────────────────────────
+function VATDashboard({ client, reportData }) {
+  const [tab, setTab] = useState("overview");
+  const rd = reportData?.vat || {};
+
+  const vatData = {
+    trnVAT:             client?.trnVAT || rd.trnVAT || "Not registered",
+    registrationStatus: client?.vatRegistered ? "Active" : "Not Registered",
+    outputVAT:          rd.outputVAT    || 185000,
+    inputVAT:           rd.inputVAT     || 92500,
+    vatPayable:         rd.vatPayable   || 92500,
+    nextDeadline:       rd.nextDeadline || "28 Apr 2026",
+    filingPeriod:       rd.filingPeriod || "Q1 2026 (Jan–Mar)",
+    pendingReturns: rd.pendingReturns || [
+      { period:"Q4 2025 (Oct–Dec)", due:"28 Jan 2026", status:"Filed", vatNet:"AED 74,200" },
+      { period:"Q3 2025 (Jul–Sep)", due:"28 Oct 2025", status:"Filed", vatNet:"AED 68,500" },
+      { period:"Q1 2026 (Jan–Mar)", due:"28 Apr 2026", status:"Due",   vatNet:"AED 92,500" },
+    ],
+    cashImpact: rd.cashImpact || [
+      { month:"Jan", collected:62000, paid:28000, net:34000 },
+      { month:"Feb", collected:68000, paid:31000, net:37000 },
+      { month:"Mar", collected:55000, paid:33000, net:22000 },
+      { month:"Apr", collected:null,  paid:null,  forecast:25000 },
+    ],
+  };
+
+  const tabs = [["overview","💡 Overview"],["returns","📋 Returns"],["cashimpact","💸 Cash Impact"],["invoices","🧾 VAT Invoices"]];
+
+  return (
+    <div style={{ padding:24 }}>
+      <UAEDisclaimer/>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
+        <div>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>VAT Dashboard</h2>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>UAE VAT tracking, filing reminders, and cash impact.</p>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+          <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 12px", borderRadius:100,
+            background:"#E8F5EE", border:"1px solid #86EFAC", color:"#15803D", fontSize:12, fontWeight:700, fontFamily:F }}>
+            ✅ {vatData.registrationStatus}
+          </span>
+          <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>TRN: {vatData.trnVAT}</span>
+        </div>
+      </div>
+
+      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
+        {tabs.map(([id,lbl]) => (
+          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
+            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
+            background:tab===id?C.blue:"#F3F4F6", color:tab===id?"white":C.muted,
+            outline:`1.5px solid ${tab===id?C.blue:C.border}` }}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {tab === "overview" && (
+        <>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
+            {[
+              { label:"Output VAT (Collected)", value:fmtAED(vatData.outputVAT), color:C.blue,  icon:"📤" },
+              { label:"Input VAT (Paid)",        value:fmtAED(vatData.inputVAT),  color:C.green, icon:"📥" },
+              { label:"VAT Payable",             value:fmtAED(vatData.vatPayable),color:C.amber, icon:"💰" },
+            ].map((s,i) => (
+              <Card key={i} style={{ padding:18 }}>
+                <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+                <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+              </Card>
+            ))}
+          </div>
+          <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:6 }}>📅 Next Filing Deadline</div>
+            <div style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.7 }}>
+              <strong>{vatData.filingPeriod}</strong> — Due <strong>{vatData.nextDeadline}</strong><br/>
+              VAT Payable: <strong>{fmtAED(vatData.vatPayable)}</strong> — ensure cash is available before filing date.
+            </div>
+            <button onClick={() => window.open(WA,"_blank")} style={{ marginTop:12, padding:"9px 20px",
+              borderRadius:8, border:"none", background:"#00732F", color:"white",
+              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+              💬 Discuss with Garima
+            </button>
+          </Card>
+        </>
+      )}
+
+      {tab === "returns" && (
+        <Card>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>VAT Return History</div>
+          {vatData.pendingReturns.map((r,i) => {
+            const due = r.status === "Due";
+            return (
+              <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                padding:"12px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:10 }}>
+                <div>
+                  <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{r.period}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>Due: {r.due}</div>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                  <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text }}>{r.vatNet}</div>
+                  <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                    background:due?"#FFFBEB":"#ECFDF5", color:due?C.amber:C.green }}>
+                    {due ? "⏰ Due" : "✅ Filed"}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10, background:"#FEF2F2", border:"1px solid #FCA5A5" }}>
+            <span style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:600 }}>
+              ⚠️ Late filing penalty: AED 1,000 for first offence, AED 2,000 for repeat. File on time!
+            </span>
+          </div>
+        </Card>
+      )}
+
+      {tab === "cashimpact" && (
+        <Card>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>VAT Cash Flow Impact</div>
+          {vatData.cashImpact.map((m,i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"12px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:10 }}>
+              <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>
+                {m.month} 2026 {m.forecast && <span style={{ fontSize:10, color:C.muted, marginLeft:6 }}>(Forecast)</span>}
+              </div>
+              <div style={{ display:"flex", gap:16 }}>
+                <span style={{ fontFamily:F, fontSize:12, color:C.blue }}>In: {m.collected ? fmtAED(m.collected) : "—"}</span>
+                <span style={{ fontFamily:F, fontSize:12, color:C.red }}>Out: {m.paid ? fmtAED(m.paid) : "—"}</span>
+                <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.green }}>Net: {fmtAED(m.net || m.forecast)}</span>
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
+
+      {tab === "invoices" && (
+        <Card>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:8 }}>VAT-Compliant Invoice Requirements</div>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:16, lineHeight:1.7 }}>
+            All UAE tax invoices must include the following to be FTA-compliant:
+          </p>
+          {[
+            "The word 'Tax Invoice' prominently displayed",
+            `Your Tax Registration Number (TRN): ${client?.trnVAT || "—"}`,
+            "Customer's TRN (if registered for VAT)",
+            "Invoice date and unique sequential invoice number",
+            "Supply description, quantity, unit price",
+            "Tax rate applied (5%) and VAT amount per line item",
+            "Total excl. VAT, VAT amount, and total incl. VAT",
+            "Currency: AED (or foreign currency with AED equivalent)",
+          ].map((item,i) => (
+            <div key={i} style={{ display:"flex", gap:10, padding:"8px 0", borderBottom:`1px solid ${C.border}` }}>
+              <span style={{ color:C.green, fontWeight:700, flexShrink:0 }}>✓</span>
+              <span style={{ fontFamily:F, fontSize:13, color:C.text }}>{item}</span>
+            </div>
+          ))}
+          <button onClick={() => window.open(WA,"_blank")} style={{ marginTop:16, padding:"9px 20px",
+            borderRadius:8, border:"none", background:C.blue, color:"white",
+            fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            💬 Get VAT Invoice Template from Garima
+          </button>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── CORPORATE TAX MODULE ─────────────────────────────────────────────────────
+function CorporateTax({ client, reportData }) {
+  const [tab, setTab] = useState("overview");
+  const rd = reportData?.ct || {};
+
+  const revenue       = rd.revenue     || 1850000;
+  const sbrThreshold  = 3000000;
+  const sbrEligible   = client?.sbrEligible ?? (revenue <= sbrThreshold);
+  const qfzpStatus    = client?.qfzpStatus ?? true;
+
+  const ctData = {
+    trnCT:               client?.trnCT || rd.trnCT || "Pending registration",
+    sbrEligible, revenue, qfzpStatus,
+    taxableIncome:       rd.taxableIncome || 271000,
+    adjustments: rd.adjustments || [
+      { item:"Accounting Profit",            amount: 271000, sign: 1 },
+      { item:"Add: Non-deductible expenses", amount:  12000, sign: 1 },
+      { item:"Less: Exempt dividends",       amount:  18000, sign:-1 },
+      { item:"Less: QFZP qualifying income", amount: 265000, sign:-1 },
+    ],
+    taxableFinalIncome:  rd.taxableFinalIncome  || 0,
+    effectiveCTRate:     (qfzpStatus || sbrEligible) ? 0 : 9,
+    ctPayable:           (qfzpStatus || sbrEligible) ? 0 : rd.ctPayable || 24390,
+    ctDue:               ctDeadline(client?.financialYearEnd),
+    qualifyingPct:       rd.qualifyingPct     || 92,
+    nonQualifyingPct:    rd.nonQualifyingPct  || 8,
+    substanceItems: rd.substanceItems || [
+      { item:"Adequate employees in free zone",   done:true  },
+      { item:"Adequate operating expenditure",    done:true  },
+      { item:"Physical presence in free zone",    done:true  },
+      { item:"Core income-generating activities", done:true  },
+      { item:"Audited financial statements",      done:false },
+    ],
+  };
+
+  const tabs = [["overview","🏛️ Overview"],["sbr","💡 SBR Eligibility"],["qfzp","🏙️ QFZP Tracker"],["recon","📊 Tax Reconciliation"]];
+
+  return (
+    <div style={{ padding:24 }}>
+      <UAEDisclaimer/>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
+        <div>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>Corporate Tax (CT)</h2>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>UAE Corporate Tax — effective June 2023</p>
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+          <span style={{ padding:"4px 12px", borderRadius:100, background:"#E8FAF3", border:"1px solid #86EFAC",
+            color:C.green, fontSize:12, fontWeight:700, fontFamily:F }}>CT Rate: {ctData.effectiveCTRate}%</span>
+          <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>TRN: {ctData.trnCT}</span>
+        </div>
+      </div>
+
+      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
+        {tabs.map(([id,lbl]) => (
+          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
+            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
+            background:tab===id?C.purple:"#F3F4F6", color:tab===id?"white":C.muted,
+            outline:`1.5px solid ${tab===id?C.purple:C.border}` }}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      {tab === "overview" && (
+        <>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
+            {[
+              { label:"Effective CT Rate", value:`${ctData.effectiveCTRate}%`, color:C.green, icon:"🏛️" },
+              { label:"CT Payable",        value:fmtAED(ctData.ctPayable),     color:ctData.ctPayable>0?C.amber:C.green, icon:"💰" },
+              { label:"CT Return Due",     value:ctData.ctDue,                  color:C.blue, icon:"📅" },
+            ].map((s,i) => (
+              <Card key={i} style={{ padding:18 }}>
+                <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+                <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+              </Card>
+            ))}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <Card style={{ background:sbrEligible?"#F0FDF4":"#FEF2F2", border:`1px solid ${sbrEligible?"#86EFAC":"#FCA5A5"}` }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:sbrEligible?"#15803D":C.red }}>
+                {sbrEligible ? "✅ SBR Eligible" : "❌ SBR Not Eligible"}
+              </div>
+              <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:6, lineHeight:1.6 }}>
+                Revenue {fmtAED(ctData.revenue)} vs threshold AED 3M.
+                {sbrEligible ? " Elect SBR in CT return → 0% tax." : " Exceeds SBR threshold."}
+              </p>
+            </Card>
+            <Card style={{ background:qfzpStatus?"#EFF6FF":"#FEF2F2", border:`1px solid ${qfzpStatus?"#93C5FD":"#FCA5A5"}` }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:qfzpStatus?C.blue:C.red }}>
+                {qfzpStatus ? "✅ QFZP Active" : "❌ QFZP Not Qualified"}
+              </div>
+              <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:6, lineHeight:1.6 }}>
+                Qualifying income taxed at 0%. Non-qualifying income at 9%.
+              </p>
+            </Card>
+          </div>
+        </>
+      )}
+
+      {tab === "sbr" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          <Card style={{ background:sbrEligible?"#F0FDF4":"#FFF7ED", border:`1px solid ${sbrEligible?"#86EFAC":"#FCD34D"}` }}>
+            <div style={{ fontFamily:F, fontWeight:800, fontSize:16, color:sbrEligible?"#15803D":"#92400E", marginBottom:8 }}>
+              {sbrEligible ? "✅ Small Business Relief Eligible" : "⚠️ Check SBR Eligibility"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8 }}>
+              <div>Revenue (current period): <strong>{fmtAED(ctData.revenue)}</strong></div>
+              <div>SBR Revenue Threshold: <strong>AED 3,000,000</strong></div>
+              <div>Status: <strong>{sbrEligible ? "✅ Below threshold" : "❌ Exceeds threshold"}</strong></div>
+              <div>Regime valid until: <strong>31 December 2026</strong></div>
+            </div>
+          </Card>
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>SBR Rules Checklist</div>
+            {[
+              { rule:"Revenue ≤ AED 3M in current tax period",                              met:revenue <= sbrThreshold },
+              { rule:"Revenue ≤ AED 3M in ALL previous periods (from 1 Jun 2023)",          met:true  },
+              { rule:"Not member of a qualifying group (related-party threshold)",           met:true  },
+              { rule:"Not a Qualifying Free Zone Person (cannot elect both SBR and QFZP)", met:!qfzpStatus },
+              { rule:"SBR election must be made in CT return within 9 months of FYE",       met:false },
+            ].map((r,i) => (
+              <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:`1px solid ${C.border}` }}>
+                <span style={{ color:r.met?C.green:C.amber, fontWeight:700, flexShrink:0 }}>{r.met?"✓":"⚠"}</span>
+                <span style={{ fontFamily:F, fontSize:13, color:C.text }}>{r.rule}</span>
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
+      {tab === "qfzp" && (
+        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+            <Card>
+              <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Qualifying Income %</div>
+              <div style={{ fontFamily:F, fontSize:26, fontWeight:800, color:C.green }}>{ctData.qualifyingPct}%</div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:4 }}>Taxed at 0% CT</div>
+            </Card>
+            <Card>
+              <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Non-Qualifying %</div>
+              <div style={{ fontFamily:F, fontSize:26, fontWeight:800, color:ctData.nonQualifyingPct>=5?C.red:C.amber }}>{ctData.nonQualifyingPct}%</div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:4 }}>De-minimis: must be &lt;5% or &lt;AED 5M</div>
+            </Card>
+          </div>
+          {ctData.nonQualifyingPct >= 5 && (
+            <Card style={{ background:"#FEF2F2", border:"1px solid #FCA5A5" }}>
+              <div style={{ fontFamily:F, fontWeight:700, color:C.red, marginBottom:6 }}>⚠️ De-minimis Rule at Risk</div>
+              <p style={{ fontFamily:F, fontSize:13, color:"#7F1D1D", lineHeight:1.6 }}>
+                Non-qualifying income at {ctData.nonQualifyingPct}% — at the de-minimis boundary. If this exceeds 5% of total revenue OR AED 5M, all income is taxed at 9%.
+              </p>
+            </Card>
+          )}
+          <Card>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Substance Requirements</div>
+            {ctData.substanceItems.map((s,i) => (
+              <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:`1px solid ${C.border}`, alignItems:"center" }}>
+                <span style={{ color:s.done?C.green:C.red, fontWeight:700, flexShrink:0 }}>{s.done?"✓":"✗"}</span>
+                <span style={{ fontFamily:F, fontSize:13, color:C.text, flex:1 }}>{s.item}</span>
+                {!s.done && <span style={{ padding:"2px 8px", borderRadius:100, background:"#FFFBEB", color:C.amber, fontSize:10, fontWeight:700 }}>Action Needed</span>}
+              </div>
+            ))}
+          </Card>
+        </div>
+      )}
+
+      {tab === "recon" && (
+        <Card>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Accounting Profit → Taxable Income</div>
+          {ctData.adjustments.map((a,i) => (
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
+              <span style={{ fontFamily:F, fontSize:13, color:C.text }}>{a.item}</span>
+              <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:a.sign>0?C.text:C.green }}>
+                {a.sign < 0 ? "-" : ""}{fmtAED(Math.abs(a.amount))}
+              </span>
+            </div>
+          ))}
+          <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 0", borderTop:`2px solid ${C.text}`, marginTop:4 }}>
+            <span style={{ fontFamily:F, fontSize:14, fontWeight:800, color:C.text }}>CT Taxable Income</span>
+            <span style={{ fontFamily:F, fontSize:16, fontWeight:800, color:ctData.taxableFinalIncome===0?C.green:C.amber }}>
+              {fmtAED(ctData.taxableFinalIncome)}
+            </span>
+          </div>
+          {ctData.taxableFinalIncome === 0 && (
+            <div style={{ marginTop:12, padding:"10px 14px", borderRadius:10, background:"#F0FDF4", border:"1px solid #86EFAC" }}>
+              <span style={{ fontFamily:F, fontSize:12, color:"#15803D", fontWeight:600 }}>
+                ✅ With QFZP status, qualifying income excluded → CT payable = AED 0
+              </span>
+            </div>
+          )}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+// ─── UNIFIED COMPLIANCE CALENDAR ─────────────────────────────────────────────
+function ComplianceCalendar({ client }) {
+  const [filter, setFilter] = useState("all");
+  const freezone = client?.freezone || "DMCC";
+  const fye      = client?.financialYearEnd || "31 Dec";
+
+  const deadlines = [
+    { date:"28 Apr 2026", label:"VAT Return — Q1 2026",          category:"vat",     priority:"High",   desc:"File Q1 VAT return (Jan–Mar 2026) and pay AED 92.5K to FTA." },
+    { date:"30 Apr 2026", label:"Audit Report Submission",        category:"audit",   priority:"High",   desc:`Submit audited financial statements to ${freezone}.` },
+    { date:"15 May 2026", label:`${freezone} License Renewal`,    category:"license", priority:"High",   desc:`Renew annual trade license. Prepare documents early.` },
+    { date:"28 Jul 2026", label:"VAT Return — Q2 2026",           category:"vat",     priority:"Medium", desc:"File Q2 VAT return (Apr–Jun 2026) and settle net VAT." },
+    { date:"30 Sep 2026", label:"CT Return Filing",               category:"ct",      priority:"High",   desc:`CT return due 9 months after FYE (${fye}). Elect SBR if eligible.` },
+    { date:"28 Oct 2026", label:"VAT Return — Q3 2026",           category:"vat",     priority:"Medium", desc:"File Q3 VAT return (Jul–Sep 2026)." },
+    { date:"31 Dec 2026", label:"SBR Election Window Closes",     category:"ct",      priority:"High",   desc:"Last period for Small Business Relief election under current regime." },
+    { date:"28 Jan 2027", label:"VAT Return — Q4 2026",           category:"vat",     priority:"Medium", desc:"File Q4 VAT return (Oct–Dec 2026)." },
+    { date:"30 Jun 2026", label:"ESR Annual Notification",        category:"other",   priority:"Low",    desc:"Economic Substance Regulations notification (if applicable)." },
+  ].sort((a,b) => new Date(a.date) - new Date(b.date));
+
+  const catColors = { vat:"#3B82F6", ct:"#8B5CF6", audit:"#10B981", license:"#F59E0B", other:"#6B7280" };
+  const catLabels = { vat:"VAT", ct:"Corp Tax", audit:"Audit", license:"License", other:"Other" };
+  const filtered  = filter === "all" ? deadlines : deadlines.filter(d => d.category === filter);
+
+  return (
+    <div style={{ padding:24 }}>
+      <UAEDisclaimer/>
+      <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, marginBottom:6 }}>Compliance Calendar</h2>
+      <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>All UAE deadlines — VAT, Corporate Tax, Audit, License — in one view.</p>
+
+      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
+        {[["all","All"],["vat","VAT"],["ct","Corp Tax"],["audit","Audit"],["license","License"]].map(([id,lbl]) => (
+          <button key={id} onClick={() => setFilter(id)} style={{ padding:"8px 16px", borderRadius:100, border:"none",
+            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700,
+            background:filter===id?(catColors[id]||C.blue):"#F3F4F6",
+            color:filter===id?"white":C.muted,
+            outline:`1.5px solid ${filter===id?(catColors[id]||C.blue):C.border}` }}>
+            {lbl}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+        {filtered.map((d,i) => {
+          const isPast = new Date(d.date) < new Date();
+          return (
+            <Card key={i} style={{ padding:"14px 18px", opacity:isPast?0.55:1 }}>
+              <div style={{ display:"flex", gap:14, alignItems:"flex-start", flexWrap:"wrap" }}>
+                <div style={{ minWidth:80, textAlign:"center" }}>
+                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.muted }}>
+                    {new Date(d.date).toLocaleDateString("en-GB",{day:"2-digit",month:"short"})}
+                  </div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>{new Date(d.date).getFullYear()}</div>
+                </div>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4, flexWrap:"wrap" }}>
+                    <span style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{d.label}</span>
+                    <span style={{ padding:"2px 8px", borderRadius:100, fontSize:10, fontWeight:700, fontFamily:F,
+                      background:`${catColors[d.category]}22`, color:catColors[d.category], border:`1px solid ${catColors[d.category]}44` }}>
+                      {catLabels[d.category]}
+                    </span>
+                    <span style={{ padding:"2px 8px", borderRadius:100, fontSize:10, fontWeight:700, fontFamily:F,
+                      background:d.priority==="High"?"#FEF2F2":d.priority==="Medium"?"#FFFBEB":"#ECFDF5",
+                      color:d.priority==="High"?C.red:d.priority==="Medium"?C.amber:C.green }}>
+                      {d.priority}
+                    </span>
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0, lineHeight:1.6 }}>{d.desc}</p>
+                </div>
+                {isPast && <span style={{ padding:"2px 8px", borderRadius:100, background:"#ECFDF5", color:C.green, fontSize:10, fontWeight:700 }}>✓ Past</span>}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+// ─── QFZP / FREE ZONE MODULE ──────────────────────────────────────────────────
+function QFZPModule({ client, reportData }) {
+  const rd        = reportData?.qfzp || {};
+  const freezone  = client?.freezone || "DMCC";
+  const qfzpScore = rd.qfzpScore || 82;
+
+  const qualifyingActivities = [
+    { activity:"Manufacturing / processing of goods",           qualified:true  },
+    { activity:"Holding of shares in UAE free zone entities",   qualified:true  },
+    { activity:"Treasury and financing activities (intra-grp)", qualified:true  },
+    { activity:"Shipping / distribution of goods",              qualified:true  },
+    { activity:"Sales to mainland UAE customers",               qualified:false, note:"Taxed at 9% — de-minimis risk" },
+    { activity:"Professional services to non-FZ clients",       qualified:false, note:"Non-qualifying — monitor ratio" },
+  ];
+
+  const fzDetails = {
+    DMCC:  { name:"Dubai Multi Commodities Centre", regulator:"DMCC Authority",   audit:"Annual audit required" },
+    JAFZA: { name:"Jebel Ali Free Zone",             regulator:"JAFZA Authority", audit:"Annual audit required" },
+    ADGM:  { name:"Abu Dhabi Global Market",         regulator:"ADGM",            audit:"Annual audit required" },
+    RAK:   { name:"RAK Economic Zone",               regulator:"RAKEZ",           audit:"Audit required for QFZP" },
+    DIFC:  { name:"Dubai Int'l Financial Centre",    regulator:"DIFC Authority",  audit:"Annual audit required" },
+  };
+  const fz = fzDetails[freezone] || fzDetails.DMCC;
+
+  return (
+    <div style={{ padding:24 }}>
+      <UAEDisclaimer/>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
+        <div>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>QFZP & Free Zone Status</h2>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>{fz.name} ({freezone})</p>
+        </div>
+        <div style={{ textAlign:"right" }}>
+          <div style={{ fontFamily:F, fontSize:28, fontWeight:900, color:qfzpScore>=70?C.green:C.amber }}>{qfzpScore}/100</div>
+          <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>QFZP Compliance Score</div>
+        </div>
+      </div>
+
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }}>
+        <Card>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Free Zone</div>
+          <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:C.text }}>{freezone}</div>
+          <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>{fz.regulator}</div>
+        </Card>
+        <Card>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Audit Requirement</div>
+          <div style={{ fontFamily:F, fontSize:14, fontWeight:700, color:C.amber }}>{fz.audit}</div>
+        </Card>
+      </div>
+
+      <Card style={{ marginBottom:16 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>Qualifying vs Non-Qualifying Activities</div>
+        {qualifyingActivities.map((a,i) => (
+          <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:`1px solid ${C.border}`, alignItems:"flex-start" }}>
+            <span style={{ color:a.qualified?C.green:C.red, fontWeight:700, flexShrink:0, fontSize:15 }}>{a.qualified?"✓":"✗"}</span>
+            <div style={{ flex:1 }}>
+              <div style={{ fontFamily:F, fontSize:13, color:C.text }}>{a.activity}</div>
+              {a.note && <div style={{ fontFamily:F, fontSize:11, color:C.amber, marginTop:2 }}>⚠️ {a.note}</div>}
+            </div>
+            <span style={{ padding:"2px 8px", borderRadius:100, fontSize:10, fontWeight:700, fontFamily:F,
+              background:a.qualified?"#ECFDF5":"#FEF2F2", color:a.qualified?C.green:C.red }}>
+              {a.qualified?"0% CT":"9% CT"}
+            </span>
+          </div>
+        ))}
+      </Card>
+
+      <Card style={{ background:"#EFF6FF", border:"1px solid #93C5FD" }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.blue, marginBottom:8 }}>💬 Ask Garima About QFZP</div>
+        <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:12 }}>
+          QFZP documentation, substance review, qualifying income ratio optimisation, and DIFC/ADGM investor reporting.
+        </p>
+        <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
+          borderRadius:8, border:"none", background:C.blue, color:"white",
+          fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+          📱 WhatsApp Garima
+        </button>
+      </Card>
+    </div>
+  );
+}
+
+// ─── AUDIT READINESS ──────────────────────────────────────────────────────────
+function AuditReadiness({ client, reportData }) {
+  const rd        = reportData?.auditReadiness || {};
+  const freezone  = client?.freezone || "DMCC";
+  const auditScore = rd.auditScore || 65;
+
+  const checklistItems = rd.checklistItems || [
+    { cat:"Financial Statements",  item:"Audited P&L (current year)",                done:false, req:true  },
+    { cat:"Financial Statements",  item:"Audited Balance Sheet",                     done:false, req:true  },
+    { cat:"Financial Statements",  item:"Cash Flow Statement (IFRS)",                done:true,  req:true  },
+    { cat:"Financial Statements",  item:"Notes to Accounts",                         done:true,  req:true  },
+    { cat:"Tax Documentation",     item:"VAT Returns (last 4 quarters)",             done:true,  req:true  },
+    { cat:"Tax Documentation",     item:"CT Registration Certificate",               done:true,  req:true  },
+    { cat:"Tax Documentation",     item:"QFZP Supporting Documentation",             done:false, req:true  },
+    { cat:"Tax Documentation",     item:"Transfer Pricing Documentation",            done:false, req:true  },
+    { cat:"Free Zone Docs",        item:`${freezone} License (current)`,             done:true,  req:true  },
+    { cat:"Free Zone Docs",        item:`${freezone} Substance Evidence`,            done:false, req:true  },
+    { cat:"Free Zone Docs",        item:"Lease Agreement (physical presence)",       done:true,  req:true  },
+    { cat:"Corporate Governance",  item:"Board Resolutions",                         done:true,  req:false },
+    { cat:"Corporate Governance",  item:"Shareholders Agreement",                    done:true,  req:false },
+    { cat:"Other",                 item:"Related Party Transactions Schedule",       done:false, req:true  },
+    { cat:"Other",                 item:"Bank Statements (12 months)",               done:true,  req:true  },
+  ];
+
+  const cats       = [...new Set(checklistItems.map(c => c.cat))];
+  const totalReq   = checklistItems.filter(c => c.req).length;
+  const doneReq    = checklistItems.filter(c => c.req && c.done).length;
+
+  return (
+    <div style={{ padding:24 }}>
+      <UAEDisclaimer/>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
+        <div>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>Audit Readiness</h2>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
+            QFZP audit pack checklist — {doneReq}/{totalReq} required docs ready
+          </p>
+        </div>
+        <div style={{ textAlign:"right" }}>
+          <div style={{ fontFamily:F, fontSize:28, fontWeight:900,
+            color:auditScore>=80?C.green:auditScore>=60?C.amber:C.red }}>{auditScore}/100</div>
+          <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>Audit Readiness Score</div>
+        </div>
+      </div>
+
+      {cats.map(cat => {
+        const items    = checklistItems.filter(c => c.cat === cat);
+        const doneCount = items.filter(c => c.done).length;
+        return (
+          <Card key={cat} style={{ marginBottom:14 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{cat}</div>
+              <span style={{ padding:"2px 8px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                background:doneCount===items.length?"#ECFDF5":"#FFFBEB",
+                color:doneCount===items.length?C.green:C.amber }}>
+                {doneCount}/{items.length}
+              </span>
+            </div>
+            {items.map((item,i) => (
+              <div key={i} style={{ display:"flex", gap:10, padding:"8px 0", borderBottom:`1px solid ${C.border}`, alignItems:"center" }}>
+                <span style={{ color:item.done?C.green:C.red, fontWeight:700, flexShrink:0 }}>{item.done?"✓":"✗"}</span>
+                <span style={{ fontFamily:F, fontSize:13, color:C.text, flex:1 }}>{item.item}</span>
+                {item.req && !item.done && (
+                  <span style={{ padding:"2px 8px", borderRadius:100, background:"#FEF2F2", color:C.red, fontSize:10, fontWeight:700 }}>Required</span>
+                )}
+              </div>
+            ))}
+          </Card>
+        );
+      })}
+
+      <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:14,
+        borderRadius:12, border:"none", background:C.green, color:"white",
+        fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>
+        💬 Get Audit Prep Support from Garima
+      </button>
     </div>
   );
 }
@@ -8943,7 +9676,8 @@ function Portal({ client, onLogout }) {
 
   // Build merged KPI array — live data + prev values from report_data
   const prevK = liveReportData?.prevKpis || {};
-  const resolvedKpis = (!isDemo && liveKpis) ? [
+  const resolvedKpis = isUAE(client) ? KPIs_UAE
+    : (!isDemo && liveKpis) ? [
     { label: client?.client_pack==="msme"?"Revenue":"Revenue",
       value:liveKpis.revenue||"—", prev:prevK.revenue||"—", trend:"up", color:C.blue, bg:"#EEF3FE", emoji:"📈" },
     { label: client?.client_pack==="msme"?"Working Capital":client?.client_pack==="corporate"?"Gross Margin":"Gross Margin",
@@ -8958,7 +9692,9 @@ function Portal({ client, onLogout }) {
       value:liveKpis.arr||"—", prev:prevK.arr||"—", trend:"up", color:C.green, bg:"#E8FAF3", icon: client?.client_pack==="msme"?"🔄":"🎯" },
   ] : KPIs;
 
-  const resolvedActions    = (!isDemo && liveActions)    ? liveActions    : (ACTIONS_BY_PACK[client?.client_pack||'startup'] || ACTIONS);
+  const resolvedActions = isUAE(client)
+    ? ACTIONS_BY_PACK.uae
+    : (!isDemo && liveActions) ? liveActions : (ACTIONS_BY_PACK[client?.client_pack||"startup"] || ACTIONS);
   const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
   const DEMO_REPORT_DATA = {
     monthLabel: "March 2026",
@@ -9081,6 +9817,12 @@ function Portal({ client, onLogout }) {
     documents:  <MyDocuments client={client}/>,
     treasury:   <Treasury   client={client} reportData={resolvedReportData}/>,
     terms:      <Terms/>,
+    // ── UAE modules (only rendered for UAE/Cross-Border clients) ──
+    vat:        <VATDashboard    client={client} reportData={resolvedReportData}/>,
+    corptax:    <CorporateTax    client={client} reportData={resolvedReportData}/>,
+    compliance: <ComplianceCalendar client={client}/>,
+    qfzp:       <QFZPModule      client={client} reportData={resolvedReportData}/>,
+    auditready: <AuditReadiness  client={client} reportData={resolvedReportData}/>,
   };
 
   return (
@@ -12247,4 +12989,5 @@ export default function App() {
   if (!client) return <Login onLogin={setClient}/>;
   return <Portal client={client} onLogout={handleLogout}/>;
 }
+
 
