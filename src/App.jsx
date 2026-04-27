@@ -8536,10 +8536,6 @@ function Treasury({ client, reportData }) {
   );
 }
 
-    </div>
-  );
-}
-
 // ─── UAE DISCLAIMER BANNER ────────────────────────────────────────────────────
 function UAEDisclaimer() {
   return (
