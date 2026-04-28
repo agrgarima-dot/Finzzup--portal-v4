@@ -1088,7 +1088,6 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                   : ovPack==="msme"      ? "linear-gradient(135deg,#1B3A6B 0%,#2563EB 60%,#7C3AED 100%)"
                   : ovPack==="corporate" ? "linear-gradient(135deg,#4C1D95 0%,#7C3AED 60%,#DB2777 100%)"
                   : "linear-gradient(135deg,#1a3a8f 0%,#2563EB 60%,#7C3AED 100%)",
-                  : "linear-gradient(135deg,#1a3a8f 0%,#2563EB 60%,#7C3AED 100%)",
         color:"white", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", right:-30, top:-30, width:180, height:180,
           borderRadius:"50%", background:"rgba(255,255,255,0.05)" }}/>
