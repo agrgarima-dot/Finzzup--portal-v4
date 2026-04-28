@@ -1915,7 +1915,7 @@ function CashFlow({ reportData, client, kpis }) {
             { label:"− Other opex",          value:"−₹9.3L",   color:C.red    },
             { label:"Closing Balance",        value:"₹2.1 Cr",  color:C.blue,   bold:true },
           ].map((r,i) => (
-            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"9px 0",
+            <div key={i} style={{ display:"flex", justifyContent:"space-between",
               borderBottom:i<6?`1px solid ${C.border}`:"none",
               background:r.bold?`${C.blue}04`:"transparent", margin:r.bold?"0 -4px":"0", padding:r.bold?"9px 4px":"9px 0" }}>
               <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:r.bold?700:400 }}>{r.label}</span>
@@ -9860,7 +9860,7 @@ function Portal({ client, onLogout }) {
   const DEMO_REPORT_DATA = {
     monthLabel: "March 2026",
     score: 72,
-    varianceCommentary: "Revenue beat plan by ₹4.2L driven by new Gulf client onboarded in Feb. COGS savings of ₹2.3L from vendor renegotiation boosted GP margin to 41.0%. Watch: HR costs up 12% due to 2 new hires — keep Q2 opex tight.",
+    varianceSummary: "Revenue beat plan by ₹4.2L driven by new Gulf client onboarded in Feb. COGS savings of ₹2.3L from vendor renegotiation boosted GP margin to 41.0%. Watch: HR costs up 12% due to 2 new hires — keep Q2 opex tight.",
     pl: {
       revenue:      { actual:"₹84.2L",  prev:"₹79.1L"  },
       cogs:         { actual:"₹49.7L",  prev:"₹48.3L"  },
@@ -9950,7 +9950,6 @@ function Portal({ client, onLogout }) {
     },
     packNote: "Strong month across the board. Revenue beat plan by ₹4.2L, EBITDA margin at best level this year. Three priorities for Q1: close two Gulf pipeline deals (₹18L combined), complete FEMA filing for GCC revenue, and bring debtor days below 40. Runway needs attention — start fundraise conversations now.",
     reportNote: "All figures reviewed and certified by Garima Agarwal, CA (M.No. 160944). Data as at 31 March 2026. Next CFO review scheduled 20 April 2026.",
-    monthLabel: "March 2026",
     score: 74,
     scoreBreakdown: [
       { label:"Revenue Growth",          score:"84", comment:"78% YoY — well above Series A median of 28%" },
@@ -12678,9 +12677,6 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
 
                 {reportData && <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
               </>)}
-            </div>
-          )}
-
             </div>
           )}
 
