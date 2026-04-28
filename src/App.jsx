@@ -167,9 +167,9 @@ const KPIs_UAE = [
   { label:"Gross Margin",      value:"45%",        prev:"42%",        trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin"   },
   { label:"Cash Balance",      value:"AED 620K",   prev:"AED 580K",   trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"cash"     },
   { label:"Burn Rate",         value:"AED 75K/mo", prev:"AED 82K/mo", trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"burn"     },
-  { label:"Runway",            value:"8.3 mo",     prev:"7.1 mo",     trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"runway"   },
+  { label:"Runway",            value:"8.3 mo",     prev:"7.1 mo",     trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"runway"   },
   { label:"VAT Payable",       value:"AED 92.5K",  prev:"AED 78K",    trend:"down", color:C.amber,  bg:"#FEF7E7", icon:"invoice"  },
-  { label:"CT Effective Rate", value:"0%",          prev:"0%",         trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"chart_pie"},
+  { label:"CT Effective Rate", value:"0%", prev:"9% (std rate)", trend:"up", color:C.green, bg:"#E8FAF3", icon:"chart_pie"},
   { label:"QFZP Score",        value:"82/100",      prev:"75/100",     trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"star"     },
 ];
 
@@ -231,6 +231,20 @@ function kpiContext(k) {
   const prev  = k.prev && k.prev !== "—" ? k.prev : null;
   const val   = k.value || "";
 
+  // UAE-specific
+  if (label.includes("vat payable")) {
+    return "File by 28th of month following quarter end";
+  }
+  if (label.includes("ct effective") || label.includes("ct rate")) {
+    return "0% via QFZP status — maintain substance requirements";
+  }
+  if (label.includes("qfzp")) {
+    const num = parseFloat(val);
+    if (num >= 85) return "✅ Strong QFZP compliance — maintain documentation";
+    if (num >= 70) return "Good — address audit readiness to improve";
+    return "⚠️ Action needed — review substance requirements";
+  }
+
   if (label.includes("revenue")) {
     if (!prev) return "Track monthly to spot growth trend";
     return up ? `Up from ${prev} — growth on track` : `Down from ${prev} — review pipeline`;
@@ -243,7 +257,6 @@ function kpiContext(k) {
     return prev ? (up ? `Improving from ${prev} — keep focus` : `Declined from ${prev} — review COGS`) : "Monitor cost of goods sold";
   }
   if (label.includes("cash") || label.includes("balance")) {
-    const num = parseFloat(val);
     if (!prev) return "Maintain 6+ months of runway";
     return up ? `Up from ${prev} — healthy position` : `Down from ${prev} — monitor burn`;
   }
@@ -282,15 +295,15 @@ function kpiContext(k) {
 
 
 const CASHFLOW = [
-  { month:"Sep", value:210, forecast:null },
-  { month:"Oct", value:185, forecast:null },
-  { month:"Nov", value:240, forecast:null },
-  { month:"Dec", value:260, forecast:null },
-  { month:"Jan", value:195, forecast:null },
-  { month:"Feb", value:220, forecast:null },
-  { month:"Mar", value:null, forecast:175 },
-  { month:"Apr", value:null, forecast:200 },
-  { month:"May", value:null, forecast:230 },
+  { month:"Sep", value:185, forecast:null },
+  { month:"Oct", value:192, forecast:null },
+  { month:"Nov", value:210, forecast:null },
+  { month:"Dec", value:228, forecast:null },
+  { month:"Jan", value:196, forecast:null },
+  { month:"Feb", value:215, forecast:null },
+  { month:"Mar", value:242, forecast:null },
+  { month:"Apr", value:null, forecast:220 },
+  { month:"May", value:null, forecast:248 },
 ];
 
 // Pack-specific default action items (shown in demo / before Supabase loads)
@@ -940,20 +953,20 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
 const OVERVIEW_REVEXP = [
-  { month:"Sep", revenue:68, expenses:52 },
-  { month:"Oct", revenue:71, expenses:55 },
-  { month:"Nov", revenue:75, expenses:58 },
-  { month:"Dec", revenue:80, expenses:60 },
-  { month:"Jan", revenue:74, expenses:57 },
-  { month:"Feb", revenue:71, expenses:54 },
+  { month:"Sep", revenue:72, expenses:58 },
+  { month:"Oct", revenue:75, expenses:60 },
+  { month:"Nov", revenue:78, expenses:62 },
+  { month:"Dec", revenue:81, expenses:63 },
+  { month:"Jan", revenue:79, expenses:61 },
+  { month:"Feb", revenue:84, expenses:66 },
 ];
 const OVERVIEW_CF = [
-  { month:"Sep", net:16 },
-  { month:"Oct", net:16 },
-  { month:"Nov", net:17 },
-  { month:"Dec", net:20 },
-  { month:"Jan", net:17 },
-  { month:"Feb", net:17 },
+  { month:"Sep", net:14 },
+  { month:"Oct", net:15 },
+  { month:"Nov", net:16 },
+  { month:"Dec", net:18 },
+  { month:"Jan", net:18 },
+  { month:"Feb", net:18 },
 ];
 const OVERVIEW_ENGAGEMENTS = [
   { id:1, title:"Series A Pre-Funding Valuation", type:"Valuation", status:"Completed",  color:"#10B981" },
@@ -967,28 +980,28 @@ const OVERVIEW_ENGAGEMENTS = [
 const PACK_CONFIG = {
   startup: {
     overviewKpis: [
-      { label:"Monthly Revenue", value:"₹71L",  prev:"₹63L",  pct:"+12.7%", up:true,  color:C.blue,   bg:"#EEF3FE", emoji:"📈" },
-      { label:"ARR",             value:"₹850L", prev:"₹649L", pct:"+31%",   up:true,  color:C.purple, bg:"#F3EFFF", emoji:"🎯" },
-      { label:"Cash Balance",    value:"₹610L", prev:"₹583L", pct:"+₹27L",  up:true,  color:C.teal,   bg:"#E6FAF7", emoji:"🏦" },
+      { label:"Monthly Revenue", value:"₹84.2L", prev:"₹79.1L", pct:"+6.5%",  up:true,  color:C.blue,   bg:"#EEF3FE", icon:"rev"  },
+      { label:"ARR",             value:"₹10.1 Cr",prev:"₹8.5 Cr",pct:"+18.8%",up:true,  color:C.purple, bg:"#F3EFFF", icon:"arr"  },
+      { label:"Cash Balance",    value:"₹2.1 Cr", prev:"₹2.6 Cr",pct:"−₹50L", up:false, color:C.teal,   bg:"#E6FAF7", icon:"cash" },
     ],
     benchmarkTitle: "Market Benchmarks — SaaS / Fintech Sector",
     benchmarkCols: ["Metric","Your Value","Sector Median","Series A Benchmark","Status"],
     benchmarks: [
-      { metric:"ARR Growth YoY",  yours:"42%",   median:"28%",   bench:"40%+",   ok:true  },
+      { metric:"ARR Growth YoY",  yours:"78%",   median:"28%",   bench:"40%+",   ok:true  },
       { metric:"Gross Margin",     yours:"41%",   median:"38%",   bench:"45%+",   ok:false },
-      { metric:"Burn Multiple",    yours:"1.8x",  median:"2.1x",  bench:"<1.5x",  ok:false },
-      { metric:"NRR",              yours:"108%",  median:"104%",  bench:">110%",  ok:true  },
-      { metric:"CAC Payback",      yours:"18 mo", median:"22 mo", bench:"<12 mo", ok:false },
-      { metric:"Revenue per FTE",  yours:"₹48L",  median:"₹42L",  bench:"₹60L+",  ok:true  },
+      { metric:"Burn Multiple",    yours:"1.2x",  median:"2.1x",  bench:"<1.5x",  ok:true  },
+      { metric:"NRR",              yours:"112%",  median:"104%",  bench:">110%",  ok:true  },
+      { metric:"CAC Payback",      yours:"8 mo",  median:"22 mo", bench:"<12 mo", ok:true  },
+      { metric:"Revenue per FTE",  yours:"₹48L",  median:"₹42L",  bench:"₹60L+",  ok:false },
     ],
-    garimaNote: "Revenue is up 6.1% MoM — strong. The concern is March cash: advance tax + debt repayment + delayed Client B collection creates a tight window. Two decisions need board attention before 10 March.",
+    garimaNote: "March was a breakout month — revenue hit ₹84.2L (+6.5% MoM), best in FY26, and burn improved to ₹48L from ₹52L. The ARR growth at 78% YoY puts you well ahead of Series A benchmarks. Two immediate priorities: cash is tight — advance tax of ~₹18L due 15 March plus Client B's overdue ₹4.8L (90+ days) must be resolved this week. I'd hold the AWS infra upgrade to April. On fundraise: your NRR of 112% is the strongest metric in your deck — lead with that. CAC payback now at 8 months is a major improvement from 18 months. Let's update the Series A deck with Q1 actuals before April investor conversations.",
     plRows: [
-      { label:"Revenue",      value:"₹842L", pct:"6.1%",  trend:"up",   sub:"MoM growth" },
-      { label:"Gross Profit", value:"₹345L", pct:"41.0%", trend:"up",   sub:"GP margin" },
-      { label:"EBITDA",       value:"₹147L", pct:"17.5%", trend:"up",   sub:"Best in 12 months" },
-      { label:"Net Profit",   value:"₹102L", pct:"12.1%", trend:"up",   sub:"Net margin" },
-      { label:"Burn Rate",    value:"₹48L/mo",pct:"7.7%", trend:"up",   sub:"Improved from ₹52L" },
-      { label:"Runway",       value:"4.4 mo", pct:"12%",  trend:"down", sub:"Based on current burn" },
+      { label:"Revenue",      value:"₹84.2L", pct:"+6.5%", trend:"up",   sub:"Best month in FY26 · Gulf client uplift" },
+      { label:"Gross Profit", value:"₹34.5L", pct:"41.0%", trend:"up",   sub:"GP margin +2.1pp MoM · vendor savings" },
+      { label:"EBITDA",       value:"₹14.7L", pct:"17.5%", trend:"up",   sub:"Best EBITDA margin this year" },
+      { label:"Net Profit",   value:"₹10.2L", pct:"12.1%", trend:"up",   sub:"First double-digit net margin in FY26" },
+      { label:"Burn Rate",    value:"₹48L/mo",pct:"−7.7%", trend:"up",   sub:"Improved from ₹52L — 2 months in a row" },
+      { label:"Runway",       value:"4.4 mo", pct:"−12%",  trend:"down", sub:"⚠️ Fundraise conversations must start now" },
     ],
   },
   msme: {
@@ -1007,14 +1020,14 @@ const PACK_CONFIG = {
       { metric:"Gross Margin",         yours:"41%",     median:"36%",     bench:">40%",     ok:true  },
       { metric:"Cash Conversion Cycle",yours:"37 days", median:"45 days", bench:"<30 days", ok:false },
     ],
-    garimaNote: "Working capital is stable but debtor days at 46 is elevated — Client B's ₹4.8L overdue balance is the biggest risk this month. GST-3B for Feb is due 20 March. Recommend following up on collections before advance tax hits on 15 March.",
+    garimaNote: "February was solid overall, but three things need your attention this week. First — debtor days at 46 is improving (down from 51) but Client B's ₹4.8L has crossed 90 days. Chase this before 15 March or we'll have a cash gap during advance tax week. Second — SBI FD Tranche 1 (₹10L) matures 15 March; let's renew at 7.1% before the April RBI meeting potentially cuts rates. Third — GSTR-3B for February is due 20 March; documents are ready from my end, I just need your digital signature approval by 17th. GP margin improvement to 41% from 38% is real progress — vendor renegotiation is working.",
     plRows: [
-      { label:"Revenue",            value:"₹84.2L",  pct:"6.1%",  trend:"up",   sub:"vs ₹79.4L last month" },
-      { label:"Cost of Goods Sold", value:"₹49.7L",  pct:"4.2%",  trend:"down", sub:"58.9% of revenue" },
-      { label:"Gross Profit",       value:"₹34.5L",  pct:"41.0%", trend:"up",   sub:"GP margin improved +1.4pp" },
-      { label:"Operating Expenses", value:"₹19.8L",  pct:"3.1%",  trend:"down", sub:"23.5% of revenue" },
-      { label:"EBITDA",             value:"₹14.7L",  pct:"17.5%", trend:"up",   sub:"EBITDA margin 17.5%" },
-      { label:"Debtor Days",        value:"46 days",  pct:"10%",   trend:"up",   sub:"Target: <30 days" },
+      { label:"Revenue",            value:"₹84.2L", pct:"+6.1%",  trend:"up",   sub:"vs ₹79.4L last month" },
+      { label:"Cost of Goods Sold", value:"₹49.7L", pct:"58.9%",  trend:"down", sub:"Vendor savings of ₹2.3L this month" },
+      { label:"Gross Profit",       value:"₹34.5L", pct:"41.0%",  trend:"up",   sub:"GP margin +2.6pp vs last month" },
+      { label:"Operating Expenses", value:"₹19.8L", pct:"23.5%",  trend:"down", sub:"Within budget — well controlled" },
+      { label:"EBITDA",             value:"₹14.7L", pct:"17.5%",  trend:"up",   sub:"EBITDA margin best in 6 months" },
+      { label:"Debtor Days",        value:"46 days", pct:"−5 days",trend:"up",   sub:"Improving · target <30 days by Jun" },
     ],
   },
   corporate: {
@@ -1033,14 +1046,14 @@ const PACK_CONFIG = {
       { metric:"ROCE",                yours:"22.4%",  median:"18%",    bench:">25%",    ok:false },
       { metric:"Revenue Scale",       yours:"₹85 Cr", median:"₹65 Cr", bench:"₹100 Cr+",ok:false },
     ],
-    garimaNote: "Strong February — EBITDA up 27.8% vs budget and PAT nearly doubled vs prior year. The Ind AS 116 lease restatement is on track for Q1 completion. Board pack for March AGM is being prepared — please confirm director availability for 18 March.",
+    garimaNote: "February was the strongest month in FY26 — EBITDA at ₹147L, up 27.8% vs budget, and PAT nearly doubled year-on-year to ₹81L. The revenue beat of ₹32L vs budget is partly structural (new SKU mix) and partly timing — don't model it forward without adjustment. Two compliance items are time-sensitive: (1) Ind AS 116 lease restatement must be completed before Q1 close — I need the lease schedule from Finance by 20 March; (2) related-party transaction disclosures in the annual report need a legal review before filing. On IPO readiness: EBITDA margin at 17.5% needs to cross 18% — one more quarter like this and we're there. ROCE at 22.4% is already above sector median. Please confirm director availability for 18 March board meeting — I'll circulate the draft pack by 12 March.",
     plRows: [
-      { label:"Revenue",         value:"₹842L",  pct:"4.0%",   trend:"up", sub:"vs budget ₹810L" },
-      { label:"Gross Profit",    value:"₹345L",  pct:"41.0%",  trend:"up", sub:"GP margin 41.0%" },
-      { label:"EBITDA",          value:"₹147L",  pct:"17.5%",  trend:"up", sub:"vs budget ₹115L" },
-      { label:"Finance Costs",   value:"₹22L",   pct:"2.6%",   trend:"up", sub:"of revenue" },
-      { label:"PAT",             value:"₹81L",   pct:"9.6%",   trend:"up", sub:"PAT margin" },
-      { label:"ROCE",            value:"22.4%",  pct:"4.1pp",  trend:"up", sub:"vs 18.3% last year" },
+      { label:"Revenue",         value:"₹842L",  pct:"+4.0%",  trend:"up", sub:"Beat budget ₹810L by ₹32L" },
+      { label:"Gross Profit",    value:"₹345L",  pct:"41.0%",  trend:"up", sub:"GP margin up 1.2pp vs prior year" },
+      { label:"EBITDA",          value:"₹147L",  pct:"17.5%",  trend:"up", sub:"+27.8% vs budget of ₹115L" },
+      { label:"Finance Costs",   value:"₹22L",   pct:"2.6%",   trend:"up", sub:"Debt reduction target on track" },
+      { label:"PAT",             value:"₹81L",   pct:"9.6%",   trend:"up", sub:"PAT +44.6% YoY — best in 4 years" },
+      { label:"ROCE",            value:"22.4%",  pct:"+4.1pp", trend:"up", sub:"vs 18.3% last year · above sector" },
     ],
   },
 };
@@ -1049,9 +1062,12 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   // Fall back to dummy data if no live data passed
   const displayKpis = kpis || KPIs;
   const ovPack = client?.client_pack || client?.clientPack || "startup";
+  const uaeClient = isUAE(client);
   const pendingActions = actions.filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
-  const displayNote = garimaNote || (PACK_CONFIG[ovPack]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
+  const indiaNote = garimaNote || (PACK_CONFIG[ovPack]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
+  const uaeNote = "Q1 is looking solid — revenue at AED 1.85M is tracking 32% ahead of last year. Key priorities this month: (1) File Q1 VAT return by 28 April — AED 92.5K payable, keep this in your Emirates NBD current account. (2) Submit audited financials to DMCC by 30 April — your QFZP status depends on it. (3) Review mainland sales percentage — currently at 8%, which is above the 5% de-minimis threshold. I recommend restructuring two client contracts before Q2 close.";
+  const displayNote = uaeClient ? uaeNote : indiaNote;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -1064,10 +1080,14 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 
   return (
     <div style={{ padding:24 }}>
+      {/* UAE Disclaimer */}
+      {uaeClient && <UAEDisclaimer/>}
       {/* Hero Banner — pack-aware */}
       <div style={{ marginBottom:20, padding:"22px 28px", borderRadius:18,
-        background: ovPack==="msme"      ? "linear-gradient(135deg,#1B3A6B 0%,#2563EB 60%,#7C3AED 100%)"
+        background: uaeClient            ? "linear-gradient(135deg,#003A1F 0%,#00732F 60%,#1a5276 100%)"
+                  : ovPack==="msme"      ? "linear-gradient(135deg,#1B3A6B 0%,#2563EB 60%,#7C3AED 100%)"
                   : ovPack==="corporate" ? "linear-gradient(135deg,#4C1D95 0%,#7C3AED 60%,#DB2777 100%)"
+                  : "linear-gradient(135deg,#1a3a8f 0%,#2563EB 60%,#7C3AED 100%)",
                   : "linear-gradient(135deg,#1a3a8f 0%,#2563EB 60%,#7C3AED 100%)",
         color:"white", position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", right:-30, top:-30, width:180, height:180,
@@ -1088,9 +1108,17 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.18)",
             borderRadius:100, padding:"4px 14px", fontSize:12, fontWeight:700,
-            fontFamily:F, backdropFilter:"blur(4px)", border:"1px solid rgba(255,255,255,0.25)" }}>
+            fontFamily:F, backdropFilter:"blur(4px)", border:"1px solid rgba(255,255,255,0.25)",
+            marginRight:8 }}>
             ● {engagementBadge}
           </span>
+          {uaeClient && (
+            <span style={{ display:"inline-block", background:"rgba(255,255,255,0.15)",
+              borderRadius:100, padding:"4px 14px", fontSize:12, fontWeight:700,
+              fontFamily:F, backdropFilter:"blur(4px)", border:"1px solid rgba(255,255,255,0.2)" }}>
+              🇦🇪 {client?.jurisdiction === "Cross-Border" ? "India + UAE" : "UAE · " + (client?.freezone || "Free Zone")}
+            </span>
+          )}
         </div>
       </div>
 
@@ -1098,26 +1126,37 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }} className="ov-kpi">
         {(kpis && kpis.length > 0 ? kpis.slice(0,3).map(k => ({
             label: k.label, value: k.value, prev: k.prev,
-            pct: k.prev && k.prev !== "—" ? "" : "",
-            up: k.trend === "up", color: k.color, bg: k.bg, icon: k.icon
+            pct: k.pct || (k.prev && k.prev !== "—" ? "" : ""),
+            up: k.trend === "up", color: k.color, bg: k.bg, icon: k.icon || k.emoji
           }))
           : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.overviewKpis || PACK_CONFIG.startup.overviewKpis)
         ).map((k,i) => (
           <Card key={i} style={{ padding:18 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
               <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
-                display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 }}>{k.icon}</div>
-              <span style={{ fontSize:11, fontWeight:700,
-                color:k.up ? C.green : C.red,
-                background:k.up ? "#ECFDF5" : "#FEF2F2",
-                padding:"3px 8px", borderRadius:100, fontFamily:F }}>
-                {k.up ? "▲" : "▼"} {k.pct}
-              </span>
+                display:"flex", alignItems:"center", justifyContent:"center" }}>
+                {typeof k.icon === "string" && k.icon.length <= 12
+                  ? <Icon name={k.icon} size={18} color={k.color}/>
+                  : <span style={{ fontSize:16 }}>{k.icon}</span>}
+              </div>
+              {k.pct && (
+                <span style={{ fontSize:11, fontWeight:700,
+                  color:k.up ? C.green : C.red,
+                  background:k.up ? "#ECFDF5" : "#FEF2F2",
+                  padding:"3px 8px", borderRadius:100, fontFamily:F }}>
+                  {k.up ? "▲" : "▼"} {k.pct}
+                </span>
+              )}
             </div>
-            <div style={{ fontFamily:"monospace", fontWeight:700, fontSize:22, color:k.color, marginBottom:2 }}>
+            <div style={{ fontFamily:FM, fontWeight:700, fontSize:22, color:k.color, marginBottom:2 }}>
               {k.value}
             </div>
             <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, marginBottom:2 }}>{k.label}</div>
+            {k.prev && k.prev !== "—" && (
+              <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginBottom:2 }}>
+                vs {k.prev} prior period
+              </div>
+            )}
             <div style={{ fontFamily:F, fontSize:11, color:k.up?C.green:C.red, lineHeight:1.4, marginBottom:2 }}>
               {kpiContext(k)}
             </div>
@@ -1873,7 +1912,7 @@ function CashFlow({ reportData, client, kpis }) {
             { label:"+ Collections received",value:"+₹81.8L",  color:C.green  },
             { label:"− Payroll & benefits",  value:"−₹28.4L",  color:C.red    },
             { label:"− Vendor payments",     value:"−₹22.1L",  color:C.red    },
-            { label:"− Advance tax",         value:"−₹0",      color:C.dim    },
+            { label:"− Advance tax (Q4)",    value:"−₹11.6L",  color:C.red    },
             { label:"− Other opex",          value:"−₹9.3L",   color:C.red    },
             { label:"Closing Balance",        value:"₹2.1 Cr",  color:C.blue,   bold:true },
           ].map((r,i) => (
@@ -2212,14 +2251,14 @@ function CashFlow({ reportData, client, kpis }) {
           EBITDA → Free Cash Flow Bridge — Feb 2026
         </div>
         {[
-          { label:"EBITDA",                   value:"₹147L", color:C.blue,   base:true  },
-          { label:"− Interest paid",           value:"−₹22L", color:C.red,   base:false },
-          { label:"− Tax paid",                value:"−₹0L",  color:C.red,   base:false, note:"Q4 due Mar" },
-          { label:"± Working capital changes", value:"+₹3L",  color:C.green, base:false },
-          { label:"= Operating Cash Flow",     value:"₹128L", color:C.green, base:true  },
-          { label:"− Capex",                   value:"−₹7L",  color:C.red,   base:false },
-          { label:"+ Asset disposal",          value:"+₹0L",  color:C.dim,   base:false },
-          { label:"= Free Cash Flow",          value:"₹121L", color:C.purple,base:true  },
+          { label:"EBITDA",                   value:"₹147L",  color:C.blue,   base:true  },
+          { label:"− Interest paid",           value:"−₹22L",  color:C.red,    base:false },
+          { label:"− Tax paid",                value:"−₹18L",  color:C.red,    base:false, note:"Q4 advance tax" },
+          { label:"± Working capital changes", value:"+₹3L",   color:C.green,  base:false },
+          { label:"= Operating Cash Flow",     value:"₹110L",  color:C.green,  base:true  },
+          { label:"− Capex",                   value:"−₹7L",   color:C.red,    base:false },
+          { label:"+ Asset disposal",          value:"+₹4L",   color:C.teal,   base:false },
+          { label:"= Free Cash Flow",          value:"₹107L",  color:C.purple, base:true  },
         ].map((b,i) => (
           <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
             padding:"9px 12px", borderRadius:9, margin:"2px 0",
@@ -2422,7 +2461,7 @@ const CFO_PACK_DATA = {
     bg: "#EEF3FE",
     grad: "linear-gradient(135deg,#3B6FF7,#7C5CF5)",
     tagline: "Fundraise-ready financials for your next round",
-    fundraiseScore: 72,
+    fundraiseScore: 74,
     fundraiseBreakdown: [
       { label:"Revenue Growth",          score:85, comment:"Strong 42% YoY — above Series A median" },
       { label:"Gross Margin",            score:78, comment:"41% is healthy; target 45%+ before raise" },
@@ -2433,9 +2472,9 @@ const CFO_PACK_DATA = {
     investorMetrics: [
       { label:"ARR",          value:"₹6.2 Cr",  flag:false, note:"Good for Series A" },
       { label:"MoM Growth",   value:"6%",        flag:false, note:"Consistent" },
-      { label:"Burn Multiple",value:"1.8x",      flag:true,  note:"Target <1.5x before raise" },
-      { label:"CAC Payback",  value:"18 mo",     flag:true,  note:"Investors prefer <12 mo" },
-      { label:"NRR",          value:"108%",      flag:false, note:"Healthy retention" },
+      { label:"Burn Multiple",value:"1.2x",      flag:false, note:"Improved — target <1.5x ✅" },
+      { label:"CAC Payback",  value:"8 mo",      flag:false, note:"Down from 18mo — healthy ✅" },
+      { label:"NRR",          value:"112%",      flag:false, note:"Expansion revenue positive ✅" },
       { label:"Gross Margin", value:"41%",       flag:false, note:"On track" },
     ],
     dueDiligence: [
@@ -2449,7 +2488,7 @@ const CFO_PACK_DATA = {
       { item:"Shareholder agreement (all investors)",     done:true  },
     ],
     boardPacks: BOARD_PACKS,
-    garimaNote: "Your ARR growth is the strongest part of your story — lean into it. The burn multiple at 1.8x will get questions from institutional investors. I'd recommend showing a clear path to 1.2x by month 9. Let's work on the unit economics narrative before you start investor conversations.",
+    garimaNote: "Your NRR at 112% is the single strongest metric in your deck — it tells investors that customers are expanding, not just renewing. Lead every investor conversation with this. The burn multiple at 1.2x is excellent and has improved from 1.8x six months ago — make sure this trend is visible in your deck. The one gap to address before serious investor conversations: unit economics by cohort. Most Series A investors will ask for a 12-month LTV/CAC by acquisition channel — let's build this together. CAC payback at 8 months is already strong; we just need to show it cleanly. I'd suggest scheduling a 2-hour working session this month to finalise the deck before you start outreach in May.",
   },
   msme: {
     label: "MSME Pack",
@@ -2481,7 +2520,7 @@ const CFO_PACK_DATA = {
       { label:"Debtor Concentration", value:"High",   flag:true,  note:"Top 3 = 64% of AR" },
     ],
     boardPacks: BOARD_PACKS,
-    garimaNote: "Working capital is healthy overall but the debtor concentration is a risk — if your top client delays, it cascades into a cash crunch. I've flagged this as the priority item for next month. Creditor days are well managed; keep that discipline. Focus for Q1: reduce debtor days from 38 to 30.",
+    garimaNote: "Working capital is healthy overall but the debtor concentration is your biggest risk right now — your top 3 clients represent 64% of accounts receivable. If any one of them delays payment, it cascades into a cash crunch during advance tax weeks. I've flagged Client B's ₹4.8L (90+ days) as Priority 1 this month. On the positive side: your creditor days at 52 are very well managed — that discipline is protecting your cash flow. For Q1 focus: reduce debtor days from 38 to under 30, and the cash conversion cycle improves automatically. The SBI FD renewal on 15 March is also time-sensitive — let's lock in 7.1% before any RBI rate action.",
   },
   corporate: {
     label: "Corporate Pack",
@@ -2513,7 +2552,7 @@ const CFO_PACK_DATA = {
       { standard:"Ind AS 21 — Foreign Ops",    status:"Compliant",    note:"USD invoices hedged" },
     ],
     boardPacks: BOARD_PACKS,
-    garimaNote: "The IPO readiness score of 58 is a starting point — the two Ind AS gaps (116 and 109) are solvable in 2–3 months with a focused project. The governance gap is easier but takes longer (6+ months for a qualified independent director). I'd recommend starting the Ind AS restatement work immediately so it's done before you engage investment bankers.",
+    garimaNote: "The IPO readiness score of 58 reflects real gaps — but they're all fixable within 6 months if we move now. The two Ind AS items (116 and 109) should be your immediate priority: commission a Big 4 firm to run the restatement project in parallel with your Q1 close. This typically takes 8–10 weeks. The governance gap (independent director) takes longer — start the search now, not after you've engaged bankers. On the positive side: EBITDA margin at 17.5% and ROCE at 22.4% are genuinely strong metrics that will resonate with QIBs. Revenue scale at ₹85 Cr is approaching the ₹100 Cr threshold that makes the IPO story cleaner. One more quarter like February and we're there.",
   },
 };
 
@@ -8569,6 +8608,9 @@ function VATDashboard({ client, reportData }) {
       { period:"Q1 2026 (Jan–Mar)", due:"28 Apr 2026", status:"Due",   vatNet:"AED 92,500" },
     ],
     cashImpact: rd.cashImpact || [
+      { month:"Oct", collected:58000, paid:24000, net:34000 },
+      { month:"Nov", collected:64000, paid:27000, net:37000 },
+      { month:"Dec", collected:71000, paid:32000, net:39000 },
       { month:"Jan", collected:62000, paid:28000, net:34000 },
       { month:"Feb", collected:68000, paid:31000, net:37000 },
       { month:"Mar", collected:55000, paid:33000, net:22000 },
@@ -8625,13 +8667,22 @@ function VATDashboard({ client, reportData }) {
             <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:6 }}>📅 Next Filing Deadline</div>
             <div style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.7 }}>
               <strong>{vatData.filingPeriod}</strong> — Due <strong>{vatData.nextDeadline}</strong><br/>
-              VAT Payable: <strong>{fmtAED(vatData.vatPayable)}</strong> — ensure cash is available before filing date.
+              VAT Payable: <strong>{fmtAED(vatData.vatPayable)}</strong> — ensure cash is available 3–5 days before filing date.
             </div>
             <button onClick={() => window.open(WA,"_blank")} style={{ marginTop:12, padding:"9px 20px",
               borderRadius:8, border:"none", background:"#00732F", color:"white",
               fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
               💬 Discuss with Garima
             </button>
+          </Card>
+          {/* Garima's VAT note */}
+          <Card style={{ borderLeft:"3px solid #00732F", background:"#F0FDF4" }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:8 }}>
+              🇦🇪 Note from Garima
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:"#166534", lineHeight:1.8, margin:0 }}>
+              Q1 VAT payable of {fmtAED(vatData.vatPayable)} is due {vatData.nextDeadline}. Keep this amount in your Emirates NBD current account — do not lock it in a term deposit. I recommend filing by 24 April (4 days early) to avoid any last-minute portal issues. If your input VAT increases in Q2 due to planned equipment purchases, we can optimise timing to reduce the net payable.
+            </p>
           </Card>
         </>
       )}
@@ -8732,10 +8783,10 @@ function CorporateTax({ client, reportData }) {
     sbrEligible, revenue, qfzpStatus,
     taxableIncome:       rd.taxableIncome || 271000,
     adjustments: rd.adjustments || [
-      { item:"Accounting Profit",            amount: 271000, sign: 1 },
-      { item:"Add: Non-deductible expenses", amount:  12000, sign: 1 },
-      { item:"Less: Exempt dividends",       amount:  18000, sign:-1 },
-      { item:"Less: QFZP qualifying income", amount: 265000, sign:-1 },
+      { item:"Accounting Profit (per audited FS)", amount: 271000, sign: 1, note:"Net profit before CT adjustments" },
+      { item:"Add: Non-deductible expenses",        amount:  12000, sign: 1, note:"Entertainment, fines, and non-business costs" },
+      { item:"Less: Exempt dividend income",        amount:  18000, sign:-1, note:"Dividends from UAE subsidiary — exempt under Art. 22" },
+      { item:"Less: QFZP qualifying income",        amount: 265000, sign:-1, note:"Income from qualifying activities — 0% CT rate" },
     ],
     taxableFinalIncome:  rd.taxableFinalIncome  || 0,
     effectiveCTRate:     (qfzpStatus || sbrEligible) ? 0 : 9,
@@ -8845,6 +8896,19 @@ function CorporateTax({ client, reportData }) {
               </div>
             ))}
           </Card>
+          <Card style={{ borderLeft:"3px solid #00732F", background:"#F0FDF4" }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:8 }}>🇦🇪 Note from Garima — SBR</div>
+            <p style={{ fontFamily:F, fontSize:13, color:"#166534", lineHeight:1.8, margin:"0 0 12px" }}>
+              {sbrEligible
+                ? "You are eligible for Small Business Relief — I recommend electing SBR in your CT return. This reduces your CT liability to AED 0 on all income (not just qualifying income). The election window is open until 9 months after your financial year-end. Important: if revenue crosses AED 3M in any future period, SBR eligibility is permanently lost for that period. Monitor monthly."
+                : "Revenue has exceeded the AED 3M SBR threshold. Focus on QFZP status — ensure qualifying income stays above 95% of total revenue to maintain 0% CT on that portion. The 9% standard rate will apply on any non-qualifying income."}
+            </p>
+            <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
+              borderRadius:8, border:"none", background:"#00732F", color:"white",
+              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+              💬 Discuss SBR with Garima
+            </button>
+          </Card>
         </div>
       )}
 
@@ -8884,30 +8948,116 @@ function CorporateTax({ client, reportData }) {
       )}
 
       {tab === "recon" && (
-        <Card>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Accounting Profit → Taxable Income</div>
-          {ctData.adjustments.map((a,i) => (
-            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"10px 0", borderBottom:`1px solid ${C.border}` }}>
-              <span style={{ fontFamily:F, fontSize:13, color:C.text }}>{a.item}</span>
-              <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:a.sign>0?C.text:C.green }}>
-                {a.sign < 0 ? "-" : ""}{fmtAED(Math.abs(a.amount))}
+        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+          <Card>
+            {/* Table header */}
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+              Taxable Income Reconciliation
+            </div>
+            <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.6 }}>
+              Accounting profit adjusted to arrive at UAE Corporate Tax base — per Federal Decree-Law No. 47 of 2022.
+            </p>
+
+            {/* Column headers */}
+            <div style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:8,
+              padding:"8px 12px", background:C.bg2, borderRadius:8, marginBottom:4 }}>
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em" }}>Item</span>
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", textAlign:"right", minWidth:80 }}>Sign</span>
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", textAlign:"right", minWidth:110 }}>Amount (AED)</span>
+            </div>
+
+            {/* Rows */}
+            {ctData.adjustments.map((a,i) => {
+              const isAdd = a.sign > 0;
+              const isFirst = i === 0;
+              return (
+                <div key={i} style={{
+                  display:"grid", gridTemplateColumns:"1fr auto auto", gap:8,
+                  padding:"11px 12px",
+                  background: isFirst ? `${C.blue}06` : "transparent",
+                  borderBottom:`1px solid ${C.border}`,
+                  alignItems:"center",
+                }}>
+                  <div>
+                    <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight: isFirst ? 700 : 400 }}>{a.item}</span>
+                    {a.note && <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>{a.note}</div>}
+                  </div>
+                  <div style={{ textAlign:"right", minWidth:80 }}>
+                    <span style={{
+                      display:"inline-block", padding:"2px 10px", borderRadius:100,
+                      fontSize:11, fontWeight:700, fontFamily:F,
+                      background: isFirst ? `${C.blue}12` : isAdd ? `${C.green}12` : `${C.red}12`,
+                      color: isFirst ? C.blue : isAdd ? C.green : C.red,
+                    }}>
+                      {isFirst ? "Base" : isAdd ? "+ Add" : "− Deduct"}
+                    </span>
+                  </div>
+                  <div style={{ textAlign:"right", minWidth:110 }}>
+                    <span style={{
+                      fontFamily:FM, fontSize:13, fontWeight:700,
+                      color: isFirst ? C.text : isAdd ? C.red : C.green,
+                    }}>
+                      {isAdd && !isFirst ? "+" : isAdd ? "" : "−"} {fmtAED(Math.abs(a.amount))}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Subtotal line */}
+            <div style={{
+              display:"grid", gridTemplateColumns:"1fr auto auto", gap:8,
+              padding:"14px 12px", marginTop:2,
+              borderTop:`2px solid ${C.text}`,
+              background: ctData.taxableFinalIncome === 0 ? "#F0FDF4" : "#FFFBEB",
+              borderRadius:"0 0 10px 10px",
+            }}>
+              <span style={{ fontFamily:F, fontSize:14, fontWeight:800, color:C.text }}>
+                Taxable Income
+              </span>
+              <div/>
+              <span style={{
+                fontFamily:FM, fontSize:16, fontWeight:900, textAlign:"right", minWidth:110,
+                color: ctData.taxableFinalIncome === 0 ? C.green : C.amber,
+              }}>
+                {fmtAED(ctData.taxableFinalIncome || 0)}
               </span>
             </div>
-          ))}
-          <div style={{ display:"flex", justifyContent:"space-between", padding:"12px 0", borderTop:`2px solid ${C.text}`, marginTop:4 }}>
-            <span style={{ fontFamily:F, fontSize:14, fontWeight:800, color:C.text }}>CT Taxable Income</span>
-            <span style={{ fontFamily:F, fontSize:16, fontWeight:800, color:ctData.taxableFinalIncome===0?C.green:C.amber }}>
-              {fmtAED(ctData.taxableFinalIncome)}
-            </span>
-          </div>
-          {ctData.taxableFinalIncome === 0 && (
-            <div style={{ marginTop:12, padding:"10px 14px", borderRadius:10, background:"#F0FDF4", border:"1px solid #86EFAC" }}>
-              <span style={{ fontFamily:F, fontSize:12, color:"#15803D", fontWeight:600 }}>
-                ✅ With QFZP status, qualifying income excluded → CT payable = AED 0
-              </span>
+
+            {/* CT calculation */}
+            <div style={{ marginTop:12, display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+              <div style={{ padding:"12px 14px", borderRadius:10, background:`${C.purple}08`, border:`1px solid ${C.purple}18` }}>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>CT Rate Applied</div>
+                <div style={{ fontFamily:FM, fontSize:18, fontWeight:800, color:C.purple }}>
+                  {ctData.effectiveCTRate}%
+                </div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>
+                  {ctData.effectiveCTRate === 0 ? "QFZP / SBR exemption" : "Standard rate"}
+                </div>
+              </div>
+              <div style={{ padding:"12px 14px", borderRadius:10,
+                background: ctData.ctPayable === 0 ? "#F0FDF4" : "#FFFBEB",
+                border:`1px solid ${ctData.ctPayable===0?"#86EFAC":"#FCD34D"}` }}>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>CT Payable</div>
+                <div style={{ fontFamily:FM, fontSize:18, fontWeight:800,
+                  color: ctData.ctPayable === 0 ? C.green : C.amber }}>
+                  {fmtAED(ctData.ctPayable || 0)}
+                </div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>
+                  Due {ctData.ctDue}
+                </div>
+              </div>
             </div>
-          )}
-        </Card>
+
+            {ctData.taxableFinalIncome === 0 && (
+              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:10, background:"#F0FDF4", border:"1px solid #86EFAC" }}>
+                <span style={{ fontFamily:F, fontSize:12, color:"#15803D", fontWeight:600 }}>
+                  ✅ With QFZP qualifying income exclusion and SBR election, CT payable = <strong>AED 0</strong>. Ensure QFZP documentation is audit-ready.
+                </span>
+              </div>
+            )}
+          </Card>
+        </div>
       )}
     </div>
   );
@@ -8953,6 +9103,14 @@ function ComplianceCalendar({ client }) {
         ))}
       </div>
 
+      {/* Garima's compliance note */}
+      <Card style={{ borderLeft:"3px solid #00732F", background:"#F0FDF4", marginBottom:4 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:6 }}>🇦🇪 Note from Garima</div>
+        <p style={{ fontFamily:F, fontSize:13, color:"#166534", lineHeight:1.8, margin:0 }}>
+          Three high-priority deadlines in the next 90 days: VAT return (28 Apr), DMCC audit submission (30 Apr), and license renewal (15 May). I recommend addressing them in this order — VAT first as it has a financial penalty, then audit as it unlocks QFZP confirmation, then license. I'll send you a document checklist for each one week before the deadline.
+        </p>
+      </Card>
+
       <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
         {filtered.map((d,i) => {
           const isPast = new Date(d.date) < new Date();
@@ -8994,7 +9152,7 @@ function ComplianceCalendar({ client }) {
 function QFZPModule({ client, reportData }) {
   const rd        = reportData?.qfzp || {};
   const freezone  = client?.freezone || "DMCC";
-  const qfzpScore = rd.qfzpScore || 82;
+  const qfzpScore = rd.qfzpScore || 84;
 
   const qualifyingActivities = [
     { activity:"Manufacturing / processing of goods",           qualified:true  },
@@ -9057,10 +9215,12 @@ function QFZPModule({ client, reportData }) {
         ))}
       </Card>
 
-      <Card style={{ background:"#EFF6FF", border:"1px solid #93C5FD" }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.blue, marginBottom:8 }}>💬 Ask Garima About QFZP</div>
-        <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:12 }}>
-          QFZP documentation, substance review, qualifying income ratio optimisation, and DIFC/ADGM investor reporting.
+      <Card style={{ borderLeft:"3px solid #2563EB", background:"#EFF6FF" }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.blue, marginBottom:8 }}>
+          🇦🇪 Note from Garima — QFZP
+        </div>
+        <p style={{ fontFamily:F, fontSize:13, color:"#1E3A8A", lineHeight:1.8, margin:"0 0 14px" }}>
+          Your QFZP score of {qfzpScore}/100 is solid, but the two gaps — mainland sales ratio and audited financials — need to be addressed before the next FTA review. The mainland sales (currently at {ctData?.nonQualifyingPct || 8}% of revenue) must stay below the 5% de-minimis threshold or below AED 5M annually. I recommend we review the contract structure for your non-free-zone clients in Q2. Audited financials are the other priority — your DMCC submission deadline is 30 April.
         </p>
         <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
           borderRadius:8, border:"none", background:C.blue, color:"white",
@@ -9076,7 +9236,7 @@ function QFZPModule({ client, reportData }) {
 function AuditReadiness({ client, reportData }) {
   const rd        = reportData?.auditReadiness || {};
   const freezone  = client?.freezone || "DMCC";
-  const auditScore = rd.auditScore || 65;
+  const auditScore = rd.auditScore || 68;
 
   const checklistItems = rd.checklistItems || [
     { cat:"Financial Statements",  item:"Audited P&L (current year)",                done:false, req:true  },
@@ -9143,6 +9303,12 @@ function AuditReadiness({ client, reportData }) {
         );
       })}
 
+      <Card style={{ borderLeft:"3px solid #059669", background:"#F0FDF4", marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:8 }}>🇦🇪 Note from Garima — Audit Readiness</div>
+        <p style={{ fontFamily:F, fontSize:13, color:"#166534", lineHeight:1.8, margin:"0 0 12px" }}>
+          Your audit readiness score of {auditScore}/100 is encouraging, but there are 5 required documents still outstanding. The highest-priority gap is QFZP Supporting Documentation — without this, your free zone status cannot be confirmed in the audit. I'd suggest we schedule a 45-minute working session to close these items before the 30 April DMCC deadline. I can prepare the first draft of the CT computation and transfer pricing documentation if you share the relevant contracts.
+        </p>
+      </Card>
       <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:14,
         borderRadius:12, border:"none", background:C.green, color:"white",
         fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>
@@ -9695,7 +9861,7 @@ function Portal({ client, onLogout }) {
   const DEMO_REPORT_DATA = {
     monthLabel: "March 2026",
     score: 72,
-    varianceCommentary: "Revenue tracking slightly ahead of plan. Operating expenses within budget.",
+    varianceCommentary: "Revenue beat plan by ₹4.2L driven by new Gulf client onboarded in Feb. COGS savings of ₹2.3L from vendor renegotiation boosted GP margin to 41.0%. Watch: HR costs up 12% due to 2 new hires — keep Q2 opex tight.",
     pl: {
       revenue:      { actual:"₹84.2L",  prev:"₹79.1L"  },
       cogs:         { actual:"₹49.7L",  prev:"₹48.3L"  },
@@ -9783,21 +9949,84 @@ function Portal({ client, onLogout }) {
       "Admin & G&A":         { actual:"220000",  budget:"230000"  },
       "Finance & Legal":     { actual:"180000",  budget:"200000"  },
     },
-    packNote: "Strong month — revenue beat, margins expanding. Focus areas for Q1: close two Gulf pipeline deals, complete FEMA filing.",
-    reportNote: "All figures reviewed and certified by Garima Agarwal, CA. Next review scheduled April 20, 2026.",
+    packNote: "Strong month across the board. Revenue beat plan by ₹4.2L, EBITDA margin at best level this year. Three priorities for Q1: close two Gulf pipeline deals (₹18L combined), complete FEMA filing for GCC revenue, and bring debtor days below 40. Runway needs attention — start fundraise conversations now.",
+    reportNote: "All figures reviewed and certified by Garima Agarwal, CA (M.No. 160944). Data as at 31 March 2026. Next CFO review scheduled 20 April 2026.",
     monthLabel: "March 2026",
-    score: 72,
+    score: 74,
     scoreBreakdown: [
-      { label:"Revenue Growth",          score:"82", comment:"Strong MoM trajectory" },
-      { label:"Gross Margin",            score:"74", comment:"Improving, target 45%" },
-      { label:"Runway",                  score:"58", comment:"Under 6 months — prioritise" },
-      { label:"Financial Documentation", score:"80", comment:"Audit-ready" },
-      { label:"Unit Economics",          score:"71", comment:"CAC payback improving" },
+      { label:"Revenue Growth",          score:"84", comment:"78% YoY — well above Series A median of 28%" },
+      { label:"Gross Margin",            score:"76", comment:"At 41% — target 45%+ before raise; improving" },
+      { label:"Runway",                  score:"52", comment:"4.4 months — urgent. Begin fundraise now." },
+      { label:"Financial Documentation", score:"88", comment:"3yr audited P&L, MIS pack current, FEMA filed" },
+      { label:"Unit Economics",          score:"78", comment:"CAC payback 8mo (was 18mo) — major improvement" },
     ],
   };
-  const resolvedReportData = (!isDemo && liveReportData) ? liveReportData : DEMO_REPORT_DATA;
+
+  // UAE-specific demo report data
+  const DEMO_REPORT_DATA_UAE = {
+    ...DEMO_REPORT_DATA,
+    monthLabel: "Q1 2026 (Jan–Mar)",
+    score: 79,
+    packNote: "Q1 2026 was a strong quarter — revenue at AED 1.85M, up 32% YoY, and QFZP compliance score at 82/100. VAT return for Q1 is due 28 April (AED 92.5K payable — ensure this is ring-fenced now). Key priorities: elect Small Business Relief in your CT return, finalise the DMCC audited accounts by 30 April, and keep mainland sales below 5% of revenue to protect QFZP status.",
+    reportNote: "All figures reviewed and certified by Garima Agarwal, CA (M.No. 160944). UAE VAT & CT data as at 31 March 2026. Final tax advice should be confirmed with a licensed UAE tax advisor. Next review: 20 April 2026.",
+    vat: {
+      outputVAT: 185000, inputVAT: 92500, vatPayable: 92500,
+      filingPeriod: "Q1 2026 (Jan–Mar)", nextDeadline: "28 Apr 2026",
+      pendingReturns: [
+        { period:"Q2 2025 (Apr–Jun)", due:"28 Jul 2025",  status:"Filed", vatNet:"AED 58,400" },
+        { period:"Q3 2025 (Jul–Sep)", due:"28 Oct 2025",  status:"Filed", vatNet:"AED 68,500" },
+        { period:"Q4 2025 (Oct–Dec)", due:"28 Jan 2026",  status:"Filed", vatNet:"AED 74,200" },
+        { period:"Q1 2026 (Jan–Mar)", due:"28 Apr 2026",  status:"Due",   vatNet:"AED 92,500" },
+      ],
+      cashImpact: [
+        { month:"Jan", collected:62000, paid:28000, net:34000  },
+        { month:"Feb", collected:68000, paid:31000, net:37000  },
+        { month:"Mar", collected:55000, paid:33500, net:21500  },
+        { month:"Apr", collected:null,  paid:null,  forecast:26000 },
+        { month:"May", collected:null,  paid:null,  forecast:31000 },
+      ],
+    },
+    ct: {
+      revenue: 1850000, taxableIncome: 271000,
+      qualifyingPct: 92, nonQualifyingPct: 8,
+      taxableFinalIncome: 0,
+      adjustments: [
+        { item:"Accounting Profit (per audited P&L)",           amount:271000, sign:1,  note:"Per IFRS financial statements" },
+        { item:"Add: Non-deductible entertainment expenses",    amount:12400,  sign:1,  note:"50% disallowance per Art. 33" },
+        { item:"Add: Penalties & fines (non-deductible)",       amount:3600,   sign:1,  note:"Per Art. 33 UAE CT Law" },
+        { item:"Less: Exempt dividend income",                  amount:18200,  sign:-1, note:"From qualifying FZ subsidiary" },
+        { item:"Less: QFZP qualifying income (0% CT rate)",    amount:268800, sign:-1, note:"92% of total income — QFZP" },
+      ],
+    },
+    qfzp: { qfzpScore: 82 },
+    auditReadiness: { auditScore: 65 },
+    treasury: { totalCash:"AED 620K", investedPct:55, yieldPA:"AED 22K" },
+    pl: {
+      revenue:      { actual:"AED 1.85M",  prev:"AED 1.40M" },
+      cogs:         { actual:"AED 1.02M",  prev:"AED 0.84M" },
+      grossProfit:  { actual:"AED 832.5K", prev:"AED 588K"  },
+      ebitda:       { actual:"AED 407.5K", prev:"AED 280K"  },
+      pat:          { actual:"AED 271K",   prev:"AED 196K"  },
+      gpMargin:     { actual:"45.0%",      prev:"42.0%"     },
+      ebitdaMargin: { actual:"22.0%",      prev:"20.0%"     },
+      netMargin:    { actual:"14.6%",      prev:"14.0%"     },
+    },
+    scoreBreakdown: [
+      { label:"Revenue Growth",   score:"86", comment:"32% YoY — strong for DMCC trading SME" },
+      { label:"QFZP Compliance",  score:"82", comment:"Non-qualifying at 8% — keep mainland under 5%" },
+      { label:"VAT Compliance",   score:"95", comment:"All returns filed on time, zero penalties" },
+      { label:"Audit Readiness",  score:"65", comment:"Audited FS not yet ready — critical for QFZP" },
+      { label:"Cash Position",    score:"80", comment:"8.3 months runway — healthy buffer" },
+    ],
+  };
+
+  const resolvedReportData = isUAE(client)
+    ? ((!isDemo && liveReportData) ? liveReportData : DEMO_REPORT_DATA_UAE)
+    : ((!isDemo && liveReportData) ? liveReportData : DEMO_REPORT_DATA);
   const resolvedGarimaNote = (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
-    : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
+    : isUAE(client)
+      ? "Q1 2026 closed strongly — AED 1.85M revenue, up 32% YoY, with gross margin at 45% (best quarter since inception). Four things need your attention this week: (1) VAT return for Q1 is due 28 April — AED 92.5K payable to FTA. Confirm this is sitting in your Emirates NBD current account and not locked in the Mashreq term deposit maturing 15 April. (2) DMCC audited financial statements must be submitted by 30 April to maintain QFZP status — your audit firm needs your signed management accounts by 22 April. Do not miss this: losing QFZP status triggers 9% CT retroactively. (3) Your mainland UAE sales are at 8% of revenue — above the 5% de-minimis threshold. Review the two mainland contracts due for renewal in Q2 and restructure them as DMCC-to-DMCC to bring this back under 5%. (4) SBR election must be made in your CT return by 30 September — I'll prepare this. Confirm your Q2 revenue won't cross AED 3M YTD."
+      : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
 
   const pages = {
     overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData}/>,
@@ -10605,6 +10834,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"invoices",   icon:"🧾", label:"Invoices"        },
     { id:"reportdata", icon:"📈", label:"Report Data"     },
     { id:"treasury",   icon:"🏛️", label:"Treasury"        },
+    { id:"uae",        icon:"🇦🇪", label:"UAE / Tax"       },
     { id:"analytics",  icon:"🌏", label:"BI & Scenarios"  },
     { id:"documents",  icon:"📁", label:"Documents"       },
     { id:"requests",   icon:"📩", label:"Requests"        },
@@ -11103,6 +11333,45 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   {value:"cfo",       label:"CFO Only"},
                   {value:"valuation", label:"Valuation Only"},
                 ]}/>
+              {/* ── UAE fields ── */}
+              <AdminSelect C={C} F={F} label="Jurisdiction" val={newClient.jurisdiction||"India"}
+                onChange={v=>setNewClient(c=>({...c,jurisdiction:v}))}
+                options={[
+                  {value:"India",        label:"🇮🇳 India"},
+                  {value:"UAE",          label:"🇦🇪 UAE / Dubai"},
+                  {value:"Cross-Border", label:"🌐 Cross-Border (India + UAE)"},
+                ]}/>
+              {(newClient.jurisdiction === "UAE" || newClient.jurisdiction === "Cross-Border") && (<>
+                <AdminSelect C={C} F={F} label="Free Zone" val={newClient.freezone||"DMCC"}
+                  onChange={v=>setNewClient(c=>({...c,freezone:v}))}
+                  options={[
+                    {value:"DMCC",  label:"DMCC — Dubai Multi Commodities Centre"},
+                    {value:"JAFZA", label:"JAFZA — Jebel Ali Free Zone"},
+                    {value:"ADGM",  label:"ADGM — Abu Dhabi Global Market"},
+                    {value:"DIFC",  label:"DIFC — Dubai Int'l Financial Centre"},
+                    {value:"RAK",   label:"RAKEZ — RAK Economic Zone"},
+                    {value:"Other", label:"Other / Mainland"},
+                  ]}/>
+                <AdminInput C={C} F={F} FM={FM} label="VAT TRN" val={newClient.trnVAT||""}
+                  onChange={v=>setNewClient(c=>({...c,trnVAT:v}))} placeholder="e.g. 100345678900003" mono/>
+                <AdminInput C={C} F={F} FM={FM} label="CT TRN (Corporate Tax)" val={newClient.trnCT||""}
+                  onChange={v=>setNewClient(c=>({...c,trnCT:v}))} placeholder="e.g. 900012345678901" mono/>
+                <AdminSelect C={C} F={F} label="Financial Year End" val={newClient.financialYearEnd||"31 Dec"}
+                  onChange={v=>setNewClient(c=>({...c,financialYearEnd:v}))}
+                  options={[
+                    {value:"31 Dec", label:"31 December (Calendar Year)"},
+                    {value:"31 Mar", label:"31 March (India-aligned)"},
+                  ]}/>
+                <AdminSelect C={C} F={F} label="VAT Registered?" val={newClient.vatRegistered?"yes":"no"}
+                  onChange={v=>setNewClient(c=>({...c,vatRegistered:v==="yes"}))}
+                  options={[{value:"yes",label:"✅ Yes — VAT Registered"},{value:"no",label:"❌ Not Registered"}]}/>
+                <AdminSelect C={C} F={F} label="QFZP Status?" val={newClient.qfzpStatus?"yes":"no"}
+                  onChange={v=>setNewClient(c=>({...c,qfzpStatus:v==="yes"}))}
+                  options={[{value:"yes",label:"✅ Active QFZP"},{value:"no",label:"❌ Not a QFZP"}]}/>
+                <AdminSelect C={C} F={F} label="SBR Eligible?" val={newClient.sbrEligible?"yes":"no"}
+                  onChange={v=>setNewClient(c=>({...c,sbrEligible:v==="yes"}))}
+                  options={[{value:"yes",label:"✅ SBR Eligible (revenue ≤ AED 3M)"},{value:"no",label:"❌ Not Eligible"}]}/>
+              </>)}
               <div style={{ marginTop:8 }}>
                 <button onClick={createClient} style={{ padding:"12px 24px", borderRadius:10,
                   border:"none", background:C.grad1, color:"white", fontFamily:F,
@@ -11152,7 +11421,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </p>
                   <AdminInput C={C} F={F} FM={FM} label="Month" val={kpis.month} onChange={v=>setKpis(k=>({...k,month:v}))} placeholder="e.g. February 2026" />
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }} className="kpi-edit-grid">
-                    {(selected.client_pack === "msme" ? [
+                    {(isUAE(selected) ? [
+                      { label:"Revenue (AED)",        key:"revenue",      placeholder:"e.g. AED 1.85M"  },
+                      { label:"Gross Margin",          key:"gross_margin", placeholder:"e.g. 45%"         },
+                      { label:"Cash Balance (AED)",   key:"cash_balance", placeholder:"e.g. AED 620K"   },
+                      { label:"Burn Rate (AED/mo)",   key:"burn_rate",    placeholder:"e.g. AED 75K/mo" },
+                      { label:"Runway (months)",       key:"runway",       placeholder:"e.g. 8.3 mo"     },
+                      { label:"VAT Payable (AED)",    key:"arr",          placeholder:"e.g. AED 92.5K"  },
+                    ] : selected.client_pack === "msme" ? [
                       { label:"Revenue",           key:"revenue",      placeholder:"e.g. ₹84L"      },
                       { label:"Gross Margin",       key:"gross_margin", placeholder:"e.g. 41%"       },
                       { label:"Cash Balance",       key:"cash_balance", placeholder:"e.g. ₹26L"      },
@@ -12402,6 +12678,155 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 </Card>}
 
                 {reportData && <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
+              </>)}
+            </div>
+          )}
+
+            </div>
+          )}
+
+          {/* ── UAE / TAX ── */}
+          {tab === "uae" && (
+            <div style={{ maxWidth:700 }}>
+              {!selected ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a UAE client from the sidebar first</div>
+                </Card>
+              ) : !isUAE(selected) ? (
+                <Card style={{ textAlign:"center", padding:40, background:"#FFFBEB", border:"1px solid #FCD34D" }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>🇮🇳</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:"#92400E", fontWeight:600 }}>
+                    Selected client is an India client
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:8 }}>
+                    Switch to a UAE or Cross-Border client to edit UAE/Tax data.
+                  </p>
+                </Card>
+              ) : (<>
+
+                {/* Client UAE Profile */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🇦🇪 UAE Client Profile</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Update jurisdiction settings and tax registration details.
+                  </p>
+                  <AdminSelect C={C} F={F} label="Free Zone" val={selected.freezone||"DMCC"}
+                    onChange={async v => {
+                      await supabase.from("clients").update({ freezone:v }).eq("id", selected.id);
+                      setSelected(s=>({...s,freezone:v}));
+                    }}
+                    options={[
+                      {value:"DMCC",  label:"DMCC — Dubai Multi Commodities Centre"},
+                      {value:"JAFZA", label:"JAFZA — Jebel Ali Free Zone"},
+                      {value:"ADGM",  label:"ADGM — Abu Dhabi Global Market"},
+                      {value:"DIFC",  label:"DIFC — Dubai Int'l Financial Centre"},
+                      {value:"RAK",   label:"RAKEZ — RAK Economic Zone"},
+                      {value:"Other", label:"Other / Mainland"},
+                    ]}/>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="VAT TRN"
+                      val={selected.trnVAT||""} placeholder="e.g. 100345678900003" mono
+                      onChange={async v => {
+                        await supabase.from("clients").update({ trnVAT:v }).eq("id", selected.id);
+                        setSelected(s=>({...s,trnVAT:v}));
+                      }}/>
+                    <AdminInput C={C} F={F} FM={FM} label="CT TRN"
+                      val={selected.trnCT||""} placeholder="e.g. 900012345678901" mono
+                      onChange={async v => {
+                        await supabase.from("clients").update({ trnCT:v }).eq("id", selected.id);
+                        setSelected(s=>({...s,trnCT:v}));
+                      }}/>
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                    <AdminSelect C={C} F={F} label="VAT Registered?"
+                      val={selected.vatRegistered?"yes":"no"}
+                      onChange={async v => {
+                        const val = v==="yes";
+                        await supabase.from("clients").update({ vatRegistered:val }).eq("id", selected.id);
+                        setSelected(s=>({...s,vatRegistered:val}));
+                      }}
+                      options={[{value:"yes",label:"✅ Yes"},{value:"no",label:"❌ No"}]}/>
+                    <AdminSelect C={C} F={F} label="QFZP Status?"
+                      val={selected.qfzpStatus?"yes":"no"}
+                      onChange={async v => {
+                        const val = v==="yes";
+                        await supabase.from("clients").update({ qfzpStatus:val }).eq("id", selected.id);
+                        setSelected(s=>({...s,qfzpStatus:val}));
+                      }}
+                      options={[{value:"yes",label:"✅ Active"},{value:"no",label:"❌ No"}]}/>
+                    <AdminSelect C={C} F={F} label="SBR Eligible?"
+                      val={selected.sbrEligible?"yes":"no"}
+                      onChange={async v => {
+                        const val = v==="yes";
+                        await supabase.from("clients").update({ sbrEligible:val }).eq("id", selected.id);
+                        setSelected(s=>({...s,sbrEligible:val}));
+                      }}
+                      options={[{value:"yes",label:"✅ Eligible"},{value:"no",label:"❌ No"}]}/>
+                  </div>
+                  <AdminSelect C={C} F={F} label="Financial Year End"
+                    val={selected.financialYearEnd||"31 Dec"}
+                    onChange={async v => {
+                      await supabase.from("clients").update({ financialYearEnd:v }).eq("id", selected.id);
+                      setSelected(s=>({...s,financialYearEnd:v}));
+                    }}
+                    options={[
+                      {value:"31 Dec", label:"31 December (Calendar Year)"},
+                      {value:"31 Mar", label:"31 March (India-aligned)"},
+                    ]}/>
+                </Card>
+
+                {/* VAT Data */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🧾 VAT Dashboard Data</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Shown on the client's VAT Dashboard tab.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Output VAT (AED)" val={reportData?.vat?.outputVAT||""}
+                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),outputVAT:Number(v)||v}}))} placeholder="e.g. 185000" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Input VAT (AED)" val={reportData?.vat?.inputVAT||""}
+                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),inputVAT:Number(v)||v}}))} placeholder="e.g. 92500" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="VAT Payable (AED)" val={reportData?.vat?.vatPayable||""}
+                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),vatPayable:Number(v)||v}}))} placeholder="e.g. 92500" mono/>
+                  </div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Filing Period" val={reportData?.vat?.filingPeriod||""}
+                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),filingPeriod:v}}))} placeholder="e.g. Q1 2026 (Jan–Mar)"/>
+                    <AdminInput C={C} F={F} FM={FM} label="Next Deadline" val={reportData?.vat?.nextDeadline||""}
+                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),nextDeadline:v}}))} placeholder="e.g. 28 Apr 2026"/>
+                  </div>
+                </Card>
+
+                {/* CT Data */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏛️ Corporate Tax Data</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Shown on the client's Corporate Tax tab.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Revenue (AED)" val={reportData?.ct?.revenue||""}
+                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),revenue:Number(v)||v}}))} placeholder="e.g. 1850000" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Accounting Profit (AED)" val={reportData?.ct?.taxableIncome||""}
+                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),taxableIncome:Number(v)||v}}))} placeholder="e.g. 271000" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Qualifying Income %" val={reportData?.ct?.qualifyingPct||""}
+                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),qualifyingPct:Number(v)||v}}))} placeholder="e.g. 92" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Non-Qualifying Income %" val={reportData?.ct?.nonQualifyingPct||""}
+                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),nonQualifyingPct:Number(v)||v}}))} placeholder="e.g. 8" mono/>
+                  </div>
+                </Card>
+
+                {/* QFZP Score */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏙️ QFZP Compliance Score</div>
+                  <AdminInput C={C} F={F} FM={FM} label="QFZP Score (0–100)" val={reportData?.qfzp?.qfzpScore||""}
+                    onChange={v=>setReportData(r=>({...r,qfzp:{...(r.qfzp||{}),qfzpScore:Number(v)||v}}))} placeholder="e.g. 82" mono/>
+                  <AdminInput C={C} F={F} FM={FM} label="Audit Readiness Score (0–100)" val={reportData?.auditReadiness?.auditScore||""}
+                    onChange={v=>setReportData(r=>({...r,auditReadiness:{...(r.auditReadiness||{}),auditScore:Number(v)||v}}))} placeholder="e.g. 65" mono/>
+                </Card>
+
+                <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData}
+                  label="Save UAE Data →"/>
               </>)}
             </div>
           )}
