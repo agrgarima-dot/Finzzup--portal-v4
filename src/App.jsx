@@ -61,7 +61,7 @@ const Legend = () => null;
 const Tooltip = () => null;
 const ReferenceLine = () => null;
 import LOGO_SRC from "./logo.png";
-
+ 
 // ─── TOKENS ──────────────────────────────────────────────────────────────────
 const C = {
   bg:      "#FFFFFF",
@@ -90,7 +90,7 @@ const C = {
 const F  = "'Plus Jakarta Sans', sans-serif";
 const FM = "'DM Mono', monospace";
 const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
-
+ 
 // ─── JURISDICTION HELPERS ─────────────────────────────────────────────────────
 const isUAE         = c => c?.jurisdiction === "UAE" || c?.jurisdiction === "Cross-Border";
 const isCrossBorder = c => c?.jurisdiction === "Cross-Border";
@@ -108,8 +108,8 @@ const AED_TO_INR  = 22.8;
 const fmtDual     = (aed) => `AED ${Number(aed).toLocaleString()} (≈ ₹${(Number(aed)*AED_TO_INR).toLocaleString()})`;
 const ctDeadline  = (fye="31 Dec") => fye === "31 Dec" ? "30 Sep" : "31 Dec";
 const UAE_DISCLAIMER = "This portal provides financial insights and tracking. Final tax compliance, filings, and advice should be reviewed with a licensed UAE auditor/tax advisor.";
-
-
+ 
+ 
 // ─── INVITE CODES → client data ──────────────────────────────────────────────
 // 🔧 When you connect Supabase, replace this with a DB lookup
 const INVITE_CODES = {
@@ -151,7 +151,7 @@ const INVITE_CODES = {
     qfzpStatus: false, sbrEligible: true, financialYearEnd: "31 Mar",
   },
 };
-
+ 
 // ─── DEMO DATA ────────────────────────────────────────────────────────────────
 const KPIs = [
   { label:"Revenue",      value:"₹8.4 Cr",  prev:"₹7.9 Cr",  trend:"up",   color:C.blue,   bg:"#EEF3FE", emoji:"📈"    },
@@ -161,7 +161,7 @@ const KPIs = [
   { label:"Runway",       value:"4.4 mo",   prev:"5.0 mo",   trend:"down", color:C.pink,   bg:"#FEF0F7", icon:"runway" },
   { label:"ARR",          value:"₹6.2 Cr",  prev:"₹5.4 Cr",  trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"arr"    },
 ];
-
+ 
 const KPIs_UAE = [
   { label:"Revenue",           value:"AED 1.85M", prev:"AED 1.40M", trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"rev"      },
   { label:"Gross Margin",      value:"45%",        prev:"42%",        trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin"   },
@@ -172,7 +172,7 @@ const KPIs_UAE = [
   { label:"CT Effective Rate", value:"0%", prev:"9% (std rate)", trend:"up", color:C.green, bg:"#E8FAF3", icon:"chart_pie"},
   { label:"QFZP Score",        value:"82/100",      prev:"75/100",     trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"star"     },
 ];
-
+ 
 // ─── SVG ICON SYSTEM ──────────────────────────────────────────────────────────
 // Replaces all emojis with clean SVG icons throughout the portal
 function Icon({ name, size=16, color="currentColor", style={} }) {
@@ -230,7 +230,7 @@ function kpiContext(k) {
   const up    = k.trend === "up";
   const prev  = k.prev && k.prev !== "—" ? k.prev : null;
   const val   = k.value || "";
-
+ 
   // UAE-specific
   if (label.includes("vat payable")) {
     return "File by 28th of month following quarter end";
@@ -244,7 +244,7 @@ function kpiContext(k) {
     if (num >= 70) return "Good — address audit readiness to improve";
     return "⚠️ Action needed — review substance requirements";
   }
-
+ 
   if (label.includes("revenue")) {
     if (!prev) return "Track monthly to spot growth trend";
     return up ? `Up from ${prev} — growth on track` : `Down from ${prev} — review pipeline`;
@@ -292,8 +292,8 @@ function kpiContext(k) {
   if (prev) return up ? `Improved from ${prev}` : `Changed from ${prev}`;
   return "Updated by Garima";
 }
-
-
+ 
+ 
 const CASHFLOW = [
   { month:"Sep", value:185, forecast:null },
   { month:"Oct", value:192, forecast:null },
@@ -305,7 +305,7 @@ const CASHFLOW = [
   { month:"Apr", value:null, forecast:220 },
   { month:"May", value:null, forecast:248 },
 ];
-
+ 
 // Pack-specific default action items (shown in demo / before Supabase loads)
 const ACTIONS_BY_PACK = {
   startup: [
@@ -341,7 +341,7 @@ const ACTIONS_BY_PACK = {
   ],
 };
 const ACTIONS = ACTIONS_BY_PACK.startup; // fallback
-
+ 
 const BOARD_PACKS = [
   { name:"Board Pack — February 2026", date:"20 Feb 2026", size:"2.4 MB", uploadedAt:"2026-02-20" },
   { name:"Board Pack — January 2026",  date:"22 Jan 2026", size:"2.1 MB", uploadedAt:"2026-01-22" },
@@ -349,7 +349,7 @@ const BOARD_PACKS = [
   { name:"Board Pack — November 2025", date:"21 Nov 2025", size:"2.0 MB", uploadedAt:"2025-11-21" },
 ];
 // "new" badge computed at render time, not module load
-
+ 
 const ENGAGEMENT = {
   type: "DCF Valuation — Section 56(2)(viib)",
   ref: "VAL-240216",
@@ -364,7 +364,7 @@ const ENGAGEMENT = {
     { name:"Cap Table",                   done:false },
   ],
 };
-
+ 
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
 const Card = ({ children, style={} }) => (
   <div style={{ background:C.bg2, border:`1px solid ${C.border}`, borderRadius:16,
@@ -372,14 +372,14 @@ const Card = ({ children, style={} }) => (
     {children}
   </div>
 );
-
+ 
 const SectionTitle = ({ children, sub }) => (
   <div style={{ marginBottom:20 }}>
     <h2 style={{ fontFamily:F, fontWeight:700, fontSize:17, color:C.text, margin:0 }}>{children}</h2>
     {sub && <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>{sub}</p>}
   </div>
 );
-
+ 
 const Badge = ({ children, color=C.blue, bg }) => (
   <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:100,
     background:bg||`${color}18`, fontSize:11, fontWeight:700, color,
@@ -387,15 +387,15 @@ const Badge = ({ children, color=C.blue, bg }) => (
     {children}
   </span>
 );
-
+ 
 const PriBadge = ({ p }) => {
   const map = { High:[C.red,"#FEF2F2"], Medium:[C.amber,"#FFFBEB"], Low:[C.green,"#ECFDF5"] };
   const [c,bg] = map[p]||map.Low;
   return <Badge color={c} bg={bg}>{p}</Badge>;
 };
-
+ 
 // ─── LOGO ─────────────────────────────────────────────────────────────────────
-
+ 
 // ─── SVG LOGO COMPONENT ───────────────────────────────────────────────────────
 const FinzzupIcon = ({ size=44, collapsed=false }) => (
   <svg width={collapsed ? size*0.8 : size} height={collapsed ? size*0.8 : size}
@@ -410,7 +410,7 @@ const FinzzupIcon = ({ size=44, collapsed=false }) => (
     <path d="M11 9h22v5.5H17.5v6.5H26v5.5h-8.5V35H11V9Z" fill="white"/>
   </svg>
 );
-
+ 
 const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapsed=false }) => {
   const iconSize = size * 1.35;
   if (collapsed) {
@@ -453,7 +453,7 @@ const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapse
     </div>
   );
 };
-
+ 
 // ─── LOGIN INPUT— defined OUTSIDE Login so it never remounts on re-render ────
 function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
   return (
@@ -480,7 +480,7 @@ function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
     </div>
   );
 }
-
+ 
 // ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
 function Login({ onLogin }) {
   const [step, setStep]     = useState("code"); // "code" | "register" | "signin"
@@ -490,15 +490,15 @@ function Login({ onLogin }) {
   const [error, setError]   = useState("");
   const [loading, setLoading] = useState(false);
   const [consent, setConsent] = useState(false);
-
+ 
   // Note: session restore is handled at App level — Login only shows when no session exists
-
+ 
   // Check invite code — demo codes use local data, real codes hit Supabase
   const checkCode = async () => {
     if (!code.trim()) { setError("Please enter an invite code."); return; }
     const upper = code.trim().toUpperCase();
     setLoading(true); setError("");
-
+ 
     // ── Demo codes: bypass Supabase, log straight in with dummy data ──
     if (INVITE_CODES[upper]) {
       const raw = INVITE_CODES[upper];
@@ -508,7 +508,7 @@ function Login({ onLogin }) {
       onLogin(demo);   // straight to Portal, no password needed
       return;
     }
-
+ 
     // ── Real codes: look up in Supabase clients table ──
     const { data, error: err } = await supabase
       .from("clients")
@@ -522,7 +522,7 @@ function Login({ onLogin }) {
     setForm(f => ({ ...f, email: data.email }));
     setStep("register");   // real client must set a password
   };
-
+ 
   // Register new account with Supabase Auth
   const register = async () => {
     if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
@@ -541,12 +541,12 @@ function Login({ onLogin }) {
       .from("clients").select("*").eq("email", form.email.trim()).maybeSingle();
     onLogin(freshClient || client);
   };
-
+ 
   // Sign in existing account
   const signIn = async () => {
     if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
     setLoading(true); setError("");
-
+ 
     // ── Demo email shortcut (shouldn't normally reach here, but just in case) ──
     const demoMatch = Object.values(INVITE_CODES).find(d => d.email === form.email.trim().toLowerCase());
     if (demoMatch) {
@@ -555,7 +555,7 @@ function Login({ onLogin }) {
         client_pack: demoMatch.clientPack || demoMatch.client_pack || "startup" });
       return;
     }
-
+ 
     // ── Real Supabase signin ──
     const { error: authErr } = await supabase.auth.signInWithPassword({
       email: form.email.trim(), password: form.password
@@ -567,14 +567,14 @@ function Login({ onLogin }) {
     if (dbErr || !data) { setError("Account not found. Please register first."); return; }
     onLogin(data);
   };
-
+ 
   return (
     <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center",
       justifyContent:"center", padding:20, fontFamily:F }}>
       <div style={{ position:"fixed", inset:0, pointerEvents:"none",
         background:`radial-gradient(ellipse 60% 50% at 20% 30%, rgba(59,111,247,0.07) 0%, transparent 60%),
                    radial-gradient(ellipse 40% 40% at 80% 70%, rgba(124,92,245,0.06) 0%, transparent 60%)` }}/>
-
+ 
       <div style={{ width:"100%", maxWidth:420, position:"relative" }}>
         <div style={{ textAlign:"center", marginBottom:32 }}>
           <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:8 }}>
@@ -582,9 +582,9 @@ function Login({ onLogin }) {
           </div>
           <p style={{ fontSize:13, color:C.muted, marginTop:12 }}>Secure Client Portal</p>
         </div>
-
+ 
         <Card style={{ padding:32 }}>
-
+ 
           {/* ── STEP 1: Enter invite code ── */}
           {step === "code" && <>
             <h2 style={{ fontWeight:700, fontSize:20, color:C.text, marginBottom:6, textAlign:"center" }}>
@@ -598,7 +598,7 @@ function Login({ onLogin }) {
                 Sign in here
               </button>
             </p>
-
+ 
             <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
               letterSpacing:"0.08em", display:"block", marginBottom:8, fontFamily:F }}>
               Invite Code
@@ -616,7 +616,7 @@ function Login({ onLogin }) {
               onBlur={e  => e.target.style.borderColor = error ? C.red : C.border}
             />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:8, textAlign:"center" }}>{error}</p>}
-
+ 
             {/* ── AI & Data Consent ── */}
             <div onClick={() => setConsent(c => !c)}
               style={{ display:"flex", alignItems:"flex-start", gap:10, marginTop:18,
@@ -638,7 +638,7 @@ function Login({ onLogin }) {
                 By continuing, I acknowledge this and consent to its use for my advisory services.
               </p>
             </div>
-
+ 
             <button onClick={checkCode} disabled={loading || !consent} style={{ width:"100%", marginTop:14, padding:14,
               borderRadius:12, border:"none", background: consent ? C.grad1 : C.bg3,
               color: consent ? "white" : C.dim,
@@ -649,14 +649,14 @@ function Login({ onLogin }) {
               transition:"all 0.2s", touchAction:"manipulation" }}>
               {loading ? "Checking…" : "Continue →"}
             </button>
-
+ 
             <p style={{ textAlign:"center", fontSize:12, color:C.dim, marginTop:20 }}>
               Don't have a code?{" "}
               <a href="mailto:garima@finzzup.com" style={{ color:C.blue, fontWeight:600 }}>
                 Email garima@finzzup.com
               </a>
             </p>
-
+ 
             {/* Demo accounts */}
             <div style={{ marginTop:20, padding:"14px 16px", borderRadius:12,
               background:`${C.blue}0A`, border:`1px solid ${C.blue}20` }}>
@@ -682,7 +682,7 @@ function Login({ onLogin }) {
               </div>
             </div>
           </>}
-
+ 
           {/* ── STEP 2: Register ── */}
           {step === "register" && <>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24,
@@ -710,7 +710,7 @@ function Login({ onLogin }) {
               ← Back
             </button>
           </>}
-
+ 
           {/* ── STEP 3: Sign in (returning client) ── */}
           {step === "signin" && <>
             <h2 style={{ fontWeight:700, fontSize:20, color:C.text, marginBottom:6 }}>Welcome back</h2>
@@ -732,7 +732,7 @@ function Login({ onLogin }) {
               ← New client? Enter invite code
             </button>
           </>}
-
+ 
         </Card>
         <p style={{ textAlign:"center", fontSize:11, color:C.dim, marginTop:20 }}>
           Powered by Finzzup · garima@finzzup.com<br/>
@@ -747,48 +747,64 @@ function Login({ onLogin }) {
     </div>
   );
 }
-
+ 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 // Dynamic nav based on client pack type
+ 
+// ─────────────────────────────────────────────────────────────────────────────
+// PASTE THESE TWO FUNCTIONS into App_UAE_v2.jsx
+// Replace the existing getNav() (line ~753) and Sidebar() (line ~800)
+// ─────────────────────────────────────────────────────────────────────────────
+ 
+// FIXED: getNav() — clean sidebar + UAE reports grouped under CFO Report dropdown
 function getNav(client) {
   const pack = client?.client_pack || client?.clientPack || "startup";
   const type = client?.type || "both";
   const uae  = isUAE(client);
-
+ 
   const base = [
-    { id:"overview",  icon:"🏠", label:"Overview"  },
-    { id:"dashboard", icon:"📊", label:"Dashboard" },
+    { id:"overview",  icon:"🏠", label:"Overview"    },
+    { id:"dashboard", icon:"📊", label:"Dashboard"   },
   ];
-
+ 
   if (type === "cfo" || type === "both") {
-    base.push({ id:"cashflow", icon:"💵", label:"Cash Flow"    });
+    base.push({ id:"cashflow", icon:"💵", label:"Cash Flow" });
     if (pack === "msme" || pack === "corporate" || uae) {
       base.push({ id:"treasury", icon:"🏛️", label:"Treasury" });
     }
-    base.push({ id:"actions",  icon:"✅", label:"Action Items" });
+    base.push({ id:"actions", icon:"✅", label:"Action Items" });
   }
-
-  const reportLabel = pack === "msme" ? "MSME Report"
-    : pack === "corporate" ? "Board Report"
-    : "CFO Report";
-  base.push({ id:"myreport", icon:"📋", label:reportLabel });
-
-  if (type === "valuation" || type === "both") {
-    base.push({ id:"engagement", icon:"⚖️", label:"Valuation Status" });
-  }
-
-  // ── UAE-specific modules (only shown for UAE/Cross-Border clients) ──
+ 
+  // FIXED: UAE clients get CFO Report as dropdown with all sub-reports inside
   if (uae) {
-    base.push({ id:"vat",            icon:"🧾", label:"VAT Dashboard"        });
-    base.push({ id:"revrecon",       icon:"⚖️", label:"Rev. Reconciliation"  });
-    base.push({ id:"workingcapital", icon:"💧", label:"Working Capital"       });
-    base.push({ id:"verticalanalysis",icon:"📊", label:"Vertical Analysis"   }); // NEW
-    base.push({ id:"corptax",        icon:"🏛️", label:"Corporate Tax"        });
-    base.push({ id:"compliance",     icon:"📅", label:"Compliance Cal."      });
-    base.push({ id:"qfzp",           icon:"🏙️", label:"QFZP / Free Zone"    });
-    base.push({ id:"auditready",     icon:"✅", label:"Audit Readiness"      });
+    base.push({
+      id: "cforeport",
+      icon: "📋",
+      label: "CFO Report",
+      dropdown: true,
+      children: [
+        { id:"myreport",         icon:"📋", label:"Monthly Report"        },
+        { id:"revrecon",         icon:"⚖️", label:"Revenue Reconciliation" },
+        { id:"workingcapital",   icon:"💧", label:"Working Capital"        },
+        { id:"verticalanalysis", icon:"📈", label:"Vertical Analysis"      },
+        { id:"corptax",          icon:"🏛️", label:"Corporate Tax"          },
+        { id:"vat",              icon:"🧾", label:"VAT Dashboard"          },
+        { id:"qfzp",             icon:"🏙️", label:"QFZP Substance"         },
+        { id:"auditready",       icon:"✅", label:"Audit Readiness"        },
+        { id:"relatedparty",     icon:"🔗", label:"Related Party Risk"     },
+      ]
+    });
+  } else {
+    // India clients — flat report item
+    const reportLabel = pack === "msme" ? "MSME Report"
+      : pack === "corporate" ? "Board Report"
+      : "CFO Report";
+    base.push({ id:"myreport", icon:"📋", label:reportLabel });
+    if (type === "valuation" || type === "both") {
+      base.push({ id:"engagement", icon:"⚖️", label:"Valuation Status" });
+    }
   }
-
+ 
   base.push({ id:"market",     icon:"🌐", label:"Market Intel"  });
   base.push({ id:"calendar",   icon:"📅", label:"Book a Call"   });
   base.push({ id:"newrequest", icon:"➕", label:"New Request"   });
@@ -796,24 +812,41 @@ function getNav(client) {
   base.push({ id:"invoices",   icon:"🧾", label:"Invoices", badge:2 });
   return base;
 }
-
-function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {  return (
-    <aside style={{ width:collapsed?64:220, minHeight:"100vh", background:C.navy, flexShrink:0,
-      display:"flex", flexDirection:"column", transition:"width 0.25s", overflow:"hidden",
-      borderRight:`1px solid rgba(255,255,255,0.06)` }}>
-
+ 
+// FIXED: Sidebar — supports dropdown/nested nav for UAE CFO Report group
+function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
+  const [openGroups, setOpenGroups] = React.useState({ cforeport: true });
+ 
+  const toggleGroup = (id) =>
+    setOpenGroups(prev => ({ ...prev, [id]: !prev[id] }));
+ 
+  const isChildActive = (item) =>
+    item.children?.some(c => c.id === page);
+ 
+  return (
+    <aside style={{
+      width: collapsed ? 64 : 220, minHeight:"100vh", background:C.navy,
+      flexShrink:0, display:"flex", flexDirection:"column",
+      transition:"width 0.25s", overflow:"hidden",
+      borderRight:"1px solid rgba(255,255,255,0.06)"
+    }}>
+ 
       {/* Logo */}
-      <div style={{ padding: collapsed ? "20px 0" : "22px 20px", display:"flex",
+      <div style={{
+        padding: collapsed?"20px 0":"22px 20px", display:"flex",
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
-        borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
+        borderBottom:"1px solid rgba(255,255,255,0.07)"
+      }}>
         {!collapsed && <Logo size={28} dark={true} showTagline={false}/>}
-        {collapsed && <Logo size={24} dark={true} collapsed={true}/>}
-        <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
-          cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
+        {collapsed  && <Logo size={24} dark={true} collapsed={true}/>}
+        <button onClick={() => setCollapsed(c=>!c)} style={{
+          background:"none", border:"none", cursor:"pointer",
+          color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1
+        }}>
           {collapsed ? "→" : "←"}
         </button>
       </div>
-
+ 
       {/* Client info */}
       {!collapsed && (
         <div style={{ padding:"14px 16px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
@@ -822,50 +855,119 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
           <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:F }}>{client.company}</div>
         </div>
       )}
-
+ 
       {/* Nav */}
       <nav style={{ flex:1, padding:"10px 0", overflowY:"auto" }}>
-        {getNav(client).map(n => (
-          <button key={n.id} onClick={() => setPage(n.id)}
-            title={collapsed ? n.label : undefined}
-            style={{
-            display:"flex", alignItems:"center", gap:10,
-            width:"100%", padding: collapsed ? "12px 0" : "11px 16px",
-            justifyContent: collapsed ? "center" : "flex-start",
-            background: page===n.id ? "rgba(59,111,247,0.18)" : "transparent",
-            border:"none", cursor:"pointer", borderLeft: page===n.id ? `3px solid ${C.blue}` : "3px solid transparent",
-            transition:"all 0.15s", fontFamily:F,
-          }}>
-            <span style={{ fontSize:16, opacity: page===n.id ? 1 : 0.55 }}>{n.icon}</span>
-            {!collapsed && <span style={{ fontSize:13, fontWeight:600, flex:1, textAlign:"left",
-              color: page===n.id ? "white" : "rgba(255,255,255,0.5)" }}>
-              {n.label}
-            </span>}
-            {!collapsed && n.badge && (
-              <span style={{ background:C.amber, color:C.navy, borderRadius:"50%",
-                width:18, height:18, fontSize:10, fontWeight:900, display:"flex",
-                alignItems:"center", justifyContent:"center", fontFamily:F }}>
-                {n.badge}
-              </span>
-            )}
-          </button>
-        ))}
+        {getNav(client).map(n => {
+ 
+          // ── DROPDOWN GROUP ─────────────────────────────────────────────────
+          if (n.dropdown && n.children) {
+            const isOpen    = openGroups[n.id];
+            const hasActive = isChildActive(n);
+            return (
+              <div key={n.id}>
+                {/* Parent button */}
+                <button
+                  onClick={() => collapsed ? setPage(n.children[0].id) : toggleGroup(n.id)}
+                  title={collapsed ? n.label : undefined}
+                  style={{
+                    display:"flex", alignItems:"center", gap:10,
+                    width:"100%", padding:collapsed?"12px 0":"11px 16px",
+                    justifyContent:collapsed?"center":"flex-start",
+                    background:hasActive?"rgba(59,111,247,0.18)":"transparent",
+                    border:"none", cursor:"pointer",
+                    borderLeft:hasActive?`3px solid ${C.blue}`:"3px solid transparent",
+                    transition:"all 0.15s", fontFamily:F,
+                  }}>
+                  <span style={{ fontSize:16, opacity:hasActive?1:0.55 }}>{n.icon}</span>
+                  {!collapsed && <>
+                    <span style={{
+                      fontSize:13, fontWeight:600, flex:1, textAlign:"left",
+                      color:hasActive?"white":"rgba(255,255,255,0.5)"
+                    }}>{n.label}</span>
+                    <span style={{
+                      fontSize:10, color:"rgba(255,255,255,0.35)", marginRight:4,
+                      transform:isOpen?"rotate(90deg)":"rotate(0deg)",
+                      transition:"transform 0.2s", display:"inline-block"
+                    }}>▶</span>
+                  </>}
+                </button>
+ 
+                {/* Children */}
+                {!collapsed && isOpen && (
+                  <div style={{ background:"rgba(0,0,0,0.15)", borderLeft:"1px solid rgba(255,255,255,0.05)" }}>
+                    {n.children.map(child => (
+                      <button key={child.id} onClick={() => setPage(child.id)}
+                        style={{
+                          display:"flex", alignItems:"center", gap:8,
+                          width:"100%", padding:"9px 16px 9px 28px",
+                          background:page===child.id?"rgba(59,111,247,0.22)":"transparent",
+                          border:"none", cursor:"pointer",
+                          borderLeft:page===child.id?`3px solid ${C.blue}`:"3px solid transparent",
+                          transition:"all 0.15s", fontFamily:F,
+                        }}>
+                        <span style={{ fontSize:13, opacity:page===child.id?1:0.45 }}>{child.icon}</span>
+                        <span style={{
+                          fontSize:12, fontWeight:500,
+                          color:page===child.id?"white":"rgba(255,255,255,0.45)"
+                        }}>{child.label}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          }
+ 
+          // ── REGULAR ITEM ───────────────────────────────────────────────────
+          return (
+            <button key={n.id} onClick={() => setPage(n.id)}
+              title={collapsed ? n.label : undefined}
+              style={{
+                display:"flex", alignItems:"center", gap:10,
+                width:"100%", padding:collapsed?"12px 0":"11px 16px",
+                justifyContent:collapsed?"center":"flex-start",
+                background:page===n.id?"rgba(59,111,247,0.18)":"transparent",
+                border:"none", cursor:"pointer",
+                borderLeft:page===n.id?`3px solid ${C.blue}`:"3px solid transparent",
+                transition:"all 0.15s", fontFamily:F,
+              }}>
+              <span style={{ fontSize:16, opacity:page===n.id?1:0.55 }}>{n.icon}</span>
+              {!collapsed && <span style={{
+                fontSize:13, fontWeight:600, flex:1, textAlign:"left",
+                color:page===n.id?"white":"rgba(255,255,255,0.5)"
+              }}>{n.label}</span>}
+              {!collapsed && n.badge && (
+                <span style={{
+                  background:C.amber, color:C.navy, borderRadius:"50%",
+                  width:18, height:18, fontSize:10, fontWeight:900,
+                  display:"flex", alignItems:"center", justifyContent:"center", fontFamily:F
+                }}>{n.badge}</span>
+              )}
+            </button>
+          );
+        })}
       </nav>
-
-      {/* Logout */}
-      <div style={{ padding: collapsed?"10px 0":"10px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
+ 
+      {/* Bottom */}
+      <div style={{ padding:collapsed?"10px 0":"10px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
         {!collapsed && (
-          <button onClick={() => setPage("terms")} style={{ display:"flex", alignItems:"center", gap:8,
+          <button onClick={() => setPage("terms")} style={{
+            display:"flex", alignItems:"center", gap:8,
             width:"100%", padding:"8px 12px", justifyContent:"flex-start",
             background:"none", border:"none", cursor:"pointer", borderRadius:8,
-            fontFamily:F, fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.25)", marginBottom:4 }}>
+            fontFamily:F, fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.25)", marginBottom:4
+          }}>
             <span>📜</span> Terms & Privacy
           </button>
         )}
-        <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
-          width:"100%", padding: collapsed?"10px 0":"10px 12px", justifyContent:collapsed?"center":"flex-start",
+        <button onClick={onLogout} style={{
+          display:"flex", alignItems:"center", gap:8,
+          width:"100%", padding:collapsed?"10px 0":"10px 12px",
+          justifyContent:collapsed?"center":"flex-start",
           background:"none", border:"none", cursor:"pointer", borderRadius:8,
-          fontFamily:F, fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
+          fontFamily:F, fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.35)"
+        }}>
           <span style={{ fontSize:16 }}>🚪</span>
           {!collapsed && "Sign Out"}
         </button>
@@ -873,7 +975,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
     </aside>
   );
 }
-
+ 
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
 function Topbar({ title, client, setPage, notifItems=[] }) {
   const now = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
@@ -951,9 +1053,9 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
     </header>
   );
 }
-
+ 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
-
+ 
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
 const OVERVIEW_REVEXP = [
   { month:"Sep", revenue:72, expenses:58 },
@@ -976,8 +1078,8 @@ const OVERVIEW_ENGAGEMENTS = [
   { id:2, title:"Fractional CFO — Q1 2026",       type:"CFO",       status:"Active",     color:"#3B6FF7" },
   { id:3, title:"ESOP Valuation Round 2",          type:"Valuation", status:"In Review",  color:"#F59E0B" },
 ];
-
-
+ 
+ 
 // ─── PACK-SPECIFIC CONFIG ────────────────────────────────────────────────────
 // Drives Overview hero KPIs, Dashboard benchmarks, and default Garima notes
 const PACK_CONFIG = {
@@ -1060,7 +1162,7 @@ const PACK_CONFIG = {
     ],
   },
 };
-
+ 
 function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null }) {
   const displayKpis = kpis || KPIs;
   const ovPack = client?.client_pack || client?.clientPack || "startup";
@@ -1081,11 +1183,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const runKpi  = displayKpis.find(k => k.label?.toLowerCase().includes("runway"));
   const burnKpi = displayKpis.find(k => k.label?.toLowerCase().includes("burn"));
   const vatKpi  = displayKpis.find(k => k.label?.toLowerCase().includes("vat"));
-
+ 
   return (
     <div style={{ padding:24 }}>
       {uaeClient && <UAEDisclaimer/>}
-
+ 
       {/* Hero Banner */}
       <div style={{ marginBottom:20, padding:"22px 28px", borderRadius:18,
         background: uaeClient            ? "linear-gradient(135deg,#003A1F 0%,#00732F 60%,#1a5276 100%)"
@@ -1119,7 +1221,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
         </div>
       </div>
-
+ 
       {/* At a Glance — plain English summary */}
       <Card style={{ marginBottom:20, borderLeft:`4px solid ${uaeClient?"#00732F":C.blue}`,
         background:uaeClient?"#F0FDF4":`${C.blue}06` }}>
@@ -1164,7 +1266,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
         </div>
       </Card>
-
+ 
       {/* Key Metrics — top 3 only */}
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>Key Metrics</div>
@@ -1198,7 +1300,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </Card>
         ))}
       </div>
-
+ 
       {/* 3-Month Forward View */}
       {(reportData?.forecast1Label || reportData?.forecastNote) && (
         <Card style={{ marginBottom:20, borderLeft:`3px solid ${C.purple}` }}>
@@ -1240,7 +1342,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           )}
         </Card>
       )}
-
+ 
       {/* Note from Garima */}
       <Card style={{ marginBottom:20, background:"#FFFBF0", border:"1px solid #FDE68A" }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
@@ -1279,7 +1381,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
         </div>
       </Card>
-
+ 
       {/* Charts Row */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="ov-charts">
         <Card>
@@ -1325,7 +1427,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:8 }}>{"▲ Positive = cash in · ▼ Negative = cash consumed"}</div>
         </Card>
       </div>
-
+ 
       {/* Priorities + Quick Nav */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="ov-bottom">
         <Card>
@@ -1386,7 +1488,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </a>
         </div>
       </div>
-
+ 
       <style>{`
         @media(max-width:700px) {
           .ov-kpi { grid-template-columns: 1fr 1fr !important; }
@@ -1398,20 +1500,20 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
     </div>
   );
 }
-
-
+ 
+ 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
-
+ 
 // ─── LIVE MARKET DATA WIDGET ─────────────────────────────────────────────────
 function useLiveMarketData(pack) {
   const [rbi, setRbi]         = React.useState(null);
   const [benchmarks, setBench]= React.useState(null);
   const [loading, setLoading] = React.useState(true);
   const [lastUpdated, setLast]= React.useState(null);
-
+ 
   React.useEffect(() => {
     let cancelled = false;
-
+ 
     const fetchAll = async () => {
       setLoading(true);
       try {
@@ -1420,7 +1522,7 @@ function useLiveMarketData(pack) {
         // frankfurter.app for exchange rates (free, no key needed)
         const fxRes = await fetch("https://api.frankfurter.app/latest?from=INR&to=USD,SAR,AED,EUR,GBP");
         const fxData = fxRes.ok ? await fxRes.json() : null;
-
+ 
         // For RBI repo rate we use a static value updated monthly
         // (RBI API requires registration — we'll use known current rate)
         // This gets updated in the code when RBI changes rates
@@ -1432,7 +1534,7 @@ function useLiveMarketData(pack) {
           sbiMCLR:     9.15,   // SBI 1-year MCLR %
           sbiStartup:  8.50,   // SBI Startup Branch rate (Repo + ~2%)
         };
-
+ 
         if (!cancelled) {
           setRbi({
             rates: rbiRates,
@@ -1440,7 +1542,7 @@ function useLiveMarketData(pack) {
           });
           setLast(new Date());
         }
-
+ 
         // ── Sector Benchmarks via Screener/NSE proxy ─────────────────────────
         // Using curated sector median data (updated quarterly from public filings)
         // These reflect NSE-listed company medians as of Q3 FY26
@@ -1479,27 +1581,27 @@ function useLiveMarketData(pack) {
             ],
           },
         };
-
+ 
         if (!cancelled) {
           setBench(sectorData[pack] || sectorData.startup);
           setLoading(false);
         }
-
+ 
       } catch(e) {
         if (!cancelled) setLoading(false);
       }
     };
-
+ 
     fetchAll();
     return () => { cancelled = true; };
   }, [pack]);
-
+ 
   return { rbi, benchmarks, loading, lastUpdated };
 }
-
+ 
 function LiveMarketWidget({ pack, kpis, reportData }) {
   const { rbi, benchmarks, loading, lastUpdated } = useLiveMarketData(pack);
-
+ 
   // Map client KPI values onto benchmark rows
   const enrichedBench = benchmarks ? {
     ...benchmarks,
@@ -1515,11 +1617,11 @@ function LiveMarketWidget({ pack, kpis, reportData }) {
       return {...m, yours};
     })
   } : null;
-
+ 
   return (
     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginTop:20 }} className="mkt-grid">
       <style>{`.mkt-grid{grid-template-columns:1fr 1fr!important}@media(max-width:640px){.mkt-grid{grid-template-columns:1fr!important}}`}</style>
-
+ 
       {/* RBI Rates Card */}
       <Card style={{ borderTop:`3px solid ${C.blue}` }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12 }}>
@@ -1530,7 +1632,7 @@ function LiveMarketWidget({ pack, kpis, reportData }) {
             </div>
           )}
         </div>
-
+ 
         {loading ? (
           <div style={{ fontFamily:F, fontSize:12, color:C.dim }}>{"Loading..."}</div>
         ) : rbi ? (
@@ -1550,7 +1652,7 @@ function LiveMarketWidget({ pack, kpis, reportData }) {
                 </div>
               ))}
             </div>
-
+ 
             {/* Exchange Rates — only show if cross-border relevant */}
             {rbi.fx && (
               <div>
@@ -1580,7 +1682,7 @@ function LiveMarketWidget({ pack, kpis, reportData }) {
           <div style={{ fontFamily:F, fontSize:12, color:C.dim }}>{"Rate data unavailable"}</div>
         )}
       </Card>
-
+ 
       {/* Sector Benchmarks Card */}
       <Card style={{ borderTop:`3px solid ${C.purple}` }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:4 }}>
@@ -1590,7 +1692,7 @@ function LiveMarketWidget({ pack, kpis, reportData }) {
         <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginBottom:12 }}>
           {enrichedBench?.source}
         </div>
-
+ 
         {loading ? (
           <div style={{ fontFamily:F, fontSize:12, color:C.dim }}>{"Loading..."}</div>
         ) : enrichedBench ? (
@@ -1625,16 +1727,16 @@ function LiveMarketWidget({ pack, kpis, reportData }) {
     </div>
   );
 }
-
-
-
+ 
+ 
+ 
 function Dashboard({ client, kpis, garimaNote, reportData }) {
   const displayKpis = kpis || KPIs;
   const pack    = client?.client_pack || client?.clientPack || "startup";
   const packCfg = PACK_CONFIG[pack] || PACK_CONFIG.startup;
   const accent  = pack==="msme" ? C.blue : pack==="corporate" ? C.purple : C.blue;
   const pl      = reportData?.pl || {};
-
+ 
   // Month story — auto generated
   const storyLines = (() => {
     const lines = [];
@@ -1653,10 +1755,10 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
     }
     return lines;
   })();
-
+ 
   return (
     <div style={{ padding:24, display:"flex", flexDirection:"column", gap:20 }}>
-
+ 
       {/* ── Header strip ── */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
         <div>
@@ -1674,7 +1776,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
           </span>
         )}
       </div>
-
+ 
       {/* ── KPI grid ── */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }} className="kpi-grid">
         {displayKpis.map((k,i) => (
@@ -1702,7 +1804,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
           </div>
         ))}
       </div>
-
+ 
       {/* ── P&L snapshot ── */}
       {pl.revenue?.actual && (
         <div style={{ borderRadius:14, background:"white", border:`1px solid ${C.border}`, overflow:"hidden" }}>
@@ -1731,7 +1833,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
           </div>
         </div>
       )}
-
+ 
       {/* ── Month story ── */}
       {storyLines.length > 0 && (
         <div style={{ padding:"18px 20px", borderRadius:14, background:C.navy }}>
@@ -1755,7 +1857,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
           </div>
         </div>
       )}
-
+ 
       {/* ── Variance snapshot ── */}
       {(reportData?.variance||[]).filter(v=>v.budget&&v.actual).length > 0 && (
         <div style={{ borderRadius:14, background:"white", border:`1px solid ${C.border}`, overflow:"hidden" }}>
@@ -1805,7 +1907,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
           </div>
         </div>
       )}
-
+ 
       <style>{`
         .kpi-grid{grid-template-columns:repeat(3,1fr)!important}
         .pl-snap{grid-template-columns:repeat(4,1fr)!important}
@@ -1815,9 +1917,9 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
     </div>
   );
 }
-
-
-
+ 
+ 
+ 
 // ─── PACK-SPECIFIC CASHFLOW DEMO DATA ────────────────────────────────────────
 const CASHFLOW_MSME = [
   { month:"Sep", inflow:76, outflow:61, net:15 },
@@ -1841,11 +1943,11 @@ const CASHFLOW_CORPORATE = [
   { month:"Apr", operating:null, investing:null, financing:null, net:null, fOp:44, fInv:-6,  fFin:-5, fNet:33 },
   { month:"May", operating:null, investing:null, financing:null, net:null, fOp:47, fInv:-5,  fFin:-5, fNet:37 },
 ];
-
+ 
 // ─── CASH FLOW ────────────────────────────────────────────────────────────────
 function CashFlow({ reportData, client, kpis }) {
   const pack = client?.client_pack || client?.clientPack || "startup";
-
+ 
   // ── Shared tooltip ──────────────────────────────────────────────────────────
   const Tip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
@@ -1861,7 +1963,7 @@ function CashFlow({ reportData, client, kpis }) {
       </div>
     );
   };
-
+ 
   // ── Shared summary KPI bar ──────────────────────────────────────────────────
   const KpiBar = ({ items }) => (
     <div style={{ display:"grid", gridTemplateColumns:`repeat(${items.length},1fr)`, gap:12, marginBottom:20 }} className="cf-kpi">
@@ -1876,14 +1978,14 @@ function CashFlow({ reportData, client, kpis }) {
       <style>{`.cf-kpi{grid-template-columns:repeat(${items.length},1fr)!important}@media(max-width:500px){.cf-kpi{grid-template-columns:1fr 1fr!important}}`}</style>
     </div>
   );
-
+ 
   // ── Garima note ─────────────────────────────────────────────────────────────
   const garimaDefaults = {
     startup: "March forecast shows a dip to ₹175L — lowest in 6 months. Driven by advance tax (₹32L due 15 Mar), delayed Client B collection (₹45L pushed to April), and quarterly vendor payments coinciding. April–May outlook is positive. Hold off on discretionary capex until April.",
     msme: "Collections in March will be tight — Client B's ₹4.8L overdue (90+ days) and advance tax of ₹22L due 15 March will squeeze the cash position. Recommend converting 2 large debtors to post-dated cheques before 10 March. The April inflow forecast of ₹86L is achievable if collections are actioned this week.",
     corporate: "Strong operating cash flow of ₹45L in February — best month YTD. March will dip due to the Q4 advance tax (₹38L) and planned capex (₹15L machinery). The EBITDA-to-cash conversion of 82% is above sector average. Free cash flow remains positive for Q1 FY27 overall.",
   };
-
+ 
   // ───────────────────────────────────────────────────────────────────────────
   // STARTUP PACK
   // ───────────────────────────────────────────────────────────────────────────
@@ -1919,14 +2021,14 @@ function CashFlow({ reportData, client, kpis }) {
             {"📄 Download Cash Report"}
           </button>
         </div>
-
+ 
         <KpiBar items={[
           { label:"Current Cash",  value:"₹2.1 Cr", color:C.blue,   bg:"#EEF3FE", sub:"▼ vs ₹2.6 Cr last month", trend:"down" },
           { label:"Monthly Burn",  value:"₹48L/mo", color:C.purple, bg:"#F3EFFF", sub:"▲ Improved from ₹52L", trend:"up" },
           { label:"Runway",        value:"4.4 mo",  color:C.red,    bg:"#FEF2F2", border:`${C.red}30`, sub:"⚠️ Below 6 months", trend:"down" },
           { label:"Mar Forecast",  value: nextForecast ? `₹${nextForecast.forecast}L` : "₹175L", color:C.muted, bg:C.bg, sub:"Next month cash" },
         ]}/>
-
+ 
         <Card style={{ marginBottom:20 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
             Cash Balance — 9 Month View
@@ -1967,7 +2069,7 @@ function CashFlow({ reportData, client, kpis }) {
             </ResponsiveContainer>
           </div>
         </Card>
-
+ 
         {/* Monthly cash in/out breakdown */}
         <Card style={{ marginBottom:20 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
@@ -1990,7 +2092,7 @@ function CashFlow({ reportData, client, kpis }) {
             </div>
           ))}
         </Card>
-
+ 
         {/* Inflow vs Outflow bar chart */}
         <Card style={{ marginBottom:20 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
@@ -2019,7 +2121,7 @@ function CashFlow({ reportData, client, kpis }) {
             </ResponsiveContainer>
           </div>
         </Card>
-
+ 
         {/* Working Capital Positions */}
         <Card style={{ marginBottom:20 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
@@ -2053,7 +2155,7 @@ function CashFlow({ reportData, client, kpis }) {
             </div>
           )}
         </Card>
-
+ 
         {/* Burn Rate Analysis */}
         <Card style={{ marginBottom:20 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
@@ -2092,7 +2194,7 @@ function CashFlow({ reportData, client, kpis }) {
             ))}
           </div>
         </Card>
-
+ 
         {/* Cash Pressure Points */}
         {(reportData?.cashPressure1 || reportData?.cashPressure2) && (
           <Card style={{ marginBottom:20, borderLeft:`3px solid ${C.red}` }}>
@@ -2110,7 +2212,7 @@ function CashFlow({ reportData, client, kpis }) {
             ))}
           </Card>
         )}
-
+ 
         <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
             Garima's Analysis
@@ -2122,7 +2224,7 @@ function CashFlow({ reportData, client, kpis }) {
       </div>
     );
   }
-
+ 
   // ───────────────────────────────────────────────────────────────────────────
   // MSME PACK
   // ───────────────────────────────────────────────────────────────────────────
@@ -2146,14 +2248,14 @@ function CashFlow({ reportData, client, kpis }) {
             {"📄 Download Cash Report"}
           </button>
         </div>
-
+ 
         <KpiBar items={[
           { label:"Cash Inflows (Feb)",   value:"₹84L",    color:C.green,  bg:"#ECFDF5", sub:"▲ +6.1% vs Jan", trend:"up" },
           { label:"Cash Outflows (Feb)",  value:"₹67L",    color:C.red,    bg:"#FEF2F2", sub:"▼ −4.3% vs Jan", trend:"up" },
           { label:"Net Cash Flow",        value:"+₹17L",   color:C.blue,   bg:"#EEF3FE", sub:"Feb closing" },
           { label:"Cash Conv. Cycle",     value:"37 days", color:C.amber,  bg:"#FFFBEB", border:`${C.amber}30`, sub:"⚠️ Target <30 days", trend:"down" },
         ]}/>
-
+ 
         {/* Inflow vs Outflow chart */}
         <Card style={{ marginBottom:20 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
@@ -2177,7 +2279,7 @@ function CashFlow({ reportData, client, kpis }) {
             </ResponsiveContainer>
           </div>
         </Card>
-
+ 
         {/* Working capital positions */}
         <Card style={{ marginBottom:20 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
@@ -2205,7 +2307,7 @@ function CashFlow({ reportData, client, kpis }) {
             </span>
           </div>
         </Card>
-
+ 
         {/* March cash pressure */}
         <Card style={{ marginBottom:20, borderLeft:`3px solid ${C.red}` }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
@@ -2231,7 +2333,7 @@ function CashFlow({ reportData, client, kpis }) {
             </div>
           ))}
         </Card>
-
+ 
         <Card style={{ borderLeft:`3px solid ${C.teal}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
             Garima's Analysis
@@ -2243,7 +2345,7 @@ function CashFlow({ reportData, client, kpis }) {
       </div>
     );
   }
-
+ 
   // ───────────────────────────────────────────────────────────────────────────
   // CORPORATE PACK
   // ───────────────────────────────────────────────────────────────────────────
@@ -2266,14 +2368,14 @@ function CashFlow({ reportData, client, kpis }) {
             {"📄 Download Cash Report"}
           </button>
         </div>
-
+ 
       <KpiBar items={[
         { label:"Operating CF (Feb)",  value:"₹45L",   color:C.green,  bg:"#ECFDF5", sub:"▲ Best month YTD", trend:"up" },
         { label:"Free Cash Flow",      value:"₹38L",   color:C.blue,   bg:"#EEF3FE", sub:"After capex" },
         { label:"EBITDA→Cash Conv.",   value:"82%",    color:C.purple, bg:"#F3EFFF", sub:"▲ Above sector avg", trend:"up" },
         { label:"Net Debt",            value:"₹1.8 Cr",color:C.muted,  bg:C.bg,      sub:"D/E ratio: 0.8x" },
       ]}/>
-
+ 
       {/* OCF / ICF / FCF chart */}
       <Card style={{ marginBottom:20 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
@@ -2310,7 +2412,7 @@ function CashFlow({ reportData, client, kpis }) {
           <span style={{ fontSize:11, color:C.dim, fontFamily:F }}>· Faded = forecast</span>
         </div>
       </Card>
-
+ 
       {/* EBITDA to Cash bridge */}
       <Card style={{ marginBottom:20 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
@@ -2337,7 +2439,7 @@ function CashFlow({ reportData, client, kpis }) {
           </div>
         ))}
       </Card>
-
+ 
       {/* Q1 forecast table */}
       <Card style={{ marginBottom:20 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
@@ -2377,7 +2479,7 @@ function CashFlow({ reportData, client, kpis }) {
           </table>
         </div>
       </Card>
-
+ 
       <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
         <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
           Garima's Analysis
@@ -2389,7 +2491,7 @@ function CashFlow({ reportData, client, kpis }) {
     </div>
   );
 }
-
+ 
 // ─── ACTION ITEMS ─────────────────────────────────────────────────────────────
 function ActionItems({ actions: actionsProp, kpis, reportData }) {
   const [items, setItems] = useState(actionsProp || ACTIONS);
@@ -2407,7 +2509,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
   };
   const pending  = items.filter(a => !a.done);
   const done     = items.filter(a => a.done);
-
+ 
   // Auto-generate strategic alerts from KPI data
   const strategicAlerts = (() => {
     if (!kpis || kpis.length === 0) return [];
@@ -2426,14 +2528,14 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
     if (reportData?.loanScore && reportData.loanScore < 55) alerts.push({ text:"Loan readiness score is low — complete financial projections and clean up balance sheet before applying.", priority:"Medium", color:C.amber });
     return alerts;
   })();
-
+ 
   return (
     <div style={{ padding:24 }}>
       <SectionTitle
         sub={`${pending.length} pending · ${done.length} completed`}>
         Action Items from Garima
       </SectionTitle>
-
+ 
       {/* Strategic Alerts — auto-generated */}
       {strategicAlerts.length > 0 && (
         <div style={{ marginBottom:24 }}>
@@ -2455,7 +2557,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
           </div>
         </div>
       )}
-
+ 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20, textAlign:"center" }}>
         {[
           { label:"Pending", n:pending.length, c:C.red,   bg:"#FEF2F2" },
@@ -2467,7 +2569,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
           </Card>
         ))}
       </div>
-
+ 
       {/* Pending */}
       {pending.length > 0 && (
         <div style={{ marginBottom:24 }}>
@@ -2490,7 +2592,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
           </div>
         </div>
       )}
-
+ 
       {/* Done */}
       {done.length > 0 && (
         <div>
@@ -2516,9 +2618,9 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
     </div>
   );
 }
-
+ 
 // ─── SMART CFO PACKS ─────────────────────────────────────────────────────────
-
+ 
 const CFO_PACK_DATA = {
   startup: {
     label: "Startup Pack",
@@ -2621,7 +2723,7 @@ const CFO_PACK_DATA = {
     garimaNote: "The IPO readiness score of 58 reflects real gaps — but they're all fixable within 6 months if we move now. The two Ind AS items (116 and 109) should be your immediate priority: commission a Big 4 firm to run the restatement project in parallel with your Q1 close. This typically takes 8–10 weeks. The governance gap (independent director) takes longer — start the search now, not after you've engaged bankers. On the positive side: EBITDA margin at 17.5% and ROCE at 22.4% are genuinely strong metrics that will resonate with QIBs. Revenue scale at ₹85 Cr is approaching the ₹100 Cr threshold that makes the IPO story cleaner. One more quarter like February and we're there.",
   },
 };
-
+ 
 function ScoreGauge({ score, color, size=100 }) {
   const r = (size/2) - 8;
   const circ = 2 * Math.PI * r;
@@ -2642,7 +2744,7 @@ function ScoreGauge({ score, color, size=100 }) {
     </div>
   );
 }
-
+ 
 function StartupCFOPack({ data, client, reportData }) {
   return (
     <>
@@ -2693,7 +2795,7 @@ function StartupCFOPack({ data, client, reportData }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* Investor Metrics */}
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Key metrics investors will ask about in your data room">Investor Metrics</SectionTitle>
@@ -2713,7 +2815,7 @@ function StartupCFOPack({ data, client, reportData }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* Due Diligence Checklist */}
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Documents investors will request in due diligence">Financial DD Checklist</SectionTitle>
@@ -2737,7 +2839,7 @@ function StartupCFOPack({ data, client, reportData }) {
     </>
   );
 }
-
+ 
 function MSMECFOPack({ data, reportData }) {
   return (
     <>
@@ -2788,7 +2890,7 @@ function MSMECFOPack({ data, reportData }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* Working Capital */}
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Working capital ratios vs benchmarks">Working Capital Metrics</SectionTitle>
@@ -2806,7 +2908,7 @@ function MSMECFOPack({ data, reportData }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* Growth Metrics */}
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Growth and profitability indicators">Growth Metrics</SectionTitle>
@@ -2827,7 +2929,7 @@ function MSMECFOPack({ data, reportData }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* Bank Finance / Loan Readiness */}
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Readiness for working capital loans & term finance">Bank Finance Readiness</SectionTitle>
@@ -2854,7 +2956,7 @@ function MSMECFOPack({ data, reportData }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* Due Diligence Checklist */}
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Documents required for bank loans, buyer DD, and audits">Due Diligence Checklist</SectionTitle>
@@ -2888,12 +2990,12 @@ function MSMECFOPack({ data, reportData }) {
     </>
   );
 }
-
+ 
 function CorporateCFOPack({ data, reportData }) {
   const sevColor = { High:C.red, Medium:C.amber, Low:C.green };
   const sevBg    = { High:"#FEF2F2", Medium:"#FFFBEB", Low:"#ECFDF5" };
   const statusColor = { "Compliant":C.green, "Action Needed":C.red, "Monitor":C.amber };
-
+ 
   return (
     <>
       {/* IPO Readiness Score */}
@@ -2943,7 +3045,7 @@ function CorporateCFOPack({ data, reportData }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* Compliance Flags */}
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Issues requiring attention before IPO or auditor review">Compliance Flags</SectionTitle>
@@ -2961,7 +3063,7 @@ function CorporateCFOPack({ data, reportData }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* Ind AS Health Check */}
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Status of key Ind AS standards for your entity">Ind AS Health Check</SectionTitle>
@@ -2983,9 +3085,9 @@ function CorporateCFOPack({ data, reportData }) {
     </>
   );
 }
-
+ 
 // ─── BOARD PACKS — MSME / CORPORATE / CFO TABBED ────────────────────────────
-
+ 
 // "new" = uploaded within last 35 days
 const _archiveRaw = [
   { name:"February 2026", date:"20 Feb 2026", size:"2.4 MB", uploadedAt:"2026-02-20" },
@@ -2993,7 +3095,7 @@ const _archiveRaw = [
   { name:"December 2025", date:"19 Dec 2025", size:"1.9 MB", uploadedAt:"2025-12-19" },
 ];
 const ARCHIVE = _archiveRaw; // "new" badge computed at render time
-
+ 
 function PackPreview({ p, label }) {
   // Realistic mock preview content per month
   const previews = {
@@ -3032,7 +3134,7 @@ function PackPreview({ p, label }) {
           CONFIDENTIAL<br/>Page 1 of {data.pages.length + 2}
         </div>
       </div>
-
+ 
       {/* KPI snapshot row */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:12 }}>
         {data.kpis.map((kpi,i) => (
@@ -3045,7 +3147,7 @@ function PackPreview({ p, label }) {
           </div>
         ))}
       </div>
-
+ 
       {/* Garima note snippet */}
       <div style={{ padding:"10px 12px", borderRadius:9, background:`${C.blue}06`,
         borderLeft:`3px solid ${C.blue}`, marginBottom:12 }}>
@@ -3054,7 +3156,7 @@ function PackPreview({ p, label }) {
         </div>
         <div style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.6 }}>{data.note}</div>
       </div>
-
+ 
       {/* Table of contents */}
       <div style={{ padding:"8px 12px", borderRadius:9, background:C.bg, border:`1px solid ${C.border}` }}>
         <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, letterSpacing:"0.06em", marginBottom:6 }}>
@@ -3070,14 +3172,14 @@ function PackPreview({ p, label }) {
           ))}
         </div>
       </div>
-
+ 
       <div style={{ marginTop:10, fontFamily:F, fontSize:10, color:C.dim, textAlign:"center" }}>
         Preview of cover page · Download for full report
       </div>
     </div>
   );
 }
-
+ 
 function ArchiveRow({ p, label }) {
   const [showPreview, setShowPreview] = React.useState(false);
   return (
@@ -3127,7 +3229,7 @@ function ArchiveRow({ p, label }) {
     </Card>
   );
 }
-
+ 
 const StatRow = ({ label, value, pct, trend, sub }) => (
   <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:8 }}>
     <div>
@@ -3140,7 +3242,7 @@ const StatRow = ({ label, value, pct, trend, sub }) => (
     </div>
   </div>
 );
-
+ 
 const AgeingTable = ({ title, rows, color }) => (
   <div style={{ marginBottom:20 }}>
     <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color, marginBottom:10 }}>{title}</div>
@@ -3166,7 +3268,7 @@ const AgeingTable = ({ title, rows, color }) => (
     </div>
   </div>
 );
-
+ 
 const COMPLIANCE_DATES = [
   { due:"07 Mar", item:"TDS Payment — Feb deductions",       status:"upcoming", owner:"Accounts" },
   { due:"10 Mar", item:"ESI Contribution — Feb",             status:"upcoming", owner:"HR/Accounts" },
@@ -3177,31 +3279,31 @@ const COMPLIANCE_DATES = [
   { due:"07 Apr", item:"TDS Payment — Mar deductions",       status:"upcoming", owner:"Accounts" },
   { due:"30 Apr", item:"TDS Returns Q4 (Form 24Q/26Q)",      status:"upcoming", owner:"CA" },
 ];
-
-
-
-
+ 
+ 
+ 
+ 
 // ─── EXECUTIVE SUMMARY PDF ───────────────────────────────────────────────────
 function generateExecSummaryPDF({ client, reportData, kpis }) {
   const company  = client?.company || "Your Company";
   const month    = reportData?.monthLabel || "Current Period";
   const pack     = client?.client_pack || client?.clientPack || "startup";
   const packLabel = pack==="msme" ? "MSME Pack" : pack==="corporate" ? "Board Pack" : "CFO Pack";
-
+ 
   const rev  = kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value  || reportData?.plInputs?.revenue || "—";
   const cash = kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—";
   const burn = kpis?.find(k=>k.label?.toLowerCase().includes("burn"))?.value || "—";
   const run  = kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value || "—";
   const mar  = kpis?.find(k=>k.label?.toLowerCase().includes("margin"))?.value || reportData?.plInputs?.gpMargin || "—";
   const ebitda = reportData?.plInputs?.ebitda || "—";
-
+ 
   const perf     = reportData?.execPerformance  || "Performance summary not yet added. Please update in the admin panel.";
   const cashNote = reportData?.execCash         || "Cash position analysis not yet added.";
   const risks    = reportData?.execRisks        || "Risk summary not yet added.";
   const opps     = reportData?.execOpportunities|| "Opportunities not yet added.";
   const nextSteps= reportData?.execNextSteps    || "Next steps not yet added.";
   const garimaNote = reportData?.garimaNote || reportData?.packNote || "";
-
+ 
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -3251,11 +3353,11 @@ function generateExecSummaryPDF({ client, reportData, kpis }) {
       ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
     </div>
   </div>
-
+ 
   <div class="eyebrow">Board-Ready | Confidential | Prepared by Garima Agarwal CA</div>
   <h1>${company}</h1>
   <div class="subtitle">Monthly Executive Summary — ${month}</div>
-
+ 
   <div class="kpi-strip">
     <div class="kpi"><div class="kpi-label">Revenue</div><div class="kpi-value">${rev}</div></div>
     <div class="kpi"><div class="kpi-label">Gross Margin</div><div class="kpi-value">${mar}</div></div>
@@ -3264,42 +3366,42 @@ function generateExecSummaryPDF({ client, reportData, kpis }) {
     <div class="kpi"><div class="kpi-label">Burn Rate</div><div class="kpi-value">${burn}</div></div>
     <div class="kpi"><div class="kpi-label">Runway</div><div class="kpi-value">${run}</div></div>
   </div>
-
+ 
   <div class="section perf">
     <div class="section-header"><span class="section-icon">📈</span><h2>Performance</h2></div>
     <div class="section-body">${perf}</div>
   </div>
-
+ 
   <div class="section cash">
     <div class="section-header"><span class="section-icon">💰</span><h2>Cash & Liquidity</h2></div>
     <div class="section-body">${cashNote}</div>
   </div>
-
+ 
   <div class="section risks">
     <div class="section-header"><span class="section-icon">⚠️</span><h2>Key Risks</h2></div>
     <div class="section-body">${risks}</div>
   </div>
-
+ 
   <div class="section opps">
     <div class="section-header"><span class="section-icon">🚀</span><h2>Opportunities</h2></div>
     <div class="section-body">${opps}</div>
   </div>
-
+ 
   <div class="section next">
     <div class="section-header"><span class="section-icon">✅</span><h2>Next Steps</h2></div>
     <div class="section-body">${nextSteps}</div>
   </div>
-
+ 
   ${garimaNote ? `
   <div class="garima-note">
     <div class="garima-label">CA's Note — ${month}</div>
     <div class="garima-text">${garimaNote}</div>
   </div>` : ""}
-
+ 
   <div class="disclaimer">
     This executive summary is prepared by Garima Agarwal (CA Membership: 160944) based on management information provided by the client. It is for internal management and board use only and does not constitute audited financial statements.
   </div>
-
+ 
   <div class="footer">
     <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038 | agrgarima@gmail.com</span>
     <span>Finzzup | Build. Value. Scale.</span>
@@ -3308,8 +3410,8 @@ function generateExecSummaryPDF({ client, reportData, kpis }) {
 </body>
 </html>`;
 }
-
-
+ 
+ 
 // ─── LIVE MARKET DATA HOOK ────────────────────────────────────────────────────
 function useMarketData() {
   const [market, setMarket] = React.useState({
@@ -3323,7 +3425,7 @@ function useMarketData() {
     error:     false,
     updatedAt: null,
   });
-
+ 
   React.useEffect(() => {
     const fetchAll = async () => {
       try {
@@ -3335,15 +3437,15 @@ function useMarketData() {
         const usdInr = rates.USD ? (1 / rates.USD).toFixed(2) : null;
         const sarInr = rates.SAR ? (1 / rates.SAR).toFixed(2) : null;
         const aedInr = rates.AED ? (1 / rates.AED).toFixed(2) : null;
-
+ 
         // Nifty removed — CORS blocked from browser
         let nifty = null, niftyChg = null;
-
+ 
         // 3. RBI Repo rate — hardcoded current value, update monthly
         // RBI API has CORS issues so we use a known current value
         // As of Feb 2026: 6.50% (RBI held in Feb 2026 MPC meeting)
         const repoRate = "6.50%";
-
+ 
         setMarket({
           repo:      repoRate,
           usd:       usdInr   ? `₹${usdInr}` : null,
@@ -3359,29 +3461,29 @@ function useMarketData() {
         setMarket(m => ({...m, loaded:true, error:true}));
       }
     };
-
+ 
     fetchAll();
     // Refresh every 15 minutes
     const interval = setInterval(fetchAll, 15 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
+ 
   return market;
 }
-
+ 
 // ─── MARKET DATA WIDGET ───────────────────────────────────────────────────────
 function MarketWidget({ pack, client }) {
   const m = useMarketData();
   const isCrossBorder = client?.country === "SA" || client?.country === "UAE"
     || client?.company?.toLowerCase().includes("gulf")
     || client?.company?.toLowerCase().includes("saudi");
-
+ 
   if (!m.loaded) return null;
   if (m.error)   return null;
-
+ 
   const isCorp  = pack === "corporate";
   const isMSME  = pack === "msme";
-
+ 
   const items = [
     m.repo     && { label:"RBI Repo Rate",  value:m.repo,     color:C.blue,
                     note:"SBI lending = Repo + 2–3%",          emoji:"🏦" },
@@ -3396,9 +3498,9 @@ function MarketWidget({ pack, client }) {
     (isCrossBorder) && m.aed && { label:"AED / INR", value:m.aed, color:C.amber,
                     note:"UAE Dirham",                          icon:"🇦🇪" },
   ].filter(Boolean);
-
+ 
   if (items.length === 0) return null;
-
+ 
   return (
     <div style={{ marginBottom:20 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -3437,15 +3539,15 @@ function MarketWidget({ pack, client }) {
     </div>
   );
 }
-
-
+ 
+ 
 // ─── MARKET INTELLIGENCE PAGE ─────────────────────────────────────────────────
 function MarketIntel({ client }) {
   const pack  = client?.client_pack || client?.clientPack || "startup";
   const m     = useMarketData();
   const [aiInsight, setAiInsight] = React.useState("");
   const [aiLoading, setAiLoading] = React.useState(false);
-
+ 
   // Sector benchmarks — hardcoded industry medians (updated quarterly)
   const sectorData = {
     startup: [
@@ -3467,7 +3569,7 @@ function MarketIntel({ client }) {
       { sector:"Listed Pharma",         grossMargin:"55–68%", ebitdaMargin:"20–30%", roce:"18–28%",  pe:"22–35x",  evEbitda:"14–20x" },
     ],
   };
-
+ 
   // Funding / market context by pack
   const fundingContext = {
     startup: [
@@ -3495,7 +3597,7 @@ function MarketIntel({ client }) {
       { label:"ICRA rating threshold","value":"BBB–",         note:"Minimum for bond issuance" },
     ],
   };
-
+ 
   const sectors = sectorData[pack]   || sectorData.startup;
   const funding  = fundingContext[pack] || fundingContext.startup;
   const benchmarkHeaders = pack === "startup"
@@ -3503,13 +3605,13 @@ function MarketIntel({ client }) {
     : pack === "msme"
     ? ["Sector","Gross Margin","EBITDA Margin","Debtor Days","Current Ratio","Creditor Days"]
     : ["Sector","Gross Margin","EBITDA Margin","ROCE","P/E","EV/EBITDA"];
-
+ 
   const benchmarkKeys = pack === "startup"
     ? ["sector","grossMargin","ebitdaMargin","arr","burnMultiple","cac","ltv"]
     : pack === "msme"
     ? ["sector","grossMargin","ebitdaMargin","debtorDays","currentRatio","creditDays"]
     : ["sector","grossMargin","ebitdaMargin","roce","pe","evEbitda"];
-
+ 
   return (
     <div style={{ padding:24 }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -3528,7 +3630,7 @@ function MarketIntel({ client }) {
           {"Benchmarks updated Q1 2026"}
         </div>
       </div>
-
+ 
       {/* Live rates strip */}
       {m.loaded && !m.error && (
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12,
@@ -3560,7 +3662,7 @@ function MarketIntel({ client }) {
           <style>{`.mkt-live{grid-template-columns:1fr 1fr 1fr 1fr!important}@media(max-width:600px){.mkt-live{grid-template-columns:1fr 1fr!important}}`}</style>
         </div>
       )}
-
+ 
       {/* Sector Benchmarks table */}
       <Card style={{ marginBottom:20 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -3600,7 +3702,7 @@ function MarketIntel({ client }) {
           </table>
         </div>
       </Card>
-
+ 
       {/* Funding / Market Context */}
       <Card style={{ marginBottom:20 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -3629,7 +3731,7 @@ function MarketIntel({ client }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* Compliance Calendar */}
       <Card>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -3670,7 +3772,7 @@ function MarketIntel({ client }) {
     </div>
   );
 }
-
+ 
 // ─── CASH FLOW PDF ────────────────────────────────────────────────────────────
 function generateCashPDF({ client, reportData, kpis }) {
   const company  = client?.company || "Your Company";
@@ -3681,7 +3783,7 @@ function generateCashPDF({ client, reportData, kpis }) {
   const isMSME   = pack === "msme";
   const isCorp   = pack === "corporate";
   const packLabel = isMSME ? "MSME Pack" : isCorp ? "Board Pack" : "CFO Pack";
-
+ 
   // KPIs
   const cashKpi    = kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value    || pl.closingCash || "—";
   const burnKpi    = kpis?.find(k=>k.label?.toLowerCase().includes("burn"))?.value    || "—";
@@ -3692,7 +3794,7 @@ function generateCashPDF({ client, reportData, kpis }) {
   const pat        = pl.pat        || "—";
   const cogs       = pl.cogs       || "—";
   const grossProfit= pl.grossProfit|| "—";
-
+ 
   // Cash movement — startup style
   const cashMoves = [
     { label:"Opening Balance",          value: pl.openingCash  || "—", type:"neutral" },
@@ -3703,7 +3805,7 @@ function generateCashPDF({ client, reportData, kpis }) {
     { label:"− Other Operating Costs",  value: pl.otherOpex    || "—", type:"out"     },
     { label:"Closing Cash Balance",     value: pl.closingCash  || cashKpi || "—", type:"neutral" },
   ];
-
+ 
   // Working capital — MSME / Corporate
   const wcItems = [
     { label:"Trade Debtors (AR)",   value: reportData?.debtors      || "—", days: reportData?.debtorDays  || "—", note:"Collections outstanding" },
@@ -3711,7 +3813,7 @@ function generateCashPDF({ client, reportData, kpis }) {
     { label:"Inventory",            value: reportData?.inventory     || "—", days: reportData?.inventoryDays|| "—", note:"Stock on hand" },
     { label:"Working Capital",      value: reportData?.workingCapital|| "—", days: "—",                            note:"Current Assets − Current Liabilities" },
   ];
-
+ 
   // Indirect cash flow — Corporate
   const indirectCF = [
     { label:"EBITDA",                    value: ebitda,                           bold:true  },
@@ -3723,7 +3825,7 @@ function generateCashPDF({ client, reportData, kpis }) {
     { label:"+ Asset Disposal",          value: pl.assetDisposal   || "—",        bold:false },
     { label:"= Free Cash Flow",          value: reportData?.freeCF || "—",        bold:true  },
   ];
-
+ 
   // Key ratios from reportData
   const ratios = [
     { label:"Current Ratio",          value: reportData?.currentRatio     || "—", benchmark:">2.0x" },
@@ -3735,7 +3837,7 @@ function generateCashPDF({ client, reportData, kpis }) {
     { label:"Debt / EBITDA",          value: reportData?.debtEbitda       || "—", benchmark:"<3.0x" },
     { label:"Working Capital",        value: reportData?.workingCapital   || "—", benchmark:"Positive" },
   ].filter(r => r.value !== "—");
-
+ 
   return `<!DOCTYPE html>
 <html>
 <head>
@@ -3779,7 +3881,7 @@ function generateCashPDF({ client, reportData, kpis }) {
 </head>
 <body>
 <div class="page">
-
+ 
   <div class="header">
     <div><div class="logo">Finzzup</div><div class="tagline">Build. Value. Scale.</div></div>
     <div class="doc-meta">
@@ -3789,11 +3891,11 @@ function generateCashPDF({ client, reportData, kpis }) {
       ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
     </div>
   </div>
-
+ 
   <div class="eyebrow">Confidential | Prepared by Garima Agarwal CA | Membership 160944</div>
   <h1>${company}</h1>
   <div class="subtitle">Cash Flow Statement, Working Capital & Liquidity Analysis — ${month}</div>
-
+ 
   <!-- KPI SUMMARY -->
   <div class="kpi-grid">
     <div class="kpi-card"><div class="kpi-label">Cash Balance</div><div class="kpi-value">${cashKpi}</div><div class="kpi-sub">End of period</div></div>
@@ -3804,7 +3906,7 @@ function generateCashPDF({ client, reportData, kpis }) {
       : `<div class="kpi-card"><div class="kpi-label">Runway</div><div class="kpi-value">${runwayKpi}</div><div class="kpi-sub">At current burn</div></div>`
     }
   </div>
-
+ 
   <!-- P&L SUMMARY -->
   <div class="section">
     <h2>P&L Summary — ${month}</h2>
@@ -3819,7 +3921,7 @@ function generateCashPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>
-
+ 
   <!-- CASH MOVEMENT -->
   <div class="section">
     <h2>Cash Movement — ${month}</h2>
@@ -3834,7 +3936,7 @@ function generateCashPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>
-
+ 
   ${isCorp ? `
   <!-- INDIRECT CASH FLOW -->
   <div class="section">
@@ -3850,7 +3952,7 @@ function generateCashPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>` : ""}
-
+ 
   <!-- WORKING CAPITAL -->
   <div class="section">
     <h2>Working Capital Analysis</h2>
@@ -3867,7 +3969,7 @@ function generateCashPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>
-
+ 
   ${ratios.length > 0 ? `
   <!-- KEY RATIOS -->
   <div class="section">
@@ -3884,28 +3986,28 @@ function generateCashPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>` : ""}
-
+ 
   ${note ? `
   <div class="note-box">
     <div class="note-label">CA's Cash Flow Analysis — ${month}</div>
     <div class="note-text">${note}</div>
   </div>` : ""}
-
+ 
   <div class="disclaimer">
     <strong>Disclaimer:</strong> This cash flow report is prepared based on information provided by the client and is for management and banking purposes. It does not constitute a statutory financial statement. Figures are subject to audit adjustments. For statutory reporting, refer to audited financials.
   </div>
-
+ 
   <div class="footer">
     <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038 | agrgarima@gmail.com</span>
     <span>Finzzup | ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</span>
   </div>
-
+ 
 </div>
 </body>
 </html>`;
 }
-
-
+ 
+ 
 // ─── KPI BENCHMARKS ───────────────────────────────────────────────────────────
 // Returns benchmark text for a KPI. reportData overrides take precedence.
 function kpiBenchmark(label, pack, reportData) {
@@ -3949,8 +4051,8 @@ function kpiBenchmark(label, pack, reportData) {
   }
   return null;
 }
-
-
+ 
+ 
 // ─── LOAN READINESS PDF ───────────────────────────────────────────────────────
 function generateLoanPDF({ client, reportData, kpis }) {
   const score    = reportData?.loanScore || 64;
@@ -4052,14 +4154,14 @@ function generateLoanPDF({ client, reportData, kpis }) {
       Date: ${new Date().toLocaleDateString("en-IN", {day:"numeric",month:"long",year:"numeric"})}
     </div>
   </div>
-
+ 
   <div class="title-block">
     <div class="eyebrow">Confidential | Prepared by Garima Agarwal CA</div>
     <h1>${company}</h1>
     <div class="subtitle">Loan Readiness Assessment &amp; Scheme Eligibility Report</div>
   </div>
   ${loanNote ? `<div style="margin-bottom:24px;padding:16px 18px;background:#EEF2FF;border-radius:10px;border-left:3px solid #5B4FDB"><div style="font-size:10px;font-weight:700;color:#5B4FDB;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">Garima's Assessment</div><p style="font-size:14px;color:#111827;line-height:1.7;margin:0">${loanNote}</p></div>` : ""}
-
+ 
   <div class="score-box">
     <div>
       <div class="score-label">Loan Eligibility Score</div>
@@ -4072,7 +4174,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
       <div style="font-size:11px;color:#6B7280;margin-top:6px;">Documents ready: ${readyCount}/${docs.length}</div>
     </div>
   </div>
-
+ 
   <div class="section">
     <h2>Recommended Loan Schemes</h2>
     <table>
@@ -4090,7 +4192,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>
-
+ 
   <div class="section">
     <h2>Documents Checklist (${readyCount}/${docs.length} Ready)</h2>
     ${docs.map(d => `
@@ -4100,7 +4202,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
       <span class="badge ${d.done ? "badge-done" : "badge-pending"}" style="margin-left:auto;">${d.done ? "Ready" : "Pending"}</span>
     </div>`).join("")}
   </div>
-
+ 
   <div class="section">
     <h2>Financial Snapshot</h2>
     <table>
@@ -4112,7 +4214,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>
-
+ 
   <div class="section">
     <h2>Debt Position</h2>
     <table>
@@ -4125,7 +4227,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>
-
+ 
   ${ratios.length > 0 ? `
   <div class="section">
     <h2>Key Financial Ratios</h2>
@@ -4136,7 +4238,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>` : ""}
-
+ 
   ${improvements.length > 0 ? `
   <div class="section">
     <h2>Recommended Improvements</h2>
@@ -4146,7 +4248,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
       <span>${imp}</span>
     </div>`).join("")}
   </div>` : ""}
-
+ 
   <div class="section">
     <h2>Next Steps</h2>
     <table>
@@ -4158,11 +4260,11 @@ function generateLoanPDF({ client, reportData, kpis }) {
       </tbody>
     </table>
   </div>
-
+ 
   <div class="disclaimer">
     <strong>Disclaimer:</strong> This assessment is based on information provided by the client and is indicative in nature. Actual loan eligibility is subject to lender assessment, credit bureau checks, and applicable scheme criteria at the time of application. This report does not constitute a guarantee of loan approval.
   </div>
-
+ 
   <div class="footer">
     <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038</span>
     <span>agrgarima@gmail.com | Finzzup</span>
@@ -4171,7 +4273,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
 </body>
 </html>`;
 }
-
+ 
 // ─── LIVE DOCS HOOK for Pack Content components ──────────────────────────────
 function useLiveDocs(client) {
   const [liveDocs, setLiveDocs] = React.useState([]);
@@ -4194,7 +4296,7 @@ function useLiveDocs(client) {
         }
       });
   }, [client?.id, isDemo]);
-
+ 
   const archiveDocs = liveDocs.length > 0
     ? liveDocs.map(d => ({
         name: d.name,
@@ -4205,17 +4307,17 @@ function useLiveDocs(client) {
         new: d.created_at ? (new Date() - new Date(d.created_at)) < 35 * 24 * 60 * 60 * 1000 : false,
       }))
     : ARCHIVE;
-
+ 
   return archiveDocs;
 }
-
+ 
 // ─── PACK LAYOUT — sidebar on desktop, dropdown on mobile ─────────────────────
 function PackLayout({ tab, setTab, groups, accent, children }) {
   const [open, setOpen] = React.useState(false);
   const allItems = groups.flatMap(g => g.items);
   const current  = allItems.find(t => t.id === tab);
   const dropRef  = React.useRef(null);
-
+ 
   // Close on outside click
   React.useEffect(() => {
     const handler = (e) => {
@@ -4224,15 +4326,15 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, []);
-
+ 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
-
+ 
       {/* ── Dropdown nav — always shown ── */}
       <div style={{ padding:"14px 20px 0", background:"#F9FAFB",
         borderBottom:"1px solid #E5E7EB" }}>
         <div ref={dropRef} style={{ position:"relative", maxWidth:320 }}>
-
+ 
           {/* Trigger button */}
           <button onClick={() => setOpen(o => !o)} style={{
             width:"100%", padding:"10px 14px", borderRadius:10,
@@ -4260,7 +4362,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
               <polyline points="6 9 12 15 18 9"/>
             </svg>
           </button>
-
+ 
           {/* Dropdown panel */}
           {open && (
             <div style={{ position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:200,
@@ -4301,7 +4403,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
           )}
         </div>
       </div>
-
+ 
       {/* ── Content area ── */}
       <div style={{ padding:"20px 20px 32px" }}>
         {children}
@@ -4309,10 +4411,10 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
     </div>
   );
 }
-
+ 
 function MSMEPackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
-
+ 
   // Grouped nav — cleaner than 11 pills in a row
   const groups = [
     {
@@ -4347,14 +4449,14 @@ function MSMEPackContent({ reportData, kpis, client }) {
       ]
     },
   ];
-
+ 
   const data = CFO_PACK_DATA["msme"];
   const archiveDocs = useLiveDocs(client);
-
+ 
   return (
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.teal}>
       <div>
-
+ 
       {tab === "monthly" && (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
       {(reportData?.reportNote || reportData?.packNote) && (
@@ -4397,7 +4499,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
           ].map((r,i) => <StatRow key={i} {...r}/>);
         }())}
       </Card>
-
+ 
       {reportData?.metrics?.some(m => m.value) && (
         <Card>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Working Capital Analysis</div>
@@ -4412,7 +4514,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
           </div>
         </Card>
       )}
-
+ 
       {kpis?.some(k => k.value && k.value !== "—") && (
         <Card>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>KPI Snapshot</div>
@@ -4423,7 +4525,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
           ))}
         </Card>
       )}
-
+ 
       <Card>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>📅 Compliance Due Date Calendar — March 2026</div>
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
@@ -4443,19 +4545,19 @@ function MSMEPackContent({ reportData, kpis, client }) {
           })}
         </div>
       </Card>
-
-
+ 
+ 
       <div>
         <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Previous MSME Packs</div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
         </div>
       </div>
-
+ 
         <style>{`.wc-g{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-g{grid-template-columns:1fr!important}}`}</style>
       </div>
       )}
-
+ 
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           {reportData?.variance?.some(r => r.item && (r.budget || r.actual)) ? (<>
@@ -4514,7 +4616,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
           )}
         </div>
       )}
-
+ 
       {tab === "cash" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           <MSMECFOPack data={data} reportData={reportData}/>
@@ -4539,10 +4641,10 @@ function MSMEPackContent({ reportData, kpis, client }) {
           )}
         </div>
       )}
-
+ 
             {tab === "workingcap" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
           {/* Question this tab answers */}
           <div style={{ padding:"16px 20px", borderRadius:14,
             background:`linear-gradient(135deg,${C.teal}10,${C.blue}06)`,
@@ -4554,7 +4656,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               {"Working capital efficiency determines how much cash is trapped in operations vs available to use. Every day saved in collections = real cash freed up."}
             </div>
           </div>
-
+ 
           {/* CCC Calculation — the key insight */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4594,7 +4696,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               </div>
             </div>
           </Card>
-
+ 
           {/* AR Aging — the action card */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4629,7 +4731,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               </div>
             )}
           </Card>
-
+ 
           {/* Working Capital Ratios — with benchmarks */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4663,7 +4765,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               })}
             </div>
           </Card>
-
+ 
           {/* Garima's working capital note */}
           {reportData?.wcNote && (
             <Card style={{ borderLeft:`3px solid ${C.teal}` }}>
@@ -4678,10 +4780,10 @@ function MSMEPackContent({ reportData, kpis, client }) {
           )}
         </div>
       )}
-
+ 
       {tab === "bankfin" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
           {/* Question this tab answers */}
           <div style={{ padding:"16px 20px", borderRadius:14,
             background:`linear-gradient(135deg,${C.blue}10,${C.purple}06)`,
@@ -4693,7 +4795,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               {"Banks don't just look at your revenue — they look at your repayment capacity, collateral, and financial hygiene. Here's exactly where you stand."}
             </div>
           </div>
-
+ 
           {/* Loan Eligibility Score */}
           <Card>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -4721,7 +4823,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               </div>
             )}
           </Card>
-
+ 
           {/* Key Ratios — what the bank will look at */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4757,7 +4859,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               ))}
             </div>
           </Card>
-
+ 
           {/* Auto-flagged issues */}
           {(function() {
             var flags = [];
@@ -4787,7 +4889,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               </Card>
             ) : null;
           }())}
-
+ 
           {/* Recommended Schemes for MSME */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"MSME Loan Schemes"}</div>
@@ -4814,7 +4916,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               </div>
             ))}
           </Card>
-
+ 
           {/* CTA */}
           <Card style={{ background:`${C.blue}06`, borderColor:`${C.blue}15` }}>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:12 }}>
@@ -4835,16 +4937,16 @@ function MSMEPackContent({ reportData, kpis, client }) {
               </button>
             </div>
           </Card>
-
+ 
         </div>
       )}
-
+ 
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.teal}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.teal}/>}
       {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.teal} client={client}/>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.teal} client={client}/> }
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.teal} client={client}/>}
-
+ 
       {tab === "packs" && (
         <div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
@@ -4866,10 +4968,10 @@ function MSMEPackContent({ reportData, kpis, client }) {
     </PackLayout>
   );
 }
-
+ 
 function CorporatePackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
-
+ 
   const groups = [
     {
       label: "Financial Reports",
@@ -4902,17 +5004,17 @@ function CorporatePackContent({ reportData, kpis, client }) {
       ]
     },
   ];
-
+ 
   const data = CFO_PACK_DATA["corporate"];
   const archiveDocs = useLiveDocs(client);
-
+ 
   return (
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.purple}>
       <div>
-
+ 
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
           <div style={{ padding:"16px 20px", borderRadius:14,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
@@ -4923,7 +5025,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               {"Actuals vs Budget vs Prior Year · Prepared by Garima Agarwal CA"}
             </div>
           </div>
-
+ 
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12 }} className="corp-kpi">
             {[
               { label:"Revenue",       value:reportData?.plInputs?.revenue      ||"₹842L", budget:"₹810L",  color:C.blue   },
@@ -4942,7 +5044,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
             ))}
             <style>{`.corp-kpi{grid-template-columns:1fr 1fr 1fr 1fr!important}@media(max-width:600px){.corp-kpi{grid-template-columns:1fr 1fr!important}}`}</style>
           </div>
-
+ 
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
               {"P&L — Actuals vs Budget vs Prior Year"}
@@ -5002,7 +5104,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               </table>
             </div>
           </Card>
-
+ 
           <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
@@ -5012,7 +5114,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               {reportData?.cashflowNote || reportData?.packNote || data.garimaNote}
             </p>
           </Card>
-
+ 
           {reportData?.boardHighlight1 && (
             <Card>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
@@ -5035,10 +5137,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
               </div>
             </Card>
           )}
-
+ 
         </div>
       )}
-
+ 
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           {reportData?.variance?.some(r => r.item && (r.budget || r.actual)) ? (<>
@@ -5097,10 +5199,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
           )}
         </div>
       )}
-
+ 
             {tab === "governance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
           {/* Question this tab answers */}
           <div style={{ padding:"16px 20px", borderRadius:14,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
@@ -5112,7 +5214,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               {"Governance isn't just compliance — it's the difference between a company that survives management changes and one that doesn't. This tab tracks what matters."}
             </div>
           </div>
-
+ 
           {/* Board Composition */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Board Composition"}</div>
@@ -5133,7 +5235,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               ))}
             </div>
           </Card>
-
+ 
           {/* Compliance Health */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
@@ -5175,7 +5277,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               })}
             </div>
           </Card>
-
+ 
           {/* Ind AS Readiness */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Ind AS Health Check"}</div>
@@ -5206,7 +5308,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               })}
             </div>
           </Card>
-
+ 
           {/* Garima's governance note */}
           {reportData?.governanceNote && (
             <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
@@ -5221,10 +5323,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
           )}
         </div>
       )}
-
+ 
       {tab === "ipo" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
           <div style={{ padding:"16px 20px", borderRadius:14,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
@@ -5235,7 +5337,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               {"IPO readiness is about closing specific gaps — not a number. Here's a plain-language view of where you stand and what to focus on."}
             </div>
           </div>
-
+ 
           {/* Gap tracker — the real value */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Critical Gaps to Close"}</div>
@@ -5274,7 +5376,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               })}
             </div>
           </Card>
-
+ 
           {/* Timeline */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
@@ -5297,7 +5399,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               ))}
             </div>
           </Card>
-
+ 
           {/* Garima's note */}
           {(reportData?.ipoNote || reportData?.packNote || data.garimaNote) && (
             <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
@@ -5310,7 +5412,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               </p>
             </Card>
           )}
-
+ 
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
@@ -5319,16 +5421,16 @@ function CorporatePackContent({ reportData, kpis, client }) {
               {"💬 Discuss IPO readiness with Garima"}
             </a>
           </div>
-
+ 
         </div>
       )}
-
+ 
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.purple}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.purple}/>}
       {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.purple} client={client}/>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
-
+ 
       {tab === "packs" && (
         <div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
@@ -5350,15 +5452,15 @@ function CorporatePackContent({ reportData, kpis, client }) {
     </PackLayout>
   );
 }
-
-
+ 
+ 
 // ─── BUSINESS INTELLIGENCE ────────────────────────────────────────────────────
 function BusinessIntelligence({ reportData, accentColor, client }) {
   const acc = accentColor || C.blue;
   const [view, setView] = React.useState("geography"); // geography | department
-
-
-
+ 
+ 
+ 
   // ── Parse helpers ──────────────────────────────────────────────────────────
   const parse = (val) => {
     if (!val) return 0;
@@ -5369,7 +5471,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     else if (s.toLowerCase().includes("k")) n *= 1000;
     return n;
   };
-
+ 
   const fmt = (n) => {
     if (!n && n !== 0) return "—";
     const abs = Math.abs(n), sign = n < 0 ? "-" : "";
@@ -5378,19 +5480,19 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     if (abs >= 1000)     return `${sign}₹${(abs/1000).toFixed(0)}K`;
     return `${sign}₹${abs.toFixed(0)}`;
   };
-
+ 
   const pctDiff = (curr, prev) => {
     if (!prev || prev === 0) return null;
     return (((curr - prev) / Math.abs(prev)) * 100).toFixed(1);
   };
-
+ 
   // ── Pull from existing reportData ─────────────────────────────────────────
   const pl       = reportData?.pl || {};
   const variance = reportData?.variance || [];
   const metrics  = reportData?.metrics  || [];
   const benchmarks = reportData?.benchmarks || [];
   const cashflow = reportData?.cashflow || [];
-
+ 
   const rev      = parse(pl.revenue?.actual);
   const prevRev  = parse(pl.revenue?.prev);
   const cogs     = parse(pl.cogs?.actual);
@@ -5398,13 +5500,13 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
   const ebitda   = parse(pl.ebitda?.actual);
   const pat      = parse(pl.pat?.actual);
   const prevEbitda = parse(pl.ebitda?.prev);
-
+ 
   const gpMargin     = rev > 0 ? ((gp / rev) * 100).toFixed(1)     : 0;
   const ebitdaMargin = rev > 0 ? ((ebitda / rev) * 100).toFixed(1) : 0;
   const patMargin    = rev > 0 ? ((pat / rev) * 100).toFixed(1)     : 0;
   const revGrowth    = pctDiff(rev, prevRev);
   const ebitdaGrowth = pctDiff(ebitda, prevEbitda);
-
+ 
   // ── Geography data from admin ─────────────────────────────────────────────
   const indiaRegions = [
     { name:"North", icon:"🏔️", color:"#2563EB" },
@@ -5416,7 +5518,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     revenue: parse(reportData?.geoIndia?.[r.name]?.revenue),
     cost:    parse(reportData?.geoIndia?.[r.name]?.cost),
   })).filter(r => r.revenue > 0 || r.cost > 0);
-
+ 
   const globalRegions = [
     { name:"India",  icon:"🇮🇳", color:"#FF6B35" },
     { name:"GCC",    icon:"🌙",   color:"#2563EB" },
@@ -5427,7 +5529,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     revenue: parse(reportData?.geoGlobal?.[r.name]?.revenue),
     cost:    parse(reportData?.geoGlobal?.[r.name]?.cost),
   })).filter(r => r.revenue > 0 || r.cost > 0);
-
+ 
   // ── Department data from admin ────────────────────────────────────────────
   const deptList = [
     { name:"Sales",       icon:"💼", color:"#2563EB" },
@@ -5441,7 +5543,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     cost:    parse(reportData?.depts?.[d.name]?.cost),
     budget:  parse(reportData?.depts?.[d.name]?.budget),
   })).filter(d => d.revenue > 0 || d.cost > 0);
-
+ 
   // ── Auto-generate flags/insights from data ────────────────────────────────
   const flags = [];
   if (revGrowth !== null && parseFloat(revGrowth) < 0)
@@ -5454,7 +5556,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     flags.push({ type:"danger",  icon:"🔴", text:`EBITDA negative at ${ebitdaMargin}% — business burning cash at operating level` });
   if (ebitdaGrowth !== null && parseFloat(ebitdaGrowth) > 20)
     flags.push({ type:"success", icon:"✅", text:`EBITDA improved ${ebitdaGrowth}% vs last month` });
-
+ 
   // Variance flags
   variance.forEach(v => {
     const budget = parse(v.budget), actual = parse(v.actual);
@@ -5464,13 +5566,13 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     if (unfav && Math.abs(diff) > 10)
       flags.push({ type:"warning", emoji:"📊", text:`${v.metric}: ${Math.abs(diff)}% ${unfav ? "below" : "above"} budget` });
   });
-
+ 
   // Dept flags
   deptList.forEach(d => {
     if (d.budget > 0 && d.cost > d.budget * 1.15)
       flags.push({ type:"warning", emoji:"💵", text:`${d.name} overspending budget by ${(((d.cost-d.budget)/d.budget)*100).toFixed(0)}%` });
   });
-
+ 
   // ── Reusable chart components ─────────────────────────────────────────────
   const DonutChart = ({ data, valueKey="revenue", size=150 }) => {
     const items = data.filter(d => (d[valueKey]||0) > 0);
@@ -5512,7 +5614,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
       </div>
     );
   };
-
+ 
   const HBarChart = ({ data, valueKey, total, label="" }) => (
     <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
       {data.filter(d => (d[valueKey]||0) > 0)
@@ -5547,7 +5649,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
         })}
     </div>
   );
-
+ 
   const ProfitTable = ({ data, label }) => {
     const rows = data.filter(d => (d.revenue||0)>0 || (d.cost||0)>0)
       .sort((a,b) => ((b.revenue||0)-(b.cost||0)) - ((a.revenue||0)-(a.cost||0)));
@@ -5595,7 +5697,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
       </div>
     );
   };
-
+ 
   const StatCard = ({ label, value, sub, color, icon }) => (
     <div style={{ padding:"14px 16px", borderRadius:12, background:"white",
       border:`1px solid ${C.border}`, boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
@@ -5604,7 +5706,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
       {sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{sub}</div>}
     </div>
   );
-
+ 
   // ── AI Analysis ───────────────────────────────────────────────────────────
   const generateAI = async () => {
     setLoadingAI(true);
@@ -5618,7 +5720,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
       globalRegions.length ? `Global Regions: ${globalRegions.map(r=>`${r.name} rev=${fmt(r.revenue)} cost=${fmt(r.cost)}`).join(", ")}` : "",
       variance.filter(v=>v.budget&&v.actual).map(v=>`${v.metric}: budget=${v.budget} actual=${v.actual}`).join(", "),
     ].filter(Boolean).join("\n");
-
+ 
     try {
       const res = await fetch("/api/chat", {
         method:"POST",
@@ -5634,9 +5736,9 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     } catch { setAiInsight("API error. Please try again."); }
     setLoadingAI(false);
   };
-
+ 
   const hasData = rev > 0 || deptList.length > 0 || indiaRegions.length > 0;
-
+ 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
@@ -5645,7 +5747,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
         .bi-4col{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
         @media(max-width:700px){.bi-2col{grid-template-columns:1fr!important}.bi-4col{grid-template-columns:1fr 1fr!important}}
       `}</style>
-
+ 
       {/* View toggle */}
       <div style={{ display:"flex", gap:8 }}>
         {[
@@ -5665,7 +5767,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
           </button>
         ))}
       </div>
-
+ 
       {!hasData && (
         <Card>
           <div style={{ textAlign:"center", padding:"24px 0" }}>
@@ -5675,8 +5777,8 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
           </div>
         </Card>
       )}
-
-
+ 
+ 
       {/* ── GEOGRAPHY VIEW ── */}
       {view === "geography" && (<>
         {indiaRegions.length === 0 && globalRegions.length === 0 ? (
@@ -5715,7 +5817,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
               </Card>
             </div>
           </>)}
-
+ 
           {globalRegions.length > 0 && (<>
             <Card>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>Global Regions — Revenue & Cost</div>
@@ -5737,7 +5839,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
           </>)}
         </>)}
       </>)}
-
+ 
       {/* ── DEPARTMENT VIEW ── */}
       {view === "department" && (<>
         {deptList.length === 0 ? (
@@ -5776,19 +5878,19 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
           </div>
         </>)}
       </>)}
-
-
+ 
+ 
     </div>
   );
 }
-
-
-
+ 
+ 
+ 
 // ─── SCENARIO MODELLING ───────────────────────────────────────────────────────
 function ScenarioModelling({ reportData, accentColor, client }) {
   const acc    = accentColor || C.blue;
   const pack   = client?.client_pack || client?.clientPack || "startup";
-
+ 
   // Pull base figures from admin-entered P&L data
   const parse = (v) => {
     if (!v) return 0;
@@ -5799,7 +5901,7 @@ function ScenarioModelling({ reportData, accentColor, client }) {
     else if (s.toLowerCase().includes("k")) n *= 1000;
     return n;
   };
-
+ 
   const fmt = (n) => {
     if (!n && n !== 0) return "—";
     const abs = Math.abs(n), sign = n < 0 ? "-" : "";
@@ -5808,15 +5910,15 @@ function ScenarioModelling({ reportData, accentColor, client }) {
     if (abs >= 1000)     return `${sign}₹${(abs/1000).toFixed(0)}K`;
     return `${sign}₹${abs.toFixed(0)}`;
   };
-
+ 
   const baseRev  = parse(reportData?.scenarioBase?.revenue || reportData?.pl?.revenue?.actual);
   const baseCogs = parse(reportData?.scenarioBase?.cogs    || reportData?.pl?.cogs?.actual);
   const baseOpex = parse(reportData?.scenarioBase?.opex    || reportData?.pl?.opex?.actual);
   const cashBal  = parse(reportData?.pl?.cashBalance || "");
   const burnRate = parse(reportData?.pl?.burnRate || "");
-
+ 
   const hasData = baseRev > 0;
-
+ 
   // Three fixed scenarios — meaningful, not arbitrary sliders
   const SCENARIOS = [
     {
@@ -5853,7 +5955,7 @@ function ScenarioModelling({ reportData, accentColor, client }) {
       icon: "🔴",
     },
   ];
-
+ 
   const calc = (s) => {
     const rev   = baseRev   * (1 + s.revDelta/100);
     const cogs  = baseCogs  * (1 + s.cogsDelta/100);
@@ -5869,18 +5971,18 @@ function ScenarioModelling({ reportData, accentColor, client }) {
       : null;
     return { rev, cogs, opex, gp, ebitda, gpMargin, ebitdaMargin, runway };
   };
-
+ 
   // AI analysis state
   const [aiAnalysis, setAiAnalysis] = React.useState("");
   const [loadingAI, setLoadingAI]   = React.useState(false);
   const [activeScenario, setActiveScenario] = React.useState("stress");
-
+ 
   const generateAnalysis = async (scenarioId) => {
     const s = SCENARIOS.find(s => s.id === scenarioId);
     const r = calc(s);
     setLoadingAI(true);
     setActiveScenario(scenarioId);
-
+ 
     const context = [
       `Company type: ${pack}`,
       `Scenario: ${s.name} — ${s.subtitle}`,
@@ -5891,7 +5993,7 @@ function ScenarioModelling({ reportData, accentColor, client }) {
       cashBal ? `Current cash balance: ${fmt(cashBal)}` : "",
       r.runway ? `Implied runway: ~${r.runway} months` : "",
     ].filter(Boolean).join("\n");
-
+ 
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -5915,7 +6017,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
     }
     setLoadingAI(false);
   };
-
+ 
   if (!hasData) return (
     <Card>
       <div style={{ textAlign:"center", padding:"32px 0" }}>
@@ -5929,12 +6031,12 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
       </div>
     </Card>
   );
-
+ 
   const baseCalc = calc(SCENARIOS[0]);
-
+ 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
-
+ 
       {/* Header */}
       <div style={{ padding:"16px 20px", borderRadius:14,
         background:`linear-gradient(135deg,${acc}12,${acc}06)`,
@@ -5946,7 +6048,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
           Based on {reportData?.monthLabel || "current"} actuals — Revenue {fmt(baseRev)} · COGS {fmt(baseCogs)} · OpEx {fmt(baseOpex)}
         </div>
       </div>
-
+ 
       {/* Three scenario cards */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }} className="scenario-grid">
         {SCENARIOS.map((s) => {
@@ -5957,7 +6059,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
               border:`2px solid ${isActive ? s.color : C.border}`,
               boxShadow: isActive ? `0 4px 20px ${s.color}25` : "none",
               transition:"all 0.2s", background:"white" }}>
-
+ 
               {/* Card header */}
               <div style={{ padding:"12px 16px", background:s.bg,
                 borderBottom:`1px solid ${s.color}20` }}>
@@ -5971,7 +6073,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
                   {s.subtitle}
                 </div>
               </div>
-
+ 
               {/* Metrics */}
               <div style={{ padding:"14px 16px", display:"flex", flexDirection:"column", gap:8 }}>
                 {[
@@ -6003,7 +6105,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
                     </div>
                   );
                 })}
-
+ 
                 {/* EBITDA margin badge */}
                 <div style={{ padding:"6px 10px", borderRadius:8, background:
                   r.ebitdaMargin >= 15 ? `${C.green}12` : r.ebitdaMargin >= 0 ? `${C.amber}12` : `${C.red}12`,
@@ -6014,7 +6116,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
                     {r.ebitdaMargin.toFixed(1)}%
                   </span>
                 </div>
-
+ 
                 {/* Runway if negative */}
                 {r.ebitda < 0 && cashBal > 0 && (
                   <div style={{ padding:"6px 10px", borderRadius:8, background:`${C.red}08`,
@@ -6025,7 +6127,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
                   </div>
                 )}
               </div>
-
+ 
               {/* Analyse button */}
               <div style={{ padding:"0 16px 14px" }}>
                 <button onClick={() => generateAnalysis(s.id)}
@@ -6043,7 +6145,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
         })}
       </div>
       <style>{`.scenario-grid{grid-template-columns:repeat(3,1fr)!important}@media(max-width:700px){.scenario-grid{grid-template-columns:1fr!important}}`}</style>
-
+ 
       {/* Comparison table */}
       <Card>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
@@ -6088,7 +6190,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
           </table>
         </div>
       </Card>
-
+ 
       {/* AI CFO Insights */}
       {aiAnalysis && (
         <Card style={{ border:`1.5px solid ${SCENARIOS.find(s=>s.id===activeScenario)?.color}30` }}>
@@ -6116,14 +6218,14 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
     </div>
   );
 }
-
-
-
+ 
+ 
+ 
 // ─── SPEND INTELLIGENCE ───────────────────────────────────────────────────────
 function SpendIntelligence({ reportData, accentColor, client }) {
   const acc = accentColor || C.blue;
   const pack = client?.client_pack || client?.clientPack || "startup";
-
+ 
   const defaultDepts = [
     { name:"Marketing & Sales",   benchmark:15, icon:"📣" },
     { name:"Technology / Product",benchmark:20, icon:"💻" },
@@ -6132,21 +6234,21 @@ function SpendIntelligence({ reportData, accentColor, client }) {
     { name:"Admin & G&A",         benchmark:10, icon:"🏢" },
     { name:"Finance & Legal",     benchmark:5,  icon:"⚖️" },
   ];
-
+ 
   // Pull from admin-entered data — clients don't enter this themselves
   const depts = defaultDepts.map(d => ({
     ...d,
     actual: parseFloat(reportData?.spendDepts?.[d.name]?.actual || 0),
     budget: parseFloat(reportData?.spendDepts?.[d.name]?.budget || 0),
   }));
-
+ 
   const rev = parseFloat(reportData?.spendRevenue || reportData?.pl?.revenue?.actual?.replace(/[^0-9.]/g,"") || 0);
   const totalSpend = depts.reduce((s,d) => s + (d.actual||0), 0);
   const hasData = depts.some(d => d.actual > 0);
-
+ 
   const [aiInsight, setAiInsight] = React.useState("");
   const [loadingInsight, setLoadingInsight] = React.useState(false);
-
+ 
   const fmt = (n) => {
     if (!n) return "—";
     if (n >= 10000000) return `₹${(n/10000000).toFixed(1)}Cr`;
@@ -6154,7 +6256,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
     if (n >= 1000)     return `₹${(n/1000).toFixed(0)}K`;
     return `₹${n.toFixed(0)}`;
   };
-
+ 
   const getFlag = (d) => {
     if (!d.actual || !rev) return null;
     const pct = (d.actual / rev) * 100;
@@ -6164,7 +6266,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
     if (diff < -8) return { label:"Underfunded",  color:C.blue };
     return { label:"On Track", color:C.green };
   };
-
+ 
   const generateInsight = async () => {
     if (!rev) return;
     setLoadingInsight(true);
@@ -6186,7 +6288,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
     } catch { setAiInsight("Could not generate insights. Please try again."); }
     setLoadingInsight(false);
   };
-
+ 
   if (!hasData) return (
     <Card>
       <div style={{ textAlign:"center", padding:"32px 0" }}>
@@ -6200,10 +6302,10 @@ function SpendIntelligence({ reportData, accentColor, client }) {
       </div>
     </Card>
   );
-
+ 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
       {/* Header summary */}
       {rev > 0 && (
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12 }} className="spend-hdr">
@@ -6222,7 +6324,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
           ))}
         </div>
       )}
-
+ 
       {/* Department breakdown */}
       <Card>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
@@ -6234,7 +6336,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
             const pct      = rev > 0 ? ((d.actual/rev)*100).toFixed(1) : null;
             const budgetPct= d.budget > 0 ? Math.min((d.actual/d.budget)*100, 150) : null;
             const barW     = rev > 0 ? Math.min((d.actual/rev)*100 / d.benchmark * 100, 150) : 0;
-
+ 
             return (
               <div key={i} style={{ padding:"14px 16px", borderRadius:12,
                 background:C.bg2, border:`1px solid ${C.border}` }}>
@@ -6255,7 +6357,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
                     </span>
                   )}
                 </div>
-
+ 
                 {/* Progress bar — actual vs benchmark */}
                 <div style={{ marginBottom:6 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
@@ -6275,7 +6377,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
                       width:2, height:"100%", background:"rgba(0,0,0,0.25)" }}/>
                   </div>
                 </div>
-
+ 
                 {/* Budget comparison */}
                 {budgetPct !== null && (
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -6293,7 +6395,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
           })}
         </div>
       </Card>
-
+ 
       {/* AI Recommendations */}
       <Card>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
@@ -6319,12 +6421,12 @@ function SpendIntelligence({ reportData, accentColor, client }) {
           </div>
         )}
       </Card>
-
+ 
       <style>{`.spend-hdr{grid-template-columns:repeat(3,1fr)!important}@media(max-width:600px){.spend-hdr{grid-template-columns:1fr!important}}`}</style>
     </div>
   );
 }
-
+ 
 // ─── FUND UTILISATION COMPONENT ──────────────────────────────────────────────
 function FundUtilisation({ reportData, accentColor }) {
   const acc = accentColor || C.blue;
@@ -6341,7 +6443,7 @@ function FundUtilisation({ reportData, accentColor }) {
   const [funds, setFunds] = React.useState(
     reportData?.fundUtil?.categories || defaultFunds
   );
-
+ 
   const totalAllocated = funds.reduce((s,f) => s + (parseFloat(f.allocated)||0), 0);
   const totalDeployed = funds.reduce((s,f) => s + (parseFloat(f.deployed)||0), 0);
   const raised = parseFloat(totalRaised) || 0;
@@ -6350,7 +6452,7 @@ function FundUtilisation({ reportData, accentColor }) {
   const runwayMonths = totalDeployed > 0 && raised > 0
     ? Math.round((raised - totalDeployed) / (totalDeployed / Math.max(funds.length,1)))
     : null;
-
+ 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
       <Card>
@@ -6389,7 +6491,7 @@ function FundUtilisation({ reportData, accentColor }) {
             </div>
           </div>
         </div>
-
+ 
         {/* Category breakdown */}
         <div style={{ fontSize:12, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F, marginBottom:12 }}>
           Allocation by Category
@@ -6451,7 +6553,7 @@ function FundUtilisation({ reportData, accentColor }) {
     </div>
   );
 }
-
+ 
 // ─── VERTICAL P&L COMPONENT ───────────────────────────────────────────────────
 function VerticalPnL({ reportData, accentColor }) {
   const acc = accentColor || C.blue;
@@ -6464,29 +6566,29 @@ function VerticalPnL({ reportData, accentColor }) {
     reportData?.verticalPnL || defaultVerticals
   );
   const [month, setMonth] = React.useState(reportData?.monthLabel || "");
-
+ 
   const updateVertical = (i, field, value) => {
     const nv = [...verticals];
     nv[i] = {...nv[i], [field]: value};
     setVerticals(nv);
   };
-
+ 
   const addVertical = () => {
     setVerticals([...verticals, { name:"New Vertical", revenue:0, cogs:0, opex:0 }]);
   };
-
+ 
   const calcGP = v => (parseFloat(v.revenue)||0) - (parseFloat(v.cogs)||0);
   const calcContrib = v => calcGP(v) - (parseFloat(v.opex)||0);
   const calcMargin = v => {
     const r = parseFloat(v.revenue)||0;
     return r > 0 ? Math.round((calcContrib(v)/r)*100) : 0;
   };
-
+ 
   const totalRevenue = verticals.reduce((s,v) => s + (parseFloat(v.revenue)||0), 0);
   const totalContrib = verticals.reduce((s,v) => s + calcContrib(v), 0);
   const bestVertical = [...verticals].sort((a,b) => calcContrib(b) - calcContrib(a))[0];
   const worstVertical = [...verticals].sort((a,b) => calcContrib(a) - calcContrib(b))[0];
-
+ 
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
       <Card>
@@ -6503,7 +6605,7 @@ function VerticalPnL({ reportData, accentColor }) {
               fontFamily:F, fontSize:12, color:C.text, background:C.bg2, outline:"none" }}
           />
         </div>
-
+ 
         {/* Summary cards */}
         {totalRevenue > 0 && (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:20 }}>
@@ -6527,7 +6629,7 @@ function VerticalPnL({ reportData, accentColor }) {
             </div>
           </div>
         )}
-
+ 
         {/* Vertical rows */}
         {verticals.map((v,i) => {
           const gp = calcGP(v);
@@ -6535,7 +6637,7 @@ function VerticalPnL({ reportData, accentColor }) {
           const margin = calcMargin(v);
           const revenueShare = totalRevenue > 0
             ? Math.round(((parseFloat(v.revenue)||0)/totalRevenue)*100) : 0;
-
+ 
           return (
             <div key={i} style={{ marginBottom:20, padding:"16px", borderRadius:12,
               background:C.bg2, border:`1px solid ${C.border}` }}>
@@ -6551,7 +6653,7 @@ function VerticalPnL({ reportData, accentColor }) {
                   {revenueShare}% of total revenue
                 </div>
               </div>
-
+ 
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8, marginBottom:12 }}>
                 {[
                   { label:"Revenue (₹)", field:"revenue" },
@@ -6572,7 +6674,7 @@ function VerticalPnL({ reportData, accentColor }) {
                   </div>
                 ))}
               </div>
-
+ 
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
                 <div style={{ padding:"8px 10px", borderRadius:8,
                   background: gp >= 0 ? `${C.green}10` : `${C.red}10` }}>
@@ -6603,7 +6705,7 @@ function VerticalPnL({ reportData, accentColor }) {
             </div>
           );
         })}
-
+ 
         <button onClick={addVertical} style={{
           width:"100%", padding:"10px", borderRadius:10,
           border:`1.5px dashed ${C.border}`, background:"transparent",
@@ -6611,7 +6713,7 @@ function VerticalPnL({ reportData, accentColor }) {
           + Add Vertical / Region
         </button>
       </Card>
-
+ 
       {/* Summary table */}
       {totalRevenue > 0 && (
         <Card>
@@ -6678,10 +6780,10 @@ function VerticalPnL({ reportData, accentColor }) {
     </div>
   );
 }
-
+ 
 function CFOPackContent({ reportData, client, kpis }) {
   const [tab, setTab] = useState("monthly");
-
+ 
   const groups = [
     {
       label: "Financial Reports",
@@ -6715,10 +6817,10 @@ function CFOPackContent({ reportData, client, kpis }) {
       ]
     },
   ];
-
+ 
   const data = CFO_PACK_DATA["startup"];
   const archiveDocs = useLiveDocs(client);
-
+ 
   return (
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.blue}>
       <div>
@@ -6788,7 +6890,7 @@ function CFOPackContent({ reportData, client, kpis }) {
           </Card>
         </div>
       )}
-
+ 
       {/* Fundraise Readiness tab */}
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
@@ -6857,10 +6959,10 @@ function CFOPackContent({ reportData, client, kpis }) {
           </Card>
         </div>
       )}
-
+ 
       {tab === "uniteco" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
           {/* Header */}
           <div style={{ padding:"18px 22px", borderRadius:16,
             background:`linear-gradient(135deg,${C.blue}10,${C.teal}08)`,
@@ -6872,7 +6974,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               {"The metrics investors will scrutinise in your data room — CAC, LTV, payback, retention."}
             </div>
           </div>
-
+ 
           {/* Core Metrics — 2x2 big cards */}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
             {[
@@ -6942,7 +7044,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               </div>
             ))}
           </div>
-
+ 
           {/* Growth & Retention */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>
@@ -7016,7 +7118,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               ))}
             </div>
           </Card>
-
+ 
           {/* Garima's UE Commentary */}
           {reportData?.ueNote && (
             <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
@@ -7029,7 +7131,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               </p>
             </Card>
           )}
-
+ 
           {/* CTA */}
           <Card style={{ background:`${C.blue}06`, borderColor:`${C.blue}15` }}>
             <div style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7 }}>
@@ -7041,11 +7143,11 @@ function CFOPackContent({ reportData, client, kpis }) {
               {"."}
             </div>
           </Card>
-
+ 
         </div>
       )}
-
-
+ 
+ 
       {tab === "fundraise" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           <StartupCFOPack data={data} client={client} reportData={reportData}/>
@@ -7070,10 +7172,10 @@ function CFOPackContent({ reportData, client, kpis }) {
           )}
         </div>
       )}
-
+ 
 {tab === "loan" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
           {/* HEADER */}
           <div style={{ padding:"20px 22px", borderRadius:16, background:`linear-gradient(135deg,${C.blue}12,${C.purple}08)`, border:`1px solid ${C.blue}20` }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
@@ -7090,7 +7192,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               </div>
             )}
           </div>
-
+ 
           {/* SCORE */}
           <Card>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16, marginBottom:16 }}>
@@ -7107,7 +7209,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               <div style={{ height:"100%", borderRadius:4, width:`${reportData?.loanScore || 64}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
             </div>
           </Card>
-
+ 
           {/* FINANCIAL SNAPSHOT */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Financial Snapshot"}</div>
@@ -7128,7 +7230,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               ))}
             </div>
           </Card>
-
+ 
           {/* DEBT POSITION */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"Debt Position"}</div>
@@ -7146,7 +7248,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               ))}
             </div>
           </Card>
-
+ 
           {/* KEY DEBT RATIOS — always visible */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Key Debt Ratios"}</div>
@@ -7209,7 +7311,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               ))}
             </div>
           </Card>
-
+ 
           {/* AUTO FLAGS */}
           {(function() {
             var flags = [];
@@ -7233,7 +7335,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               </Card>
             ) : null;
           }())}
-
+ 
           {/* IMPROVEMENTS */}
           {Array.isArray(reportData?.loanImprovements) && reportData.loanImprovements.some(x=>x) && (
             <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
@@ -7248,7 +7350,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               </div>
             </Card>
           )}
-
+ 
           {/* SCHEMES */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"Recommended Schemes"}</div>
@@ -7274,7 +7376,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               ))}
             </div>
           </Card>
-
+ 
           {/* DOCS CHECKLIST */}
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>{"Documents Checklist"}</div>
@@ -7299,7 +7401,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               ))}
             </div>
           </Card>
-
+ 
           {/* CTA */}
           <Card style={{ background:`${C.blue}06`, borderColor:`${C.blue}20` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>{"Ready to apply?"}</div>
@@ -7315,16 +7417,16 @@ function CFOPackContent({ reportData, client, kpis }) {
               <div style={{ display:"inline-flex", alignItems:"center", padding:"11px 20px", borderRadius:12, background:`${C.purple}10`, border:`1.5px solid ${C.purple}20`, fontFamily:F, fontSize:12, fontWeight:600, color:C.purple }}>{"Loan Package from Rs.15,000"}</div>
             </div>
           </Card>
-
+ 
         </div>
       )}
-
+ 
       {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.blue}/>}
       {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.blue}/>}
       {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.blue} client={client}/>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
-
+ 
       {tab === "boardpacks" && (
         <div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
@@ -7352,7 +7454,7 @@ function CFOPackContent({ reportData, client, kpis }) {
     </PackLayout>
   );
 }
-
+ 
 function BoardPacksTabbed() {
   const [tab, setTab] = useState("msme");
   const tabs = [
@@ -7384,7 +7486,7 @@ function BoardPacksTabbed() {
     </div>
   );
 }
-
+ 
 // ─── CFO PACKS (existing component) ──────────────────────────────────────────
 function CFOPacks({ client, reportData }) {
   const packType  = client.client_pack || client.clientPack || "startup";
@@ -7392,7 +7494,7 @@ function CFOPacks({ client, reportData }) {
   const [tab, setTab] = useState("pack"); // "pack" | "boardpacks"
   const [liveDocs, setLiveDocs] = useState([]);
   const isDemo = client?.isDemo === true;
-
+ 
   const fetchLiveDocs = React.useCallback(() => {
     if (isDemo || !client?.id) return;
     supabase.from("documents")
@@ -7412,9 +7514,9 @@ function CFOPacks({ client, reportData }) {
         }
       });
   }, [client?.id, isDemo]);
-
+ 
   useEffect(() => { fetchLiveDocs(); }, [fetchLiveDocs]);
-
+ 
   // Map live docs to ARCHIVE format, fall back to static ARCHIVE for demo
   const archiveDocs = liveDocs.length > 0
     ? liveDocs.map(d => ({
@@ -7426,7 +7528,7 @@ function CFOPacks({ client, reportData }) {
         new: d.created_at ? (new Date() - new Date(d.created_at)) < 35 * 24 * 60 * 60 * 1000 : false,
       }))
     : ARCHIVE;
-
+ 
   return (
     <div style={{ padding:24 }}>
       {/* Header */}
@@ -7442,7 +7544,7 @@ function CFOPacks({ client, reportData }) {
           </div>
         </div>
       </div>
-
+ 
       {/* Tabs */}
       <div style={{ display:"flex", gap:8, marginBottom:20 }}>
         {[["pack","📊 Smart Analysis"],["boardpacks","📁 Board Packs"]].map(([id, label]) => (
@@ -7456,7 +7558,7 @@ function CFOPacks({ client, reportData }) {
           }}>{label}</button>
         ))}
       </div>
-
+ 
       {tab === "pack" && (
         <>
           {/* Garima's note */}
@@ -7469,11 +7571,11 @@ function CFOPacks({ client, reportData }) {
               {reportData?.packNote || data.garimaNote}
             </p>
           </Card>
-
+ 
           {packType === "startup"   && <StartupCFOPack   data={data} client={client} reportData={reportData}/>}
           {packType === "msme"      && <MSMECFOPack      data={data} reportData={reportData}/>}
           {packType === "corporate" && <CorporateCFOPack data={data} reportData={reportData}/>}
-
+ 
           <div style={{ textAlign:"center", marginTop:8 }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
@@ -7484,10 +7586,10 @@ function CFOPacks({ client, reportData }) {
           </div>
         </>
       )}
-
-
+ 
+ 
       {tab === "boardpacks" && <BoardPacksTabbed/>}
-
+ 
       <style>{`
         @media(max-width:600px){.inv-grid{grid-template-columns:1fr 1fr!important}}
         @media(max-width:400px){.inv-grid{grid-template-columns:1fr!important}}
@@ -7495,7 +7597,7 @@ function CFOPacks({ client, reportData }) {
     </div>
   );
 }
-
+ 
 // ─── VALUATION ENGAGEMENT ────────────────────────────────────────────────────
 function Engagement({ liveData }) {
   // Merge live data from Supabase with dummy fallback
@@ -7509,13 +7611,13 @@ function Engagement({ liveData }) {
     garimaNote:   liveData.garima_note  || null,
   } : ENGAGEMENT;
   const pct = (eng.status / (eng.stages.length - 1)) * 100;
-
+ 
   return (
     <div style={{ padding:24 }}>
       <SectionTitle sub="Live status of your valuation engagement.">
         Valuation Status
       </SectionTitle>
-
+ 
       {/* Status card */}
       <Card style={{ marginBottom:20 }}>
         <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
@@ -7531,7 +7633,7 @@ function Engagement({ liveData }) {
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.blue }}>{eng.expectedDate}</div>
           </div>
         </div>
-
+ 
         {/* Progress bar */}
         <div style={{ position:"relative", marginBottom:24 }}>
           <div style={{ height:6, borderRadius:3, background:C.bg3, marginBottom:24 }}>
@@ -7558,7 +7660,7 @@ function Engagement({ liveData }) {
             ))}
           </div>
         </div>
-
+ 
         <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.blue}08`,
           border:`1px solid ${C.blue}20` }}>
           <span style={{ fontFamily:F, fontSize:13, color:C.blue, fontWeight:600 }}>
@@ -7566,7 +7668,7 @@ function Engagement({ liveData }) {
           </span>
         </div>
       </Card>
-
+ 
       {/* Document checklist */}
       <Card>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
@@ -7600,7 +7702,7 @@ function Engagement({ liveData }) {
     </div>
   );
 }
-
+ 
 // ─── CALENDAR ────────────────────────────────────────────────────────────────
 function Calendar() {
   return (
@@ -7608,7 +7710,7 @@ function Calendar() {
       <SectionTitle sub="Book a 30-min Valuation call or 60-min CFO Strategy session with Garima.">
         Book a Call
       </SectionTitle>
-
+ 
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:20 }} className="cal-grid">
         <a href="https://calendly.com/agrgarima/30min" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
@@ -7633,7 +7735,7 @@ function Calendar() {
             </div>
           </Card>
         </a>
-
+ 
         <a href="https://calendly.com/agrgarima/cfo-strategy-call" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
           <Card style={{ padding:24, borderTop:`3px solid ${C.purple}`, cursor:"pointer",
@@ -7658,7 +7760,7 @@ function Calendar() {
           </Card>
         </a>
       </div>
-
+ 
       <Card style={{ marginBottom:16 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
           📋 What to expect
@@ -7678,7 +7780,7 @@ function Calendar() {
           ))}
         </div>
       </Card>
-
+ 
       <div style={{ padding:"12px 16px", borderRadius:12,
         background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
@@ -7691,7 +7793,7 @@ function Calendar() {
     </div>
   );
 }
-
+ 
 // ─── DOWNLOAD UTILITIES ───────────────────────────────────────────────────────
 function downloadInvoicePDF(inv, client) {
   const html = `<!DOCTYPE html>
@@ -7765,7 +7867,7 @@ function downloadInvoicePDF(inv, client) {
   if (win) win.onload = () => win.print();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
-
+ 
 // ─── NEW REQUEST ──────────────────────────────────────────────────────────────
 function NewRequest({ client, setPage }) {
   const [step, setStep]     = useState(1);
@@ -7774,7 +7876,7 @@ function NewRequest({ client, setPage }) {
   const [submitted, setSubmitted] = useState(false);
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
-
+ 
   const SERVICES = [
     { id:"val-starter",  name:"Valuation · Starter",       tag:"Compliance",  tagColor:C.purple, price:"₹30,000 onwards",  desc:"DCF or NAV, IBBI-signed, 5–7 days" },
     { id:"val-pro",      name:"Valuation · Professional",  tag:"Fundraising", tagColor:C.pink,   price:"₹65,000 onwards",  desc:"Full IB-quality, peer comps, sensitivity", popular:true },
@@ -7783,7 +7885,7 @@ function NewRequest({ client, setPage }) {
     { id:"ppa",          name:"Purchase Price Allocation",  tag:"M&A",         tagColor:C.blue,   price:"₹80,000 onwards",  desc:"Ind AS 103, intangible identification" },
     { id:"fema-fdi",     name:"FEMA / FDI Valuation",      tag:"Regulatory",  tagColor:C.red,    price:"₹40,000 onwards",  desc:"Inbound & outbound FDI compliance" },
   ];
-
+ 
   const handleSubmit = async () => {
     if (!agreed) { alert("Please agree to the terms to proceed."); return; }
     setLoading(true);
@@ -7808,7 +7910,7 @@ function NewRequest({ client, setPage }) {
     setLoading(false);
     setSubmitted(true);
   };
-
+ 
   if (submitted) return (
     <div style={{ padding:32, maxWidth:520 }}>
       <Card style={{ textAlign:"center", padding:48 }}>
@@ -7841,11 +7943,11 @@ function NewRequest({ client, setPage }) {
       </Card>
     </div>
   );
-
+ 
   return (
     <div style={{ padding:24, maxWidth:900 }}>
       <SectionTitle sub="Get a scoped proposal within 24 hours.">Request a Service</SectionTitle>
-
+ 
       {/* Stepper */}
       <div style={{ display:"flex", alignItems:"center", gap:0, marginBottom:28, maxWidth:500 }}>
         {[["1","Select Service"],["2","Your Details"],["3","Confirm"]].map(([n,lbl],i) => (
@@ -7865,7 +7967,7 @@ function NewRequest({ client, setPage }) {
           </div>
         ))}
       </div>
-
+ 
       {/* Step 1: Select Service */}
       {step === 1 && (
         <>
@@ -7901,7 +8003,7 @@ function NewRequest({ client, setPage }) {
           <style>{`@media(max-width:600px){.nr-grid{grid-template-columns:1fr!important}}`}</style>
         </>
       )}
-
+ 
       {/* Step 2: Your Details */}
       {step === 2 && (
         <div style={{ maxWidth:480 }}>
@@ -7958,7 +8060,7 @@ function NewRequest({ client, setPage }) {
           </div>
         </div>
       )}
-
+ 
       {/* Step 3: Confirm */}
       {step === 3 && (
         <div style={{ maxWidth:480 }}>
@@ -7982,7 +8084,7 @@ function NewRequest({ client, setPage }) {
               </div>
             ))}
           </Card>
-
+ 
           {/* Terms checkbox */}
           <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.blue}06`,
             border:`1px solid ${C.blue}20`, marginBottom:16, display:"flex", gap:10, alignItems:"flex-start" }}>
@@ -8001,7 +8103,7 @@ function NewRequest({ client, setPage }) {
               . I understand this is a request for a scoped proposal, not a confirmed engagement.
             </label>
           </div>
-
+ 
           <div style={{ display:"flex", gap:10 }}>
             <button onClick={() => setStep(2)}
               style={{ padding:"12px 20px", borderRadius:10, border:`1px solid ${C.border}`,
@@ -8023,14 +8125,14 @@ function NewRequest({ client, setPage }) {
     </div>
   );
 }
-
+ 
 // ─── INVOICES ─────────────────────────────────────────────────────────────────
 const DEMO_INVOICES = [
   { id:"INV-2026-003", date:"20 Feb 2026", due:"05 Mar 2026", service:"Fractional CFO — February 2026", amount:"₹50,000", status:"unpaid", items:[{ desc:"Fractional CFO Retainer (Feb 2026)", qty:1, unit:"₹50,000", total:"₹50,000" }] },
   { id:"INV-2026-002", date:"20 Jan 2026", due:"05 Feb 2026", service:"Fractional CFO — January 2026",  amount:"₹50,000", status:"paid",   items:[{ desc:"Fractional CFO Retainer (Jan 2026)", qty:1, unit:"₹50,000", total:"₹50,000" }] },
   { id:"INV-2026-001", date:"15 Jan 2026", due:"30 Jan 2026", service:"DCF Valuation — Series A Pre-Funding", amount:"₹65,000", status:"paid", items:[{ desc:"Valuation Report (DCF + Comps)", qty:1, unit:"₹65,000", total:"₹65,000" }] },
 ];
-
+ 
 function Invoices({ client, liveInvoices }) {
   // Use live data if provided (real client), else demo data
   const allInvoices = liveInvoices && liveInvoices.length > 0 ? liveInvoices.map(inv => ({
@@ -8044,10 +8146,10 @@ function Invoices({ client, liveInvoices }) {
   })) : DEMO_INVOICES;
   const [view, setView] = useState("list");
   const [selected, setSelected] = useState(null);
-
+ 
   const unpaid = allInvoices.filter(i=>i.status==="unpaid");
   const paid   = allInvoices.filter(i=>i.status==="paid");
-
+ 
   const InvoiceCard = ({ inv }) => {
     const isUnpaid = inv.status === "unpaid";
     return (
@@ -8085,7 +8187,7 @@ function Invoices({ client, liveInvoices }) {
       </div>
     );
   };
-
+ 
   if (view === "detail" && selected) return (
     <div style={{ padding:24, maxWidth:620 }}>
       <button onClick={() => setView("list")}
@@ -8093,7 +8195,7 @@ function Invoices({ client, liveInvoices }) {
           cursor:"pointer", marginBottom:20, padding:0, fontWeight:600 }}>
         ← Back to Invoices
       </button>
-
+ 
       {/* Invoice header */}
       <div style={{ padding:"28px 32px", borderRadius:16,
         background:"linear-gradient(135deg,#0A1128 0%,#1a2a5e 100%)",
@@ -8117,14 +8219,14 @@ function Invoices({ client, liveInvoices }) {
           </div>
         </div>
       </div>
-
+ 
       <Card style={{ marginBottom:16 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>Bill To</div>
         <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{client?.name}</div>
         <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>{client?.company}</div>
         <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>{client?.email}</div>
       </Card>
-
+ 
       <Card style={{ marginBottom:16 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>Services</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr auto auto auto", gap:"10px 16px",
@@ -8148,7 +8250,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
         </div>
       </Card>
-
+ 
       {/* Contact to pay */}
       {selected.status === "unpaid" && (
         <div style={{ padding:"14px 18px", borderRadius:12, background:`${C.amber}08`,
@@ -8163,7 +8265,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
         </div>
       )}
-
+ 
       <button
         onClick={() => {
           // Build a minimal invoice object if coming from live data
@@ -8176,11 +8278,11 @@ function Invoices({ client, liveInvoices }) {
       </button>
     </div>
   );
-
+ 
   return (
     <div style={{ padding:24 }}>
       <SectionTitle sub="Auto-generated invoices for your engagements.">Invoices</SectionTitle>
-
+ 
       {/* Summary */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="inv-sum">
         {[
@@ -8195,7 +8297,7 @@ function Invoices({ client, liveInvoices }) {
           </Card>
         ))}
       </div>
-
+ 
       {unpaid.length > 0 && (
         <div style={{ marginBottom:20 }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase",
@@ -8203,28 +8305,28 @@ function Invoices({ client, liveInvoices }) {
           {unpaid.map(inv => <InvoiceCard key={inv.id} inv={inv}/>)}
         </div>
       )}
-
+ 
       <div>
         <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
           letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Paid ({paid.length})</div>
         {paid.map(inv => <InvoiceCard key={inv.id} inv={inv}/>)}
       </div>
-
+ 
       <style>{`@media(max-width:500px){.inv-sum{grid-template-columns:1fr!important}}`}</style>
     </div>
   );
 }
-
+ 
 // ─── MY DOCUMENTS ────────────────────────────────────────────────────────────
-
-
+ 
+ 
 function MyDocuments({ client }) {
   const [docs,       setDocs]       = useState([]);
   const [uploading,  setUploading]  = useState(false);
   const [loading,    setLoading]    = useState(true);
   const [dragOver,   setDragOver]   = useState(false);
   const isDemo = client?.isDemo === true;
-
+ 
   // Load documents from Supabase on mount
   useEffect(() => {
     if (isDemo) { setLoading(false); return; }
@@ -8234,7 +8336,7 @@ function MyDocuments({ client }) {
       .order("created_at", { ascending: false })
       .then(({ data }) => { setDocs(data || []); setLoading(false); });
   }, [client?.id, isDemo]);
-
+ 
   const handleUpload = async (file) => {
     if (!file) return;
     if (isDemo) { alert("Uploads are disabled in demo mode."); return; }
@@ -8256,13 +8358,13 @@ function MyDocuments({ client }) {
     if (docRow) setDocs(prev => [docRow, ...prev]);
     setUploading(false);
   };
-
+ 
   const handleDelete = async (doc) => {
     if (!window.confirm(`Delete "${doc.name}"?`)) return;
     await supabase.from("documents").delete().eq("id", doc.id);
     setDocs(prev => prev.filter(d => d.id !== doc.id));
   };
-
+ 
   const handleDownload = (doc) => {
     if (!doc.file_url) { alert("File URL not available."); return; }
     const isReport = doc.doc_type === "report" || doc.file_url?.startsWith("data:text/html");
@@ -8284,7 +8386,7 @@ function MyDocuments({ client }) {
     a.click();
     document.body.removeChild(a);
   };
-
+ 
   const fileIcon = (name, docType) => {
     if (docType === "report") return "📊";
     const ext = name?.split(".").pop()?.toLowerCase();
@@ -8295,7 +8397,7 @@ function MyDocuments({ client }) {
     if (["zip","rar"].includes(ext))              return "🗜️";
     return "📎";
   };
-
+ 
   // DEMO placeholder docs so the page isn't empty
   const DEMO_DOCS = [
     { id:"d1", name:"Board Pack — February 2026.pdf",     file_size:"2.4 MB", uploaded_by:"garima", created_at:"2026-02-20", file_url: null },
@@ -8304,11 +8406,11 @@ function MyDocuments({ client }) {
     { id:"d4", name:"Cap Table — v4.xlsx",               file_size:"0.3 MB", uploaded_by:client?.name, created_at:"2026-01-10", file_url: null },
   ];
   const displayDocs = isDemo ? DEMO_DOCS : docs;
-
+ 
   return (
     <div style={{ padding:24, maxWidth:700 }}>
       <SectionTitle sub="Documents shared by Garima, and files you've uploaded.">My Documents</SectionTitle>
-
+ 
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:10, background:`${C.amber}0A`,
           border:`1px solid ${C.amber}25`, marginBottom:20,
@@ -8316,7 +8418,7 @@ function MyDocuments({ client }) {
           👋 Demo mode — uploads disabled. Real clients can upload and download files here.
         </div>
       )}
-
+ 
       {/* Upload area */}
       {!isDemo && (
         <Card style={{ marginBottom:20 }}
@@ -8355,7 +8457,7 @@ function MyDocuments({ client }) {
           </label>
         </Card>
       )}
-
+ 
       {/* Document list */}
       <Card>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
@@ -8368,13 +8470,13 @@ function MyDocuments({ client }) {
             </div>
           )}
         </div>
-
+ 
         {loading && (
           <div style={{ textAlign:"center", padding:"32px 0", fontFamily:F, fontSize:13, color:C.dim }}>
             Loading documents…
           </div>
         )}
-
+ 
         {!loading && displayDocs.length === 0 && (
           <div style={{ textAlign:"center", padding:"32px 0" }}>
             <div style={{ fontSize:32, marginBottom:8 }}>📭</div>
@@ -8383,7 +8485,7 @@ function MyDocuments({ client }) {
             </div>
           </div>
         )}
-
+ 
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {displayDocs.map((doc, i) => {
             const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
@@ -8416,7 +8518,7 @@ function MyDocuments({ client }) {
                     </div>
                   </div>
                 </div>
-
+ 
                 <div style={{ display:"flex", gap:8, flexShrink:0 }}>
                   {/* Download button */}
                   <button
@@ -8430,7 +8532,7 @@ function MyDocuments({ client }) {
                       cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
                     {doc.file_url?.startsWith("data:text/html") ? "👁 View Report" : "⬇ Download"}
                   </button>
-
+ 
                   {/* Delete — only for files the client uploaded themselves */}
                   {!isDemo && !byGarima && (
                     <button onClick={() => handleDelete(doc)}
@@ -8446,7 +8548,7 @@ function MyDocuments({ client }) {
           })}
         </div>
       </Card>
-
+ 
       <Card style={{ marginTop:16, background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 <strong>Need to send a large file?</strong> WhatsApp it directly to Garima at{" "}
@@ -8459,15 +8561,15 @@ function MyDocuments({ client }) {
     </div>
   );
 }
-
+ 
 // ─── TREASURY MANAGEMENT ─────────────────────────────────────────────────────
 function Treasury({ client, reportData }) {
   const [tab, setTab] = useState("overview");
   const uae = isUAE(client);
-
+ 
   // Use live admin-entered data if available, else fall back to defaults
   const rd = reportData?.treasury;
-
+ 
   const UAE_T = {
     totalCash:   rd?.totalCash   || "AED 620K",
     investedPct: rd?.investedPct || 55,
@@ -8491,7 +8593,7 @@ function Treasury({ client, reportData }) {
       { priority:"Low",    text:"Consider ENBD Emirates Islamic Murabaha for April surplus — projected AED 50K." },
     ],
   };
-
+ 
   const TREASURY_DATA = uae ? UAE_T : {
     totalCash:    rd?.totalCash    || "₹50.4L",
     investedPct:  rd?.investedPct  || 65,
@@ -8514,13 +8616,13 @@ function Treasury({ client, reportData }) {
       { priority:"Low",    text:"Consider a 30-day liquid fund for the April surplus (₹8L projected) — yield ~7.5%." },
     ],
   };
-
+ 
   return (
     <div style={{ padding:24 }}>
       <SectionTitle sub={uae ? "Multi-currency cash, term deposits, and yield optimisation." : "Cash visibility, FD tracking, and yield optimisation."}>
         {uae ? "Treasury Management (AED)" : "Treasury Management"}
       </SectionTitle>
-
+ 
       {/* UAE: Cash Conversion Cycle */}
       {uae && (
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
@@ -8537,7 +8639,7 @@ function Treasury({ client, reportData }) {
           ))}
         </div>
       )}
-
+ 
       <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
         {[["overview","💰 Overview"],["maturity","📅 Maturity Schedule"],["recommendations","💡 Recommendations"]].map(([id,lbl]) => (
           <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
@@ -8549,7 +8651,7 @@ function Treasury({ client, reportData }) {
           </button>
         ))}
       </div>
-
+ 
       {tab === "overview" && (
         <>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="tr-grid">
@@ -8565,7 +8667,7 @@ function Treasury({ client, reportData }) {
               </Card>
             ))}
           </div>
-
+ 
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
               Cash Positions
@@ -8591,7 +8693,7 @@ function Treasury({ client, reportData }) {
           <style>{`.tr-grid{grid-template-columns:1fr 1fr 1fr}@media(max-width:500px){.tr-grid{grid-template-columns:1fr!important}}`}</style>
         </>
       )}
-
+ 
       {tab === "maturity" && (
         <Card>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
@@ -8617,7 +8719,7 @@ function Treasury({ client, reportData }) {
           </div>
         </Card>
       )}
-
+ 
       {tab === "recommendations" && (
         <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
           {TREASURY_DATA.recommendations.map((r,i) => (
@@ -8640,7 +8742,7 @@ function Treasury({ client, reportData }) {
     </div>
   );
 }
-
+ 
 // ─── UAE DISCLAIMER BANNER ────────────────────────────────────────────────────
 function UAEDisclaimer() {
   return (
@@ -8654,12 +8756,12 @@ function UAEDisclaimer() {
     </div>
   );
 }
-
+ 
 // ─── VAT DASHBOARD ────────────────────────────────────────────────────────────
 function VATDashboard({ client, reportData }) {
   const [tab, setTab] = useState("overview");
   const rd = reportData?.vat || {};
-
+ 
   const vatData = {
     trnVAT:             client?.trnVAT || rd.trnVAT || "Not registered",
     registrationStatus: client?.vatRegistered ? "Active" : "Not Registered",
@@ -8683,9 +8785,9 @@ function VATDashboard({ client, reportData }) {
       { month:"Apr", collected:null,  paid:null,  forecast:25000 },
     ],
   };
-
+ 
   const tabs = [["overview","💡 Overview"],["returns","📋 Returns"],["cashimpact","💸 Cash Impact"],["invoices","🧾 VAT Invoices"]];
-
+ 
   return (
     <div style={{ padding:24 }}>
       <UAEDisclaimer/>
@@ -8702,7 +8804,7 @@ function VATDashboard({ client, reportData }) {
           <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>TRN: {vatData.trnVAT}</span>
         </div>
       </div>
-
+ 
       <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
         {tabs.map(([id,lbl]) => (
           <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
@@ -8713,7 +8815,7 @@ function VATDashboard({ client, reportData }) {
           </button>
         ))}
       </div>
-
+ 
       {tab === "overview" && (
         <>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
@@ -8752,7 +8854,7 @@ function VATDashboard({ client, reportData }) {
           </Card>
         </>
       )}
-
+ 
       {tab === "returns" && (
         <Card>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>VAT Return History</div>
@@ -8782,7 +8884,7 @@ function VATDashboard({ client, reportData }) {
           </div>
         </Card>
       )}
-
+ 
       {tab === "cashimpact" && (
         <Card>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>VAT Cash Flow Impact</div>
@@ -8801,7 +8903,7 @@ function VATDashboard({ client, reportData }) {
           ))}
         </Card>
       )}
-
+ 
       {tab === "invoices" && (
         <Card>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:8 }}>VAT-Compliant Invoice Requirements</div>
@@ -8833,17 +8935,17 @@ function VATDashboard({ client, reportData }) {
     </div>
   );
 }
-
+ 
 // ─── CORPORATE TAX MODULE ─────────────────────────────────────────────────────
 function CorporateTax({ client, reportData }) {
   const [tab, setTab] = useState("overview");
   const rd = reportData?.ct || {};
-
+ 
   const revenue       = rd.revenue     || 1850000;
   const sbrThreshold  = 3000000;
   const sbrEligible   = client?.sbrEligible ?? (revenue <= sbrThreshold);
   const qfzpStatus    = client?.qfzpStatus ?? true;
-
+ 
   const ctData = {
     trnCT:               client?.trnCT || rd.trnCT || "Pending registration",
     sbrEligible, revenue, qfzpStatus,
@@ -8868,9 +8970,9 @@ function CorporateTax({ client, reportData }) {
       { item:"Audited financial statements",      done:false },
     ],
   };
-
+ 
   const tabs = [["overview","🏛️ Overview"],["sbr","💡 SBR Eligibility"],["qfzp","🏙️ QFZP Tracker"],["recon","📊 Tax Reconciliation"],["rpt","🏢 Related Parties"],["connected","👤 Connected Persons"],["armslength","⚖️ Arm's Length"]];
-
+ 
   return (
     <div style={{ padding:24 }}>
       <UAEDisclaimer/>
@@ -8885,7 +8987,7 @@ function CorporateTax({ client, reportData }) {
           <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>TRN: {ctData.trnCT}</span>
         </div>
       </div>
-
+ 
       <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
         {tabs.map(([id,lbl]) => (
           <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
@@ -8896,7 +8998,7 @@ function CorporateTax({ client, reportData }) {
           </button>
         ))}
       </div>
-
+ 
       {tab === "overview" && (
         <>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
@@ -8933,7 +9035,7 @@ function CorporateTax({ client, reportData }) {
           </div>
         </>
       )}
-
+ 
       {tab === "sbr" && (
         <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
           <Card style={{ background:sbrEligible?"#F0FDF4":"#FFF7ED", border:`1px solid ${sbrEligible?"#86EFAC":"#FCD34D"}` }}>
@@ -8977,7 +9079,7 @@ function CorporateTax({ client, reportData }) {
           </Card>
         </div>
       )}
-
+ 
       {tab === "qfzp" && (
         <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
@@ -9012,7 +9114,7 @@ function CorporateTax({ client, reportData }) {
           </Card>
         </div>
       )}
-
+ 
       {tab === "recon" && (
         <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
           <Card>
@@ -9023,7 +9125,7 @@ function CorporateTax({ client, reportData }) {
             <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.6 }}>
               Accounting profit adjusted to arrive at UAE Corporate Tax base — per Federal Decree-Law No. 47 of 2022.
             </p>
-
+ 
             {/* Column headers */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:8,
               padding:"8px 12px", background:C.bg2, borderRadius:8, marginBottom:4 }}>
@@ -9031,7 +9133,7 @@ function CorporateTax({ client, reportData }) {
               <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", textAlign:"right", minWidth:80 }}>Sign</span>
               <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", textAlign:"right", minWidth:110 }}>Amount (AED)</span>
             </div>
-
+ 
             {/* Rows */}
             {ctData.adjustments.map((a,i) => {
               const isAdd = a.sign > 0;
@@ -9069,7 +9171,7 @@ function CorporateTax({ client, reportData }) {
                 </div>
               );
             })}
-
+ 
             {/* Subtotal line */}
             <div style={{
               display:"grid", gridTemplateColumns:"1fr auto auto", gap:8,
@@ -9089,7 +9191,7 @@ function CorporateTax({ client, reportData }) {
                 {fmtAED(ctData.taxableFinalIncome || 0)}
               </span>
             </div>
-
+ 
             {/* CT calculation */}
             <div style={{ marginTop:12, display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               <div style={{ padding:"12px 14px", borderRadius:10, background:`${C.purple}08`, border:`1px solid ${C.purple}18` }}>
@@ -9114,7 +9216,7 @@ function CorporateTax({ client, reportData }) {
                 </div>
               </div>
             </div>
-
+ 
             {ctData.taxableFinalIncome === 0 && (
               <div style={{ marginTop:12, padding:"10px 14px", borderRadius:10, background:"#F0FDF4", border:"1px solid #86EFAC" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:"#15803D", fontWeight:600 }}>
@@ -9125,7 +9227,7 @@ function CorporateTax({ client, reportData }) {
           </Card>
         </div>
       )}
-
+ 
       {/* ── RELATED PARTY TRANSACTIONS ── */}
       {tab === "rpt" && (() => {
         const rptData = rd.rpt || {
@@ -9174,10 +9276,10 @@ function CorporateTax({ client, reportData }) {
             },
           ],
         };
-
+ 
         const riskColor = r => r === "High" ? C.red : r === "Medium" ? C.amber : C.green;
         const riskBg    = r => r === "High" ? "#FEF2F2" : r === "Medium" ? "#FFFBEB" : "#F0FDF4";
-
+ 
         return (
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
             {/* Summary */}
@@ -9194,7 +9296,7 @@ function CorporateTax({ client, reportData }) {
                 </Card>
               ))}
             </div>
-
+ 
             {/* RPT Definition */}
             <Card style={{ background:"#EFF6FF", border:"1px solid #93C5FD", padding:"14px 18px" }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.blue, marginBottom:6 }}>
@@ -9216,7 +9318,7 @@ function CorporateTax({ client, reportData }) {
                 ))}
               </div>
             </Card>
-
+ 
             {/* Transaction List */}
             {rptData.transactions.map((t,i) => (
               <Card key={i} style={{ borderLeft:`4px solid ${riskColor(t.risk)}`, padding:"16px 20px" }}>
@@ -9235,7 +9337,7 @@ function CorporateTax({ client, reportData }) {
                     </span>
                   </div>
                 </div>
-
+ 
                 <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
                   <div>
                     <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:3, textTransform:"uppercase", letterSpacing:"0.05em" }}>Transaction Type</div>
@@ -9246,7 +9348,7 @@ function CorporateTax({ client, reportData }) {
                     <div style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.5 }}>{t.benchmark}</div>
                   </div>
                 </div>
-
+ 
                 <div style={{ marginTop:12, padding:"10px 14px", borderRadius:8,
                   background:riskBg(t.risk), border:`1px solid ${riskColor(t.risk)}33` }}>
                   <span style={{ fontFamily:F, fontSize:12, color:riskColor(t.risk), fontWeight:600 }}>
@@ -9255,7 +9357,7 @@ function CorporateTax({ client, reportData }) {
                 </div>
               </Card>
             ))}
-
+ 
             {/* Garima Note */}
             <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:8 }}>
@@ -9277,7 +9379,7 @@ function CorporateTax({ client, reportData }) {
           </div>
         );
       })()}
-
+ 
       {/* ── RELATED PARTIES (entities / companies) ── */}
       {tab === "rpt" && (() => {
         const rptData = rd.rpt || {
@@ -9328,14 +9430,14 @@ function CorporateTax({ client, reportData }) {
             },
           ],
         };
-
+ 
         const riskColor = r => r==="High"?C.red:r==="Medium"?C.amber:C.green;
         const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#F0FDF4";
         const totalRPT  = rptData.entities.reduce((s,e) => s + e.transactions.reduce((a,t)=>a+t.amount,0), 0);
-
+ 
         return (
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
             {/* Legal definition banner */}
             <Card style={{ background:"#EFF6FF", border:"1px solid #93C5FD", padding:"14px 18px" }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.blue, marginBottom:6 }}>
@@ -9362,7 +9464,7 @@ function CorporateTax({ client, reportData }) {
                 ))}
               </div>
             </Card>
-
+ 
             {/* Summary */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
               {[
@@ -9377,7 +9479,7 @@ function CorporateTax({ client, reportData }) {
                 </Card>
               ))}
             </div>
-
+ 
             {/* Entity cards */}
             {rptData.entities.map((e,i) => (
               <Card key={i} style={{ borderLeft:`4px solid ${riskColor(e.risk)}` }}>
@@ -9397,7 +9499,7 @@ function CorporateTax({ client, reportData }) {
                     </span>
                   </div>
                 </div>
-
+ 
                 {/* Transactions */}
                 <div style={{ background:`${C.border}66`, borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
                   <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8 }}>
@@ -9414,7 +9516,7 @@ function CorporateTax({ client, reportData }) {
                   ))}
                   <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:8 }}>TP Method: {e.tpMethod}</div>
                 </div>
-
+ 
                 {/* Documentation */}
                 <div style={{ marginBottom:12 }}>
                   <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 }}>
@@ -9430,7 +9532,7 @@ function CorporateTax({ client, reportData }) {
                     );
                   })}
                 </div>
-
+ 
                 {/* Action */}
                 <div style={{ padding:"10px 14px", borderRadius:8, background:riskBg(e.risk), border:`1px solid ${riskColor(e.risk)}33` }}>
                   <span style={{ fontFamily:F, fontSize:12, color:riskColor(e.risk), fontWeight:600 }}>
@@ -9439,7 +9541,7 @@ function CorporateTax({ client, reportData }) {
                 </div>
               </Card>
             ))}
-
+ 
             <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:8 }}>💬 Garima's Note</div>
               <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.8, margin:"0 0 12px" }}>
@@ -9457,7 +9559,7 @@ function CorporateTax({ client, reportData }) {
           </div>
         );
       })()}
-
+ 
       {/* ── CONNECTED PERSONS (individuals) ── */}
       {tab === "connected" && (() => {
         // CTP010 — FTA Public Clarification on "director" and "officer" under Art. 36(2)(b)
@@ -9528,13 +9630,13 @@ function CorporateTax({ client, reportData }) {
             },
           ],
         };
-
+ 
         const riskColor = r => r==="High"?C.red:r==="Medium"?C.amber:C.green;
         const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#F0FDF4";
-
+ 
         return (
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
             {/* CTP010 Official Source Banner */}
             <Card style={{ background:"#1E3A5F", border:"1px solid #2563EB", padding:"14px 18px" }}>
               <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
@@ -9552,7 +9654,7 @@ function CorporateTax({ client, reportData }) {
                 </div>
               </div>
             </Card>
-
+ 
             {/* Legal definition — Art. 36 correct */}
             <Card style={{ background:"#F5F3FF", border:"1px solid #C4B5FD", padding:"14px 18px" }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.purple, marginBottom:8 }}>
@@ -9565,7 +9667,7 @@ function CorporateTax({ client, reportData }) {
                 (1) the amount corresponds to <strong>Market Value</strong>, AND
                 (2) incurred <strong>wholly and exclusively for business purposes</strong>.
               </p>
-
+ 
               {/* Who qualifies — corrected Art. 36(2) */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
                 {[
@@ -9580,7 +9682,7 @@ function CorporateTax({ client, reportData }) {
                   </div>
                 ))}
               </div>
-
+ 
               {/* Director vs Officer distinction — CTP010 */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
                 <div style={{ padding:"12px 14px", borderRadius:10, background:"white", border:"1px solid #C4B5FD" }}>
@@ -9615,7 +9717,7 @@ function CorporateTax({ client, reportData }) {
                   </div>
                 </div>
               </div>
-
+ 
               {/* Two-test rule */}
               <div style={{ padding:"12px 14px", borderRadius:10, background:"#4C1D95" }}>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#C4B5FD",
@@ -9640,7 +9742,7 @@ function CorporateTax({ client, reportData }) {
                 </div>
               </div>
             </Card>
-
+ 
             {/* Summary cards */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
               {[
@@ -9655,7 +9757,7 @@ function CorporateTax({ client, reportData }) {
                 </Card>
               ))}
             </div>
-
+ 
             {/* Person cards */}
             {cpData.persons.map((p,i) => {
               const doneCount = p.docStatus.filter(d=>d.done).length;
@@ -9679,7 +9781,7 @@ function CorporateTax({ client, reportData }) {
                       </span>
                     </div>
                   </div>
-
+ 
                   {/* CTP010 classification note */}
                   <div style={{ padding:"10px 14px", borderRadius:8, background:`${C.blue}08`,
                     border:`1px solid ${C.blue}20`, marginBottom:14 }}>
@@ -9689,7 +9791,7 @@ function CorporateTax({ client, reportData }) {
                     </div>
                     <div style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.6 }}>{p.ctp010Note}</div>
                   </div>
-
+ 
                   {/* Job title nuance */}
                   <div style={{ padding:"8px 12px", borderRadius:8,
                     background:p.connectionType==="owner+officer"?"#ECFDF5":"#FEF2F2",
@@ -9699,7 +9801,7 @@ function CorporateTax({ client, reportData }) {
                       {p.titleNote}
                     </div>
                   </div>
-
+ 
                   {/* Payments breakdown */}
                   <div style={{ background:`${C.border}66`, borderRadius:8, padding:"10px 14px", marginBottom:14 }}>
                     <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
@@ -9727,7 +9829,7 @@ function CorporateTax({ client, reportData }) {
                       </span>
                     </div>
                   </div>
-
+ 
                   {/* Two tests */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
                     <div style={{ padding:"10px 14px", borderRadius:8,
@@ -9761,7 +9863,7 @@ function CorporateTax({ client, reportData }) {
                       </div>
                     </div>
                   </div>
-
+ 
                   {/* Documentation checklist */}
                   <div style={{ marginBottom:14 }}>
                     <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
@@ -9795,7 +9897,7 @@ function CorporateTax({ client, reportData }) {
                       </div>
                     ))}
                   </div>
-
+ 
                   {/* Action */}
                   <div style={{ padding:"10px 14px", borderRadius:8,
                     background:riskBg(p.risk), border:`1px solid ${riskColor(p.risk)}33` }}>
@@ -9806,7 +9908,7 @@ function CorporateTax({ client, reportData }) {
                 </Card>
               );
             })}
-
+ 
             {/* Garima note */}
             <Card style={{ background:"#F5F3FF", border:"1px solid #C4B5FD" }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.purple, marginBottom:8 }}>
@@ -9834,8 +9936,8 @@ function CorporateTax({ client, reportData }) {
           </div>
         );
       })()}
-
-
+ 
+ 
       {/* ── ARM'S LENGTH TEST ── */}
       {tab === "armslength" && (() => {
         const alData = rd.armsLength || {
@@ -9893,12 +9995,12 @@ function CorporateTax({ client, reportData }) {
             },
           ],
         };
-
+ 
         const pct = Math.round((alData.compliant / alData.totalTransactions) * 100);
-
+ 
         return (
           <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
-
+ 
             {/* Score header */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
               {[
@@ -9913,7 +10015,7 @@ function CorporateTax({ client, reportData }) {
                 </Card>
               ))}
             </div>
-
+ 
             {/* Compliance bar */}
             <Card>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
@@ -9935,7 +10037,7 @@ function CorporateTax({ client, reportData }) {
                   : "All tested transactions meet the arm's length standard"}
               </div>
             </Card>
-
+ 
             {/* Test method explainer */}
             <Card style={{ background:"#EFF6FF", border:"1px solid #93C5FD", padding:"14px 18px" }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.blue, marginBottom:8 }}>
@@ -9955,7 +10057,7 @@ function CorporateTax({ client, reportData }) {
                 ))}
               </div>
             </Card>
-
+ 
             {/* Individual tests */}
             {alData.tests.map((t,i) => (
               <Card key={i} style={{ borderLeft:`4px solid ${t.compliant?C.green:C.red}` }}>
@@ -9970,7 +10072,7 @@ function CorporateTax({ client, reportData }) {
                     {t.compliant ? "✓ Compliant" : "✗ Adjustment Required"}
                   </span>
                 </div>
-
+ 
                 {/* Visual range bar */}
                 <div style={{ marginBottom:14 }}>
                   <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
@@ -10005,12 +10107,12 @@ function CorporateTax({ client, reportData }) {
                     <span style={{ fontFamily:FM, fontSize:11, color:C.dim }}>{fmtAED(t.marketHigh)}</span>
                   </div>
                 </div>
-
+ 
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7, marginBottom:12 }}>
                   <strong style={{ color:C.text }}>Method:</strong> {t.method}<br/>
                   <strong style={{ color:C.text }}>Assessment:</strong> {t.notes}
                 </div>
-
+ 
                 {/* Evidence checklist */}
                 <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:10 }}>
                   <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 }}>
@@ -10030,7 +10132,7 @@ function CorporateTax({ client, reportData }) {
                 </div>
               </Card>
             ))}
-
+ 
             <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:14,
               borderRadius:12, border:"none", background:C.purple, color:"white",
               fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>
@@ -10039,11 +10141,11 @@ function CorporateTax({ client, reportData }) {
           </div>
         );
       })()}
-
+ 
     </div>
   );
 }
-
+ 
 // ─── NEW: REVENUE RECONCILIATION (IFRS vs VAT) ───────────────────────────────
 function generateRevReconPDF({ client, reportData }) {
   const company  = client?.company || "Client";
@@ -10053,7 +10155,7 @@ function generateRevReconPDF({ client, reportData }) {
   const rr       = reportData?.revRecon || {};
   const period   = rr.period   || reportData?.monthLabel || "Current Quarter";
   const note     = rr.garimaNote || "Revenue reconciliation note not yet added. Please update in the admin panel UAE tab.";
-
+ 
   const rows = (rr.rows && rr.rows.length)
     ? rr.rows
     : [
@@ -10064,11 +10166,11 @@ function generateRevReconPDF({ client, reportData }) {
         { desc:"Exempt supplies",                             ifrs:45000,   vat:0,        diff:45000,  explanation:"IFRS records as revenue; VAT exempt — not included in VAT return" },
         { desc:"Credit notes issued",                        ifrs:-28000,  vat:-28000,  diff:0,      explanation:"Both reduce revenue / output VAT equally" },
       ];
-
+ 
   const totalIFRS = rows.reduce((s,r)=>s+Number(r.ifrs||0),0);
   const totalVAT  = rows.reduce((s,r)=>s+Number(r.vat||0),0);
   const totalDiff = totalIFRS - totalVAT;
-
+ 
   const tableRows = rows.map((r,i)=>{
     const diff = Number(r.ifrs||0) - Number(r.vat||0);
     const diffColor = diff===0?"#6B7280":diff>0?"#2563EB":"#D97706";
@@ -10081,7 +10183,7 @@ function generateRevReconPDF({ client, reportData }) {
       <td style="padding:10px 12px;font-size:11px;color:#6B7280;line-height:1.5">${r.explanation||"—"}</td>
     </tr>`;
   }).join("");
-
+ 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>Revenue Reconciliation (IFRS vs VAT) — ${company} — ${period}</title>
 <style>
@@ -10112,7 +10214,7 @@ tr.total td:first-child { font-family:Arial,sans-serif; }
 .disclaimer { font-size:10px; color:#9CA3AF; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:6px; padding:10px 12px; margin-top:16px; line-height:1.6; }
 .footer { margin-top:14px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
 </style></head><body>
-
+ 
 <div class="header">
   <h1>Revenue Reconciliation</h1>
   <div class="sub">IFRS Accounting Revenue vs UAE VAT Return Revenue — ${company}</div>
@@ -10125,12 +10227,12 @@ tr.total td:first-child { font-family:Arial,sans-serif; }
     <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
   </div>
 </div>
-
+ 
 <div class="page">
   <div class="explain-box">
     <strong>Why do IFRS and VAT revenue differ?</strong> IFRS (accounting) revenue is recognised based on performance obligations — when control of goods/services transfers to the customer. UAE VAT revenue is based on the tax point — typically the earlier of invoice date or date of supply. This creates timing differences (e.g. advances, % completion contracts) and scope differences (e.g. exempt supplies, non-taxable items). The FTA compares your VAT returns against your audited P&amp;L — unexplained differences trigger audit inquiries. This reconciliation is your explanation on file.
   </div>
-
+ 
   <div class="kpi-row">
     <div class="kpi-card">
       <div class="val" style="color:#2563EB">AED ${totalIFRS.toLocaleString()}</div>
@@ -10147,7 +10249,7 @@ tr.total td:first-child { font-family:Arial,sans-serif; }
       <div class="lbl">Net Difference (Explained)</div>
     </div>
   </div>
-
+ 
   <div class="section-title">Reconciliation Table — ${period}</div>
   <table>
     <thead>
@@ -10172,16 +10274,16 @@ tr.total td:first-child { font-family:Arial,sans-serif; }
       </tr>
     </tbody>
   </table>
-
+ 
   <div class="garima">
     <strong>Note from Garima — Revenue Reconciliation (${period}):</strong><br/>
     ${note}
   </div>
-
+ 
   <div style="background:#F0FDF4;border:1px solid #86EFAC;border-left:4px solid #059669;border-radius:8px;padding:12px 14px;font-size:11px;color:#065f46;line-height:1.7">
     <strong>FTA Audit Note:</strong> This reconciliation is maintained as part of our VAT compliance documentation. The FTA cross-references VAT return totals against audited financial statements. All differences shown above are explainable and documented. No unexplained revenue has been omitted from VAT returns.
   </div>
-
+ 
   <div class="disclaimer">
     <strong>Disclaimer:</strong> This reconciliation is prepared for internal compliance and FTA audit readiness purposes. It should be reviewed by a licensed UAE tax advisor before submission. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
   </div>
@@ -10193,13 +10295,13 @@ tr.total td:first-child { font-family:Arial,sans-serif; }
 </div>
 </body></html>`;
 }
-
+ 
 // NEW: Revenue Reconciliation user-facing component
 function RevenueReconciliation({ client, reportData }) {
   const rr      = reportData?.revRecon || {};
   const period  = rr.period  || reportData?.monthLabel || "Current Quarter";
   const note    = rr.garimaNote || "";
-
+ 
   // Default demo rows if admin hasn't entered data yet
   const demoRows = [
     { desc:"Standard-rated UAE sales (5% VAT)",            ifrs:1500000, vat:1500000, explanation:"Identical — fully taxable in both IFRS and VAT" },
@@ -10209,15 +10311,15 @@ function RevenueReconciliation({ client, reportData }) {
     { desc:"Exempt supplies",                              ifrs:45000,   vat:0,        explanation:"IFRS records as revenue; VAT exempt — not included in VAT return" },
     { desc:"Credit notes issued",                         ifrs:-28000,  vat:-28000,   explanation:"Both reduce revenue / output VAT equally" },
   ];
-
+ 
   const rows = (rr.rows && rr.rows.length > 0) ? rr.rows : demoRows;
   const isDemo = !(rr.rows && rr.rows.length > 0);
-
+ 
   const totalIFRS = rows.reduce((s,r)=>s+Number(r.ifrs||0),0);
   const totalVAT  = rows.reduce((s,r)=>s+Number(r.vat||0),0);
   const totalDiff = totalIFRS - totalVAT;
   const fullyReconciled = Math.abs(totalDiff) < 1000;
-
+ 
   const diffColor = (ifrs, vat) => {
     const d = Number(ifrs||0) - Number(vat||0);
     return d === 0 ? C.muted : d > 0 ? C.blue : C.amber;
@@ -10229,7 +10331,7 @@ function RevenueReconciliation({ client, reportData }) {
       ? `+${fmtAED(Math.abs(d))}`
       : `−${fmtAED(Math.abs(d))}`;
   };
-
+ 
   const handlePrint = () => {
     const html = generateRevReconPDF({ client, reportData });
     const w = window.open("","_blank");
@@ -10237,11 +10339,11 @@ function RevenueReconciliation({ client, reportData }) {
     w.document.close();
     setTimeout(() => w.print(), 600);
   };
-
+ 
   return (
     <div style={{ padding:24 }}>
       <UAEDisclaimer/>
-
+ 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
         marginBottom:20, flexWrap:"wrap", gap:12 }}>
@@ -10264,7 +10366,7 @@ function RevenueReconciliation({ client, reportData }) {
           📄 Download PDF
         </button>
       </div>
-
+ 
       {/* What & Why explanation */}
       <Card style={{ marginBottom:20, background:`${C.blue}06`, borderLeft:`4px solid ${C.blue}` }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
@@ -10284,7 +10386,7 @@ function RevenueReconciliation({ client, reportData }) {
           </div>
         </div>
       </Card>
-
+ 
       {/* KPI Summary strip */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }}>
         {[
@@ -10306,7 +10408,7 @@ function RevenueReconciliation({ client, reportData }) {
           </Card>
         ))}
       </div>
-
+ 
       {/* Demo data notice */}
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
@@ -10315,7 +10417,7 @@ function RevenueReconciliation({ client, reportData }) {
           ⚠️ Showing demo data. Garima should enter actual reconciliation figures in the admin panel → UAE / Tax tab → Revenue Reconciliation.
         </div>
       )}
-
+ 
       {/* Reconciliation Table */}
       <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
         {/* Table header */}
@@ -10327,7 +10429,7 @@ function RevenueReconciliation({ client, reportData }) {
               textAlign:i>=1&&i<=3?"right":"left" }}>{h}</div>
           ))}
         </div>
-
+ 
         {rows.map((r,i) => {
           const d = Number(r.ifrs||0) - Number(r.vat||0);
           const rowBorderColor = d===0 ? "transparent" : d>0 ? C.blue : C.amber;
@@ -10358,7 +10460,7 @@ function RevenueReconciliation({ client, reportData }) {
             </div>
           );
         })}
-
+ 
         {/* Total row */}
         <div style={{ display:"grid", gridTemplateColumns:"28fr 14fr 14fr 12fr 32fr",
           gap:0, padding:"13px 16px", background:"#F0FDF4",
@@ -10380,7 +10482,7 @@ function RevenueReconciliation({ client, reportData }) {
           </div>
         </div>
       </Card>
-
+ 
       {/* Difference legend */}
       <div style={{ display:"flex", gap:20, marginBottom:20, flexWrap:"wrap" }}>
         {[
@@ -10396,7 +10498,7 @@ function RevenueReconciliation({ client, reportData }) {
           </div>
         ))}
       </div>
-
+ 
       {/* Note from Garima */}
       <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
@@ -10433,7 +10535,7 @@ function RevenueReconciliation({ client, reportData }) {
           </div>
         </div>
       </Card>
-
+ 
       {/* FTA Audit note */}
       <div style={{ marginTop:16, padding:"12px 16px", borderRadius:10,
         background:"#F0FDF4", border:"1px solid #86EFAC" }}>
@@ -10449,9 +10551,9 @@ function RevenueReconciliation({ client, reportData }) {
     </div>
   );
 }
-
+ 
 // ─── NEW: WORKING CAPITAL MANAGEMENT ─────────────────────────────────────────
-
+ 
 function generateWorkingCapitalPDF({ client, reportData }) {
   const company  = client?.company || "Client";
   const freezone = client?.freezone || "DMCC";
@@ -10459,12 +10561,12 @@ function generateWorkingCapitalPDF({ client, reportData }) {
   const wc       = reportData?.workingCapital || {};
   const period   = wc.period || reportData?.monthLabel || "Current Period";
   const note     = wc.garimaNote || "Working capital note not yet added. Please update in the admin panel.";
-
+ 
   const dso = Number(wc.dso || 38);
   const dio = Number(wc.dio || 15);
   const dpo = Number(wc.dpo || 28);
   const ccc = dso + dio - dpo;
-
+ 
   const arRows = (wc.arAging && wc.arAging.length)
     ? wc.arAging
     : [
@@ -10474,13 +10576,13 @@ function generateWorkingCapitalPDF({ client, reportData }) {
         { customer:"Al Habtoor Properties",  current:0,      d30:35000, d60:42500, d90:0,     risk:"Medium", action:"Follow up call" },
         { customer:"Al Manara Group",         current:0,      d30:0,     d60:0,     d90:87500, risk:"High",   action:"Demand letter NOW" },
       ];
-
+ 
   const totalAR      = arRows.reduce((s,r)=>s+Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0),0);
   const total90plus  = arRows.reduce((s,r)=>s+Number(r.d90||0),0);
-
+ 
   const riskColor = r => r==="High"?"#EF4444":r==="Medium"?"#D97706":"#059669";
   const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#ECFDF5";
-
+ 
   const arTableRows = arRows.map((r,i)=>{
     const total = Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0);
     const pct   = totalAR > 0 ? ((total/totalAR)*100).toFixed(1) : "0.0";
@@ -10496,11 +10598,11 @@ function generateWorkingCapitalPDF({ client, reportData }) {
       <td style="padding:9px 12px;font-size:11px;color:${r.risk==="High"?"#991B1B":"#374151"};font-weight:${r.risk==="High"?"700":"400"}">${r.action}</td>
     </tr>`;
   }).join("");
-
+ 
   const totalCurrent = arRows.reduce((s,r)=>s+Number(r.current||0),0);
   const total30      = arRows.reduce((s,r)=>s+Number(r.d30||0),0);
   const total60      = arRows.reduce((s,r)=>s+Number(r.d60||0),0);
-
+ 
   const apRows = (wc.apSchedule && wc.apSchedule.length)
     ? wc.apSchedule
     : [
@@ -10510,7 +10612,7 @@ function generateWorkingCapitalPDF({ client, reportData }) {
         { supplier:"Gulf Freight Solutions",      amount:28500, terms:"Net 45", due:"30 Apr 2026", daysLeft:30, priority:"On Track" },
         { supplier:"DEWA (Utilities)",            amount:12000, terms:"Monthly",due:"10 Apr 2026", daysLeft:10, priority:"Upcoming" },
       ];
-
+ 
   const apTableRows = apRows.map((r,i)=>{
     const ov = r.priority==="Overdue";
     return `<tr style="background:${ov?"#FEF2F2":i%2===0?"#fff":"#fafafa"}">
@@ -10521,9 +10623,9 @@ function generateWorkingCapitalPDF({ client, reportData }) {
       <td style="padding:9px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:${ov?"#FEF2F2":r.priority==="Upcoming"?"#FFFBEB":"#ECFDF5"};color:${ov?"#EF4444":r.priority==="Upcoming"?"#D97706":"#059669"}">${r.priority}</span></td>
     </tr>`;
   }).join("");
-
+ 
   const totalAP = apRows.reduce((s,r)=>s+Number(r.amount||0),0);
-
+ 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>Working Capital Report — ${company} — ${period}</title>
 <style>
@@ -10564,7 +10666,7 @@ tr.total-row td:first-child { font-family:Arial,sans-serif; }
 .alert  { background:#FEF2F2; border:1px solid #FCA5A5; border-left:4px solid #EF4444; border-radius:7px; padding:11px 14px; margin:10px 0; font-size:11px; color:#991B1B; line-height:1.6; }
 .footer { margin-top:14px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
 </style></head><body>
-
+ 
 <div class="header">
   <h1>Working Capital Management Report</h1>
   <div class="sub">Cash Conversion Cycle · AR Aging · AP Schedule · Liquidity Analysis — ${company} (${freezone})</div>
@@ -10577,11 +10679,11 @@ tr.total-row td:first-child { font-family:Arial,sans-serif; }
     <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
   </div>
 </div>
-
+ 
 <div class="page">
-
+ 
   <div class="garima"><strong>Note from Garima:</strong><br/>${note}</div>
-
+ 
   <!-- CCC Visual -->
   <div class="ccc-visual">
     <div style="font-size:12px;font-weight:800;color:#065f46;text-align:center;margin-bottom:14px">
@@ -10602,14 +10704,14 @@ tr.total-row td:first-child { font-family:Arial,sans-serif; }
       <div class="ccc-note"><strong>DPO ${dpo} days</strong> — Days to pay suppliers. ${dpo<35?"Scope to extend to 45 days — would release additional working capital.":"Well managed."}</div>
     </div>
   </div>
-
+ 
   <div class="kpi-row">
     <div class="kpi-card"><div class="val" style="color:#2563EB">${dso}d</div><div class="lbl">DSO</div><div class="bench">Target &lt;35 · Industry 30–45</div></div>
     <div class="kpi-card"><div class="val" style="color:#059669">${dio}d</div><div class="lbl">DIO</div><div class="bench">Excellent · Industry 20–30</div></div>
     <div class="kpi-card"><div class="val" style="color:#D97706">${dpo}d</div><div class="lbl">DPO</div><div class="bench">${dpo<35?"Extend to 45d":"Good"} · Industry 30–45</div></div>
     <div class="kpi-card"><div class="val" style="color:${ccc<=30?"#059669":ccc<=45?"#D97706":"#EF4444"}">${ccc}d</div><div class="lbl">CCC</div><div class="bench">Lower = better · Target &lt;30</div></div>
   </div>
-
+ 
   <!-- AR Aging -->
   <div class="section-title pb">AR Aging Schedule — ${period}</div>
   <table>
@@ -10641,7 +10743,7 @@ tr.total-row td:first-child { font-family:Arial,sans-serif; }
     </tbody>
   </table>
   ${total90plus>0?`<div class="alert">⚠️ <strong>AED ${total90plus.toLocaleString()} is 90+ days overdue (${((total90plus/totalAR)*100).toFixed(1)}% of total AR).</strong> Under IFRS 9 ECL model, provision at minimum 50% = AED ${Math.round(total90plus*0.5).toLocaleString()} required if not collected within 30 days. Issue demand letter immediately.</div>`:""}
-
+ 
   <!-- AP Schedule -->
   <div class="section-title" style="margin-top:24px">AP Schedule — Outstanding Payables</div>
   <table>
@@ -10657,12 +10759,12 @@ tr.total-row td:first-child { font-family:Arial,sans-serif; }
       </tr>
     </tbody>
   </table>
-
+ 
   <div style="margin-top:16px">
     <div class="insight"><strong>💡 Working Capital Opportunity:</strong> DSO ${dso} days vs DPO ${dpo} days — ${dso>dpo?"you collect slower than you pay. Priority: reduce DSO and extend DPO to improve cash position.":"collection is faster than payment — strong position. Maintain this discipline."}</div>
     ${total90plus>0?`<div class="alert"><strong>🔴 Collection Priority:</strong> AED ${total90plus.toLocaleString()} at 90+ days. Every 30-day delay in collection increases credit loss risk. Issue demand letter, offer structured payment plan, consider withholding next delivery.</div>`:""}
   </div>
-
+ 
   <div class="footer">
     <span style="font-weight:800;color:#059669">Finzzup</span>
     <span>${company} · Working Capital Report · ${period} · Confidential</span>
@@ -10671,20 +10773,20 @@ tr.total-row td:first-child { font-family:Arial,sans-serif; }
 </div>
 </body></html>`;
 }
-
+ 
 // NEW: Working Capital Management user component
 function WorkingCapital({ client, reportData }) {
   const wc     = reportData?.workingCapital || {};
   const period = wc.period || reportData?.monthLabel || "Current Period";
   const note   = wc.garimaNote || "";
-
+ 
   const dso = Number(wc.dso || 38);
   const dio = Number(wc.dio || 15);
   const dpo = Number(wc.dpo || 28);
   const ccc = dso + dio - dpo;
-
+ 
   const isDemo = !wc.dso;
-
+ 
   const arRows = (wc.arAging && wc.arAging.length) ? wc.arAging : [
     { customer:"Gulf Fresh Foods LLC",   current:125000, d30:0,     d60:0,     d90:0,     risk:"Low",    action:"On schedule" },
     { customer:"Emarat Trading Co.",     current:95000,  d30:0,     d60:0,     d90:0,     risk:"Low",    action:"On schedule" },
@@ -10692,7 +10794,7 @@ function WorkingCapital({ client, reportData }) {
     { customer:"Al Habtoor Properties", current:0,      d30:35000, d60:42500, d90:0,     risk:"Medium", action:"Follow up call" },
     { customer:"Al Manara Group",        current:0,      d30:0,     d60:0,     d90:87500, risk:"High",   action:"Demand letter NOW" },
   ];
-
+ 
   const apRows = (wc.apSchedule && wc.apSchedule.length) ? wc.apSchedule : [
     { supplier:"Al Rashidi Brothers Trading", amount:65000, terms:"Net 30", due:"15 Apr 2026", priority:"Upcoming" },
     { supplier:"Emirates Paper & Packaging",  amount:48000, terms:"Net 30", due:"20 Apr 2026", priority:"On Track" },
@@ -10700,17 +10802,17 @@ function WorkingCapital({ client, reportData }) {
     { supplier:"Gulf Freight Solutions",      amount:28500, terms:"Net 45", due:"30 Apr 2026", priority:"On Track" },
     { supplier:"DEWA (Utilities)",            amount:12000, terms:"Monthly",due:"10 Apr 2026", priority:"Upcoming" },
   ];
-
+ 
   const totalAR     = arRows.reduce((s,r)=>s+Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0),0);
   const total90     = arRows.reduce((s,r)=>s+Number(r.d90||0),0);
   const totalAP     = apRows.reduce((s,r)=>s+Number(r.amount||0),0);
   const totalCurrent= arRows.reduce((s,r)=>s+Number(r.current||0),0);
   const total30     = arRows.reduce((s,r)=>s+Number(r.d30||0),0);
   const total60     = arRows.reduce((s,r)=>s+Number(r.d60||0),0);
-
+ 
   const riskColor = r => r==="High"?C.red:r==="Medium"?C.amber:C.green;
   const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#ECFDF5";
-
+ 
   const handlePrint = () => {
     const html = generateWorkingCapitalPDF({ client, reportData });
     const w = window.open("","_blank");
@@ -10718,11 +10820,11 @@ function WorkingCapital({ client, reportData }) {
     w.document.close();
     setTimeout(()=>w.print(),600);
   };
-
+ 
   return (
     <div style={{ padding:24 }}>
       <UAEDisclaimer/>
-
+ 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
         marginBottom:20, flexWrap:"wrap", gap:12 }}>
@@ -10745,21 +10847,21 @@ function WorkingCapital({ client, reportData }) {
           📄 Download PDF
         </button>
       </div>
-
+ 
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
           border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
           ⚠️ Showing demo data. Enter actual figures in admin panel → UAE / Tax tab → Working Capital.
         </div>
       )}
-
+ 
       {/* CCC Visual */}
       <Card style={{ marginBottom:20, background:"#F0FDF4", border:`2px solid ${C.green}` }}>
         <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:"#065f46",
           textAlign:"center", marginBottom:16 }}>
           Cash Conversion Cycle — How Long Cash is Tied Up
         </div>
-
+ 
         {/* Formula */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
           gap:12, marginBottom:20, flexWrap:"wrap" }}>
@@ -10788,7 +10890,7 @@ function WorkingCapital({ client, reportData }) {
             <div style={{ fontFamily:F, fontSize:10, color:"rgba(255,255,255,0.7)", marginTop:2 }}>Lower = better</div>
           </div>
         </div>
-
+ 
         {/* Insight strips */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
           {[
@@ -10804,7 +10906,7 @@ function WorkingCapital({ client, reportData }) {
           ))}
         </div>
       </Card>
-
+ 
       {/* KPI strip */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
         {[
@@ -10820,7 +10922,7 @@ function WorkingCapital({ client, reportData }) {
           </Card>
         ))}
       </div>
-
+ 
       {/* AR Aging Table */}
       <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#064E3B" }}>
@@ -10831,7 +10933,7 @@ function WorkingCapital({ client, reportData }) {
             Total outstanding: {fmtAED(totalAR)} · {arRows.length} customers
           </div>
         </div>
-
+ 
         {/* Column headers */}
         <div style={{ display:"grid",
           gridTemplateColumns:"22fr 11fr 11fr 11fr 11fr 11fr 8fr 8fr 15fr",
@@ -10843,7 +10945,7 @@ function WorkingCapital({ client, reportData }) {
               textAlign:i>=1&&i<=6?"right":"left" }}>{h}</div>
           ))}
         </div>
-
+ 
         {arRows.map((r,i) => {
           const total = Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0);
           const pct   = totalAR>0?((total/totalAR)*100).toFixed(1):"0.0";
@@ -10878,7 +10980,7 @@ function WorkingCapital({ client, reportData }) {
             </div>
           );
         })}
-
+ 
         {/* Total row */}
         <div style={{ display:"grid",
           gridTemplateColumns:"22fr 11fr 11fr 11fr 11fr 11fr 8fr 8fr 15fr",
@@ -10894,7 +10996,7 @@ function WorkingCapital({ client, reportData }) {
           <div/><div/>
         </div>
       </Card>
-
+ 
       {/* 90+ alert */}
       {total90 > 0 && (
         <div style={{ padding:"12px 16px", borderRadius:10, background:"#FEF2F2",
@@ -10905,7 +11007,7 @@ function WorkingCapital({ client, reportData }) {
           Issue formal demand letter immediately.
         </div>
       )}
-
+ 
       {/* AP Schedule */}
       <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#064E3B" }}>
@@ -10948,7 +11050,7 @@ function WorkingCapital({ client, reportData }) {
           </div>
         </div>
       </Card>
-
+ 
       {/* Recommendations */}
       <Card style={{ marginBottom:20 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
@@ -11003,7 +11105,7 @@ function WorkingCapital({ client, reportData }) {
           </div>
         </div>
       </Card>
-
+ 
       {/* Note from Garima */}
       <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
@@ -11040,9 +11142,9 @@ function WorkingCapital({ client, reportData }) {
     </div>
   );
 }
-
+ 
 // ─── NEW: VERTICAL ANALYSIS & GP RATIO ───────────────────────────────────────
-
+ 
 function generateVerticalAnalysisPDF({ client, reportData }) {
   const company  = client?.company  || "Client";
   const freezone = client?.freezone || "DMCC";
@@ -11050,7 +11152,7 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
   const va       = reportData?.verticalAnalysis || {};
   const period   = va.period  || reportData?.monthLabel || "Current Period";
   const note     = va.garimaNote || "Vertical analysis note not yet added.";
-
+ 
   // Build rows — use admin data or defaults
   const defaultRows = [
     { label:"Revenue",              ifrs:1850000, prev:1400000, cogs:false, subtotal:false, total:false, section:"revenue" },
@@ -11070,11 +11172,11 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
     { label:"Finance Costs",        ifrs:12000,   prev:12000,   cogs:false, subtotal:false, total:false, section:"below"   },
     { label:"Net Profit (PAT)",     ifrs:241000,  prev:26000,   cogs:false, subtotal:false, total:true,  section:"pat"     },
   ];
-
+ 
   const rows = (va.rows && va.rows.length >= 5) ? va.rows : defaultRows;
   const revenue     = Number(rows[0]?.ifrs || 1850000);
   const prevRevenue = Number(rows[0]?.prev || 1400000);
-
+ 
   const sectionColors = {
     revenue:"#EFF6FF", cogs:"#FEF2F2", gp:"#ECFDF5",
     opex:"#FFF7ED", ebitda:"#EFF6FF", below:"#F9FAFB", pat:"#F0FDF4",
@@ -11083,7 +11185,7 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
     revenue:"#2563EB", cogs:"#EF4444", gp:"#059669",
     opex:"#D97706", ebitda:"#2563EB", below:"#E5E7EB", pat:"#059669",
   };
-
+ 
   const tableRows = rows.map((r,i) => {
     const pct      = revenue > 0 ? ((Number(r.ifrs||0)/revenue)*100).toFixed(1) : "—";
     const prevPct  = prevRevenue > 0 ? ((Number(r.prev||0)/prevRevenue)*100).toFixed(1) : "—";
@@ -11095,14 +11197,14 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
         ? (Number(pp) < 0 ? "#059669" : "#EF4444")
         : (Number(pp) > 0 ? "#059669" : "#EF4444");
     const ppLabel  = pp === "—" ? "—" : `${Number(pp)>0?"+":""}${pp}pp`;
-
+ 
     const isTotal    = r.total;
     const isSubtotal = r.subtotal;
     const indent     = r.label?.startsWith("  ");
     const bg = isTotal ? "#ECFDF5" : isSubtotal ? `${sectionColors[r.section]||"#F9FAFB"}` : (i%2===0?"#fff":"#fafafa");
     const fw = isTotal ? "800" : isSubtotal ? "700" : "400";
     const borderL = isSubtotal || isTotal ? `3px solid ${sectionBorder[r.section]||"#E5E7EB"}` : "none";
-
+ 
     return `<tr style="background:${bg};border-left:${borderL}${isTotal?";border-top:2px solid #059669":""}">
       <td style="padding:${isSubtotal||isTotal?"10":"8"}px 12px;font-size:11.5px;font-weight:${fw};color:${isTotal?"#065f46":"#374151"};padding-left:${indent?"24":"12"}px">${r.label?.trim()}</td>
       <td style="padding:8px 10px;font-family:monospace;font-weight:${fw};color:#111827;text-align:right">AED ${Number(r.ifrs||0).toLocaleString()}</td>
@@ -11112,7 +11214,7 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
       <td style="padding:8px 10px;font-family:monospace;font-weight:700;color:${ppColor};text-align:right">${Number(pp)>0?"▲":"▼"} ${ppLabel}</td>
     </tr>`;
   }).join("");
-
+ 
   // GP Ratio benchmark
   const gpRow     = rows.find(r=>r.section==="gp");
   const gpAmt     = Number(gpRow?.ifrs || 832500);
@@ -11122,21 +11224,21 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
   const ebitdaPct = revenue > 0 ? ((Number(ebitdaRow?.ifrs||271000)/revenue)*100).toFixed(1) : "—";
   const patRow    = rows.find(r=>r.section==="pat");
   const patPct    = revenue > 0 ? ((Number(patRow?.ifrs||241000)/revenue)*100).toFixed(1) : "—";
-
+ 
   const benchmarks = va.benchmarks || [
     { metric:"Gross Margin",    yours:gpPct+"%",    industry:"38–42%", status:Number(gpPct)>=42?"Above":"Watch" },
     { metric:"EBITDA Margin",   yours:ebitdaPct+"%",industry:"8–12%",  status:Number(ebitdaPct)>=10?"Above":"Watch" },
     { metric:"Net Margin",      yours:patPct+"%",   industry:"5–8%",   status:Number(patPct)>=7?"Above":"Watch" },
     { metric:"OpEx % Revenue",  yours:((561500/revenue)*100).toFixed(1)+"%",industry:"35–40%", status:"Above Avg" },
   ];
-
+ 
   const benchRows = benchmarks.map((b,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
     <td style="padding:9px 12px;font-weight:600;color:#111827">${b.metric}</td>
     <td style="padding:9px 12px;font-family:monospace;font-weight:800;color:#059669;text-align:right">${b.yours}</td>
     <td style="padding:9px 12px;font-size:11px;color:#6B7280;text-align:center">${b.industry}</td>
     <td style="padding:9px 12px;text-align:center"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:${b.status==="Above"||b.status==="Above Avg"?"#ECFDF5":"#FFFBEB"};color:${b.status==="Above"||b.status==="Above Avg"?"#059669":"#D97706"}">${b.status==="Above"||b.status==="Above Avg"?"✓ "+b.status:"⚠ "+b.status}</span></td>
   </tr>`).join("");
-
+ 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>Vertical Analysis Report — ${company} — ${period}</title>
 <style>
@@ -11163,7 +11265,7 @@ td { border-bottom:1px solid #F3F4F6; }
 .garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:16px 0; font-size:12px; color:#78350F; line-height:1.85; }
 .footer { margin-top:14px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
 </style></head><body>
-
+ 
 <div class="header">
   <h1>Vertical Analysis Report</h1>
   <div class="sub">Common-Size P&amp;L · Every Line as % of Revenue · GP Ratio vs Industry — ${company} (${freezone})</div>
@@ -11176,19 +11278,19 @@ td { border-bottom:1px solid #F3F4F6; }
     <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
   </div>
 </div>
-
+ 
 <div class="page">
   <div class="explain-box">
     <strong>What is Vertical Analysis?</strong> Every line item is expressed as a percentage of revenue (the base = 100%). This reveals the true cost structure of the business regardless of size, and makes it easy to compare periods and benchmark against industry. The "Change (pp)" column shows percentage point movement — a cost line moving from 30% to 28% of revenue is a 2pp improvement, even if the absolute amount increased.
   </div>
-
+ 
   <div class="kpi-row">
     <div class="kpi-card"><div class="val" style="color:#2563EB">${gpPct}%</div><div class="lbl">Gross Margin</div><div class="chg" style="color:${Number(gpPct)>Number(gpPrevPct)?"#059669":"#EF4444"}">${Number(gpPct)>Number(gpPrevPct)?"▲":"▼"} vs ${gpPrevPct}% prior</div></div>
     <div class="kpi-card"><div class="val" style="color:#059669">${ebitdaPct}%</div><div class="lbl">EBITDA Margin</div><div class="chg" style="color:#059669">▲ Strong improvement</div></div>
     <div class="kpi-card"><div class="val" style="color:#7C3AED">${patPct}%</div><div class="lbl">Net Profit Margin</div><div class="chg" style="color:#059669">▲ Best quarter</div></div>
     <div class="kpi-card"><div class="val" style="color:#D97706">${((Number(rows.find(r=>r.section==="opex"&&r.subtotal)?.ifrs||561500)/revenue)*100).toFixed(1)}%</div><div class="lbl">OpEx % Revenue</div><div class="chg" style="color:#059669">▲ Improving efficiency</div></div>
   </div>
-
+ 
   <div class="section-title">Common-Size P&amp;L — ${period} vs Prior Period</div>
   <table>
     <thead>
@@ -11203,9 +11305,9 @@ td { border-bottom:1px solid #F3F4F6; }
     </thead>
     <tbody>${tableRows}</tbody>
   </table>
-
+ 
   <div class="garima"><strong>Note from Garima:</strong><br/>${note}</div>
-
+ 
   <div class="section-title pb">GP Ratio — Industry Benchmark Comparison</div>
   <table>
     <thead>
@@ -11213,7 +11315,7 @@ td { border-bottom:1px solid #F3F4F6; }
     </thead>
     <tbody>${benchRows}</tbody>
   </table>
-
+ 
   <div class="footer">
     <span style="font-weight:800;color:#2563EB">Finzzup</span>
     <span>${company} · Vertical Analysis Report · ${period} · Confidential</span>
@@ -11222,14 +11324,14 @@ td { border-bottom:1px solid #F3F4F6; }
 </div>
 </body></html>`;
 }
-
+ 
 // NEW: Vertical Analysis user component
 function VerticalAnalysis({ client, reportData }) {
   const va     = reportData?.verticalAnalysis || {};
   const period = va.period || reportData?.monthLabel || "Current Period";
   const note   = va.garimaNote || "";
   const [activeSection, setActiveSection] = useState("all");
-
+ 
   const defaultRows = [
     { label:"Revenue",             ifrs:1850000, prev:1400000, subtotal:false, total:false, section:"revenue" },
     { label:"Cost of Goods Sold",  ifrs:1017500, prev:812000,  subtotal:true,  total:false, section:"cogs",   indent:false },
@@ -11248,29 +11350,29 @@ function VerticalAnalysis({ client, reportData }) {
     { label:"Finance Costs",       ifrs:12000,   prev:12000,   subtotal:false, total:false, section:"below"   },
     { label:"Net Profit (PAT)",    ifrs:241000,  prev:26000,   subtotal:false, total:true,  section:"pat"     },
   ];
-
+ 
   const rows      = (va.rows && va.rows.length >= 5) ? va.rows : defaultRows;
   const isDemo    = !(va.rows && va.rows.length >= 5);
   const revenue   = Number(rows[0]?.ifrs || 1850000);
   const prevRev   = Number(rows[0]?.prev || 1400000);
-
+ 
   const pct  = (v) => revenue > 0 ? ((Number(v||0)/revenue)*100).toFixed(1) : "—";
   const ppct = (v) => prevRev > 0 ? ((Number(v||0)/prevRev)*100).toFixed(1)  : "—";
   const pp   = (cur, prev) => {
     if (!revenue || !prevRev) return null;
     return (((Number(cur||0)/revenue) - (Number(prev||0)/prevRev))*100);
   };
-
+ 
   const gpRow      = rows.find(r=>r.section==="gp");
   const ebitdaRow  = rows.find(r=>r.section==="ebitda");
   const patRow     = rows.find(r=>r.section==="pat");
   const opexRow    = rows.find(r=>r.section==="opex"&&r.subtotal);
   const cogsRow    = rows.find(r=>r.section==="cogs"&&r.subtotal);
-
+ 
   const gpPct     = pct(gpRow?.ifrs);
   const gpPrevPct = ppct(gpRow?.prev);
   const gpPP      = pp(gpRow?.ifrs, gpRow?.prev);
-
+ 
   const sectionColor = {
     revenue:"#EFF6FF", cogs:"#FEF2F2", gp:"#ECFDF5",
     opex:"#FFF7ED", ebitda:"#EFF6FF", below:"transparent", pat:"#F0FDF4",
@@ -11279,7 +11381,7 @@ function VerticalAnalysis({ client, reportData }) {
     revenue:C.blue, cogs:C.red, gp:C.green,
     opex:C.amber, ebitda:C.blue, below:"transparent", pat:C.green,
   };
-
+ 
   // GP Ratio benchmark data
   const benchmarks = va.benchmarks || [
     { metric:"Gross Margin",   yours:gpPct+"%",           industry:"38–42%",  status: Number(gpPct)>=42 ? "above" : "watch" },
@@ -11288,7 +11390,7 @@ function VerticalAnalysis({ client, reportData }) {
     { metric:"OpEx % Revenue", yours:pct(opexRow?.ifrs)+"%",   industry:"35–40%", status: Number(pct(opexRow?.ifrs))<=35 ? "above" : "watch" },
     { metric:"COGS % Revenue", yours:pct(cogsRow?.ifrs)+"%",   industry:"58–62%", status: Number(pct(cogsRow?.ifrs))<=58 ? "above" : "watch" },
   ];
-
+ 
   const handlePrint = () => {
     const html = generateVerticalAnalysisPDF({ client, reportData });
     const w = window.open("","_blank");
@@ -11296,11 +11398,11 @@ function VerticalAnalysis({ client, reportData }) {
     w.document.close();
     setTimeout(()=>w.print(),600);
   };
-
+ 
   return (
     <div style={{ padding:24 }}>
       <UAEDisclaimer/>
-
+ 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
         marginBottom:20, flexWrap:"wrap", gap:12 }}>
@@ -11323,14 +11425,14 @@ function VerticalAnalysis({ client, reportData }) {
           📄 Download PDF
         </button>
       </div>
-
+ 
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
           border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
           ⚠️ Showing demo data. Enter actual P&L figures in admin panel → UAE / Tax tab → Vertical Analysis.
         </div>
       )}
-
+ 
       {/* What is vertical analysis */}
       <Card style={{ marginBottom:20, background:`${C.blue}06`, borderLeft:`4px solid ${C.blue}` }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
@@ -11351,7 +11453,7 @@ function VerticalAnalysis({ client, reportData }) {
           </div>
         </div>
       </Card>
-
+ 
       {/* KPI strip */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
         {[
@@ -11380,7 +11482,7 @@ function VerticalAnalysis({ client, reportData }) {
           );
         })}
       </div>
-
+ 
       {/* Main Vertical Analysis Table */}
       <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#1E3A5F" }}>
@@ -11391,7 +11493,7 @@ function VerticalAnalysis({ client, reportData }) {
             Revenue = 100% base · pp = percentage points change
           </div>
         </div>
-
+ 
         {/* Column headers */}
         <div style={{ display:"grid", gridTemplateColumns:"30fr 14fr 9fr 14fr 9fr 10fr",
           background:"#F0F4FF", padding:"8px 16px",
@@ -11408,32 +11510,32 @@ function VerticalAnalysis({ client, reportData }) {
               textTransform:"uppercase", letterSpacing:"0.07em", textAlign:h.align }}>{h.label}</div>
           ))}
         </div>
-
+ 
         {rows.map((r,i) => {
           const curPct  = pct(r.ifrs);
           const prePct  = ppct(r.prev);
           const ppVal   = pp(r.ifrs, r.prev);
           const ppNum   = ppVal !== null ? ppVal.toFixed(1) : null;
-
+ 
           // For costs (cogs/opex): falling % is good. For income lines: rising % is good.
           const isCost  = r.section==="cogs"||r.section==="opex";
           const isGood  = ppVal === null ? null : isCost ? ppVal < 0 : ppVal > 0;
-
+ 
           const ppColor = ppNum === null ? C.dim : isGood ? C.green : C.red;
           const ppLabel = ppNum === null ? "—"
             : `${Number(ppNum)>0?"▲ +":"▼ "}${Math.abs(Number(ppNum)).toFixed(1)}pp`;
-
+ 
           const isTotal    = r.total;
           const isSubtotal = r.subtotal;
           const indent     = r.indent || r.label?.startsWith("  ");
-
+ 
           const rowBg = isTotal
             ? "#ECFDF5"
             : isSubtotal
             ? sectionColor[r.section]||"#F9FAFB"
             : i%2===0?"white":"#FAFAFA";
           const rowBorder = (isSubtotal||isTotal) ? `3px solid ${sectionBorder[r.section]||C.border}` : "none";
-
+ 
           return (
             <div key={i} style={{ display:"grid",
               gridTemplateColumns:"30fr 14fr 9fr 14fr 9fr 10fr",
@@ -11475,7 +11577,7 @@ function VerticalAnalysis({ client, reportData }) {
           );
         })}
       </Card>
-
+ 
       {/* GP Ratio Benchmark */}
       <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#064E3B" }}>
@@ -11486,7 +11588,7 @@ function VerticalAnalysis({ client, reportData }) {
             {client?.freezone||"DMCC"} trading company peers
           </div>
         </div>
-
+ 
         {/* Table header */}
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr",
           background:"#F9FAFB", padding:"8px 18px", borderBottom:`1px solid ${C.border}` }}>
@@ -11496,7 +11598,7 @@ function VerticalAnalysis({ client, reportData }) {
               textAlign:i===1||i===2?"center":"left" }}>{h}</div>
           ))}
         </div>
-
+ 
         {benchmarks.map((b,i) => (
           <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr",
             padding:"11px 18px", background:i%2===0?"white":"#FAFAFA",
@@ -11516,7 +11618,7 @@ function VerticalAnalysis({ client, reportData }) {
           </div>
         ))}
       </Card>
-
+ 
       {/* Cost Structure Visual */}
       <Card style={{ marginBottom:20 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
@@ -11542,7 +11644,7 @@ function VerticalAnalysis({ client, reportData }) {
           </div>
         ))}
       </Card>
-
+ 
       {/* Note from Garima */}
       <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
@@ -11581,13 +11683,13 @@ function VerticalAnalysis({ client, reportData }) {
     </div>
   );
 }
-
+ 
 // ─── UNIFIED COMPLIANCE CALENDAR ─────────────────────────────────────────────
 function ComplianceCalendar({ client }) {
   const [filter, setFilter] = useState("all");
   const freezone = client?.freezone || "DMCC";
   const fye      = client?.financialYearEnd || "31 Dec";
-
+ 
   const deadlines = [
     { date:"28 Apr 2026", label:"VAT Return — Q1 2026",          category:"vat",     priority:"High",   desc:"File Q1 VAT return (Jan–Mar 2026) and pay AED 92.5K to FTA." },
     { date:"30 Apr 2026", label:"Audit Report Submission",        category:"audit",   priority:"High",   desc:`Submit audited financial statements to ${freezone}.` },
@@ -11599,17 +11701,17 @@ function ComplianceCalendar({ client }) {
     { date:"28 Jan 2027", label:"VAT Return — Q4 2026",           category:"vat",     priority:"Medium", desc:"File Q4 VAT return (Oct–Dec 2026)." },
     { date:"30 Jun 2026", label:"ESR Annual Notification",        category:"other",   priority:"Low",    desc:"Economic Substance Regulations notification (if applicable)." },
   ].sort((a,b) => new Date(a.date) - new Date(b.date));
-
+ 
   const catColors = { vat:"#3B82F6", ct:"#8B5CF6", audit:"#10B981", license:"#F59E0B", other:"#6B7280" };
   const catLabels = { vat:"VAT", ct:"Corp Tax", audit:"Audit", license:"License", other:"Other" };
   const filtered  = filter === "all" ? deadlines : deadlines.filter(d => d.category === filter);
-
+ 
   return (
     <div style={{ padding:24 }}>
       <UAEDisclaimer/>
       <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, marginBottom:6 }}>Compliance Calendar</h2>
       <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>All UAE deadlines — VAT, Corporate Tax, Audit, License — in one view.</p>
-
+ 
       <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
         {[["all","All"],["vat","VAT"],["ct","Corp Tax"],["audit","Audit"],["license","License"]].map(([id,lbl]) => (
           <button key={id} onClick={() => setFilter(id)} style={{ padding:"8px 16px", borderRadius:100, border:"none",
@@ -11621,7 +11723,7 @@ function ComplianceCalendar({ client }) {
           </button>
         ))}
       </div>
-
+ 
       {/* Garima's compliance note */}
       <Card style={{ borderLeft:"3px solid #00732F", background:"#F0FDF4", marginBottom:4 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:6 }}>🇦🇪 Note from Garima</div>
@@ -11629,7 +11731,7 @@ function ComplianceCalendar({ client }) {
           Three high-priority deadlines in the next 90 days: VAT return (28 Apr), DMCC audit submission (30 Apr), and license renewal (15 May). I recommend addressing them in this order — VAT first as it has a financial penalty, then audit as it unlocks QFZP confirmation, then license. I'll send you a document checklist for each one week before the deadline.
         </p>
       </Card>
-
+ 
       <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
         {filtered.map((d,i) => {
           const isPast = new Date(d.date) < new Date();
@@ -11666,7 +11768,7 @@ function ComplianceCalendar({ client }) {
     </div>
   );
 }
-
+ 
 // ─── QFZP / FREE ZONE MODULE ──────────────────────────────────────────────────
 function generateQFZPSubstancePDF({ client, reportData }) {
   const company   = client?.company  || "Client";
@@ -11677,7 +11779,7 @@ function generateQFZPSubstancePDF({ client, reportData }) {
   const period    = qd.period || reportData?.monthLabel || "Current Period";
   const note      = qd.garimaNote || "QFZP substance note not yet added.";
   const score     = Number(qd.overallScore || reportData?.qfzp?.qfzpScore || 82);
-
+ 
   const fzDetails = {
     DMCC:  { name:"Dubai Multi Commodities Centre", regulator:"DMCC Authority"  },
     JAFZA: { name:"Jebel Ali Free Zone",             regulator:"JAFZA Authority" },
@@ -11686,14 +11788,14 @@ function generateQFZPSubstancePDF({ client, reportData }) {
     DIFC:  { name:"Dubai Int'l Financial Centre",    regulator:"DIFC Authority" },
   };
   const fz = fzDetails[freezone] || fzDetails.DMCC;
-
+ 
   const cigas = (qd.cigas && qd.cigas.length) ? qd.cigas : [
     { activity:"Trading — sourcing, procurement & distribution",         qualified:true,  pct:57, note:"Core activity — conducted from DMCC office" },
     { activity:"Treasury — intercompany financing (Rashidi Holdings)",   qualified:true,  pct:18, note:"Intragroup — qualifies per Art. 18 schedule" },
     { activity:"Export sales — outside UAE",                             qualified:true,  pct:17, note:"Zero-rated for VAT, qualifying for QFZP" },
     { activity:"Advisory services to mainland UAE clients",              qualified:false, pct:8,  note:"⚠ Non-qualifying — above 5% de-minimis threshold" },
   ];
-
+ 
   const substanceItems = (qd.substanceItems && qd.substanceItems.length) ? qd.substanceItems : [
     {
       pillar:"Employees",
@@ -11736,11 +11838,11 @@ function generateQFZPSubstancePDF({ client, reportData }) {
       gap:"⚠ CRITICAL: Management accounts must be signed and sent to audit firm by 22 April 2026. Missing this deadline risks QFZP status.",
     },
   ];
-
+ 
   const statusColor = s => s==="met"?"#059669":s==="watch"?"#D97706":"#EF4444";
   const statusBg    = s => s==="met"?"#ECFDF5":s==="watch"?"#FFFBEB":"#FEF2F2";
   const statusLabel = s => s==="met"?"✓ Met":s==="watch"?"⚠ Watch":"✗ Action Required";
-
+ 
   const cigaRows = cigas.map((c,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}${!c.qualified?";border-left:3px solid #EF4444":""}">
     <td style="padding:9px 12px;font-size:12px;font-weight:600;color:#111827">${c.activity}</td>
     <td style="padding:9px 12px;text-align:center"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:${c.qualified?"#ECFDF5":"#FEF2F2"};color:${c.qualified?"#059669":"#EF4444"}">${c.qualified?"✓ Qualifying":"✗ Non-Qualifying"}</span></td>
@@ -11748,10 +11850,10 @@ function generateQFZPSubstancePDF({ client, reportData }) {
     <td style="padding:9px 12px;font-size:11px;color:#6B7280">${c.note}</td>
     <td style="padding:9px 12px;font-size:11px;font-weight:700;color:${c.qualified?"#059669":"#EF4444"}">${c.qualified?"0% CT":"9% CT"}</td>
   </tr>`).join("");
-
+ 
   const qualPct   = cigas.filter(c=>c.qualified).reduce((s,c)=>s+Number(c.pct||0),0);
   const nonQualPct = cigas.filter(c=>!c.qualified).reduce((s,c)=>s+Number(c.pct||0),0);
-
+ 
   const substanceRows = substanceItems.map((s,i)=>`
     <tr style="background:${statusBg(s.status)};border-left:3px solid ${statusColor(s.status)}">
       <td style="padding:11px 12px;font-weight:700;color:#111827">${s.pillar}</td>
@@ -11763,7 +11865,7 @@ function generateQFZPSubstancePDF({ client, reportData }) {
     <tr style="background:#F9FAFB"><td colspan="4" style="padding:6px 12px 10px;font-size:10px;color:#6B7280">
       Evidence on file: ${s.evidence.join(" · ")}
     </td></tr>`).join("");
-
+ 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>QFZP Substance Tracker — ${company} — ${period}</title>
 <style>
@@ -11791,7 +11893,7 @@ td { border-bottom:1px solid #F3F4F6; }
 .disclaimer { font-size:10px; color:#9CA3AF; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:6px; padding:10px 12px; margin-top:14px; line-height:1.6; }
 .footer { margin-top:12px; padding-top:10px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
 </style></head><body>
-
+ 
 <div class="header">
   <h1>QFZP Substance Tracker</h1>
   <div class="sub">Qualifying Free Zone Person — Annual Substance Review — ${company} (${freezone})</div>
@@ -11804,9 +11906,9 @@ td { border-bottom:1px solid #F3F4F6; }
     <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
   </div>
 </div>
-
+ 
 <div class="page">
-
+ 
   <div class="score-box">
     <div>
       <div class="score-num">${score}</div>
@@ -11823,29 +11925,29 @@ td { border-bottom:1px solid #F3F4F6; }
       </div>
     </div>
   </div>
-
+ 
   <div class="kpi-row">
     <div class="kpi-card"><div class="val" style="color:#059669">${qualPct}%</div><div class="lbl">Qualifying Income</div></div>
     <div class="kpi-card"><div class="val" style="color:${nonQualPct>=5?"#EF4444":"#D97706"}">${nonQualPct}%</div><div class="lbl">Non-Qualifying</div></div>
     <div class="kpi-card"><div class="val" style="color:#059669">0%</div><div class="lbl">CT Rate (QFZP)</div></div>
     <div class="kpi-card"><div class="val" style="color:#7C3AED">${substanceItems.filter(s=>s.status==="action").length}</div><div class="lbl">Action Items</div></div>
   </div>
-
+ 
   <div class="garima"><strong>Note from Garima:</strong><br/>${note}</div>
-
+ 
   <div class="section-title">CIGA Analysis — Qualifying vs Non-Qualifying Income</div>
   <table>
     <thead><tr><th style="width:35%">Activity</th><th style="width:15%;text-align:center">Classification</th><th class="num" style="width:10%">% of Rev</th><th style="width:30%">Notes</th><th style="width:10%;text-align:center">CT Rate</th></tr></thead>
     <tbody>${cigaRows}</tbody>
   </table>
   ${nonQualPct>=5?`<div style="background:#FEF2F2;border:1px solid #FCA5A5;border-left:4px solid #EF4444;border-radius:7px;padding:10px 14px;margin:10px 0;font-size:11px;color:#991B1B">⚠️ <strong>De-minimis Alert:</strong> Non-qualifying income at ${nonQualPct}% of revenue — above the 5% de-minimis threshold. If this exceeds 5% in any tax period, all income loses 0% QFZP benefit and is taxed at 9%. Immediate contract restructuring recommended.</div>`:""}
-
+ 
   <div class="section-title pb">5-Pillar Substance Requirements</div>
   <table>
     <thead><tr><th style="width:15%">Pillar</th><th style="width:30%">Requirement</th><th style="width:25%">Current Status</th><th style="width:10%;text-align:center">Assessment</th></tr></thead>
     <tbody>${substanceRows}</tbody>
   </table>
-
+ 
   <div class="disclaimer">
     <strong>Disclaimer:</strong> This tracker is maintained for internal QFZP compliance monitoring. The FTA may audit substance requirements at any time. All evidence listed should be physically maintained and available for inspection. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
   </div>
@@ -11857,7 +11959,7 @@ td { border-bottom:1px solid #F3F4F6; }
 </div>
 </body></html>`;
 }
-
+ 
 // NEW: Full QFZP Substance Tracker (replaces basic QFZPModule)
 function QFZPModule({ client, reportData }) {
   const qd       = reportData?.qfzpSubstance || {};
@@ -11867,7 +11969,7 @@ function QFZPModule({ client, reportData }) {
   const note     = qd.garimaNote || "";
   const score    = Number(qd.overallScore || rd.qfzpScore || 82);
   const isDemo   = !qd.overallScore && !rd.qfzpScore;
-
+ 
   const fzDetails = {
     DMCC:  { name:"Dubai Multi Commodities Centre", regulator:"DMCC Authority",  deadline:"30 April" },
     JAFZA: { name:"Jebel Ali Free Zone",             regulator:"JAFZA Authority", deadline:"30 April" },
@@ -11876,14 +11978,14 @@ function QFZPModule({ client, reportData }) {
     DIFC:  { name:"Dubai Int'l Financial Centre",    regulator:"DIFC Authority",  deadline:"30 April" },
   };
   const fz = fzDetails[freezone] || fzDetails.DMCC;
-
+ 
   const cigas = (qd.cigas && qd.cigas.length) ? qd.cigas : [
     { activity:"Trading — sourcing, procurement & distribution",        qualified:true,  pct:57, note:"Core activity — conducted from DMCC office" },
     { activity:"Treasury — intercompany financing (Rashidi Holdings)",  qualified:true,  pct:18, note:"Intragroup — qualifies per Art. 18 schedule" },
     { activity:"Export sales — outside UAE",                            qualified:true,  pct:17, note:"Zero-rated VAT, qualifying for QFZP" },
     { activity:"Advisory services to mainland UAE clients",             qualified:false, pct:8,  note:"⚠ Non-qualifying — above 5% de-minimis threshold" },
   ];
-
+ 
   const substanceItems = (qd.substanceItems && qd.substanceItems.length) ? qd.substanceItems : [
     {
       pillar:"👥 Employees",
@@ -11928,16 +12030,16 @@ function QFZPModule({ client, reportData }) {
       gap:qd.auditSubmitted ? "" : `⚠ CRITICAL: Sign management accounts and send to audit firm before ${fz.deadline} 2026. Missing this risks retroactive 9% CT on all income.`,
     },
   ];
-
+ 
   const qualPct    = cigas.filter(c=>c.qualified).reduce((s,c)=>s+Number(c.pct||0),0);
   const nonQualPct = cigas.filter(c=>!c.qualified).reduce((s,c)=>s+Number(c.pct||0),0);
   const actionCount = substanceItems.filter(s=>s.status==="action").length;
   const watchCount  = substanceItems.filter(s=>s.status==="watch").length;
-
+ 
   const statusColor = s => s==="met"?C.green:s==="watch"?C.amber:C.red;
   const statusBg    = s => s==="met"?"#ECFDF5":s==="watch"?"#FFFBEB":"#FEF2F2";
   const statusLabel = s => s==="met"?"✓ Met":s==="watch"?"⚠ Watch":"✗ Action Required";
-
+ 
   const handlePrint = () => {
     const html = generateQFZPSubstancePDF({ client, reportData });
     const w = window.open("","_blank");
@@ -11945,11 +12047,11 @@ function QFZPModule({ client, reportData }) {
     w.document.close();
     setTimeout(()=>w.print(),600);
   };
-
+ 
   return (
     <div style={{ padding:24 }}>
       <UAEDisclaimer/>
-
+ 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
         marginBottom:20, flexWrap:"wrap", gap:12 }}>
@@ -11972,14 +12074,14 @@ function QFZPModule({ client, reportData }) {
           📄 Download PDF
         </button>
       </div>
-
+ 
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
           border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
           ⚠️ Showing demo data. Enter actual substance data in admin panel → UAE / Tax tab → QFZP Substance.
         </div>
       )}
-
+ 
       {/* Score + Status */}
       <Card style={{ marginBottom:20, background:"#F5F3FF", border:`2px solid ${C.purple}` }}>
         <div style={{ display:"flex", gap:24, alignItems:"center", flexWrap:"wrap" }}>
@@ -12019,7 +12121,7 @@ function QFZPModule({ client, reportData }) {
           </div>
         </div>
       </Card>
-
+ 
       {/* KPI strip */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
         {[
@@ -12035,7 +12137,7 @@ function QFZPModule({ client, reportData }) {
           </Card>
         ))}
       </div>
-
+ 
       {/* What is QFZP box */}
       <Card style={{ marginBottom:20, background:`${C.purple}06`, borderLeft:`4px solid ${C.purple}` }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
@@ -12056,7 +12158,7 @@ function QFZPModule({ client, reportData }) {
           </div>
         </div>
       </Card>
-
+ 
       {/* CIGA Table */}
       <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#4C1D95" }}>
@@ -12067,7 +12169,7 @@ function QFZPModule({ client, reportData }) {
             Qualifying income taxed at 0% · Non-qualifying at 9% · De-minimis: non-qualifying &lt;5% or &lt;AED 5M
           </div>
         </div>
-
+ 
         {/* Column headers */}
         <div style={{ display:"grid", gridTemplateColumns:"35fr 13fr 9fr 30fr 9fr",
           background:"#F5F3FF", padding:"8px 18px", borderBottom:`1px solid ${C.border}` }}>
@@ -12077,7 +12179,7 @@ function QFZPModule({ client, reportData }) {
               textAlign:i===2||i===4?"right":"left" }}>{h}</div>
           ))}
         </div>
-
+ 
         {cigas.map((c,i) => (
           <div key={i} style={{ display:"grid", gridTemplateColumns:"35fr 13fr 9fr 30fr 9fr",
             padding:"11px 18px", background:i%2===0?"white":"#FAFAFA",
@@ -12101,7 +12203,7 @@ function QFZPModule({ client, reportData }) {
             </div>
           </div>
         ))}
-
+ 
         {/* Totals */}
         <div style={{ display:"grid", gridTemplateColumns:"35fr 13fr 9fr 30fr 9fr",
           padding:"12px 18px", background:"#F0FDF4", borderTop:`2px solid ${C.green}` }}>
@@ -12129,7 +12231,7 @@ function QFZPModule({ client, reportData }) {
           </div>
         )}
       </Card>
-
+ 
       {/* 5-Pillar Substance Requirements */}
       <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#4C1D95" }}>
@@ -12140,12 +12242,12 @@ function QFZPModule({ client, reportData }) {
             All 5 must be satisfied every year to maintain QFZP status and 0% CT rate
           </div>
         </div>
-
+ 
         {substanceItems.map((s,i) => (
           <div key={i} style={{ borderBottom:`1px solid ${C.border}`,
             borderLeft:`4px solid ${statusColor(s.status)}`,
             background:statusBg(s.status)+"33" }}>
-
+ 
             {/* Pillar header */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
               padding:"14px 18px", flexWrap:"wrap", gap:8 }}>
@@ -12163,13 +12265,13 @@ function QFZPModule({ client, reportData }) {
                 {statusLabel(s.status)}
               </span>
             </div>
-
+ 
             {/* Current status */}
             <div style={{ padding:"0 18px 12px" }}>
               <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, marginBottom:8 }}>
                 📍 Current: {s.current}
               </div>
-
+ 
               {/* Evidence checklist */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, marginBottom:s.gap?10:0 }}>
                 {s.evidence.map((e,j) => (
@@ -12183,7 +12285,7 @@ function QFZPModule({ client, reportData }) {
                   </div>
                 ))}
               </div>
-
+ 
               {/* Gap / Action */}
               {s.gap && (
                 <div style={{ padding:"10px 14px", borderRadius:8, background:"#FEF2F2",
@@ -12197,7 +12299,7 @@ function QFZPModule({ client, reportData }) {
           </div>
         ))}
       </Card>
-
+ 
       {/* Note from Garima */}
       <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
@@ -12236,14 +12338,14 @@ function QFZPModule({ client, reportData }) {
     </div>
   );
 }
-
-
+ 
+ 
 // ─── AUDIT READINESS ──────────────────────────────────────────────────────────
 function AuditReadiness({ client, reportData }) {
   const rd        = reportData?.auditReadiness || {};
   const freezone  = client?.freezone || "DMCC";
   const auditScore = rd.auditScore || 68;
-
+ 
   const checklistItems = rd.checklistItems || [
     { cat:"Financial Statements",  item:"Audited P&L (current year)",                done:false, req:true  },
     { cat:"Financial Statements",  item:"Audited Balance Sheet",                     done:false, req:true  },
@@ -12261,11 +12363,11 @@ function AuditReadiness({ client, reportData }) {
     { cat:"Other",                 item:"Related Party Transactions Schedule",       done:false, req:true  },
     { cat:"Other",                 item:"Bank Statements (12 months)",               done:true,  req:true  },
   ];
-
+ 
   const cats       = [...new Set(checklistItems.map(c => c.cat))];
   const totalReq   = checklistItems.filter(c => c.req).length;
   const doneReq    = checklistItems.filter(c => c.req && c.done).length;
-
+ 
   return (
     <div style={{ padding:24 }}>
       <UAEDisclaimer/>
@@ -12282,7 +12384,7 @@ function AuditReadiness({ client, reportData }) {
           <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>Audit Readiness Score</div>
         </div>
       </div>
-
+ 
       {cats.map(cat => {
         const items    = checklistItems.filter(c => c.cat === cat);
         const doneCount = items.filter(c => c.done).length;
@@ -12308,7 +12410,7 @@ function AuditReadiness({ client, reportData }) {
           </Card>
         );
       })}
-
+ 
       <Card style={{ borderLeft:"3px solid #059669", background:"#F0FDF4", marginBottom:14 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:8 }}>🇦🇪 Note from Garima — Audit Readiness</div>
         <p style={{ fontFamily:F, fontSize:13, color:"#166534", lineHeight:1.8, margin:"0 0 12px" }}>
@@ -12323,14 +12425,14 @@ function AuditReadiness({ client, reportData }) {
     </div>
   );
 }
-
+ 
 // ─── TERMS & CONDITIONS / PRIVACY ────────────────────────────────────────────
 function Terms() {
   const [tab, setTab] = useState("terms");
   return (
     <div style={{ padding:24, maxWidth:720 }}>
       <SectionTitle sub="Legal documentation for Finzzup — Garima Agarwal, CA (M.No. 160944)">Legal & Compliance</SectionTitle>
-
+ 
       <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
         {[["terms","📄 Terms & Conditions"],["privacy","🔒 Privacy Policy"],["copyright","© Copyright"]].map(([id,lbl]) => (
           <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
@@ -12341,7 +12443,7 @@ function Terms() {
           </button>
         ))}
       </div>
-
+ 
       {tab === "terms" && (
         <Card style={{ lineHeight:1.8 }}>
           <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:16 }}>Last updated: January 2026</div>
@@ -12361,7 +12463,7 @@ function Terms() {
           ))}
         </Card>
       )}
-
+ 
       {tab === "privacy" && (
         <Card style={{ lineHeight:1.8 }}>
           <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:16 }}>Last updated: January 2026</div>
@@ -12381,7 +12483,7 @@ function Terms() {
           ))}
         </Card>
       )}
-
+ 
       {tab === "copyright" && (
         <Card style={{ lineHeight:1.8 }}>
           <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>
@@ -12403,24 +12505,24 @@ function Terms() {
     </div>
   );
 }
-
+ 
 // ─── PORTAL SHELL ─────────────────────────────────────────────────────────────
-
-
+ 
+ 
 // My Report component — shows correct pack based on client type
-
+ 
 // ─── UAE PDF GENERATORS ───────────────────────────────────────────────────────
-
+ 
 function generateRPTPDF({ client, reportData }) {
   const company  = client?.company || "Client";
   const trnCT    = client?.trnCT   || "Pending";
   const freezone = client?.freezone || "DMCC";
   const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
-
+ 
   // Build Related Party rows from admin data
   const rptEntities = (reportData?.rptEntities || []).filter(e => e?.name);
   const cpPersons   = (reportData?.connectedPersonsAdmin || []).filter(p => p?.name);
-
+ 
   const rptRows = rptEntities.length ? rptEntities.map((e,i) => {
     const compliant = e.compliant === "yes";
     const partial   = e.compliant === "partial";
@@ -12436,7 +12538,7 @@ function generateRPTPDF({ client, reportData }) {
     </tr>
     ${!compliant && e.action ? `<tr style="background:#FEF2F2"><td colspan="6" style="padding:8px 12px;font-size:11px;color:#991B1B">📌 <strong>Action:</strong> ${e.action}</td></tr>` : ""}`;
   }).join("") : `<tr><td colspan="6" style="padding:16px;text-align:center;color:#9CA3AF;font-size:12px">No related party data entered yet. Please update in the admin panel UAE tab.</td></tr>`;
-
+ 
   const cpRows = cpPersons.length ? cpPersons.map((p,i) => {
     const t1 = p.armsLength === "pass" ? "✓ Pass" : p.armsLength === "fail" ? "✗ Fail" : "⚠ Pending";
     const t2 = p.businessPurpose === "pass" ? "✓ Pass" : p.businessPurpose === "fail" ? "✗ Fail" : "⚠ Evidence Needed";
@@ -12452,12 +12554,12 @@ function generateRPTPDF({ client, reportData }) {
     </tr>
     ${p.action ? `<tr style="background:#FFFBEB"><td colspan="6" style="padding:8px 12px;font-size:11px;color:#92400E">📌 <strong>Action:</strong> ${p.action}</td></tr>` : ""}`;
   }).join("") : `<tr><td colspan="6" style="padding:16px;text-align:center;color:#9CA3AF;font-size:12px">No connected persons data entered yet. Please update in the admin panel UAE tab.</td></tr>`;
-
+ 
   const totalRPT = rptEntities.reduce((s,e)=>s+Number(e.amount||0),0);
   const totalCP  = cpPersons.reduce((s,p)=>s+Number(p.totalPayments||0),0);
   const rptNote  = reportData?.rptGarimaNote || "Please update related party notes in the admin panel.";
   const cpNote   = reportData?.cpGarimaNote  || "Please update connected persons notes in the admin panel.";
-
+ 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>Related Party & Connected Persons Report — ${company}</title>
 <style>
@@ -12487,7 +12589,7 @@ td { border-bottom:1px solid #F3F4F6; vertical-align:top; }
 .disclaimer { font-size:10px; color:#9CA3AF; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:6px; padding:10px 12px; margin-top:20px; line-height:1.6; }
 .footer { margin-top:16px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
 </style></head><body>
-
+ 
 <div class="cover">
   <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;opacity:0.7;margin-bottom:24px">🏛️ UAE CORPORATE TAX · ART. 35 & 36 · CTP010</div>
   <h1>Related Party &amp;<br/>Connected Persons Report</h1>
@@ -12502,28 +12604,28 @@ td { border-bottom:1px solid #F3F4F6; vertical-align:top; }
     <div class="meta-item"><label>Disclosure</label><span>Art. 55(1) Required</span></div>
   </div>
 </div>
-
+ 
 <div class="page">
   <div class="law-box">
     <strong>Legal References:</strong> Art. 35 — Related Party definition (≥50% common ownership/control) · Art. 34 — Transfer pricing: all RPT at arm's length · Art. 36(2)(a) — Owner · Art. 36(2)(b) — Director/Officer per CTP010 · Art. 36(2)(c) — Related Party of owner/director · Art. 36(1) — Two-test rule: Market Value AND Business Purpose · Art. 55(1) — Mandatory disclosure in CT Return
   </div>
-
+ 
   <div class="summary-strip">
     <div class="summary-card"><div class="val" style="color:#7C3AED">${rptEntities.length}</div><div class="lbl">Related Party Entities</div></div>
     <div class="summary-card"><div class="val" style="color:#2563EB">${cpPersons.length}</div><div class="lbl">Connected Persons</div></div>
     <div class="summary-card"><div class="val" style="color:#D97706">AED ${(totalRPT+totalCP).toLocaleString()}</div><div class="lbl">Total Disclosed Value</div></div>
     <div class="summary-card"><div class="val" style="color:#EF4444">${[...rptEntities.filter(e=>e.compliant==="no"),...cpPersons.filter(p=>p.businessPurpose==="evidence"||p.businessPurpose==="fail")].length}</div><div class="lbl">Require Action</div></div>
   </div>
-
+ 
   <div class="section-header">Part A — Art. 35 &amp; 34</div>
   <div class="section-title">Related Party Transactions (Entities)</div>
   <table>
     <thead><tr><th>Entity</th><th>Relationship</th><th>Transaction</th><th>Amount (AED)</th><th>TP Method</th><th>Arm's Length?</th></tr></thead>
     <tbody>${rptRows}</tbody>
   </table>
-
+ 
   <div class="garima"><strong>Garima's Note — Related Parties:</strong><br/>${rptNote}</div>
-
+ 
   <div class="section-header" style="margin-top:28px">Part B — Art. 36 + CTP010</div>
   <div class="section-title">Connected Person Payments (Individuals)</div>
   <div style="font-size:11px;color:#6B7280;margin-bottom:12px;background:#F5F3FF;border-radius:6px;padding:10px 12px;border:1px solid #C4B5FD">
@@ -12533,9 +12635,9 @@ td { border-bottom:1px solid #F3F4F6; vertical-align:top; }
     <thead><tr><th>Person</th><th>Art. 36(2) Ref</th><th>Total Payments</th><th>Market Range</th><th>Test 1: Market Value</th><th>Test 2: Business Purpose</th></tr></thead>
     <tbody>${cpRows}</tbody>
   </table>
-
+ 
   <div class="garima"><strong>Garima's Note — Connected Persons:</strong><br/>${cpNote}</div>
-
+ 
   <div class="section-header" style="margin-top:28px">Part C — Art. 55(1)</div>
   <div class="section-title">Mandatory Disclosure Summary</div>
   <table>
@@ -12546,7 +12648,7 @@ td { border-bottom:1px solid #F3F4F6; vertical-align:top; }
       <tr style="background:#EDE9FE;font-weight:800"><td style="padding:10px 12px" colspan="3">TOTAL — All Disclosed Transactions</td><td style="padding:10px 12px;font-family:monospace;font-weight:800;color:#4C1D95">AED ${(totalRPT+totalCP).toLocaleString()}</td><td style="padding:10px 12px;font-size:11px">Art. 55(1) disclosure filed with CT Return</td></tr>
     </tbody>
   </table>
-
+ 
   <div class="disclaimer">
     <strong>Disclaimer:</strong> This report is prepared for internal CT compliance purposes based on information provided by the client and entered by Garima Agarwal, CA. It reflects the FTA's position per CTP010. This report does not constitute legal or tax advice. Final CT Return filing should be reviewed and certified by a licensed UAE tax advisor. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
   </div>
@@ -12558,7 +12660,7 @@ td { border-bottom:1px solid #F3F4F6; vertical-align:top; }
 </div>
 </body></html>`;
 }
-
+ 
 function generateVATPDF({ client, reportData }) {
   const company  = client?.company || "Client";
   const trnVAT   = client?.trnVAT  || "—";
@@ -12571,7 +12673,7 @@ function generateVATPDF({ client, reportData }) {
   const inputVAT   = Number(vat.inputVAT   || 0);
   const vatPayable = Number(vat.vatPayable  || (outputVAT - inputVAT));
   const vatNote  = reportData?.vatGarimaNote || vat.garimaNote || "Please update VAT notes in the admin panel UAE tab.";
-
+ 
   const histRows = (vat.pendingReturns||[
     { period:"Q4 2025", due:"28 Jan 2026", status:"Filed", vatNet:"—" },
   ]).map((r,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
@@ -12580,7 +12682,7 @@ function generateVATPDF({ client, reportData }) {
     <td style="padding:9px 12px;font-family:monospace;font-weight:700">${r.vatNet}</td>
     <td style="padding:9px 12px"><span style="font-weight:700;color:${r.status==="Filed"?"#059669":"#D97706"}">${r.status==="Filed"?"✓ Filed":"⏳ Due"}</span></td>
   </tr>`).join("");
-
+ 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>VAT Compliance Report — ${company} — ${period}</title>
 <style>
@@ -12625,11 +12727,11 @@ tr.total td { background:#F0FDF4; font-weight:800; color:#065f46; }
     <div class="kpi-card"><div class="val" style="color:#D97706">AED ${vatPayable.toLocaleString()}</div><div class="lbl">Net VAT Payable</div></div>
     <div class="kpi-card"><div class="val" style="color:#00732F">5%</div><div class="lbl">Standard VAT Rate</div></div>
   </div>
-
+ 
   <div class="alert">⏰ <strong>Payment Deadline: ${deadline}</strong> — AED ${vatPayable.toLocaleString()} must reach FTA by this date. Late payment penalty: AED 1,000 + 2% of unpaid tax per month.</div>
-
+ 
   <div class="garima"><strong>Garima's Note:</strong><br/>${vatNote}</div>
-
+ 
   <div class="section-title">VAT Return Summary</div>
   <table>
     <thead><tr><th>Item</th><th>Amount (AED)</th></tr></thead>
@@ -12639,13 +12741,13 @@ tr.total td { background:#F0FDF4; font-weight:800; color:#065f46; }
       <tr class="payable"><td><strong>Net VAT Payable — ${period}</strong></td><td style="font-family:monospace"><strong>AED ${vatPayable.toLocaleString()}</strong></td></tr>
     </tbody>
   </table>
-
+ 
   <div class="section-title">Filing History</div>
   <table>
     <thead><tr><th>Period</th><th>Deadline</th><th>VAT Amount (AED)</th><th>Status</th></tr></thead>
     <tbody>${histRows}</tbody>
   </table>
-
+ 
   <div style="font-size:10px;color:#9CA3AF;margin-top:16px;line-height:1.6">
     <strong>Disclaimer:</strong> This report is prepared for compliance tracking. Final VAT return filing and payment should be confirmed with a licensed UAE tax advisor. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
   </div>
@@ -12657,7 +12759,7 @@ tr.total td { background:#F0FDF4; font-weight:800; color:#065f46; }
 </div>
 </body></html>`;
 }
-
+ 
 function generateQFZPPDF({ client, reportData }) {
   const company   = client?.company || "Client";
   const trnCT     = client?.trnCT   || "—";
@@ -12679,7 +12781,7 @@ function generateQFZPPDF({ client, reportData }) {
   const ctPayable      = qfzpStatus ? 0 : Math.round(nonQualIncome * 0.09);
   const ctDue          = client?.financialYearEnd === "31 Mar" ? "31 Dec" : "30 Sep";
   const ctNote         = reportData?.ctGarimaNote || "Please update CT notes in the admin panel UAE tab.";
-
+ 
   const substanceItems = reportData?.ct?.substanceItems || [
     { item:"Adequate employees in free zone",   done:true  },
     { item:"Adequate operating expenditure",    done:true  },
@@ -12687,13 +12789,13 @@ function generateQFZPPDF({ client, reportData }) {
     { item:"Core income-generating activities", done:true  },
     { item:"Audited financial statements",      done:false },
   ];
-
+ 
   const substanceRows = substanceItems.map((s,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
     <td style="padding:9px 12px;font-size:12px;color:${s.done?"#059669":"#EF4444"};font-weight:700">${s.done?"✓":"✗"}</td>
     <td style="padding:9px 12px;font-size:12px;color:#374151">${s.item}</td>
     <td style="padding:9px 12px;font-size:11px">${s.done?'<span style="color:#059669;font-weight:700">✓ Met</span>':'<span style="background:#FEF2F2;color:#EF4444;font-weight:700;padding:2px 8px;border-radius:100px">Action Required</span>'}</td>
   </tr>`).join("");
-
+ 
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>QFZP & Corporate Tax Report — ${company}</title>
 <style>
@@ -12740,20 +12842,20 @@ tr.less-row td { color:#059669; }
     <div class="kpi-card"><div class="val" style="color:#7C3AED">${qualifyingPct}%</div><div class="lbl">Qualifying Income</div></div>
     <div class="kpi-card"><div class="val" style="color:${nonQualPct>=5?"#EF4444":"#D97706"}">${nonQualPct}%</div><div class="lbl">Non-Qualifying</div></div>
   </div>
-
+ 
   <div class="garima"><strong>Garima's Note:</strong><br/>${ctNote}</div>
-
+ 
   <div class="section-title">QFZP Substance Requirements</div>
   <table>
     <thead><tr><th>✓/✗</th><th>Requirement</th><th>Status</th></tr></thead>
     <tbody>${substanceRows}</tbody>
   </table>
-
+ 
   <div class="sbr-box" style="background:${sbrEligible?"#F0FDF4":"#FEF2F2"};border:1px solid ${sbrEligible?"#86EFAC":"#FCA5A5"}">
     <strong style="color:${sbrEligible?"#15803D":"#991B1B"}">${sbrEligible?"✅ Small Business Relief (SBR) — Eligible":"❌ SBR — Not Eligible"}</strong><br/>
     ${sbrEligible?`Revenue AED ${revenue.toLocaleString()} is below the AED 3,000,000 SBR threshold. Elect SBR in CT Return by ${ctDue} 2026.`:`Revenue AED ${revenue.toLocaleString()} exceeds the AED 3,000,000 SBR threshold.`}
   </div>
-
+ 
   <div class="section-title" style="margin-top:20px">CT Taxable Income Computation</div>
   <table>
     <thead><tr><th>Item</th><th>Article</th><th>Amount (AED)</th></tr></thead>
@@ -12765,7 +12867,7 @@ tr.less-row td { color:#059669; }
       <tr class="total"><td><strong>CT Payable</strong></td><td>—</td><td style="font-family:monospace"><strong>AED ${ctPayable.toLocaleString()}</strong></td></tr>
     </tbody>
   </table>
-
+ 
   <div style="font-size:10px;color:#9CA3AF;margin-top:16px;line-height:1.6">
     <strong>Disclaimer:</strong> This report is for CT compliance tracking. Final CT Return filing should be reviewed by a licensed UAE tax advisor. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
   </div>
@@ -12777,7 +12879,7 @@ tr.less-row td { color:#059669; }
 </div>
 </body></html>`;
 }
-
+ 
 // ─── PDF REPORT GENERATOR ────────────────────────────────────────────────────
 function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
   const pack      = client?.client_pack || client?.clientPack || "startup";
@@ -12788,7 +12890,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
   const accentColor = pack === "msme" ? "#059669" : pack === "corporate" ? "#7C3AED" : "#2563EB";
   const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" });
   const now       = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
-
+ 
   // KPI cards — 2 per row grid
   const kpiCards  = (kpis || []).map(k => {
     const isUp = k.trend === "up";
@@ -12800,7 +12902,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       </div>
     </div>`;
   }).join("");
-
+ 
   const plData    = reportData?.pl || {};
   const plKeys    = ["revenue","cogs","gross_profit","opex","ebitda","pat"];
   const plLabels  = { revenue:"Revenue", cogs:"Cost of Goods Sold", gross_profit:"Gross Profit",
@@ -12811,7 +12913,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       <td style="padding:10px 14px;font-size:13px;font-weight:700;color:#111827;font-family:monospace;border-bottom:1px solid #F3F4F6">${plData[k].actual}</td>
       <td style="padding:10px 14px;font-size:12px;color:#6B7280;font-family:monospace;border-bottom:1px solid #F3F4F6">${plData[k].prev || "—"}</td>
     </tr>`).join("");
-
+ 
   const pendingActions = (actions || []).filter(a => !a.done);
   const actionRows = pendingActions.map(a => {
     const col = a.priority==="High"?"#EF4444":a.priority==="Medium"?"#D97706":"#059669";
@@ -12823,7 +12925,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       </td>
     </tr>`;
   }).join("");
-
+ 
   const variance  = (reportData?.variance || []).filter(r => r.item && (r.budget || r.actual));
   const varianceRows = variance.map((r,i) => `
     <tr style="background:${i%2===0?"#fff":"#f9fafb"}">
@@ -12834,7 +12936,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
         <span style="color:${r.fav?"#059669":"#EF4444"};font-weight:700;font-size:12px">${r.fav?"✓ Favourable":"✗ Unfavourable"}</span>
       </td>
     </tr>`).join("");
-
+ 
   const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -12851,10 +12953,10 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
 </style>
 </head>
 <body>
-
+ 
 <!-- COVER PAGE -->
 <div class="page-break" style="background:linear-gradient(135deg,${coverColor});min-height:100vh;padding:0;display:flex;flex-direction:column;-webkit-print-color-adjust:exact;print-color-adjust:exact">
-
+ 
   <!-- Top bar -->
   <div style="padding:32px 48px 0;display:flex;justify-content:space-between;align-items:center">
     <div style="display:flex;align-items:center;gap:10px">
@@ -12862,7 +12964,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
     </div>
     <span style="font-size:10px;font-weight:700;color:rgba(255,255,255,0.6);letter-spacing:0.1em;text-transform:uppercase;background:rgba(255,255,255,0.12);padding:5px 14px;border-radius:100px;border:1px solid rgba(255,255,255,0.2)">CONFIDENTIAL</span>
   </div>
-
+ 
   <!-- Main content -->
   <div style="flex:1;display:flex;flex-direction:column;justify-content:center;padding:48px 48px 0">
     <div style="font-size:11px;font-weight:700;color:rgba(255,255,255,0.5);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:16px">${packLabel}</div>
@@ -12886,17 +12988,17 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       </div>
     </div>
   </div>
-
+ 
   <!-- Bottom bar -->
   <div style="padding:24px 48px;border-top:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;margin-top:48px">
     <div style="font-size:10px;color:rgba(255,255,255,0.4)">garima@finzzup.com · finzzup.com</div>
     <div style="font-size:10px;color:rgba(255,255,255,0.4)">This report is confidential and intended solely for ${client.name}</div>
   </div>
 </div>
-
+ 
 <!-- CONTENT PAGES -->
 <div style="padding:0 48px">
-
+ 
   ${garimaNote ? `
   <!-- Garima's Note -->
   <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
@@ -12909,7 +13011,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       <div style="font-size:13px;color:#1f2937;line-height:1.8">${garimaNote}</div>
     </div>
   </div>` : ""}
-
+ 
   <!-- KPI Snapshot -->
   <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
@@ -12921,7 +13023,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       ${kpiCards || `<div style="color:#9CA3AF;font-style:italic">No KPI data available.</div>`}
     </div>
   </div>
-
+ 
   ${plRows ? `
   <!-- P&L Summary -->
   <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
@@ -12941,7 +13043,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       <tbody>${plRows}</tbody>
     </table>
   </div>` : ""}
-
+ 
   ${varianceRows ? `
   <!-- Budget vs Actual -->
   <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
@@ -12961,7 +13063,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       <tbody>${varianceRows}</tbody>
     </table>
   </div>` : ""}
-
+ 
   ${pendingActions.length > 0 ? `
   <!-- Action Items -->
   <div class="no-break" style="padding:36px 0 28px;border-bottom:1px solid #E5E7EB">
@@ -12980,9 +13082,9 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       <tbody>${actionRows}</tbody>
     </table>
   </div>` : ""}
-
+ 
 </div>
-
+ 
 <!-- FOOTER -->
 <div style="margin:40px 48px 0;padding:20px 0;border-top:2px solid #E5E7EB;display:flex;justify-content:space-between;align-items:center">
   <div style="display:flex;align-items:center;gap:8px">
@@ -12993,25 +13095,25 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
   <div style="font-size:10px;color:#9CA3AF">Confidential — ${client.name}, ${client.company} — ${now}</div>
 </div>
 <div style="height:32px"></div>
-
+ 
 </body></html>`;
-
+ 
   return html;
 }
-
+ 
 // Save report as HTML file to Supabase + insert documents record
 async function saveReportAsDocument({ client, kpis, garimaNote, reportData, actions }) {
   const pack      = client?.client_pack || client?.clientPack || "startup";
   const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
   const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" });
-
+ 
   const html     = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
   const blob     = new Blob([html], { type:"text/html" });
   const sizeKB   = (blob.size / 1024).toFixed(0) + " KB";
-
+ 
   // Store as data URL directly in DB — no storage upload needed, always renders correctly
   const dataUrl  = "data:text/html;charset=utf-8," + encodeURIComponent(html);
-
+ 
   const { data: docRow, error: dbErr } = await supabase.from("documents").insert({
     client_id:   client.id,
     name:        `${packLabel} — ${month}`,
@@ -13020,11 +13122,11 @@ async function saveReportAsDocument({ client, kpis, garimaNote, reportData, acti
     uploaded_by: client.name,
     created_at:  new Date().toISOString(),
   }).select().single();
-
+ 
   if (dbErr) throw new Error("DB record failed: " + dbErr.message);
   return docRow;
 }
-
+ 
 function MyReport({ client, reportData, kpis }) {
   const pack = client?.client_pack || client?.clientPack || "startup";
   const packLabel = pack === "msme" ? "MSME Report" : pack === "corporate" ? "Board Report" : "CFO Report";
@@ -13058,7 +13160,7 @@ function MyReport({ client, reportData, kpis }) {
     </div>
   );
 }
-
+ 
 function getPageTitle(page, client) {
   const pack = client?.client_pack || client?.clientPack || "startup";
   const reportLabel = pack === "msme" ? "MSME Report"
@@ -13081,14 +13183,14 @@ function getPageTitle(page, client) {
   };
   return map[page] || "Dashboard";
 }
-
-
+ 
+ 
 // ─── REPORT PDF BAR ───────────────────────────────────────────────────────────
 function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSaved }) {
   const [saving,   setSaving]   = React.useState(false);
   const [saved,    setSavedMsg] = React.useState(false);
   const [error,    setError]    = React.useState("");
-
+ 
   const handleExecSummary = () => {
     const html = generateExecSummaryPDF({ client, reportData, kpis });
     const w = window.open("","_blank");
@@ -13104,7 +13206,7 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
     if (win) win.onload = () => setTimeout(() => win.print(), 500);
     setTimeout(() => URL.revokeObjectURL(url), 15000);
   };
-
+ 
   const handleSave = async () => {
     setSaving(true); setError(""); setSavedMsg(false);
     try {
@@ -13118,11 +13220,11 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
     }
     setSaving(false);
   };
-
+ 
   const pack      = client?.client_pack || client?.clientPack || "startup";
   const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
   const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"});
-
+ 
   return (
     <div style={{ display:"flex", alignItems:"center", justifyContent:"flex-end",
       padding:"10px 24px 0", gap:8, flexWrap:"wrap" }}>
@@ -13168,11 +13270,11 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
     </div>
   );
 }
-
+ 
 function Portal({ client, onLogout }) {
   const [page,      setPage]      = useState("overview");
   const [collapsed, setCollapsed] = useState(false);
-
+ 
   // ── Live data state (only populated for real/non-demo clients) ──
   const [liveKpis,        setLiveKpis]        = useState(null);
   const [liveActions,     setLiveActions]     = useState(null);
@@ -13180,10 +13282,10 @@ function Portal({ client, onLogout }) {
   const [liveInvoices,    setLiveInvoices]    = useState(null);
   const [liveReportData,  setLiveReportData]  = useState(null);
   const [dataLoading,     setDataLoading]     = useState(false);
-
+ 
   const isDemo = client?.isDemo === true;
   const [reportSaveKey, setReportSaveKey] = React.useState(0);
-
+ 
   // Fetch all live data from Supabase when a real client logs in
   useEffect(() => {
     if (isDemo || !client?.id) return;
@@ -13211,7 +13313,7 @@ function Portal({ client, onLogout }) {
     };
     fetchAll();
   }, [client?.id, isDemo]);
-
+ 
   // Build merged KPI array — live data + prev values from report_data
   const prevK = liveReportData?.prevKpis || {};
   const resolvedKpis = isUAE(client) ? KPIs_UAE
@@ -13229,7 +13331,7 @@ function Portal({ client, onLogout }) {
     { label: client?.client_pack==="msme"?"Cash Conversion Cycle":"ARR",
       value:liveKpis.arr||"—", prev:prevK.arr||"—", trend:"up", color:C.green, bg:"#E8FAF3", icon: client?.client_pack==="msme"?"🔄":"🎯" },
   ] : KPIs;
-
+ 
   const resolvedActions = isUAE(client)
     ? ACTIONS_BY_PACK.uae
     : (!isDemo && liveActions) ? liveActions : (ACTIONS_BY_PACK[client?.client_pack||"startup"] || ACTIONS);
@@ -13336,7 +13438,7 @@ function Portal({ client, onLogout }) {
       { label:"Unit Economics",          score:"78", comment:"CAC payback 8mo (was 18mo) — major improvement" },
     ],
   };
-
+ 
   // UAE-specific demo report data
   const DEMO_REPORT_DATA_UAE = {
     ...DEMO_REPORT_DATA,
@@ -13394,7 +13496,7 @@ function Portal({ client, onLogout }) {
       { label:"Cash Position",    score:"80", comment:"8.3 months runway — healthy buffer" },
     ],
   };
-
+ 
   const resolvedReportData = isUAE(client)
     ? ((!isDemo && liveReportData) ? liveReportData : DEMO_REPORT_DATA_UAE)
     : ((!isDemo && liveReportData) ? liveReportData : DEMO_REPORT_DATA);
@@ -13402,7 +13504,7 @@ function Portal({ client, onLogout }) {
     : isUAE(client)
       ? "Q1 2026 closed strongly — AED 1.85M revenue, up 32% YoY, with gross margin at 45% (best quarter since inception). Four things need your attention this week: (1) VAT return for Q1 is due 28 April — AED 92.5K payable to FTA. Confirm this is sitting in your Emirates NBD current account and not locked in the Mashreq term deposit maturing 15 April. (2) DMCC audited financial statements must be submitted by 30 April to maintain QFZP status — your audit firm needs your signed management accounts by 22 April. Do not miss this: losing QFZP status triggers 9% CT retroactively. (3) Your mainland UAE sales are at 8% of revenue — above the 5% de-minimis threshold. Review the two mainland contracts due for renewal in Q2 and restructure them as DMCC-to-DMCC to bring this back under 5%. (4) SBR election must be made in your CT return by 30 September — I'll prepare this. Confirm your Q2 revenue won't cross AED 3M YTD."
       : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
-
+ 
   const pages = {
     overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData}/>,
     dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData}/>,
@@ -13427,7 +13529,7 @@ function Portal({ client, onLogout }) {
     qfzp:            <QFZPModule            client={client} reportData={resolvedReportData}/>,
     auditready:      <AuditReadiness        client={client} reportData={resolvedReportData}/>,
   };
-
+ 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
       {dataLoading && !isDemo && (
@@ -13480,7 +13582,7 @@ function Portal({ client, onLogout }) {
     </div>
   );
 }
-
+ 
 // ─── AI CHATBOT ───────────────────────────────────────────────────────────────
 function AIChatbot({ client, reportData, kpis }) {
   const GARIMA_AVATAR = "data:image/png;base64,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";
@@ -13492,24 +13594,24 @@ function AIChatbot({ client, reportData, kpis }) {
   const [loading, setLoading] = React.useState(false);
   const [showBubble, setShowBubble] = React.useState(true);
   const bottomRef = React.useRef(null);
-
+ 
   // Hide welcome bubble after 4s
   React.useEffect(() => {
     const t = setTimeout(() => setShowBubble(false), 4000);
     return () => clearTimeout(t);
   }, []);
-
+ 
   React.useEffect(() => {
     if (open) bottomRef.current?.scrollIntoView({ behavior:"smooth" });
   }, [msgs, open]);
-
+ 
   const sendMessage = async () => {
     const text = input.trim();
     if (!text || loading) return;
     setInput("");
     setMsgs(m => [...m, { role:"user", text }]);
     setLoading(true);
-
+ 
     // Build context from client data
     const ctx = [
       client?.name ? `Client: ${client.name}` : "",
@@ -13520,7 +13622,7 @@ function AIChatbot({ client, reportData, kpis }) {
       reportData?.pl?.pat?.actual ? `Net Profit: ${reportData.pl.pat.actual}` : "",
       (kpis||[]).length ? `KPIs: ${(kpis||[]).map(k=>`${k.label}=${k.value}`).join(", ")}` : "",
     ].filter(Boolean).join("\n");
-
+ 
     try {
       const res = await fetch("/api/chat", {
         method:"POST",
@@ -13544,7 +13646,7 @@ function AIChatbot({ client, reportData, kpis }) {
     }
     setLoading(false);
   };
-
+ 
   // Avatar SVG — abstract AI
   const Avatar = ({ size=36, pulse=false }) => (
     <div style={{
@@ -13558,7 +13660,7 @@ function AIChatbot({ client, reportData, kpis }) {
       <img src={GARIMA_AVATAR} alt="Garima" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top" }}/>
     </div>
   );
-
+ 
   return (
     <>
       {/* Welcome bubble */}
@@ -13582,7 +13684,7 @@ function AIChatbot({ client, reportData, kpis }) {
           }}/>
         </div>
       )}
-
+ 
       {/* Floating button */}
       {!open && (
         <button onClick={() => { setOpen(true); setShowBubble(false); }} style={{
@@ -13596,7 +13698,7 @@ function AIChatbot({ client, reportData, kpis }) {
           <img src={GARIMA_AVATAR} alt="Ask Garima" style={{ width:"100%", height:"100%", objectFit:"cover", objectPosition:"center top" }}/>
         </button>
       )}
-
+ 
       {/* Chat window */}
       {open && (
         <div style={{
@@ -13624,7 +13726,7 @@ function AIChatbot({ client, reportData, kpis }) {
               display:"flex", alignItems:"center", justifyContent:"center"
             }}>×</button>
           </div>
-
+ 
           {/* Messages */}
           <div style={{ flex:1, overflowY:"auto", padding:"16px 14px", display:"flex", flexDirection:"column", gap:12 }}>
             {msgs.map((m, i) => (
@@ -13654,7 +13756,7 @@ function AIChatbot({ client, reportData, kpis }) {
                 </div>
               </div>
             ))}
-
+ 
             {loading && (
               <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
                 <Avatar size={28}/>
@@ -13672,7 +13774,7 @@ function AIChatbot({ client, reportData, kpis }) {
             )}
             <div ref={bottomRef}/>
           </div>
-
+ 
           {/* Input */}
           <div style={{
             padding:"12px 14px", borderTop:`1px solid ${C.border}`,
@@ -13713,11 +13815,11 @@ function AIChatbot({ client, reportData, kpis }) {
     </>
   );
 }
-
+ 
 // ─── APP ROOT ─────────────────────────────────────────────────────────────────
-
+ 
 // ─── ADMIN PANEL ──────────────────────────────────────────────────────────────
-
+ 
 // ─── ADMIN SHARED COMPONENTS (defined outside to prevent focus loss on re-render) ─
 function AdminInput({ label, val, onChange, type="text", placeholder="", mono=false, C, F, FM }) {
   const [local, setLocal] = React.useState(val ?? "");
@@ -13761,7 +13863,7 @@ const AdminSaveBtn = ({ onClick, loading, saved, label="Save Changes", F }) => (
     {loading ? "Saving…" : saved ? "✅ Saved!" : label}
   </button>
 );
-
+ 
 // ─── INLINE INPUT — for table cells, commits on blur only ─────────────────────
 function InlineInput({ value, onCommit, placeholder="", style={} }) {
   const [local, setLocal] = React.useState(value ?? "");
@@ -13779,12 +13881,12 @@ function InlineInput({ value, onCommit, placeholder="", style={} }) {
     />
   );
 }
-
+ 
 function AdminLogin({ onLogin }) {
   const [form, setForm] = useState({ email:"", password:"" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-
+ 
   const signIn = async () => {
     if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
     setLoading(true); setError("");
@@ -13799,7 +13901,7 @@ function AdminLogin({ onLogin }) {
     if (!adminData) { await supabase.auth.signOut(); setError("Not authorised as admin."); return; }
     onLogin(adminData);
   };
-
+ 
   return (
     <div style={{ minHeight:"100vh", background:"#0A1128", display:"flex", alignItems:"center",
       justifyContent:"center", padding:20, fontFamily:F }}>
@@ -13848,7 +13950,7 @@ function AdminLogin({ onLogin }) {
     </div>
   );
 }
-
+ 
 function AdminPanel({ admin, onLogout }) {
   const [tab, setTab]         = useState("clients");
   const [clients, setClients] = useState([]);
@@ -13858,35 +13960,35 @@ function AdminPanel({ admin, onLogout }) {
   const [aiGenerating, setAiGen]    = useState(false);
   const [aiDraft, setAiDraft]       = useState(null);
   const [aiError, setAiError]       = useState("");
-
+ 
   // KPI edit state
   const [kpis, setKpis] = useState({
     month:"", revenue:"", gross_margin:"", cash_balance:"",
     burn_rate:"", runway:"", arr:"", garima_note:""
   });
-
+ 
   // Action items state
   const [actions, setActions] = useState([]);
   const [newAction, setNewAction] = useState({ text:"", priority:"High", month:"" });
-
+ 
   // New client state
   const [newClient, setNewClient] = useState({
     name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both"
   });
-
+ 
   // Engagement state
   const [engagement, setEngagement] = useState({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
   const [requests,   setRequests]   = useState([]);
   const [reqLoading, setReqLoading] = useState(false);
   const [docs, setDocs]           = useState([]);
   const [docLoading, setDocLoading] = useState(false);
-
+ 
   // Invoice state
   const [invoices,    setInvoices]    = useState([]);
   const [newInvoice,  setNewInvoice]  = useState({
     invoice_number:"", description:"", amount:"", due_date:"", status:"unpaid"
   });
-
+ 
   // Report data state — cash flow, prev KPIs, pack scores, benchmarks, checklists
   const [reportData, setReportData] = useState(null);
   const defaultReportData = (pack) => ({
@@ -14036,9 +14138,9 @@ function AdminPanel({ admin, onLogout }) {
       { item:"", note:"", favorable:false },
     ],
   });
-
+ 
   useEffect(() => { fetchClients(); }, []);
-
+ 
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending:false });
     setClients(data || []);
@@ -14046,7 +14148,7 @@ function AdminPanel({ admin, onLogout }) {
     const { data: allReqs } = await supabase.from("requests").select("*").order("created_at", { ascending:false });
     if (allReqs) setRequests(allReqs);
   };
-
+ 
   const selectClient = async (c) => {
     setSelected(c); setSaved(false);
     // Load latest KPIs
@@ -14094,7 +14196,7 @@ function AdminPanel({ admin, onLogout }) {
     }
     else setReportData(defaults);
   };
-
+ 
   const saveKPIs = async () => {
     if (!selected) return;
     setLoading(true);
@@ -14108,7 +14210,7 @@ function AdminPanel({ admin, onLogout }) {
     setLoading(false); setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
-
+ 
   const addAction = async () => {
     if (!selected || !newAction.text) return;
     const { data } = await supabase.from("action_items")
@@ -14116,18 +14218,18 @@ function AdminPanel({ admin, onLogout }) {
     if (data) setActions(prev => [data, ...prev]);
     setNewAction({ text:"", priority:"High", month:newAction.month });
   };
-
+ 
   const toggleAction = async (a) => {
     const newDone = !a.done;
     await supabase.from("action_items").update({ done: newDone }).eq("id", a.id);
     setActions(prev => prev.map(x => x.id===a.id ? {...x, done:newDone} : x));
   };
-
+ 
   const deleteAction = async (id) => {
     await supabase.from("action_items").delete().eq("id", id);
     setActions(prev => prev.filter(x => x.id!==id));
   };
-
+ 
   const saveEngagement = async () => {
     if (!selected) return;
     setLoading(true);
@@ -14141,7 +14243,7 @@ function AdminPanel({ admin, onLogout }) {
     setLoading(false); setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   };
-
+ 
   const saveReportData = async () => {
     if (!selected || !reportData) return;
     setLoading(true);
@@ -14155,7 +14257,7 @@ function AdminPanel({ admin, onLogout }) {
     }
     setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
   };
-
+ 
   const addInvoice = async () => {
     if (!selected || !newInvoice.invoice_number || !newInvoice.amount) return;
     setLoading(true);
@@ -14166,13 +14268,13 @@ function AdminPanel({ admin, onLogout }) {
     setNewInvoice({ invoice_number:"", description:"", amount:"", due_date:"", status:"unpaid" });
     setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
   };
-
+ 
   const deleteInvoice = async (id) => {
     if (!window.confirm("Delete this invoice?")) return;
     await supabase.from("invoices").delete().eq("id", id);
     setInvoices(prev => prev.filter(x => x.id !== id));
   };
-
+ 
   const markInvoicePaid = async (inv) => {
     const newStatus = inv.status === "paid" ? "unpaid" : "paid";
     await supabase.from("invoices").update({
@@ -14181,13 +14283,13 @@ function AdminPanel({ admin, onLogout }) {
     }).eq("id", inv.id);
     setInvoices(prev => prev.map(x => x.id===inv.id ? {...x, status:newStatus} : x));
   };
-
+ 
   const toggleClientActive = async (c) => {
     await supabase.from("clients").update({ active: !c.active }).eq("id", c.id);
     setClients(prev => prev.map(x => x.id===c.id ? {...x, active:!x.active} : x));
     if (selected?.id === c.id) setSelected(s => ({...s, active:!s.active}));
   };
-
+ 
   const createClient = async () => {
     if (!newClient.name || !newClient.email || !newClient.invite_code) return;
     const { data, error } = await supabase.from("clients").insert(newClient).select().single();
@@ -14196,13 +14298,13 @@ function AdminPanel({ admin, onLogout }) {
     setNewClient({ name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both" });
     setTab("clients");
   };
-
+ 
   const genCode = () => {
     const prefix = newClient.company?.slice(0,4).toUpperCase().replace(/\s/g,"") || "CLIE";
     const year = new Date().getFullYear();
     setNewClient(c => ({ ...c, invite_code: `${prefix}${year}` }));
   };
-
+ 
   const ADMIN_TABS = [
     { id:"clients",    icon:"👥", label:"All Clients"     },
     { id:"addclient",  icon:"➕", label:"Add Client"      },
@@ -14218,9 +14320,9 @@ function AdminPanel({ admin, onLogout }) {
     { id:"requests",   icon:"📩", label:"Requests"        },
     { id:"market",     icon:"🌐", label:"Market Intel"    },
   ];
-
+ 
   // Stable component references — prevents remount/focus-loss on every render
-
+ 
   // ── AUTO-CALCULATE RATIOS FROM ENTERED DATA ─────────────────────────────────
   const calcRatios = () => {
     if (!reportData) return {};
@@ -14236,7 +14338,7 @@ function AdminPanel({ admin, onLogout }) {
       arr:           kpis?.arr           || "",
     };
     var calc   = {};
-
+ 
     // Helper: parse numeric value from strings like "₹84L", "₹2.1 Cr", "41%", "4.2x"
     var parse = (val) => {
       if (!val) return null;
@@ -14247,7 +14349,7 @@ function AdminPanel({ admin, onLogout }) {
       if (s.toLowerCase().includes("%"))   n = n;       // keep as %
       return n;
     };
-
+ 
     var revenue   = parse(pl.revenue)      || parse(kv.revenue);
     var gp        = parse(pl.grossProfit);
     var gpMargin  = parse(pl.gpMargin);
@@ -14272,38 +14374,38 @@ function AdminPanel({ admin, onLogout }) {
     var momGrowth = parse(rd.momGrowth);
     var churn     = parse(rd.churnRate);
     var nrr       = parse(rd.nrr);
-
+ 
     // ── P&L DERIVED ──
     if (revenue && gp)          calc.gpMarginCalc      = ((gp/revenue)*100).toFixed(1) + "%";
     if (ebitda && revenue)      calc.ebitdaMarginCalc  = ((ebitda/revenue)*100).toFixed(1) + "%";
     if (pat && revenue)         calc.netMarginCalc     = ((pat/revenue)*100).toFixed(1) + "%";
-
+ 
     // ── DEBT RATIOS ──
     if (ebitda && interest && interest > 0)
       calc.interestCoverageCalc = (ebitda / interest).toFixed(2) + "x";
-
+ 
     if (debt && ebitda && ebitda > 0)
       calc.debtEbitdaCalc       = (debt / ebitda).toFixed(2) + "x";
-
+ 
     if (debt && pat && pat > 0 && interest)
       calc.dscrCalc             = ((ebitda - interest) / (interest)).toFixed(2) + "x";
-
+ 
     if (operCF && interest && interest > 0)
       calc.dscrCalc             = (operCF / interest).toFixed(2) + "x"; // override with actual CF
-
+ 
     // ── WORKING CAPITAL ──
     if (ddays !== null && cdays !== null && idays !== null)
       calc.cccCalc              = (ddays - cdays + idays).toFixed(0) + " days";
     else if (ddays !== null && cdays !== null)
       calc.cccCalc              = (ddays - cdays).toFixed(0) + " days";
-
+ 
     if (revenue && debtors)
       calc.debtorDaysCalc       = ((debtors / (revenue/30))).toFixed(0) + " days";
     if (revenue && creditors)
       calc.creditorDaysCalc     = ((creditors / (revenue/30))).toFixed(0) + " days";
     if (revenue && inventory)
       calc.inventoryDaysCalc    = ((inventory / (revenue/30))).toFixed(0) + " days";
-
+ 
     // ── STARTUP UNIT ECONOMICS ──
     // Calculate CAC and LTV from raw inputs if available
     var mktgSpend    = parse(rd.totalMktgSpend);
@@ -14312,7 +14414,7 @@ function AdminPanel({ admin, onLogout }) {
     var retentionMos = parse(rd.avgRetentionMos);
     var derivedCac   = (mktgSpend && newCusts && newCusts > 0) ? mktgSpend / newCusts : cac;
     var derivedLtv   = (avgRevCust && retentionMos) ? avgRevCust * retentionMos / 12 : ltv;
-
+ 
     if (derivedCac && !cac)
       calc.cacCalc = "Rs." + Math.round(derivedCac * 100).toLocaleString("en-IN");
     if (derivedLtv && !ltv)
@@ -14323,31 +14425,31 @@ function AdminPanel({ admin, onLogout }) {
       var margin = parse(pl.gpMargin) || 40;
       calc.cacPaybackCalc = (((derivedCac||cac) / (revenue * margin / 100)) * 12).toFixed(0) + " months";
     }
-
+ 
     if (burn && arr && arr > 0)
       calc.burnMultipleCalc     = (burn / (arr / 12)).toFixed(2) + "x";
-
+ 
     // ── RUNWAY CHECK ──
     if (cash && burn && burn > 0 && !runway)
       calc.runwayCalc           = (cash / burn).toFixed(1) + " months";
-
+ 
     return calc;
   };
-
+ 
   // ── AI ANALYSIS GENERATOR ──────────────────────────────────────────────────
   const generateAnalysis = async () => {
     if (!selected) return;
     setAiGen(true);
     setAiError("");
     setAiDraft(null);
-
+ 
     const pack    = selected.client_pack || "startup";
     const company = selected.company || selected.name || "the client";
     const month   = reportData?.monthLabel || "current month";
-
+ 
     // Auto-calculate ratios from entered data
     const calc = calcRatios();
-
+ 
     // Auto-apply calculated ratios to reportData fields that aren't manually set
     const autoFields = {};
     if (calc.interestCoverageCalc && !reportData?.interestCoverage) autoFields.interestCoverage = calc.interestCoverageCalc;
@@ -14361,7 +14463,7 @@ function AdminPanel({ admin, onLogout }) {
     if (calc.burnMultipleCalc && !reportData?.burnMultiple)         autoFields.burnMultiple     = calc.burnMultipleCalc;
     if (calc.cacPaybackCalc && !reportData?.cacPayback)             autoFields.cacPayback       = calc.cacPaybackCalc;
     if (Object.keys(autoFields).length > 0) setReportData(r => ({...r, ...autoFields}));
-
+ 
     // Build a rich context from all available data
     const kpiSummary = [
       kpis.revenue      && `Revenue: ${kpis.revenue}`,
@@ -14371,7 +14473,7 @@ function AdminPanel({ admin, onLogout }) {
       kpis.runway       && `Runway: ${kpis.runway}`,
       kpis.arr          && `ARR: ${kpis.arr}`,
     ].filter(Boolean).join(", ");
-
+ 
     const plSummary = reportData?.plInputs ? [
       reportData.plInputs.revenue      && `Revenue: ${reportData.plInputs.revenue}`,
       reportData.plInputs.ebitda        && `EBITDA: ${reportData.plInputs.ebitda}`,
@@ -14379,7 +14481,7 @@ function AdminPanel({ admin, onLogout }) {
       reportData.plInputs.gpMargin      && `GP Margin: ${reportData.plInputs.gpMargin}`,
       reportData.plInputs.ebitdaMargin  && `EBITDA Margin: ${reportData.plInputs.ebitdaMargin}`,
     ].filter(Boolean).join(", ") : "";
-
+ 
     const debtSummary = [
       reportData?.existingDebt      && `Existing Debt: ${reportData.existingDebt}`,
       reportData?.dscr              && `DSCR: ${reportData.dscr}`,
@@ -14387,26 +14489,26 @@ function AdminPanel({ admin, onLogout }) {
       reportData?.interestCoverage  && `Interest Coverage: ${reportData.interestCoverage}`,
       reportData?.debtEbitda        && `Debt/EBITDA: ${reportData.debtEbitda}`,
     ].filter(Boolean).join(", ");
-
+ 
     const wcSummary = [
       reportData?.debtorDays    && `Debtor Days: ${reportData.debtorDays}`,
       reportData?.creditorDays  && `Creditor Days: ${reportData.creditorDays}`,
       reportData?.ccc           && `CCC: ${reportData.ccc}`,
       reportData?.workingCapital&& `Working Capital: ${reportData.workingCapital}`,
     ].filter(Boolean).join(", ");
-
+ 
     const packContext = pack === "startup"
       ? `This is a startup on a CFO advisory pack. Key startup concerns: burn rate, runway, fundraising readiness, unit economics.`
       : pack === "msme"
       ? `This is an MSME on a working capital and bank finance pack. Key MSME concerns: collections, debtor days, bank loan eligibility, cash conversion cycle.`
       : `This is a corporate entity on a board reporting pack. Key concerns: board-ready financials, IPO readiness, governance, Ind AS compliance.`;
-
-
+ 
+ 
     // Build calculated ratios summary for prompt
     const calcSummary = Object.entries(calc)
       .map(([k,v]) => `${k.replace("Calc","")}: ${v}`)
       .join(", ");
-
+ 
     // Fetch live market context for AI
     let marketContext = "";
     try {
@@ -14422,11 +14524,11 @@ function AdminPanel({ admin, onLogout }) {
         sar && `SAR/INR: ₹${sar}`,
       ].filter(Boolean).join(", ");
     } catch(e) { /* non-critical */ }
-
+ 
     const prompt = `You are Garima Agarwal, a Chartered Accountant and CFO advisor writing monthly financial analysis for your client ${company} for ${month}.
-
+ 
 ${packContext}
-
+ 
 Financial data for ${month}:
 ${kpiSummary ? `KPIs: ${kpiSummary}` : ""}
 ${plSummary ? `P&L: ${plSummary}` : ""}
@@ -14438,9 +14540,9 @@ ${calcSummary ? `Auto-calculated ratios: ${calcSummary}` : ""}
 ${reportData?.loanAmountSought ? `Loan sought: ${reportData.loanAmountSought} for ${reportData.loanPurpose||"unspecified purpose"}` : ""}
 ${marketContext ? `Current market context: ${marketContext}` : ""}
 ${pack==="startup" && reportData?.cac ? `Unit economics entered: CAC ${reportData.cac}, LTV ${reportData.ltv||"—"}` : ""}
-
+ 
 Write the following analyses in Garima's voice — direct, specific, actionable. Use Indian financial context (lakhs, crores). Do NOT use generic filler. Every sentence should refer to actual numbers.
-
+ 
 Respond ONLY with a valid JSON object (no markdown, no backticks) with these exact keys:
 {
   "garimaNote": "2-3 sentence monthly dashboard note — what happened, why it matters, what to watch",
@@ -14457,7 +14559,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
   "loanNote": "1-2 sentences on loan readiness assessment",
   "forecastNote": "2-3 sentences on 3-month forward outlook"
 }`;
-
+ 
     try {
       const apiKey = true; // Key is handled server-side via /api/chat
       if (!apiKey) {
@@ -14492,7 +14594,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
       setAiGen(false);
     }
   };
-
+ 
   // Convert AI string response for varianceCommentary into the array format the UI expects
   const normalizeAiDraft = (draft) => {
     if (!draft) return draft;
@@ -14512,7 +14614,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
     }
     return out;
   };
-
+ 
   const applyDraft = (field) => {
     if (!aiDraft?.[field]) return;
     const normalized = normalizeAiDraft({[field]: aiDraft[field]});
@@ -14524,7 +14626,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
     setReportData(r => ({...r, ...updates}));
     if (field === "garimaNote") setKpis(k => ({...k, garima_note: aiDraft[field]}));
   };
-
+ 
   const applyAllDraft = () => {
     if (!aiDraft) return;
     const mapped = normalizeAiDraft({...aiDraft});
@@ -14539,8 +14641,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
     setAiDraft(null);
     setSaved(false);
   };
-
-
+ 
+ 
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
       {/* Admin Sidebar */}
@@ -14598,7 +14700,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
           </button>
         </div>
       </aside>
-
+ 
       {/* Main content */}
       <div style={{ flex:1, overflowY:"auto" }}>
         {/* Header */}
@@ -14616,9 +14718,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
             </div>
           )}
         </div>
-
+ 
         <div style={{ padding:24 }}>
-
+ 
           {/* ── ALL CLIENTS ── */}
           {tab === "clients" && (
             <div>
@@ -14675,7 +14777,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               )}
             </div>
           )}
-
+ 
           {/* ── ADD CLIENT ── */}
           {tab === "addclient" && (
             <Card style={{ maxWidth:520 }}>
@@ -14766,7 +14868,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               </div>
             </Card>
           )}
-
+ 
           {/* ── UPDATE KPIs ── */}
           {tab === "kpis" && (
             <div style={{ maxWidth:600 }}>
@@ -14852,7 +14954,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               <style>{`.kpi-edit-grid{grid-template-columns:1fr 1fr!important}@media(max-width:480px){.kpi-edit-grid{grid-template-columns:1fr!important}}`}</style>
             </div>
           )}
-
+ 
           {/* ── ACTION ITEMS ── */}
           {tab === "actions" && (
             <div style={{ maxWidth:600 }}>
@@ -14915,7 +15017,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               </>)}
             </div>
           )}
-
+ 
           {/* ── VALUATION ENGAGEMENT ── */}
           {tab === "engagement" && (
             <div style={{ maxWidth:520 }}>
@@ -14973,7 +15075,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               )}
             </div>
           )}
-
+ 
           {/* ── INVOICES ── */}
           {tab === "invoices" && (
             <div style={{ maxWidth:620 }}>
@@ -15009,7 +15111,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </div>
                   <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={addInvoice} label="+ Create Invoice"/>
                 </Card>
-
+ 
                 {/* Invoice list */}
                 <Card>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
@@ -15063,7 +15165,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               </>)}
             </div>
           )}
-
+ 
           {/* ── REPORT DATA ── */}
           {tab === "reportdata" && (
             <div style={{ maxWidth:700 }}>
@@ -15073,9 +15175,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
                 </Card>
               ) : (<>
-
-
-
+ 
+ 
+ 
                 {/* ══ 1: MONTH LABEL ═══════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
@@ -15094,7 +15196,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onChange={v => setReportData(r => ({...r, monthLabel:v}))}
                     placeholder="e.g. February 2026"/>
                 </Card>
-
+ 
                 {/* ══ 2: PREVIOUS KPI VALUES ═══════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Previous Month KPI Values</div>
@@ -15131,7 +15233,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     ))}
                   </div>
                 </Card>
-
+ 
                 {/* ══ 3: P&L INPUTS ════════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>P&L Inputs</div>
@@ -15175,7 +15277,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* ══ 4: VARIANCE ANALYSIS ══════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Variance Analysis — Budget vs Actual</div>
@@ -15265,7 +15367,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     ))}
                   </div>
                 </Card>
-
+ 
                 {/* ══ EXISTING: CASH FLOW DATA ══════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -15316,7 +15418,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </table>
                   </div>
                 </Card>
-
+ 
                 {/* ══ EXISTING: PACK SCORE ══════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -15342,7 +15444,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* ══ LOAN READINESS SCORE (startup only) ══════════════════════ */}
                 {selected.client_pack === "startup" && (
                   <Card style={{ marginBottom:20, border:`1px solid ${C.blue}25`, background:`${C.blue}04` }}>
@@ -15379,7 +15481,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       placeholder="e.g. Your profile is strong for CGTMSE. We recommend completing the financial projections before applying to SBI Startup Branch."/>
                   </Card>
                 )}
-
+ 
                 {/* ══ DEBT RATIOS (msme + corporate) ═══════════════════════════ */}
                 {(selected.client_pack === "msme" || selected.client_pack === "corporate") && (
                   <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}03` }}>
@@ -15435,7 +15537,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   </Card>
                 )}
-
+ 
                 {/* ══ UNIT ECONOMICS (startup only) ══════════════════════════════ */}
                 {selected.client_pack === "startup" && (
                   <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}04` }}>
@@ -15443,7 +15545,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                       {"Shown on the client's Unit Economics tab. Fill in after reviewing their data. Leave blank to show — (not yet assessed)."}
                     </p>
-
+ 
                     <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Core Metrics"}</div>
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
                       {[
@@ -15462,7 +15564,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         </div>
                       ))}
                     </div>
-
+ 
                     <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Growth & Retention"}</div>
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
                       {[
@@ -15477,7 +15579,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           placeholder={f.placeholder} mono/>
                       ))}
                     </div>
-
+ 
                     <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Benchmarks (override defaults)"}</div>
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
                       {[
@@ -15494,14 +15596,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           placeholder={f.placeholder}/>
                       ))}
                     </div>
-
+ 
                     <AdminInput C={C} F={F} FM={FM} label="Garima's UE Assessment (shown to client)"
                       val={reportData.ueNote || ""}
                       onChange={v => setReportData(r => ({...r, ueNote:v}))}
                       placeholder="e.g. LTV:CAC of 7.1x is strong — well above Series A threshold. Focus on reducing CAC from ₹12K to ₹8K before next raise."/>
                   </Card>
                 )}
-
+ 
                 {/* ══ KPI BENCHMARKS ═══════════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"KPI Benchmarks"}</div>
@@ -15526,7 +15628,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     ))}
                   </div>
                 </Card>
-
+ 
                 {/* ══ MSME: WORKING CAPITAL FIELDS ══════════════════════════════ */}
                 {selected.client_pack === "msme" && (
                   <Card style={{ marginBottom:20 }}>
@@ -15565,7 +15667,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       placeholder="e.g. CCC improved to 37 days but still above target. Debtor concentration in top 3 clients (64% of AR) is the primary risk — diversify collections."/>
                   </Card>
                 )}
-
+ 
                 {/* ══ CORPORATE: GOVERNANCE FIELDS ═══════════════════════════════ */}
                 {selected.client_pack === "corporate" && (
                   <Card style={{ marginBottom:20 }}>
@@ -15639,7 +15741,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       placeholder="e.g. Company is broadly compliant. Key gaps: independent director appointment pending (required before next funding round) and Ind AS 116 lease capitalisation needs to be completed before audit sign-off."/>
                   </Card>
                 )}
-
+ 
                 {/* ══ CORPORATE: BOARD HIGHLIGHTS + IPO GAPS ══════════════════ */}
                 {selected.client_pack === "corporate" && (
                   <Card style={{ marginBottom:20 }}>
@@ -15657,7 +15759,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         onChange={v => setReportData(r => ({...r, [f.key]:v}))}
                         placeholder={f.placeholder}/>
                     ))}
-
+ 
                     <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, margin:"16px 0 10px" }}>{"IPO Gap Statuses"}</div>
                     <p style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:12, lineHeight:1.6 }}>{"Track progress on the 6 critical IPO readiness gaps."}</p>
                     <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
@@ -15687,7 +15789,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       placeholder="e.g. IPO readiness score at 65/100. Key focus for next 6 months: appoint independent director and initiate Ind AS restatement with auditors. Revenue scale is strong — the financial story is compelling once governance gaps are closed."/>
                   </Card>
                 )}
-
+ 
                 {/* ══ EXISTING: KEY METRICS ═════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>📋 Key Metrics Table</div>
@@ -15716,7 +15818,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* ══ EXISTING: CHECKLIST ═══════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -15743,7 +15845,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* ══ EXISTING: MARKET BENCHMARKS ══════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Market Benchmarks</div>
@@ -15776,7 +15878,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* ══ NOTES ═══════════════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Garima's Monthly Note</div>
@@ -15806,7 +15908,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onFocus={e=>e.target.style.borderColor=C.amber}
                     onBlur={e=>e.target.style.borderColor=C.border}/>
                 </Card>
-
+ 
                 {/* ══ 3-MONTH FORECAST ════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"🔭 3-Month Forward View"}</div>
@@ -15845,7 +15947,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     ))}
                   </div>
                 </Card>
-
+ 
                 {/* ══ EXECUTIVE SUMMARY ════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"📋 Board Executive Summary"}</div>
@@ -15872,7 +15974,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* Cash Pressure Points — startup only */}
                 {selected.client_pack === "startup" && (
                   <Card style={{ marginBottom:20, border:`1px solid ${C.red}20`, background:`${C.red}04` }}>
@@ -15892,7 +15994,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     ))}
                   </Card>
                 )}
-
+ 
                 {/* ══ RAW INPUTS → AUTO RATIOS ═══════════════════════════════ */}
                 {reportData && <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}04` }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -15901,7 +16003,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     {"Enter these from the client's books (Tally / bank statement). All ratios — DSCR, Interest Coverage, Debt/EBITDA, CCC, LTV:CAC, Burn Multiple — calculate automatically when you click Generate Analysis."}
                   </p>
-
+ 
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
                     {"Balance Sheet Inputs"}
                   </div>
@@ -15920,7 +16022,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         placeholder={f.placeholder} mono/>
                     ))}
                   </div>
-
+ 
                   {selected.client_pack === "startup" && (<>
                     <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
                       {"Unit Economics Inputs"}
@@ -15941,14 +16043,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       ))}
                     </div>
                   </>)}
-
+ 
                                     <div style={{ padding:"10px 14px", borderRadius:8,
                     background:`${C.teal}08`, border:`1px solid ${C.teal}20`,
                     fontFamily:F, fontSize:12, color:C.teal }}>
                     {"⚡ Ratios auto-calculate when you click Generate Analysis below"}
                   </div>
                 </Card>}
-
+ 
                 {/* ══ AI ANALYSIS GENERATOR ══════════════════════════════════ */}
                 {reportData && <Card style={{ marginBottom:20, border:`1.5px solid ${C.purple}30`,
                   background:`linear-gradient(135deg,${C.purple}06,${C.blue}04)` }}>
@@ -15967,7 +16069,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       </div>
                     </div>
                   </div>
-
+ 
                   <button onClick={generateAnalysis} disabled={aiGenerating}
                     style={{ width:"100%", padding:"12px", borderRadius:10, border:"none",
                       background: aiGenerating
@@ -15982,21 +16084,21 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       : "✨ Generate Analysis Draft"
                     }
                   </button>
-
+ 
                   {aiError && (
                     <div style={{ padding:"10px 14px", borderRadius:8, background:`${C.red}10`,
                       border:`1px solid ${C.red}20`, fontFamily:F, fontSize:12, color:C.red }}>
                       {aiError}
                     </div>
                   )}
-
+ 
                   {aiDraft && (
                     <div>
                       <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text,
                         marginBottom:12 }}>
                         {"📋 Draft ready — review and apply"}
                       </div>
-
+ 
                       {/* Show each generated field with apply button */}
                       {[
                         { key:"garimaNote",        label:"Dashboard Note",           field:"garimaNote"        },
@@ -16034,7 +16136,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           </div>
                         </div>
                       ))}
-
+ 
                       {/* Apply All button */}
                       <div style={{ display:"flex", gap:10, marginTop:4 }}>
                         <button onClick={applyAllDraft}
@@ -16054,12 +16156,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   )}
                 </Card>}
-
+ 
                 {reportData && <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
               </>)}
             </div>
           )}
-
+ 
           {/* ── UAE / TAX ── */}
           {tab === "uae" && (
             <div style={{ maxWidth:700 }}>
@@ -16079,7 +16181,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </p>
                 </Card>
               ) : (<>
-
+ 
                 {/* Client UAE Profile */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🇦🇪 UAE Client Profile</div>
@@ -16150,7 +16252,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       {value:"31 Mar", label:"31 March (India-aligned)"},
                     ]}/>
                 </Card>
-
+ 
                 {/* VAT Data */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🧾 VAT Dashboard Data</div>
@@ -16172,7 +16274,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),nextDeadline:v}}))} placeholder="e.g. 28 Apr 2026"/>
                   </div>
                 </Card>
-
+ 
                 {/* CT Data */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏛️ Corporate Tax Data</div>
@@ -16190,7 +16292,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),nonQualifyingPct:Number(v)||v}}))} placeholder="e.g. 8" mono/>
                   </div>
                 </Card>
-
+ 
                 {/* QFZP Score */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏙️ QFZP Compliance Score</div>
@@ -16199,7 +16301,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <AdminInput C={C} F={F} FM={FM} label="Audit Readiness Score (0–100)" val={reportData?.auditReadiness?.auditScore||""}
                     onChange={v=>setReportData(r=>({...r,auditReadiness:{...(r.auditReadiness||{}),auditScore:Number(v)||v}}))} placeholder="e.g. 65" mono/>
                 </Card>
-
+ 
                 {/* ── NEW: QFZP SUBSTANCE ADMIN ── */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -16208,7 +16310,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Track all 5 substance pillars for QFZP compliance. Used in the Substance Tracker page and downloadable PDF.
                   </p>
-
+ 
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Period"
                       val={reportData?.qfzpSubstance?.period||""}
@@ -16223,7 +16325,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),auditSubmitted:v==="yes"}}))}
                       options={[{value:"no",label:"❌ No — Action Required"},{value:"yes",label:"✅ Yes — Submitted"}]}/>
                   </div>
-
+ 
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Employee Count" mono
                       val={reportData?.qfzpSubstance?.employeeCount||""}
@@ -16238,7 +16340,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),officeSqft:v}}))}
                       placeholder="e.g. 1200"/>
                   </div>
-
+ 
                   {/* CIGA rows */}
                   <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text,
                     margin:"14px 0 10px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
@@ -16283,13 +16385,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         placeholder="e.g. Core activity — conducted from DMCC office"/>
                     </div>
                   ))}
-
+ 
                   <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
                     val={reportData?.qfzpSubstance?.garimaNote||""}
                     onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),garimaNote:v}}))}
                     placeholder="QFZP substance analysis — gaps, audit risks, de-minimis watch, action items..."/>
                 </Card>
-
+ 
                 {/* ── NEW: VERTICAL ANALYSIS ADMIN ── */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -16302,7 +16404,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     val={reportData?.verticalAnalysis?.period||""}
                     onChange={v=>setReportData(r=>({...r,verticalAnalysis:{...(r.verticalAnalysis||{}),period:v}}))}
                     placeholder="e.g. Q1 2026 (Jan–Mar)"/>
-
+ 
                   {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(i => (
                     <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
                       borderRadius:8, padding:10, marginBottom:8 }}>
@@ -16364,13 +16466,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       </div>
                     </div>
                   ))}
-
+ 
                   <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
                     val={reportData?.verticalAnalysis?.garimaNote||""}
                     onChange={v=>setReportData(r=>({...r,verticalAnalysis:{...(r.verticalAnalysis||{}),garimaNote:v}}))}
                     placeholder="Your margin analysis — GP trend, cost structure insights, benchmark vs industry..."/>
                 </Card>
-
+ 
                 {/* ── NEW: WORKING CAPITAL ADMIN ── */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -16379,7 +16481,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Enter DSO/DIO/DPO and AR aging by customer. Shown on Working Capital page and in downloadable PDF report.
                   </p>
-
+ 
                   {/* Period + CCC inputs */}
                   <AdminInput C={C} F={F} FM={FM} label="Period (e.g. Q1 2026)"
                     val={reportData?.workingCapital?.period||""}
@@ -16399,7 +16501,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),dpo:Number(v)||v}}))}
                       placeholder="e.g. 28"/>
                   </div>
-
+ 
                   {/* AR Aging rows */}
                   <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text,
                     margin:"16px 0 10px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
@@ -16480,7 +16582,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       </div>
                     </div>
                   ))}
-
+ 
                   {/* AP Schedule rows */}
                   <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text,
                     margin:"16px 0 10px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
@@ -16543,13 +16645,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       </div>
                     </div>
                   ))}
-
+ 
                   <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
                     val={reportData?.workingCapital?.garimaNote||""}
                     onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),garimaNote:v}}))}
                     placeholder="Your working capital analysis — DSO trends, collection priorities, AP optimisation..."/>
                 </Card>
-
+ 
                 {/* ── NEW: REVENUE RECONCILIATION ADMIN ── */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -16610,7 +16712,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onChange={v=>setReportData(r=>({...r,revRecon:{...(r.revRecon||{}),garimaNote:v}}))}
                     placeholder="Your analysis — key timing differences, FTA audit risks, action items..."/>
                 </Card>
-
+ 
                 {/* ── RELATED PARTY TRANSACTIONS ── */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏢 Related Party Transactions (Art. 35 & 34)</div>
@@ -16669,7 +16771,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onChange={v=>setReportData(r=>({...r,rptGarimaNote:v}))}
                     placeholder="Your analysis and action items for related party transactions..."/>
                 </Card>
-
+ 
                 {/* ── CONNECTED PERSONS ── */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>👤 Connected Persons (Art. 36 + CTP010)</div>
@@ -16730,13 +16832,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onChange={v=>setReportData(r=>({...r,cpGarimaNote:v}))}
                     placeholder="Your analysis of connected person payments and compliance risks..."/>
                 </Card>
-
+ 
                 <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData}
                   label="Save UAE Data →"/>
               </>)}
             </div>
           )}
-
+ 
           {/* ── BI & SCENARIOS ── */}
           {tab === "analytics" && (
             <div style={{ maxWidth:700 }}>
@@ -16746,7 +16848,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
                 </Card>
               ) : (<>
-
+ 
                 {/* ══ GEOGRAPHY — INDIA REGIONS ══════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>India Regions — Revenue & Cost</div>
@@ -16770,7 +16872,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* ══ GEOGRAPHY — GLOBAL REGIONS ══════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Global Regions — Revenue & Cost</div>
@@ -16800,7 +16902,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* ══ DEPARTMENT ANALYSIS ═══════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Department — Revenue & Cost</div>
@@ -16835,7 +16937,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* ══ SCENARIO MODELLING BASE ═══════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Scenario Modelling — Base Figures</div>
@@ -16857,7 +16959,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       placeholder="e.g. 1500000" mono/>
                   </div>
                 </Card>
-
+ 
                 {/* ══ SPEND INTELLIGENCE ════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Spend Intelligence — Department Budgets</div>
@@ -16891,12 +16993,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     ))}
                   </div>
                 </Card>
-
+ 
                 <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save Analytics Data"/>
               </>)}
             </div>
           )}
-
+ 
           {/* ── TREASURY ── */}
           {tab === "treasury" && (
             <div style={{ maxWidth:700 }}>
@@ -16921,7 +17023,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       onChange={v=>setReportData(r=>({...r,treasury:{...(r.treasury||{}),yieldPA:v}}))} placeholder="e.g. ₹3.2L" mono/>
                   </div>
                 </Card>
-
+ 
                 {/* Cash Positions */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Cash Positions</div>
@@ -16951,7 +17053,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* Maturity Schedule */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>📅 FD Maturity Schedule</div>
@@ -16976,7 +17078,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 {/* Recommendations */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Recommendations</div>
@@ -16995,12 +17097,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   ))}
                 </Card>
-
+ 
                 <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save Treasury Data"/>
               </>)}
             </div>
           )}
-
+ 
           {/* ── DOCUMENTS ── */}
           {tab === "documents" && (
             <div style={{ maxWidth:600 }}>
@@ -17094,7 +17196,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </>)}
                   </label>
                 </Card>
-
+ 
                 {/* Document list */}
                 <Card>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
@@ -17145,7 +17247,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               </>)}
             </div>
           )}
-
+ 
           {/* ── REQUESTS ── */}
           {tab === "requests" && (
             <div style={{ padding:28 }}>
@@ -17231,26 +17333,26 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               )}
             </div>
           )}
-
+ 
           {tab === "market" && (
             <div style={{ maxWidth:900 }}>
               <MarketIntel client={selected || {client_pack:"startup"}}/>
             </div>
           )}
-
+ 
         </div>
       </div>
     </div>
   );
 }
-
+ 
 export default function App() {
   const [client,  setClient]  = useState(null);
   const [admin,   setAdmin]   = useState(null);
   const [loading, setLoading] = useState(true);
-
+ 
   const isAdminRoute = window.location.pathname === "/admin";
-
+ 
   // Restore session on page refresh
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -17278,7 +17380,7 @@ export default function App() {
       }
       setLoading(false);
     });
-
+ 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event) => {
         if (event === "SIGNED_OUT") { setClient(null); setAdmin(null); }
@@ -17286,12 +17388,12 @@ export default function App() {
     );
     return () => subscription.unsubscribe();
   }, []);
-
+ 
   const handleLogout = async () => {
     await supabase.auth.signOut();
     setClient(null); setAdmin(null);
   };
-
+ 
   const Loader = () => (
     <div style={{ minHeight:"100vh", background:isAdminRoute?"#0A1128":C.bg,
       display:"flex", alignItems:"center", justifyContent:"center", fontFamily:F }}>
@@ -17303,18 +17405,18 @@ export default function App() {
       </div>
     </div>
   );
-
+ 
   if (loading) return <Loader/>;
-
+ 
   // Admin route
   if (isAdminRoute) {
     if (!admin) return <AdminLogin onLogin={setAdmin}/>;
     return <AdminPanel admin={admin} onLogout={handleLogout}/>;
   }
-
+ 
   // Client route
   if (!client) return <Login onLogin={setClient}/>;
   return <Portal client={client} onLogout={handleLogout}/>;
 }
-
-
+ 
+ 
