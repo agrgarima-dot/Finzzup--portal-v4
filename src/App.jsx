@@ -2004,7 +2004,7 @@ function CashFlow({ reportData, client, kpis }) {
           <SectionTitle sub="Burn rate, runway and 9-month cash position">Cash Flow</SectionTitle>
           <button
             onClick={() => {
-              const html = generateCashPDF({ client, reportData, kpis });
+              const html = isUAE(client) ? generateCashFlowUAEPDF({ client, reportData }) : generateCashPDF({ client, reportData, kpis });
               const w = window.open("","_blank");
               w.document.write(html);
               w.document.close();
@@ -2231,7 +2231,7 @@ function CashFlow({ reportData, client, kpis }) {
           <SectionTitle sub="Collections, payments, working capital and cash conversion">Cash Flow</SectionTitle>
           <button
             onClick={() => {
-              const html = generateCashPDF({ client, reportData, kpis });
+              const html = isUAE(client) ? generateCashFlowUAEPDF({ client, reportData }) : generateCashPDF({ client, reportData, kpis });
               const w = window.open("","_blank");
               w.document.write(html);
               w.document.close();
@@ -2351,7 +2351,7 @@ function CashFlow({ reportData, client, kpis }) {
           <SectionTitle sub="Operating, investing and financing cash flows — board-ready format">Cash Flow</SectionTitle>
           <button
             onClick={() => {
-              const html = generateCashPDF({ client, reportData, kpis });
+              const html = isUAE(client) ? generateCashFlowUAEPDF({ client, reportData }) : generateCashPDF({ client, reportData, kpis });
               const w = window.open("","_blank");
               w.document.write(html);
               w.document.close();
@@ -6778,8 +6778,17 @@ function VerticalPnL({ reportData, accentColor }) {
  
 function CFOPackContent({ reportData, client, kpis }) {
   const [tab, setTab] = useState("monthly");
+  // FIXED: UAE clients only see Monthly Report — no India-specific tabs
+  const uae = isUAE(client);
  
-  const groups = [
+  const groups = uae ? [
+    {
+      label: "Monthly Report",
+      items: [
+        { id:"monthly", emoji:"📊", label:"Monthly Report" },
+      ]
+    }
+  ] : [
     {
       label: "Financial Reports",
       items: [
@@ -8787,6 +8796,16 @@ function VATDashboard({ client, reportData }) {
             ✅ {vatData.registrationStatus}
           </span>
           <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>TRN: {vatData.trnVAT}</span>
+          {/* FIXED: VAT Download button */}
+          <button onClick={() => {
+            const html = generateVATPDF({ client, reportData });
+            const w = window.open("","_blank");
+            if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 600); }
+          }} style={{ padding:"7px 14px", borderRadius:8, background:`${C.green}12`,
+            border:`1.5px solid ${C.green}30`, color:C.green,
+            fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer", display:"flex", alignItems:"center", gap:5, marginTop:6 }}>
+            📄 Download VAT Report
+          </button>
         </div>
       </div>
  
@@ -12384,6 +12403,16 @@ function AuditReadiness({ client, reportData }) {
             QFZP audit pack checklist — {doneReq}/{totalReq} required docs ready
           </p>
         </div>
+        {/* FIXED: Audit Readiness Download button */}
+        <button onClick={() => {
+          const html = generateAuditReadinessPDF({ client, reportData });
+          const w = window.open("","_blank");
+          if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 600); }
+        }} style={{ padding:"8px 16px", borderRadius:10, background:`${C.blue}12`,
+          border:`1.5px solid ${C.blue}30`, color:C.blue,
+          fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+          📄 Download Audit Report
+        </button>
         <div style={{ textAlign:"right" }}>
           <div style={{ fontFamily:F, fontSize:28, fontWeight:900,
             color:auditScore>=80?C.green:auditScore>=60?C.amber:C.red }}>{auditScore}/100</div>
@@ -13296,6 +13325,295 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
 }
  
  
+ 
+// FIXED: UAE Cash Flow PDF — matches the HTML report format exactly
+function generateCashFlowUAEPDF({ client, reportData }) {
+  const company  = client?.company || "Company";
+  const period   = reportData?.monthLabel || "Q1 2026";
+  const freezone = client?.freezone || "DMCC";
+  const note     = reportData?.cashflowNote || "Cash flow analysis prepared by Garima Agarwal, CA. Please review with your team.";
+  const rd       = reportData?.cashflow_uae || {};
+  const now      = new Date().toLocaleDateString("en-AE", { day:"numeric", month:"long", year:"numeric" });
+ 
+  const opening  = rd.opening  || 2314000;
+  const receipts = rd.receipts || 1985000;
+  const payments = rd.payments || 1762000;
+  const closing  = rd.closing  || (opening + receipts - payments);
+ 
+  const movements = rd.movements || [
+    { label:"Opening Cash Balance",           amount: opening,  type:"neutral" },
+    { label:"+ Collections from Customers",   amount: receipts, type:"in"      },
+    { label:"+ Advance Received",             amount: rd.advances||45000, type:"in" },
+    { label:"− Supplier Payments",            amount: rd.supplierPay||687000, type:"out" },
+    { label:"− Salaries & Benefits",          amount: rd.salaries||375000, type:"out" },
+    { label:"− VAT Payment",                  amount: rd.vatPay||92500, type:"out" },
+    { label:"− Rent & Overheads",             amount: rd.overheads||52000, type:"out" },
+    { label:"Closing Cash Balance",           amount: closing,  type:"neutral" },
+  ];
+ 
+  const rows = movements.map(m => {
+    const cls = m.type==="in" ? "style=\"color:#059669;font-family:monospace;text-align:right;font-weight:700\"" :
+                m.type==="out" ? "style=\"color:#DC2626;font-family:monospace;text-align:right;font-weight:700\"" :
+                "style=\"font-family:monospace;text-align:right;font-weight:800\"";
+    const sign = m.type==="in" ? "+" : m.type==="out" ? "−" : "";
+    const bg = m.type==="neutral" ? "background:#F0F9FF;" : "";
+    return `<tr style="${bg}"><td>${m.label}</td><td ${cls}>${sign} AED ${Math.abs(m.amount||0).toLocaleString()}</td></tr>`;
+  }).join("");
+ 
+  const forecast = (reportData?.cashflow||[]).filter(r=>r.forecast).map(r=>
+    `<tr><td>${r.month}</td><td style="text-align:right;font-family:monospace;color:#7C3AED">AED ${(Number(r.forecast)||0).toLocaleString()}</td><td style="text-align:right"><span style="font-size:10px;padding:2px 8px;border-radius:100px;background:#EDE9FE;color:#7C3AED;font-weight:700">Forecast</span></td></tr>`
+  ).join("") || `<tr><td colspan="3" style="color:#9CA3AF;text-align:center;padding:16px">No forecast data entered yet</td></tr>`;
+ 
+  return \`<!DOCTYPE html><html><head><meta charset="utf-8"/><title>Cash Flow Report — \${company}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+body { font-family:'Helvetica Neue',Arial,sans-serif; color:#111827; background:#fff; font-size:12px; }
+@page { size:A4; margin:0; }
+.header { background:linear-gradient(135deg,#1a1a3e,#2563EB,#7C3AED); padding:36px 50px; color:white; }
+.header-title { font-size:28px; font-weight:900; margin-bottom:6px; }
+.header-sub { font-size:13px; opacity:0.8; margin-bottom:16px; }
+.header-meta { display:flex; gap:40px; }
+.header-meta-item label { opacity:0.6; display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+.page { padding:36px 50px; }
+.section { margin-bottom:32px; }
+.section-title { font-size:16px; font-weight:800; color:#111827; margin-bottom:6px; border-left:4px solid #2563EB; padding-left:12px; }
+.garima-box { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:10px; padding:16px 18px; margin-bottom:24px; }
+.garima-text { font-size:12.5px; color:#78350F; line-height:1.85; }
+.kpi-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px; }
+.kpi-card { border-radius:12px; padding:16px; border:1px solid #E5E7EB; background:#F9FAFB; text-align:center; }
+.kpi-val { font-size:20px; font-weight:800; font-family:monospace; margin-bottom:4px; }
+.kpi-lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:#6B7280; }
+table { width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:4px; }
+th { background:#1E3A5F; color:white; padding:9px 12px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; }
+td { padding:9px 12px; border-bottom:1px solid #F3F4F6; }
+tr:nth-child(even) td { background:#FAFAFA; }
+.footer { border-top:1px solid #E5E7EB; padding:14px 50px; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+<div class="header">
+  <div class="header-title">Cash Flow Report</div>
+  <div class="header-sub">Cash Movements · Working Capital · 6-Month Forecast — \${company} (\${freezone})</div>
+  <div class="header-meta">
+    <div class="header-meta-item"><label>Period</label>\${period}</div>
+    <div class="header-meta-item"><label>Currency</label>AED (UAE Dirham)</div>
+    <div class="header-meta-item"><label>Opening Balance</label>AED \${opening.toLocaleString()}</div>
+    <div class="header-meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
+  </div>
+</div>
+<div class="page">
+  <div class="garima-box">
+    <div class="garima-text"><strong>Note from Garima:</strong> \${note}</div>
+  </div>
+  <div class="kpi-grid">
+    <div class="kpi-card"><div class="kpi-val" style="color:#2563EB">AED \${opening.toLocaleString()}</div><div class="kpi-lbl">Opening Balance</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:#059669">AED \${receipts.toLocaleString()}</div><div class="kpi-lbl">Total Receipts</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:#DC2626">AED \${payments.toLocaleString()}</div><div class="kpi-lbl">Total Payments</div></div>
+    <div class="kpi-card"><div class="kpi-val" style="color:\${closing>=opening?'#059669':'#D97706'}">AED \${closing.toLocaleString()}</div><div class="kpi-lbl">Closing Balance</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Cash Flow Statement</div>
+    <table>
+      <thead><tr><th>Description</th><th style="text-align:right">Amount (AED)</th></tr></thead>
+      <tbody>\${rows}</tbody>
+    </table>
+  </div>
+  <div class="section">
+    <div class="section-title">6-Month Cash Forecast</div>
+    <table>
+      <thead><tr><th>Month</th><th style="text-align:right">Projected Balance (AED)</th><th style="text-align:right">Status</th></tr></thead>
+      <tbody>\${forecast}</tbody>
+    </table>
+  </div>
+</div>
+<div class="footer">
+  <strong style="color:#2563EB">Finzzup</strong>
+  <span>Cash Flow Report · \${company} · \${now}</span>
+  <span>Garima Agarwal CA · M.No. 160944</span>
+</div>
+</body></html>\`;
+}
+ 
+ 
+// FIXED: Vertical Analysis PDF — matches HTML format
+function generateVerticalAnalysisPDF({ client, reportData }) {
+  const company = client?.company || "Company";
+  const period  = reportData?.monthLabel || "Q1 2026";
+  const now     = new Date().toLocaleDateString("en-AE", { day:"numeric", month:"long", year:"numeric" });
+  const va      = reportData?.verticalAnalysis || {};
+  const note    = va.garimaNote || reportData?.vaNote || "Vertical analysis prepared by Garima Agarwal, CA.";
+ 
+  const rows = (va.items || [
+    { item:"Revenue",          q1:1850000, q4:1400000, q1py:1260000 },
+    { item:"Cost of Goods Sold",q1:1017500,q4:812000, q1py:741600   },
+    { item:"Gross Profit",     q1:832500, q4:588000,  q1py:518400, bold:true },
+    { item:"Operating Expenses",q1:561500,q4:532000,  q1py:480920  },
+    { item:"EBITDA",           q1:271000, q4:56000,   q1py:37480, bold:true  },
+    { item:"Net Profit (PAT)", q1:241000, q4:26000,   q1py:12280, bold:true  },
+  ]).map(r => {
+    const pct1 = r.q1 && r.q1pct ? r.q1pct : r.item==="Revenue" ? "100%" : r.q1&&(r.q1/1850000*100).toFixed(1)+"%";
+    const bold = r.bold ? "font-weight:800;" : "";
+    const bg   = r.bold ? "background:#F0FDF4;" : "";
+    return `<tr style="${bg}"><td style="${bold}">${r.item}</td>
+      <td style="text-align:right;font-family:monospace;${bold}">${typeof r.q1==="number"?r.q1.toLocaleString():r.q1||"—"}</td>
+      <td style="text-align:right;font-family:monospace;color:#2563EB;${bold}">${pct1}</td>
+      <td style="text-align:right;font-family:monospace">${typeof r.q4==="number"?r.q4.toLocaleString():r.q4||"—"}</td>
+      <td style="text-align:right;font-family:monospace">${typeof r.q1py==="number"?r.q1py.toLocaleString():r.q1py||"—"}</td></tr>`;
+  }).join("");
+ 
+  return \`<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>Vertical Analysis — \${company}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+body { font-family:'Helvetica Neue',Arial,sans-serif; color:#111827; background:#fff; font-size:12px; }
+@page { size:A4; margin:0; }
+.header { background:linear-gradient(135deg,#1a3a8f,#2563EB,#7C3AED); padding:36px 50px; color:white; }
+.header-title { font-size:28px; font-weight:900; margin-bottom:6px; }
+.header-sub { font-size:13px; opacity:0.8; margin-bottom:16px; }
+.header-meta { display:flex; gap:40px; }
+.header-meta-item label { opacity:0.6; display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+.page { padding:36px 50px; }
+.section { margin-bottom:32px; }
+.section-title { font-size:16px; font-weight:800; color:#111827; margin-bottom:6px; border-left:4px solid #2563EB; padding-left:12px; }
+.garima-box { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:10px; padding:16px 18px; margin-bottom:24px; }
+.garima-text { font-size:12.5px; color:#78350F; line-height:1.85; }
+.three-col { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:24px; }
+.stat-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:14px; text-align:center; }
+.stat-val { font-size:24px; font-weight:800; font-family:monospace; margin-bottom:4px; }
+.stat-lbl { font-size:10px; color:#6B7280; font-weight:600; text-transform:uppercase; }
+table { width:100%; border-collapse:collapse; font-size:11.5px; }
+th { background:#1E3A5F; color:white; padding:9px 12px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; }
+td { padding:9px 12px; border-bottom:1px solid #F3F4F6; }
+tr:nth-child(even) td { background:#FAFAFA; }
+.footer { border-top:1px solid #E5E7EB; padding:14px 50px; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+<div class="header">
+  <div class="header-title">Vertical Analysis Report</div>
+  <div class="header-sub">Common-size P&L — Every line as % of Revenue — \${company}</div>
+  <div class="header-meta">
+    <div class="header-meta-item"><label>Period</label>\${period}</div>
+    <div class="header-meta-item"><label>Base</label>Revenue = 100%</div>
+    <div class="header-meta-item"><label>Comparison</label>Prior Quarter & Prior Year</div>
+    <div class="header-meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
+  </div>
+</div>
+<div class="page">
+  <div class="garima-box"><div class="garima-text"><strong>Garima's Analysis:</strong> \${note}</div></div>
+  <div class="three-col">
+    <div class="stat-card"><div class="stat-val" style="color:#2563EB">\${va.grossMargin||"45.0%"}</div><div class="stat-lbl">Gross Margin</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#059669">\${va.ebitdaMargin||"14.6%"}</div><div class="stat-lbl">EBITDA Margin</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:#7C3AED">\${va.netMargin||"13.0%"}</div><div class="stat-lbl">Net Profit Margin</div></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Common-Size P&L — Line by Line</div>
+    <table>
+      <thead><tr>
+        <th>Line Item</th>
+        <th style="text-align:right">Current Period (AED)</th>
+        <th style="text-align:right">% of Revenue</th>
+        <th style="text-align:right">Prior Quarter (AED)</th>
+        <th style="text-align:right">Prior Year (AED)</th>
+      </tr></thead>
+      <tbody>\${rows}</tbody>
+    </table>
+  </div>
+</div>
+<div class="footer">
+  <strong style="color:#2563EB">Finzzup</strong>
+  <span>Vertical Analysis · \${company} · \${now}</span>
+  <span>Garima Agarwal CA · M.No. 160944</span>
+</div>
+</body></html>\`;
+}
+ 
+ 
+// FIXED: Audit Readiness PDF — matches HTML format
+function generateAuditReadinessPDF({ client, reportData }) {
+  const company = client?.company || "Company";
+  const period  = reportData?.monthLabel || "FY 2025";
+  const now     = new Date().toLocaleDateString("en-AE", { day:"numeric", month:"long", year:"numeric" });
+  const ar      = reportData?.auditReadiness || {};
+  const note    = ar.garimaNote || "Audit readiness assessment prepared by Garima Agarwal, CA.";
+  const score   = ar.auditScore || 72;
+  const scoreColor = score >= 80 ? "#059669" : score >= 60 ? "#D97706" : "#DC2626";
+  const scoreLabel = score >= 80 ? "Ready" : score >= 60 ? "Nearly Ready" : "Action Required";
+ 
+  const items = ar.items || [
+    { category:"Financial Statements", item:"Audited FS for prior year on file", status:"done" },
+    { category:"Financial Statements", item:"Management accounts current to last month", status:"done" },
+    { category:"VAT", item:"VAT returns filed for all periods", status:"done" },
+    { category:"VAT", item:"VAT reconciliation with GL prepared", status:"pending" },
+    { category:"Corporate Tax", item:"CT registration complete (TRN obtained)", status:"done" },
+    { category:"Corporate Tax", item:"Transfer pricing documentation", status:"action" },
+    { category:"QFZP", item:"Substance requirements documented", status:"done" },
+    { category:"QFZP", item:"DMCC license renewed", status:"done" },
+    { category:"Related Parties", item:"Related party transaction register", status:"pending" },
+    { category:"Related Parties", item:"Arm's length pricing documented", status:"action" },
+  ];
+ 
+  const rows = items.map(i => {
+    const [bg, color, label] =
+      i.status==="done"    ? ["#F0FDF4","#059669","✓ Done"]      :
+      i.status==="pending" ? ["#FFFBEB","#D97706","⏳ Pending"]  :
+                             ["#FEF2F2","#DC2626","⚠ Action"];
+    return `<tr style="background:${bg}"><td>${i.category}</td><td>${i.item}</td><td style="color:${color};font-weight:700;text-align:center">${label}</td></tr>`;
+  }).join("");
+ 
+  return \`<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>Audit Readiness — \${company}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+body { font-family:'Helvetica Neue',Arial,sans-serif; color:#111827; background:#fff; font-size:12px; }
+@page { size:A4; margin:0; }
+.header { background:linear-gradient(135deg,#1E3A5F,#0284C7,#0891B2); padding:36px 50px; color:white; }
+.header-title { font-size:28px; font-weight:900; margin-bottom:6px; }
+.header-sub { font-size:13px; opacity:0.8; margin-bottom:16px; }
+.header-meta { display:flex; gap:40px; }
+.header-meta-item label { opacity:0.6; display:block; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+.page { padding:36px 50px; }
+.section { margin-bottom:32px; }
+.section-title { font-size:16px; font-weight:800; color:#111827; margin-bottom:6px; border-left:4px solid #0284C7; padding-left:12px; }
+.garima-box { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:10px; padding:16px 18px; margin-bottom:24px; }
+.garima-text { font-size:12.5px; color:#78350F; line-height:1.85; }
+.score-box { background:#F0F9FF; border:2px solid #0284C7; border-radius:12px; padding:24px; text-align:center; margin-bottom:24px; display:inline-block; min-width:200px; }
+table { width:100%; border-collapse:collapse; font-size:11.5px; }
+th { background:#1E3A5F; color:white; padding:9px 12px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; }
+td { padding:9px 12px; border-bottom:1px solid #F3F4F6; }
+.footer { border-top:1px solid #E5E7EB; padding:14px 50px; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+<div class="header">
+  <div class="header-title">Audit Readiness Report</div>
+  <div class="header-sub">Compliance Status · Document Checklist · Action Items — \${company}</div>
+  <div class="header-meta">
+    <div class="header-meta-item"><label>Period</label>\${period}</div>
+    <div class="header-meta-item"><label>Readiness Score</label>\${score}/100</div>
+    <div class="header-meta-item"><label>Status</label>\${scoreLabel}</div>
+    <div class="header-meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
+  </div>
+</div>
+<div class="page">
+  <div class="garima-box"><div class="garima-text"><strong>Note from Garima:</strong> \${note}</div></div>
+  <div style="text-align:center;margin-bottom:24px">
+    <div class="score-box">
+      <div style="font-size:48px;font-weight:900;color:\${scoreColor};font-family:monospace">\${score}</div>
+      <div style="font-size:12px;color:#6B7280;font-weight:700;text-transform:uppercase;letter-spacing:0.06em">Audit Readiness Score</div>
+      <div style="font-size:14px;font-weight:700;color:\${scoreColor};margin-top:4px">\${scoreLabel}</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Compliance Checklist</div>
+    <table>
+      <thead><tr><th>Category</th><th>Requirement</th><th style="text-align:center">Status</th></tr></thead>
+      <tbody>\${rows}</tbody>
+    </table>
+  </div>
+</div>
+<div class="footer">
+  <strong style="color:#0284C7">Finzzup</strong>
+  <span>Audit Readiness · \${company} · \${now}</span>
+  <span>Garima Agarwal CA · M.No. 160944</span>
+</div>
+</body></html>\`;
+}
+ 
 // FIXED: RelatedPartyRisk — UAE related party report component
 function RelatedPartyRisk({ client, reportData }) {
   const note = reportData?.rpNote || "Related party transaction analysis will be populated by Garima. This report flags high-volume connected person transactions, audit risk areas, and IFRS disclosure requirements.";
@@ -13384,6 +13702,43 @@ tr.total td { background:#F0FDF4; font-weight:800; color:#059669; border-top:2px
   <span>Garima Agarwal CA · M.No. 160944</span>
 </div>
 </body></html>`;
+}
+ 
+ 
+// FIXED: Related Party PDF generator — purple gradient, matches HTML format
+function generateRelatedPartyPDF({ client, reportData }) {
+  const company  = client?.company  || "Company";
+  const freezone = client?.freezone || "DMCC";
+  const trnCT    = client?.trnCT    || "—";
+  const period   = reportData?.monthLabel || "FY 2025";
+  const now      = new Date().toLocaleDateString("en-AE", { day:"numeric", month:"long", year:"numeric" });
+  const rd       = reportData?.relatedParty || {};
+  const note     = rd.garimaNote || reportData?.rpNote || "Related party and connected person transactions documented for CT Return compliance.";
+  const rptEntities = rd.rptEntities || [];
+  const cpPersons   = rd.cpPersons   || [];
+ 
+  const rptRows = rptEntities.length ? rptEntities.map(r =>
+    "<tr><td><strong>" + (r.party||"") + "</strong></td><td style='font-size:10px'>" + (r.relationship||"") + "</td><td>" + (r.txType||"") + "</td><td style='text-align:right;font-family:monospace'>" + (r.amount||"—") + "</td><td>" + (r.tpMethod||"") + "</td><td style='font-weight:700;color:" + (r.armsLength==="Yes"?"#059669":"#DC2626") + "'>" + (r.armsLength==="Yes"?"✓ Yes":"✗ No") + "</td><td style='font-weight:700;color:" + (r.risk==="High"||r.risk==="HIGH"?"#DC2626":r.risk==="Medium"?"#D97706":"#059669") + "'>" + (r.risk||"—") + "</td></tr>"
+  ).join("") : "<tr><td colspan='7' style='text-align:center;padding:16px;color:#9CA3AF'>No related party data entered yet</td></tr>";
+ 
+  const cpRows = cpPersons.length ? cpPersons.map(p =>
+    "<tr><td><strong>" + (p.name||"") + "</strong></td><td style='font-size:10px'>" + (p.classification||"") + "</td><td style='text-align:right;font-family:monospace'>" + (p.amount||"—") + "</td><td style='font-weight:700;color:" + (p.test1==="Pass"?"#059669":"#D97706") + "'>" + (p.test1||"Pending") + "</td><td style='font-weight:700;color:" + (p.test2==="Pass"?"#059669":"#D97706") + "'>" + (p.test2||"Pending") + "</td><td style='font-weight:700;color:" + (p.risk==="High"||p.risk==="HIGH"?"#DC2626":p.risk==="Medium"?"#D97706":"#059669") + "'>" + (p.risk||"—") + "</td></tr>"
+  ).join("") : "<tr><td colspan='6' style='text-align:center;padding:16px;color:#9CA3AF'>No connected persons data entered yet</td></tr>";
+ 
+  return "<!DOCTYPE html><html><head><meta charset='utf-8'/><title>Related Party Report</title><style>*{margin:0;padding:0;box-sizing:border-box;-webkit-print-color-adjust:exact}body{font-family:'Helvetica Neue',Arial,sans-serif;color:#111827;font-size:12px}@page{size:A4;margin:0}.cover{background:linear-gradient(135deg,#4C1D95 0%,#7C3AED 60%,#1E3A5F 100%);padding:50px 60px;color:white}.page{padding:36px 50px}.section{margin-bottom:28px}.section-title{font-size:15px;font-weight:800;color:#111827;margin-bottom:8px;border-left:4px solid #7C3AED;padding-left:12px}.garima-box{background:#FFFBF0;border:1px solid #FDE68A;border-left:4px solid #F59E0B;border-radius:10px;padding:16px 18px;margin-bottom:20px}.garima-text{font-size:12px;color:#78350F;line-height:1.85}table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:8px}th{background:#4C1D95;color:white;padding:9px 12px;text-align:left;font-size:10px;font-weight:700;text-transform:uppercase}td{padding:9px 12px;border-bottom:1px solid #F3F4F6;vertical-align:top}.footer{border-top:1px solid #E5E7EB;padding:14px 50px;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF}</style></head><body>"
+    + "<div class='cover'><div style='font-size:11px;font-weight:700;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.3);border-radius:100px;padding:6px 18px;display:inline-block;margin-bottom:28px'>🏛️ UAE CORPORATE TAX · TRANSFER PRICING · CTP010</div>"
+    + "<div style='font-size:34px;font-weight:900;line-height:1.2;margin-bottom:10px'>Related Party &<br/>Connected Persons<br/>Report</div>"
+    + "<div style='font-size:13px;opacity:0.75'>" + company + " (" + freezone + ") · CT TRN: " + trnCT + "</div>"
+    + "<div style='font-size:12px;opacity:0.6;margin-top:4px'>" + period + " · Prepared: " + now + " · Garima Agarwal, CA</div></div>"
+    + "<div class='page'>"
+    + "<div class='garima-box'><div class='garima-text'><strong>Note from Garima:</strong> " + note + "</div></div>"
+    + "<div class='section'><div class='section-title'>Part A — Related Party Transactions (Entities)</div>"
+    + "<table><thead><tr><th>Related Party</th><th>Relationship</th><th>Transaction Type</th><th>Amount AED</th><th>TP Method</th><th>Arm's Length</th><th>Risk</th></tr></thead><tbody>" + rptRows + "</tbody></table></div>"
+    + "<div class='section'><div class='section-title'>Part B — Connected Person Payments (Individuals)</div>"
+    + "<table><thead><tr><th>Person</th><th>CTP010 Classification</th><th>Total AED</th><th>Test 1: Market Value</th><th>Test 2: Business Purpose</th><th>Risk</th></tr></thead><tbody>" + cpRows + "</tbody></table></div>"
+    + "<div class='section'><div class='section-title'>Part C — Art. 55(1) Mandatory Disclosure</div>"
+    + "<div style='background:#F5F3FF;border:1px solid #C4B5FD;border-left:4px solid #7C3AED;border-radius:10px;padding:14px 18px'><p style='font-size:13px;color:#4C1D95;line-height:1.8'>Total transactions to disclose: <strong>" + (rptEntities.length + cpPersons.length) + "</strong> | Related Parties: <strong>" + rptEntities.length + "</strong> | Connected Persons: <strong>" + cpPersons.length + "</strong></p></div></div>"
+    + "</div><div class='footer'><strong style='color:#7C3AED'>Finzzup</strong><span>Related Party Report · " + company + " · " + now + "</span><span>Garima Agarwal CA · M.No. 160944</span></div></body></html>";
 }
  
 function Portal({ client, onLogout }) {
@@ -16409,7 +16764,16 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),qualifyingPct:Number(v)||v}}))} placeholder="e.g. 92" mono/>
                     <AdminInput C={C} F={F} FM={FM} label="Non-Qualifying Income %" val={reportData?.ct?.nonQualifyingPct||""}
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),nonQualifyingPct:Number(v)||v}}))} placeholder="e.g. 8" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="CT TRN" val={reportData?.ct?.trnCT||""}
+                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),trnCT:v}}))} placeholder="e.g. 900012345678901" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="CT Return Due Date" val={reportData?.ct?.ctDue||""}
+                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),ctDue:v}}))} placeholder="e.g. 30 Sep 2025"/>
                   </div>
+                  {/* FIXED: CT Garima Note field */}
+                  <AdminTextarea C={C} F={F} label="Garima's CT Note (shown on CT report)"
+                    val={reportData?.ctGarimaNote||""}
+                    onChange={v=>setReportData(r=>({...r,ctGarimaNote:v}))}
+                    placeholder="Enter your analysis and recommendations for Corporate Tax..."/>
                 </Card>
  
                 {/* QFZP Score */}
