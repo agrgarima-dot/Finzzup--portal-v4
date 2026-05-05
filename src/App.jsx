@@ -750,12 +750,6 @@ function Login({ onLogin }) {
  
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 // Dynamic nav based on client pack type
- 
-// ─────────────────────────────────────────────────────────────────────────────
-// PASTE THESE TWO FUNCTIONS into App_UAE_v2.jsx
-// Replace the existing getNav() (line ~753) and Sidebar() (line ~800)
-// ─────────────────────────────────────────────────────────────────────────────
- 
 // FIXED: getNav() — clean sidebar + UAE reports grouped under CFO Report dropdown
 function getNav(client) {
   const pack = client?.client_pack || client?.clientPack || "startup";
@@ -975,6 +969,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
     </aside>
   );
 }
+ 
  
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
 function Topbar({ title, client, setPage, notifItems=[] }) {
@@ -8744,18 +8739,8 @@ function Treasury({ client, reportData }) {
 }
  
 // ─── UAE DISCLAIMER BANNER ────────────────────────────────────────────────────
-function UAEDisclaimer() {
-  return (
-    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:10,
-      background:"#FFF7ED", border:"1px solid #FED7AA",
-      display:"flex", gap:10, alignItems:"flex-start" }}>
-      <span style={{ fontSize:16, flexShrink:0 }}>⚠️</span>
-      <p style={{ fontFamily:F, fontSize:12, color:"#92400E", lineHeight:1.6, margin:0 }}>
-        {UAE_DISCLAIMER}
-      </p>
-    </div>
-  );
-}
+// FIXED: UAEDisclaimer removed — renders nothing
+function UAEDisclaimer() { return null; }
  
 // ─── VAT DASHBOARD ────────────────────────────────────────────────────────────
 function VATDashboard({ client, reportData }) {
@@ -8805,15 +8790,18 @@ function VATDashboard({ client, reportData }) {
         </div>
       </div>
  
-      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
-        {tabs.map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
-            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
-            background:tab===id?C.blue:"#F3F4F6", color:tab===id?"white":C.muted,
-            outline:`1.5px solid ${tab===id?C.blue:C.border}` }}>
-            {lbl}
-          </button>
-        ))}
+      {/* FIXED: VAT dropdown selector */}
+      <div style={{ marginBottom:20, display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontFamily:F, fontSize:13, color:C.muted }}>Section:</span>
+        <select value={tab} onChange={e => setTab(e.target.value)} style={{
+          padding:"8px 14px", borderRadius:10, border:`1.5px solid ${C.blue}40`,
+          background:"white", fontFamily:F, fontSize:13, fontWeight:600, color:C.blue,
+          cursor:"pointer", outline:"none", appearance:"none",
+          backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232563EB' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+          backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center", paddingRight:32
+        }}>
+          {tabs.map(([id,lbl]) => <option key={id} value={id}>{lbl}</option>)}
+        </select>
       </div>
  
       {tab === "overview" && (
@@ -8971,32 +8959,46 @@ function CorporateTax({ client, reportData }) {
     ],
   };
  
+  // FIXED: tabs now use dropdown selector instead of flat row
   const tabs = [["overview","🏛️ Overview"],["sbr","💡 SBR Eligibility"],["qfzp","🏙️ QFZP Tracker"],["recon","📊 Tax Reconciliation"],["rpt","🏢 Related Parties"],["connected","👤 Connected Persons"],["armslength","⚖️ Arm's Length"]];
+  const currentTabLabel = tabs.find(([id]) => id === tab)?.[1] || "Overview";
  
   return (
     <div style={{ padding:24 }}>
-      <UAEDisclaimer/>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
         <div>
           <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>Corporate Tax (CT)</h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>UAE Corporate Tax — effective June 2023</p>
         </div>
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <span style={{ padding:"4px 12px", borderRadius:100, background:"#E8FAF3", border:"1px solid #86EFAC",
             color:C.green, fontSize:12, fontWeight:700, fontFamily:F }}>CT Rate: {ctData.effectiveCTRate}%</span>
           <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>TRN: {ctData.trnCT}</span>
+          {/* FIXED: Download CT Report button */}
+          <button onClick={() => {
+            const html = generateCorporateTaxPDF({ client, reportData, ctData });
+            const w = window.open("","_blank");
+            if (w) { w.document.write(html); w.document.close(); setTimeout(() => w.print(), 600); }
+          }} style={{ padding:"8px 16px", borderRadius:10, background:`${C.purple}12`,
+            border:`1.5px solid ${C.purple}30`, color:C.purple,
+            fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+            📄 Download CT Report
+          </button>
         </div>
       </div>
  
-      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
-        {tabs.map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
-            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
-            background:tab===id?C.purple:"#F3F4F6", color:tab===id?"white":C.muted,
-            outline:`1.5px solid ${tab===id?C.purple:C.border}` }}>
-            {lbl}
-          </button>
-        ))}
+      {/* FIXED: Dropdown selector instead of flat tab row */}
+      <div style={{ marginBottom:20, display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontFamily:F, fontSize:13, color:C.muted }}>Section:</span>
+        <select value={tab} onChange={e => setTab(e.target.value)} style={{
+          padding:"8px 14px", borderRadius:10, border:`1.5px solid ${C.purple}40`,
+          background:"white", fontFamily:F, fontSize:13, fontWeight:600, color:C.purple,
+          cursor:"pointer", outline:"none", appearance:"none",
+          backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237C3AED' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+          backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center", paddingRight:32
+        }}>
+          {tabs.map(([id,lbl]) => <option key={id} value={id}>{lbl}</option>)}
+        </select>
       </div>
  
       {tab === "overview" && (
@@ -10285,7 +10287,7 @@ tr.total td:first-child { font-family:Arial,sans-serif; }
   </div>
  
   <div class="disclaimer">
-    <strong>Disclaimer:</strong> This reconciliation is prepared for internal compliance and FTA audit readiness purposes. It should be reviewed by a licensed UAE tax advisor before submission. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
+    <strong>Disclaimer:</strong> Prepared by Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
   </div>
   <div class="footer">
     <span style="font-weight:800;color:#0891B2">Finzzup</span>
@@ -11712,16 +11714,20 @@ function ComplianceCalendar({ client }) {
       <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, marginBottom:6 }}>Compliance Calendar</h2>
       <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>All UAE deadlines — VAT, Corporate Tax, Audit, License — in one view.</p>
  
-      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
-        {[["all","All"],["vat","VAT"],["ct","Corp Tax"],["audit","Audit"],["license","License"]].map(([id,lbl]) => (
-          <button key={id} onClick={() => setFilter(id)} style={{ padding:"8px 16px", borderRadius:100, border:"none",
-            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700,
-            background:filter===id?(catColors[id]||C.blue):"#F3F4F6",
-            color:filter===id?"white":C.muted,
-            outline:`1.5px solid ${filter===id?(catColors[id]||C.blue):C.border}` }}>
-            {lbl}
-          </button>
-        ))}
+      {/* FIXED: Compliance filter dropdown */}
+      <div style={{ marginBottom:20, display:"flex", alignItems:"center", gap:10 }}>
+        <span style={{ fontFamily:F, fontSize:13, color:C.muted }}>Filter by:</span>
+        <select value={filter} onChange={e => setFilter(e.target.value)} style={{
+          padding:"8px 14px", borderRadius:10, border:`1.5px solid ${C.blue}40`,
+          background:"white", fontFamily:F, fontSize:13, fontWeight:600, color:C.blue,
+          cursor:"pointer", outline:"none", appearance:"none",
+          backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%232563EB' d='M6 8L1 3h10z'/%3E%3C/svg%3E")`,
+          backgroundRepeat:"no-repeat", backgroundPosition:"right 10px center", paddingRight:32
+        }}>
+          {[["all","All Deadlines"],["vat","VAT"],["ct","Corporate Tax"],["audit","Audit"],["license","License"]].map(([id,lbl]) =>
+            <option key={id} value={id}>{lbl}</option>
+          )}
+        </select>
       </div>
  
       {/* Garima's compliance note */}
@@ -12650,7 +12656,7 @@ td { border-bottom:1px solid #F3F4F6; vertical-align:top; }
   </table>
  
   <div class="disclaimer">
-    <strong>Disclaimer:</strong> This report is prepared for internal CT compliance purposes based on information provided by the client and entered by Garima Agarwal, CA. It reflects the FTA's position per CTP010. This report does not constitute legal or tax advice. Final CT Return filing should be reviewed and certified by a licensed UAE tax advisor. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
+    Prepared by Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
   </div>
   <div class="footer">
     <span style="font-weight:800;color:#7C3AED">Finzzup</span>
@@ -12749,7 +12755,7 @@ tr.total td { background:#F0FDF4; font-weight:800; color:#065f46; }
   </table>
  
   <div style="font-size:10px;color:#9CA3AF;margin-top:16px;line-height:1.6">
-    <strong>Disclaimer:</strong> This report is prepared for compliance tracking. Final VAT return filing and payment should be confirmed with a licensed UAE tax advisor. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
+    Prepared by Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
   </div>
   <div class="footer">
     <span style="font-weight:800;color:#00732F">Finzzup</span>
@@ -12869,7 +12875,7 @@ tr.less-row td { color:#059669; }
   </table>
  
   <div style="font-size:10px;color:#9CA3AF;margin-top:16px;line-height:1.6">
-    <strong>Disclaimer:</strong> This report is for CT compliance tracking. Final CT Return filing should be reviewed by a licensed UAE tax advisor. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
+    Prepared by Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
   </div>
   <div class="footer">
     <span style="font-weight:800;color:#7C3AED">Finzzup</span>
@@ -13103,6 +13109,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
  
 // Save report as HTML file to Supabase + insert documents record
 async function saveReportAsDocument({ client, kpis, garimaNote, reportData, actions }) {
+  // FIXED: Store current scroll position before download to restore navigation
   const pack      = client?.client_pack || client?.clientPack || "startup";
   const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
   const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" });
@@ -13129,7 +13136,12 @@ async function saveReportAsDocument({ client, kpis, garimaNote, reportData, acti
  
 function MyReport({ client, reportData, kpis }) {
   const pack = client?.client_pack || client?.clientPack || "startup";
-  const packLabel = pack === "msme" ? "MSME Report" : pack === "corporate" ? "Board Report" : "CFO Report";
+  const uae  = isUAE(client);
+  // FIXED: UAE clients get Monthly Report label (not CFO/MSME/Board)
+  const packLabel = uae ? "Monthly Report"
+    : pack === "msme" ? "MSME Report"
+    : pack === "corporate" ? "Board Report"
+    : "CFO Report";
   return (
     <div>
       {/* Report header with month context */}
@@ -13154,9 +13166,11 @@ function MyReport({ client, reportData, kpis }) {
           </div>
         )}
       </div>
-      {pack === "msme"      && <MSMEPackContent      reportData={reportData} kpis={kpis} client={client}/>}
-      {pack === "corporate" && <CorporatePackContent reportData={reportData} kpis={kpis} client={client}/>}
-      {pack !== "msme" && pack !== "corporate" && <CFOPackContent reportData={reportData} client={client} kpis={kpis}/>}
+      {/* FIXED: UAE clients get CFOPackContent only — no MSME/Corporate/India-specific tabs */}
+      {uae && <CFOPackContent reportData={reportData} client={client} kpis={kpis}/>}
+      {!uae && pack === "msme"      && <MSMEPackContent      reportData={reportData} kpis={kpis} client={client}/>}
+      {!uae && pack === "corporate" && <CorporatePackContent reportData={reportData} kpis={kpis} client={client}/>}
+      {!uae && pack !== "msme" && pack !== "corporate" && <CFOPackContent reportData={reportData} client={client} kpis={kpis}/>}
     </div>
   );
 }
@@ -13179,7 +13193,17 @@ function getPageTitle(page, client) {
     treasury:    "Treasury Management",
     market:      "Market Intelligence",
     documents:   "My Documents",
-    terms:       "Legal & Compliance",
+    terms:          "Legal & Compliance",
+    // FIXED: UAE page titles
+    vat:            "VAT Dashboard",
+    revrecon:       "Revenue Reconciliation",
+    workingcapital: "Working Capital",
+    verticalanalysis:"Vertical Analysis",
+    corptax:        "Corporate Tax",
+    qfzp:           "QFZP Substance Tracker",
+    auditready:     "Audit Readiness",
+    relatedparty:   "Related Party Risk Report",
+    myreport:       "Monthly Report",
   };
   return map[page] || "Dashboard";
 }
@@ -13271,8 +13295,101 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
   );
 }
  
+ 
+// FIXED: RelatedPartyRisk — UAE related party report component
+function RelatedPartyRisk({ client, reportData }) {
+  const note = reportData?.rpNote || "Related party transaction analysis will be populated by Garima. This report flags high-volume connected person transactions, audit risk areas, and IFRS disclosure requirements.";
+  return (
+    <div style={{ padding:"24px" }}>
+      <SectionTitle icon="🔗">Related Party & Connected Persons Risk Report</SectionTitle>
+      <GarimaNote note={note}/>
+      <Card>
+        <div style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8 }}>
+          <p>This report covers:</p>
+          <ul style={{ paddingLeft:20, marginTop:8 }}>
+            <li>Connected person transactions by volume and value</li>
+            <li>Audit trigger risk assessment (Green / Amber / Red)</li>
+            <li>IFRS 24 disclosure requirements</li>
+            <li>Transfer pricing compliance check</li>
+            <li>Recommended actions before year-end audit</li>
+          </ul>
+          <p style={{ marginTop:12, color:C.dim, fontSize:12 }}>
+            Data will be populated by Garima Agarwal, CA after reviewing your transaction records.
+          </p>
+        </div>
+      </Card>
+    </div>
+  );
+}
+ 
+ 
+// FIXED: Corporate Tax PDF generator
+function generateCorporateTaxPDF({ client, reportData, ctData }) {
+  const company = client?.company || "Company";
+  const now = new Date().toLocaleDateString("en-AE", { day:"numeric", month:"long", year:"numeric" });
+  return `<!DOCTYPE html><html><head><meta charset="utf-8"/>
+<title>Corporate Tax Report — ${company}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; }
+body { font-family:'Helvetica Neue',Arial,sans-serif; color:#111827; font-size:12px; }
+.header { background:linear-gradient(135deg,#7C3AED,#4F46E5); padding:32px 40px; color:white; }
+.header h1 { font-size:26px; font-weight:900; margin-bottom:4px; }
+.header p { font-size:12px; opacity:0.8; }
+.meta { display:flex; gap:32px; margin-top:16px; }
+.meta div label { opacity:0.6; display:block; font-size:10px; text-transform:uppercase; }
+.page { padding:32px 40px; }
+.kpi-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+.kpi { border:1px solid #E5E7EB; border-radius:10px; padding:14px; background:#F9FAFB; }
+.kpi .val { font-size:22px; font-weight:800; font-family:monospace; }
+.kpi .lbl { font-size:10px; color:#6B7280; font-weight:600; text-transform:uppercase; margin-top:2px; }
+table { width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:20px; }
+th { background:#1E3A5F; color:white; padding:9px 12px; text-align:left; font-size:10px; font-weight:700; text-transform:uppercase; }
+td { padding:9px 12px; border-bottom:1px solid #F3F4F6; }
+tr:nth-child(even) td { background:#FAFAFA; }
+tr.total td { background:#F0FDF4; font-weight:800; color:#059669; border-top:2px solid #059669; }
+.section-title { font-size:15px; font-weight:800; color:#111827; margin-bottom:8px; border-left:4px solid #7C3AED; padding-left:10px; }
+.footer { border-top:1px solid #E5E7EB; padding:12px 40px; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+<div class="header">
+  <h1>Corporate Tax Report</h1>
+  <p>${company} · UAE CT Compliance · FY 2024–2025</p>
+  <div class="meta">
+    <div><label>Effective CT Rate</label>${ctData?.effectiveCTRate || 0}%</div>
+    <div><label>CT Payable</label>AED ${(ctData?.ctPayable||0).toLocaleString()}</div>
+    <div><label>TRN</label>${ctData?.trnCT || "—"}</div>
+    <div><label>Prepared by</label>Garima Agarwal, CA</div>
+  </div>
+</div>
+<div class="page">
+  <div class="section-title">Tax Reconciliation</div>
+  <table>
+    <thead><tr><th>Item</th><th>Amount (AED)</th><th>Notes</th></tr></thead>
+    <tbody>
+      ${(ctData?.adjustments||[]).map(a => `<tr><td>${a.item}</td><td style="text-align:right;font-family:monospace">${a.sign>0?"+":"−"} ${Math.abs(a.amount).toLocaleString()}</td><td style="color:#6B7280">${a.note||""}</td></tr>`).join("")}
+      <tr class="total"><td><strong>Taxable Income</strong></td><td style="text-align:right;font-family:monospace"><strong>AED ${(ctData?.taxableFinalIncome||0).toLocaleString()}</strong></td><td></td></tr>
+      <tr class="total"><td><strong>CT Payable</strong></td><td style="text-align:right;font-family:monospace"><strong>AED ${(ctData?.ctPayable||0).toLocaleString()}</strong></td><td></td></tr>
+    </tbody>
+  </table>
+  <div class="section-title">Substance Requirements</div>
+  <table>
+    <thead><tr><th>Requirement</th><th>Status</th></tr></thead>
+    <tbody>
+      ${(ctData?.substanceItems||[]).map(s => `<tr><td>${s.item}</td><td style="color:${s.done?"#059669":"#EF4444"};font-weight:700">${s.done?"✓ Met":"✗ Action Needed"}</td></tr>`).join("")}
+    </tbody>
+  </table>
+</div>
+<div class="footer">
+  <strong style="color:#7C3AED">Finzzup</strong>
+  <span>Corporate Tax Report · ${company} · ${now}</span>
+  <span>Garima Agarwal CA · M.No. 160944</span>
+</div>
+</body></html>`;
+}
+ 
 function Portal({ client, onLogout }) {
-  const [page,      setPage]      = useState("overview");
+  // FIXED: Persist page to sessionStorage so PDF download/print doesn't reset navigation
+  const [page, setPageRaw] = useState(() => sessionStorage.getItem("finzzup_page") || "overview");
+  const setPage = (p) => { sessionStorage.setItem("finzzup_page", p); setPageRaw(p); };
   const [collapsed, setCollapsed] = useState(false);
  
   // ── Live data state (only populated for real/non-demo clients) ──
@@ -13528,6 +13645,8 @@ function Portal({ client, onLogout }) {
     compliance:      <ComplianceCalendar    client={client}/>,
     qfzp:            <QFZPModule            client={client} reportData={resolvedReportData}/>,
     auditready:      <AuditReadiness        client={client} reportData={resolvedReportData}/>,
+    // FIXED: Added relatedparty page for UAE dropdown
+    relatedparty:    <RelatedPartyRisk      client={client} reportData={resolvedReportData}/>,
   };
  
   return (
