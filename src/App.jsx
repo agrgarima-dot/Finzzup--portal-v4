@@ -779,11 +779,14 @@ function getNav(client) {
 
   // ── UAE-specific modules (only shown for UAE/Cross-Border clients) ──
   if (uae) {
-    base.push({ id:"vat",        icon:"🧾", label:"VAT Dashboard"   });
-    base.push({ id:"corptax",    icon:"🏛️", label:"Corporate Tax"   });
-    base.push({ id:"compliance", icon:"📅", label:"Compliance Cal." });
-    base.push({ id:"qfzp",       icon:"🏙️", label:"QFZP / Free Zone"});
-    base.push({ id:"auditready", icon:"✅", label:"Audit Readiness" });
+    base.push({ id:"vat",            icon:"🧾", label:"VAT Dashboard"        });
+    base.push({ id:"revrecon",       icon:"⚖️", label:"Rev. Reconciliation"  });
+    base.push({ id:"workingcapital", icon:"💧", label:"Working Capital"       });
+    base.push({ id:"verticalanalysis",icon:"📊", label:"Vertical Analysis"   }); // NEW
+    base.push({ id:"corptax",        icon:"🏛️", label:"Corporate Tax"        });
+    base.push({ id:"compliance",     icon:"📅", label:"Compliance Cal."      });
+    base.push({ id:"qfzp",           icon:"🏙️", label:"QFZP / Free Zone"    });
+    base.push({ id:"auditready",     icon:"✅", label:"Audit Readiness"      });
   }
 
   base.push({ id:"market",     icon:"🌐", label:"Market Intel"  });
@@ -1059,119 +1062,146 @@ const PACK_CONFIG = {
 };
 
 function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null }) {
-  // Fall back to dummy data if no live data passed
   const displayKpis = kpis || KPIs;
   const ovPack = client?.client_pack || client?.clientPack || "startup";
   const uaeClient = isUAE(client);
   const pendingActions = actions.filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
   const indiaNote = garimaNote || (PACK_CONFIG[ovPack]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
-  const uaeNote = "Q1 is looking solid — revenue at AED 1.85M is tracking 32% ahead of last year. Key priorities this month: (1) File Q1 VAT return by 28 April — AED 92.5K payable, keep this in your Emirates NBD current account. (2) Submit audited financials to DMCC by 30 April — your QFZP status depends on it. (3) Review mainland sales percentage — currently at 8%, which is above the 5% de-minimis threshold. I recommend restructuring two client contracts before Q2 close.";
+  const uaeNote = "Q1 is looking solid — revenue at AED 1.85M is tracking 32% ahead of last year. Key priorities this month: (1) File Q1 VAT return by 28 April — AED 92.5K payable, keep this in your Emirates NBD current account. (2) Submit audited financials to DMCC by 30 April — your QFZP status depends on it. (3) Review mainland sales percentage — currently at 8%, above the 5% de-minimis threshold. I recommend restructuring two client contracts before Q2 close.";
   const displayNote = uaeClient ? uaeNote : indiaNote;
-
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-
-  // Resolve engagement badge
   const engType = client?.type || "both";
   const engagementBadge = engType === "cfo" ? "Active CFO Engagement"
     : engType === "valuation" ? "Active Valuation Engagement"
     : "Active · CFO + Valuation";
+  const topKpi  = displayKpis[0];
+  const cashKpi = displayKpis.find(k => k.label?.toLowerCase().includes("cash"));
+  const runKpi  = displayKpis.find(k => k.label?.toLowerCase().includes("runway"));
+  const burnKpi = displayKpis.find(k => k.label?.toLowerCase().includes("burn"));
+  const vatKpi  = displayKpis.find(k => k.label?.toLowerCase().includes("vat"));
 
   return (
     <div style={{ padding:24 }}>
-      {/* UAE Disclaimer */}
       {uaeClient && <UAEDisclaimer/>}
-      {/* Hero Banner — pack-aware */}
+
+      {/* Hero Banner */}
       <div style={{ marginBottom:20, padding:"22px 28px", borderRadius:18,
         background: uaeClient            ? "linear-gradient(135deg,#003A1F 0%,#00732F 60%,#1a5276 100%)"
                   : ovPack==="msme"      ? "linear-gradient(135deg,#1B3A6B 0%,#2563EB 60%,#7C3AED 100%)"
                   : ovPack==="corporate" ? "linear-gradient(135deg,#4C1D95 0%,#7C3AED 60%,#DB2777 100%)"
                   : "linear-gradient(135deg,#1a3a8f 0%,#2563EB 60%,#7C3AED 100%)",
         color:"white", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", right:-30, top:-30, width:180, height:180,
-          borderRadius:"50%", background:"rgba(255,255,255,0.05)" }}/>
-        <div style={{ position:"absolute", right:60, bottom:-40, width:120, height:120,
-          borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
+        <div style={{ position:"absolute", right:-30, top:-30, width:180, height:180, borderRadius:"50%", background:"rgba(255,255,255,0.05)" }}/>
+        <div style={{ position:"absolute", right:60, bottom:-40, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
         <div style={{ position:"relative" }}>
-          <div style={{ fontFamily:F, fontSize:11, fontWeight:700, opacity:0.7,
-            letterSpacing:"0.1em", marginBottom:6 }}>
+          <div style={{ fontFamily:F, fontSize:11, fontWeight:700, opacity:0.7, letterSpacing:"0.1em", marginBottom:6 }}>
             {greeting.toUpperCase()}
           </div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:26, marginBottom:6 }}>
-            {client?.name || "Client"}
-          </div>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:26, marginBottom:6 }}>{client?.name || "Client"}</div>
           <div style={{ fontFamily:F, fontSize:13, opacity:0.8, marginBottom:12 }}>
-            {client?.company || "Company"}
-            {reportData?.monthLabel ? ` · ${reportData.monthLabel}` : ""}
+            {client?.company || "Company"}{reportData?.monthLabel ? ` · ${reportData.monthLabel}` : ""}
           </div>
-          <span style={{ display:"inline-block", background:"rgba(255,255,255,0.18)",
-            borderRadius:100, padding:"4px 14px", fontSize:12, fontWeight:700,
-            fontFamily:F, backdropFilter:"blur(4px)", border:"1px solid rgba(255,255,255,0.25)",
-            marginRight:8 }}>
-            ● {engagementBadge}
-          </span>
-          {uaeClient && (
-            <span style={{ display:"inline-block", background:"rgba(255,255,255,0.15)",
-              borderRadius:100, padding:"4px 14px", fontSize:12, fontWeight:700,
-              fontFamily:F, backdropFilter:"blur(4px)", border:"1px solid rgba(255,255,255,0.2)" }}>
-              🇦🇪 {client?.jurisdiction === "Cross-Border" ? "India + UAE" : "UAE · " + (client?.freezone || "Free Zone")}
+          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+            <span style={{ display:"inline-block", background:"rgba(255,255,255,0.18)", borderRadius:100,
+              padding:"4px 14px", fontSize:12, fontWeight:700, fontFamily:F,
+              backdropFilter:"blur(4px)", border:"1px solid rgba(255,255,255,0.25)" }}>
+              ● {engagementBadge}
             </span>
-          )}
+            {uaeClient && (
+              <span style={{ display:"inline-block", background:"rgba(255,255,255,0.15)", borderRadius:100,
+                padding:"4px 14px", fontSize:12, fontWeight:700, fontFamily:F,
+                backdropFilter:"blur(4px)", border:"1px solid rgba(255,255,255,0.2)" }}>
+                🇦🇪 {client?.jurisdiction === "Cross-Border" ? "India + UAE" : "UAE · " + (client?.freezone || "Free Zone")}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* KPI Row — pack-specific */}
+      {/* At a Glance — plain English summary */}
+      <Card style={{ marginBottom:20, borderLeft:`4px solid ${uaeClient?"#00732F":C.blue}`,
+        background:uaeClient?"#F0FDF4":`${C.blue}06` }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ width:40, height:40, borderRadius:12, flexShrink:0,
+            background:uaeClient?"#00732F":C.blue,
+            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>{"📋"}</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:6 }}>
+              {"At a Glance — "}{reportData?.monthLabel || "This Month"}
+            </div>
+            {topKpi && (
+              <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.7, marginBottom:4 }}>
+                <span style={{ fontWeight:700, color:topKpi.trend==="up"?C.green:C.red }}>
+                  {topKpi.trend==="up"?"▲":"▼"}{" "}{topKpi.label}: {topKpi.value}
+                </span>
+                {topKpi.prev && topKpi.prev !== "—" && <span style={{ color:C.muted }}>{" vs "}{topKpi.prev}{" last period."}</span>}
+              </div>
+            )}
+            {uaeClient && vatKpi ? (
+              <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.7, marginBottom:4 }}>
+                <span style={{ fontWeight:700, color:C.amber }}>{"VAT due: "}{vatKpi.value}</span>
+                <span style={{ color:C.muted }}>{" — file by 28th of month following quarter end."}</span>
+              </div>
+            ) : cashKpi ? (
+              <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.7, marginBottom:4 }}>
+                <span style={{ fontWeight:700, color:cashKpi.trend==="up"?C.green:C.amber }}>{"Cash: "}{cashKpi.value}</span>
+                <span style={{ color:C.muted }}>{" — "}{cashKpi.trend==="up"?"healthy position.":"monitor carefully."}</span>
+              </div>
+            ) : null}
+            {runKpi && !uaeClient && (
+              <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.7, marginBottom:4 }}>
+                <span style={{ fontWeight:700, color:parseFloat(runKpi.value)<6?C.red:C.green }}>{"Runway: "}{runKpi.value}</span>
+                {burnKpi && <span style={{ color:C.muted }}>{" · Burn: "}{burnKpi.value}</span>}
+              </div>
+            )}
+            {highPriority.length > 0 && (
+              <div style={{ fontFamily:F, fontSize:13, color:C.red, fontWeight:600, marginTop:4 }}>
+                {"⚠️ "}{highPriority.length}{" high-priority action"}{highPriority.length>1?"s":""}{" need your attention this month."}
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* Key Metrics — top 3 only */}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>Key Metrics</div>
+        <button onClick={() => setPage("dashboard")} style={{ fontFamily:F, fontSize:12, color:C.blue,
+          background:"none", border:"none", cursor:"pointer", fontWeight:600, padding:0 }}>
+          {"View all metrics & P&L →"}
+        </button>
+      </div>
       <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }} className="ov-kpi">
-        {(kpis && kpis.length > 0 ? kpis.slice(0,3).map(k => ({
-            label: k.label, value: k.value, prev: k.prev,
-            pct: k.pct || (k.prev && k.prev !== "—" ? "" : ""),
-            up: k.trend === "up", color: k.color, bg: k.bg, icon: k.icon || k.emoji
-          }))
-          : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.overviewKpis || PACK_CONFIG.startup.overviewKpis)
-        ).map((k,i) => (
+        {displayKpis.slice(0,3).map((k,i) => (
           <Card key={i} style={{ padding:18 }}>
             <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-              <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
+              <div style={{ width:36, height:36, borderRadius:10, background:k.bg||`${k.color}15`,
                 display:"flex", alignItems:"center", justifyContent:"center" }}>
                 {typeof k.icon === "string" && k.icon.length <= 12
                   ? <Icon name={k.icon} size={18} color={k.color}/>
                   : <span style={{ fontSize:16 }}>{k.icon}</span>}
               </div>
-              {k.pct && (
+              {k.trend && (
                 <span style={{ fontSize:11, fontWeight:700,
-                  color:k.up ? C.green : C.red,
-                  background:k.up ? "#ECFDF5" : "#FEF2F2",
+                  color:k.trend==="up"?C.green:C.red,
+                  background:k.trend==="up"?"#ECFDF5":"#FEF2F2",
                   padding:"3px 8px", borderRadius:100, fontFamily:F }}>
-                  {k.up ? "▲" : "▼"} {k.pct}
+                  {k.trend==="up"?"▲":"▼"}{k.prev && k.prev!=="—" ? ` vs ${k.prev}` : ""}
                 </span>
               )}
             </div>
-            <div style={{ fontFamily:FM, fontWeight:700, fontSize:22, color:k.color, marginBottom:2 }}>
-              {k.value}
-            </div>
-            <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, marginBottom:2 }}>{k.label}</div>
-            {k.prev && k.prev !== "—" && (
-              <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginBottom:2 }}>
-                vs {k.prev} prior period
-              </div>
-            )}
-            <div style={{ fontFamily:F, fontSize:11, color:k.up?C.green:C.red, lineHeight:1.4, marginBottom:2 }}>
-              {kpiContext(k)}
-            </div>
-            {kpiBenchmark(k.label, ovPack, null) && (
-              <div style={{ fontFamily:F, fontSize:10, color:C.blue, background:`${C.blue}08`,
-                padding:"2px 8px", borderRadius:6, display:"inline-block", marginTop:2 }}>
-                {kpiBenchmark(k.label, ovPack, null)}
-              </div>
-            )}
+            <div style={{ fontFamily:FM, fontWeight:700, fontSize:22, color:k.color, marginBottom:3 }}>{k.value}</div>
+            <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, marginBottom:3 }}>{k.label}</div>
+            <div style={{ fontFamily:F, fontSize:11, color:C.dim, lineHeight:1.4 }}>{kpiContext(k)}</div>
           </Card>
         ))}
       </div>
 
-      {/* ── 3-MONTH FORWARD VIEW ── */}
+      {/* 3-Month Forward View */}
       {(reportData?.forecast1Label || reportData?.forecastNote) && (
-        <Card style={{ marginBottom:24, borderLeft:`3px solid ${C.purple}` }}>
+        <Card style={{ marginBottom:20, borderLeft:`3px solid ${C.purple}` }}>
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
             <div style={{ width:36, height:36, borderRadius:10, background:`${C.purple}15`,
               display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>{"🔭"}</div>
@@ -1183,26 +1213,25 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           {reportData?.forecastNote && (
             <div style={{ padding:"12px 14px", borderRadius:10, background:`${C.purple}08`,
               border:`1px solid ${C.purple}15`, marginBottom:14 }}>
-              <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8, margin:0 }}>
-                {reportData.forecastNote}
-              </p>
+              <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8, margin:0 }}>{reportData.forecastNote}</p>
             </div>
           )}
-          {(reportData?.forecast1Label) && (
+          {reportData?.forecast1Label && (
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }} className="inv-grid">
               {[
-                { label: reportData?.forecast1Label || "Month 1", value: reportData?.forecast1Value, trend: reportData?.forecast1Trend },
-                { label: reportData?.forecast2Label || "Month 2", value: reportData?.forecast2Value, trend: reportData?.forecast2Trend },
-                { label: reportData?.forecast3Label || "Month 3", value: reportData?.forecast3Value, trend: reportData?.forecast3Trend },
-              ].filter(f => f.value).map((f, i) => (
+                { label:reportData.forecast1Label, value:reportData.forecast1Value, trend:reportData.forecast1Trend },
+                { label:reportData.forecast2Label, value:reportData.forecast2Value, trend:reportData.forecast2Trend },
+                { label:reportData.forecast3Label, value:reportData.forecast3Value, trend:reportData.forecast3Trend },
+              ].filter(f=>f.value).map((f,i) => (
                 <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:C.bg2,
                   border:`1px solid ${C.border}`, textAlign:"center" }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
                   <div style={{ fontFamily:FM, fontSize:20, fontWeight:800,
-                    color: f.trend==="up" ? C.green : f.trend==="down" ? C.red : C.purple }}>{f.value}</div>
+                    color:f.trend==="up"?C.green:f.trend==="down"?C.red:C.purple }}>{f.value}</div>
                   {f.trend && (
-                    <div style={{ fontFamily:F, fontSize:10, color: f.trend==="up"?C.green:f.trend==="down"?C.red:C.muted, marginTop:3 }}>
-                      {f.trend==="up" ? "▲ Improving" : f.trend==="down" ? "▼ Watch" : "→ Stable"}
+                    <div style={{ fontFamily:F, fontSize:10, marginTop:3,
+                      color:f.trend==="up"?C.green:f.trend==="down"?C.red:C.muted }}>
+                      {f.trend==="up"?"▲ Improving":f.trend==="down"?"▼ Watch":"→ Stable"}
                     </div>
                   )}
                 </div>
@@ -1212,109 +1241,149 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </Card>
       )}
 
+      {/* Note from Garima */}
+      <Card style={{ marginBottom:20, background:"#FFFBF0", border:"1px solid #FDE68A" }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ flexShrink:0 }}>
+            <div style={{ width:42, height:42, borderRadius:"50%",
+              background:"linear-gradient(135deg,#F59E0B,#D97706)",
+              display:"flex", alignItems:"center", justifyContent:"center",
+              fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+              <div>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E" }}>Note from Garima</div>
+                <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginTop:1 }}>Garima Agarwal · CA · Your CFO Partner</div>
+              </div>
+              {reportData?.monthLabel && (
+                <span style={{ fontFamily:F, fontSize:11, color:"#B45309", background:"#FEF3C7",
+                  padding:"3px 10px", borderRadius:100, fontWeight:600 }}>{reportData.monthLabel}</span>
+              )}
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.9, margin:"0 0 14px" }}>{displayNote}</p>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              <a href={WA} target="_blank" rel="noopener noreferrer"
+                style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#25D366",
+                  color:"white", borderRadius:8, padding:"8px 16px", fontFamily:F,
+                  fontWeight:700, fontSize:12, textDecoration:"none" }}>
+                {"📱 WhatsApp Garima"}
+              </a>
+              <button onClick={() => setPage("actions")}
+                style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#FEF3C7",
+                  color:"#92400E", borderRadius:8, padding:"8px 16px", fontFamily:F,
+                  fontWeight:700, fontSize:12, border:"1px solid #FDE68A", cursor:"pointer" }}>
+                {"✅ View Action Items ("}{pendingActions.length}{")"}
+              </button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
       {/* Charts Row */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="ov-charts">
-        {/* Revenue vs Expenses */}
         <Card>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:16 }}>
-            {ovPack==="msme" ? "Revenue vs COGS" : ovPack==="corporate" ? "Revenue vs Operating Costs" : "Revenue vs Expenses"}
-            <span style={{ fontWeight:400, color:C.muted, fontSize:11, marginLeft:6 }}>last 6 months (₹L)</span>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>
+              {ovPack==="msme"?"Revenue vs COGS":ovPack==="corporate"?"Revenue vs Operating Costs":"Revenue vs Expenses"}
+            </div>
+            <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>{uaeClient?"AED":"₹"}{" · 6 months"}</span>
           </div>
-          <ResponsiveContainer width="100%" height={180}>
+          <ResponsiveContainer width="100%" height={160}>
             <LineChart data={OVERVIEW_REVEXP} margin={{ top:4, right:8, left:-20, bottom:0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke={C.border} />
-              <XAxis dataKey="month" tick={{ fontSize:11, fontFamily:F, fill:C.muted }} axisLine={false} tickLine={false}/>
+              <CartesianGrid strokeDasharray="3 3" stroke={C.border}/>
+              <XAxis dataKey="month" tick={{ fontSize:10, fontFamily:F, fill:C.muted }} axisLine={false} tickLine={false}/>
               <YAxis tick={{ fontSize:10, fontFamily:F, fill:C.muted }} axisLine={false} tickLine={false}/>
               <Tooltip contentStyle={{ fontFamily:F, fontSize:12, borderRadius:8, border:`1px solid ${C.border}` }}/>
-              <Legend iconType="circle" wrapperStyle={{ fontSize:11, fontFamily:F }}/>
-              <Line type="monotone" dataKey="revenue"  stroke={C.blue}   strokeWidth={2.5} dot={false} name="Revenue"/>
-              <Line type="monotone" dataKey="expenses" stroke={C.pink}   strokeWidth={2.5} dot={false} name="Expenses"/>
+              <Line type="monotone" dataKey="revenue"  stroke={C.blue} strokeWidth={2.5} dot={false} name="Revenue"/>
+              <Line type="monotone" dataKey="expenses" stroke={C.pink} strokeWidth={2.5} dot={false} name="Expenses"/>
             </LineChart>
           </ResponsiveContainer>
-        </Card>
-
-        {/* Cash Flow */}
-        <Card>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:16 }}>
-            Monthly Net Cash Flow
-            <span style={{ fontWeight:400, color:C.muted, fontSize:11, marginLeft:6 }}>₹ Lakhs</span>
+          <div style={{ display:"flex", gap:16, marginTop:8 }}>
+            {[{c:C.blue,l:"Revenue"},{c:C.pink,l:"Expenses"}].map((x,i)=>(
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:6 }}>
+                <div style={{ width:12, height:3, background:x.c, borderRadius:2 }}/>
+                <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>{x.l}</span>
+              </div>
+            ))}
           </div>
-          <ResponsiveContainer width="100%" height={180}>
+        </Card>
+        <Card>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Monthly Net Cash Flow</div>
+            <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>{uaeClient?"AED '000":"₹ Lakhs"}</span>
+          </div>
+          <ResponsiveContainer width="100%" height={160}>
             <BarChart data={OVERVIEW_CF} margin={{ top:4, right:8, left:-20, bottom:0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
-              <XAxis dataKey="month" tick={{ fontSize:11, fontFamily:F, fill:C.muted }} axisLine={false} tickLine={false}/>
+              <XAxis dataKey="month" tick={{ fontSize:10, fontFamily:F, fill:C.muted }} axisLine={false} tickLine={false}/>
               <YAxis tick={{ fontSize:10, fontFamily:F, fill:C.muted }} axisLine={false} tickLine={false}/>
               <Tooltip contentStyle={{ fontFamily:F, fontSize:12, borderRadius:8, border:`1px solid ${C.border}` }}/>
               <Bar dataKey="net" name="Net Flow" fill={C.teal} radius={[4,4,0,0]}/>
             </BarChart>
           </ResponsiveContainer>
+          <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:8 }}>{"▲ Positive = cash in · ▼ Negative = cash consumed"}</div>
         </Card>
       </div>
 
-      {/* Engagements + Quick Actions */}
+      {/* Priorities + Quick Nav */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="ov-bottom">
-        {/* My Engagements */}
         <Card>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>My Engagements</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {OVERVIEW_ENGAGEMENTS.map(e => (
-              <div key={e.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                padding:"10px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
-                <div>
-                  <div style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text, marginBottom:2 }}>{e.title}</div>
-                  <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{e.type}</div>
-                </div>
-                <span style={{ fontSize:11, fontWeight:700, color:e.color,
-                  background:e.color+"18", padding:"3px 10px", borderRadius:100, fontFamily:F, whiteSpace:"nowrap" }}>
-                  {e.status}
-                </span>
-              </div>
-            ))}
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Top Priorities</div>
+            <button onClick={()=>setPage("actions")} style={{ fontFamily:F, fontSize:11, color:C.blue,
+              background:"none", border:"none", cursor:"pointer", fontWeight:600 }}>{"View all →"}</button>
           </div>
-        </Card>
-
-        {/* Quick Actions + WhatsApp */}
-        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-          <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>Quick Actions</div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              {[
-                { icon:"📋", label:"Request Valuation", action:"newrequest", grad:C.grad1, white:true },
-                { icon:"📁", label:"View Reports",      action:"myreport",   grad:null },
-                { icon:"📊", label:"CFO Dashboard",     action:"dashboard",  grad:null },
-                { icon:"📁", label:"My Documents",      action:"documents",  grad:null },
-              ].map((q,i) => (
-                <button key={i} onClick={() => q.action && setPage(q.action)}
-                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:6,
-                    padding:"12px 8px", borderRadius:10,
-                    background: q.grad ? C.grad1 : C.bg,
-                    border: `1px solid ${q.grad ? "transparent" : C.border}`,
-                    cursor:"pointer", transition:"all 0.15s" }}>
-                  <span style={{ fontSize:20 }}>{q.icon}</span>
-                  <span style={{ fontFamily:F, fontSize:11, fontWeight:600,
-                    color: q.grad ? "white" : C.text, textAlign:"center" }}>{q.label}</span>
-                </button>
+          {highPriority.length === 0 ? (
+            <div style={{ fontFamily:F, fontSize:13, color:C.green, padding:"12px 0" }}>{"✅ No high-priority items — you're on track!"}</div>
+          ) : (
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {highPriority.slice(0,3).map((a,i) => (
+                <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:8,
+                  background:"#FEF2F2", border:"1px solid #FCA5A5", alignItems:"flex-start" }}>
+                  <span style={{ color:C.red, fontWeight:700, flexShrink:0, marginTop:1 }}>{"!"}</span>
+                  <span style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.5 }}>{a.text}</span>
+                </div>
               ))}
             </div>
-          </Card>
-
-          {/* WhatsApp help */}
-          <Card style={{ background:"linear-gradient(135deg,#E7FAF0 0%,#D1F5E4 100%)",
-            border:"1px solid #A7F0C4", padding:"16px 18px" }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#065F46", marginBottom:6 }}>
-              💬 Need help?
+          )}
+        </Card>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Quick Links</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+            {[
+              { icon:"📊", label:"Full Dashboard", sub:"All KPIs & P&L",    action:"dashboard", color:C.blue   },
+              { icon:"💰", label:"Cash Flow",       sub:"Forecast & bridge", action:"cashflow",  color:C.teal   },
+              { icon:"✅", label:"Action Items",    sub:pendingActions.length + " pending",      action:"actions",  color:C.amber  },
+              uaeClient
+                ? { icon:"🧾", label:"VAT Dashboard", sub:"Filing & tracker",   action:"vat",       color:"#00732F" }
+                : { icon:"📋", label:"My Report",      sub:"Monthly CFO report", action:"myreport",  color:C.purple },
+            ].map((q,i) => (
+              <button key={i} onClick={()=>setPage(q.action)}
+                style={{ display:"flex", gap:8, alignItems:"center", padding:"10px 12px",
+                  borderRadius:10, background:"white", border:`1px solid ${C.border}`,
+                  cursor:"pointer", textAlign:"left" }}>
+                <div style={{ width:32, height:32, borderRadius:8, background:`${q.color}15`,
+                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, flexShrink:0 }}>
+                  {q.icon}
+                </div>
+                <div>
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text }}>{q.label}</div>
+                  <div style={{ fontFamily:F, fontSize:10, color:C.muted }}>{q.sub}</div>
+                </div>
+              </button>
+            ))}
+          </div>
+          <a href={WA} target="_blank" rel="noopener noreferrer"
+            style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px",
+              borderRadius:10, background:"linear-gradient(135deg,#E7FAF0,#D1F5E4)",
+              border:"1px solid #A7F0C4", textDecoration:"none" }}>
+            <span style={{ fontSize:20 }}>{"📱"}</span>
+            <div>
+              <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:"#065F46" }}>Chat with Garima</div>
+              <div style={{ fontFamily:F, fontSize:10, color:"#047857" }}>Quick questions · WhatsApp</div>
             </div>
-            <div style={{ fontFamily:F, fontSize:12, color:"#047857", marginBottom:12, lineHeight:1.6 }}>
-              Chat directly with Garima on WhatsApp for quick questions about your financials or valuations.
-            </div>
-            <a href={WA} target="_blank" rel="noopener noreferrer"
-              style={{ display:"inline-flex", alignItems:"center", gap:8,
-                background:"#25D366", color:"white", borderRadius:10,
-                padding:"9px 18px", fontFamily:F, fontWeight:700, fontSize:13,
-                textDecoration:"none", boxShadow:"0 2px 8px rgba(37,211,102,0.35)" }}>
-              <span style={{ fontSize:17 }}>📱</span> WhatsApp Garima
-            </a>
-          </Card>
+          </a>
         </div>
       </div>
 
@@ -1324,9 +1393,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           .ov-charts { grid-template-columns: 1fr !important; }
           .ov-bottom { grid-template-columns: 1fr !important; }
         }
-        @media(max-width:420px) {
-          .ov-kpi { grid-template-columns: 1fr !important; }
-        }
+        @media(max-width:420px) { .ov-kpi { grid-template-columns: 1fr !important; } }
       `}</style>
     </div>
   );
@@ -8802,7 +8869,7 @@ function CorporateTax({ client, reportData }) {
     ],
   };
 
-  const tabs = [["overview","🏛️ Overview"],["sbr","💡 SBR Eligibility"],["qfzp","🏙️ QFZP Tracker"],["recon","📊 Tax Reconciliation"]];
+  const tabs = [["overview","🏛️ Overview"],["sbr","💡 SBR Eligibility"],["qfzp","🏙️ QFZP Tracker"],["recon","📊 Tax Reconciliation"],["rpt","🏢 Related Parties"],["connected","👤 Connected Persons"],["armslength","⚖️ Arm's Length"]];
 
   return (
     <div style={{ padding:24 }}>
@@ -9058,6 +9125,2459 @@ function CorporateTax({ client, reportData }) {
           </Card>
         </div>
       )}
+
+      {/* ── RELATED PARTY TRANSACTIONS ── */}
+      {tab === "rpt" && (() => {
+        const rptData = rd.rpt || {
+          totalRPT: 485000,
+          revenueRatio: 26.2,
+          transactions: [
+            {
+              party:       "Ahmed Al Rashidi (Shareholder/Director)",
+              relation:    "Shareholder >25% + Senior Officer",
+              type:        "Salary & Management Fees",
+              amount:      240000,
+              armslength:  true,
+              benchmark:   "AED 180K–280K market range for equivalent role",
+              risk:        "Low",
+              action:      "Document board resolution approving remuneration",
+            },
+            {
+              party:       "Rashidi Holdings Ltd (UAE)",
+              relation:    "Common shareholder (>50% ownership)",
+              type:        "Intercompany loan — interest receivable",
+              amount:      85000,
+              armslength:  true,
+              benchmark:   "EIBOR + 2.5% = 7.8% — charged at 7.5% (within range)",
+              risk:        "Medium",
+              action:      "Prepare transfer pricing documentation — loan agreement needed",
+            },
+            {
+              party:       "Al Rashidi Brothers Trading (Mainland UAE)",
+              relation:    "Related company — common director",
+              type:        "Service fee income",
+              amount:      120000,
+              armslength:  false,
+              benchmark:   "Similar services billed at AED 160K–200K to third parties",
+              risk:        "High",
+              action:      "Price adjustment required — rebill at arm's length or document commercial justification",
+            },
+            {
+              party:       "Rashidi Family Trust",
+              relation:    "Connected person — beneficial owner",
+              type:        "Rent — office premises",
+              amount:      40000,
+              armslength:  true,
+              benchmark:   "DMCC comparable office: AED 38K–45K/yr — within range",
+              risk:        "Low",
+              action:      "Obtain independent rental valuation and retain on file",
+            },
+          ],
+        };
+
+        const riskColor = r => r === "High" ? C.red : r === "Medium" ? C.amber : C.green;
+        const riskBg    = r => r === "High" ? "#FEF2F2" : r === "Medium" ? "#FFFBEB" : "#F0FDF4";
+
+        return (
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+            {/* Summary */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+              {[
+                { label:"Total RPT Value",       value:fmtAED(rptData.totalRPT), color:C.blue,  icon:"🔗" },
+                { label:"% of Revenue",           value:`${rptData.revenueRatio}%`, color:rptData.revenueRatio>25?C.amber:C.green, icon:"📊" },
+                { label:"High-Risk Transactions", value:rptData.transactions.filter(t=>t.risk==="High").length, color:C.red, icon:"⚠️" },
+              ].map((s,i) => (
+                <Card key={i} style={{ padding:18 }}>
+                  <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+                  <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+                </Card>
+              ))}
+            </div>
+
+            {/* RPT Definition */}
+            <Card style={{ background:"#EFF6FF", border:"1px solid #93C5FD", padding:"14px 18px" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.blue, marginBottom:6 }}>
+                📋 Who is a Connected Person under UAE CT Law?
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                {[
+                  "Shareholder holding ≥ 25% of shares or voting rights",
+                  "Director or senior officer of the company",
+                  "Related companies with common ownership > 50%",
+                  "Family members of any of the above (spouse, children, parents)",
+                  "Trusts or foundations controlled by connected persons",
+                  "Partner in a partnership arrangement",
+                ].map((r,i) => (
+                  <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
+                    <span style={{ color:C.blue, fontWeight:700, flexShrink:0, fontSize:12 }}>•</span>
+                    <span style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.5 }}>{r}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Transaction List */}
+            {rptData.transactions.map((t,i) => (
+              <Card key={i} style={{ borderLeft:`4px solid ${riskColor(t.risk)}`, padding:"16px 20px" }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10, flexWrap:"wrap", gap:8 }}>
+                  <div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{t.party}</div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{t.relation}</div>
+                  </div>
+                  <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                    <span style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.text }}>{fmtAED(t.amount)}</span>
+                    <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                      background:riskBg(t.risk), color:riskColor(t.risk) }}>{t.risk} Risk</span>
+                    <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                      background:t.armslength?"#ECFDF5":"#FEF2F2", color:t.armslength?C.green:C.red }}>
+                      {t.armslength ? "✓ Arm's Length" : "✗ Not Arm's Length"}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:3, textTransform:"uppercase", letterSpacing:"0.05em" }}>Transaction Type</div>
+                    <div style={{ fontFamily:F, fontSize:13, color:C.text }}>{t.type}</div>
+                  </div>
+                  <div>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:3, textTransform:"uppercase", letterSpacing:"0.05em" }}>Benchmark</div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.5 }}>{t.benchmark}</div>
+                  </div>
+                </div>
+
+                <div style={{ marginTop:12, padding:"10px 14px", borderRadius:8,
+                  background:riskBg(t.risk), border:`1px solid ${riskColor(t.risk)}33` }}>
+                  <span style={{ fontFamily:F, fontSize:12, color:riskColor(t.risk), fontWeight:600 }}>
+                    📌 Action: {t.action}
+                  </span>
+                </div>
+              </Card>
+            ))}
+
+            {/* Garima Note */}
+            <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:8 }}>
+                💬 Garima's Note on RPT Compliance
+              </div>
+              <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.8, margin:0 }}>
+                Your RPT total at AED {fmtAED(rptData.totalRPT, false)} ({rptData.revenueRatio}% of revenue) is above the threshold where the FTA expects formal transfer pricing documentation.
+                The most urgent issue is the <strong>Al Rashidi Brothers service fee</strong> — billed at AED 120K vs market rate of AED 160–200K.
+                This underpricing is a CT audit red flag and must be corrected before your return.
+                For all other RPTs, ensure you have signed agreements, board resolutions, and benchmarking studies on file.
+                I'll prepare the RPT schedule for your CT return — please send me the signed loan agreement with Rashidi Holdings.
+              </p>
+              <button onClick={() => window.open(WA,"_blank")} style={{ marginTop:12, padding:"9px 20px",
+                borderRadius:8, border:"none", background:"#D97706", color:"white",
+                fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                💬 Discuss RPT with Garima
+              </button>
+            </Card>
+          </div>
+        );
+      })()}
+
+      {/* ── RELATED PARTIES (entities / companies) ── */}
+      {tab === "rpt" && (() => {
+        const rptData = rd.rpt || {
+          totalRPT: 325000,
+          revenueRatio: 17.6,
+          entities: [
+            {
+              name:        "Rashidi Holdings Ltd",
+              jurisdiction:"UAE (Abu Dhabi)",
+              relationship:"Common shareholder — Ahmed Al Rashidi holds >50% in both entities",
+              ownershipPct: 80,
+              transactions:[
+                { desc:"Intercompany loan — principal AED 850,000 @ 7.5% p.a.", amount:63750, type:"Interest income" },
+              ],
+              tpMethod:    "CUP — EIBOR + 2.5% benchmark",
+              compliant:   true,
+              risk:        "Medium",
+              docStatus:   ["Loan agreement — PENDING signed copy", "Board approval minute — ✓ on file", "Interest calculation schedule — ✓ prepared"],
+              action:      "Obtain signed loan agreement urgently — FTA requires this as primary documentation.",
+            },
+            {
+              name:        "Al Rashidi Brothers Trading LLC",
+              jurisdiction:"UAE Mainland (Dubai)",
+              relationship:"Common director — Ahmed Al Rashidi is director of both entities",
+              ownershipPct: 0,
+              transactions:[
+                { desc:"Management & advisory services provided by DMCC entity", amount:120000, type:"Service fee income" },
+              ],
+              tpMethod:    "CUP — compared to 3rd party service agreements",
+              compliant:   false,
+              risk:        "High",
+              docStatus:   ["Service agreement — needs repricing to AED 160K+", "Third-party comparables — 3 quotes required", "Scope of services document — PENDING"],
+              action:      "Underpriced by AED 40–80K vs market. Revise fee to AED 160K minimum or document commercial justification — this is the #1 CT audit risk.",
+            },
+            {
+              name:        "Rashidi Family Trust",
+              jurisdiction:"UAE (DIFC registered)",
+              relationship:"Connected entity — beneficial owner is Ahmed Al Rashidi",
+              ownershipPct: 100,
+              transactions:[
+                { desc:"Office premises lease — 1,200 sq ft DMCC office", amount:40000, type:"Rent expense" },
+              ],
+              tpMethod:    "CUP — DMCC market rent comparables",
+              compliant:   true,
+              risk:        "Low",
+              docStatus:   ["Lease agreement — ✓ valid until Dec 2026", "Independent valuation — PENDING", "DIFC trust deed — ✓ on file"],
+              action:      "Obtain independent DMCC rental valuation and retain on audit file.",
+            },
+          ],
+        };
+
+        const riskColor = r => r==="High"?C.red:r==="Medium"?C.amber:C.green;
+        const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#F0FDF4";
+        const totalRPT  = rptData.entities.reduce((s,e) => s + e.transactions.reduce((a,t)=>a+t.amount,0), 0);
+
+        return (
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+            {/* Legal definition banner */}
+            <Card style={{ background:"#EFF6FF", border:"1px solid #93C5FD", padding:"14px 18px" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.blue, marginBottom:6 }}>
+                📋 Related Party — UAE CT Law Definition (Art. 35 & 34)
+              </div>
+              <p style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.7, margin:"0 0 10px" }}>
+                A <strong>Related Party</strong> is an entity (company, trust, partnership) where there is common ownership or control of <strong>≥50%</strong>, or where one entity controls the other.
+                All transactions between related parties must be priced on <strong>arm's length terms</strong> and supported by transfer pricing documentation.
+                This is separate from Connected Persons (individuals) which is governed by Art. 36.
+              </p>
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                {[
+                  "Common shareholder owning ≥50% in both entities",
+                  "Parent company / subsidiary relationships",
+                  "Sister companies under same holding structure",
+                  "Trusts / foundations with common beneficial owner",
+                  "Joint ventures with ≥50% common ownership",
+                  "Partnerships with controlling common partner",
+                ].map((r,i) => (
+                  <div key={i} style={{ display:"flex", gap:6, alignItems:"flex-start" }}>
+                    <span style={{ color:C.blue, fontWeight:700, fontSize:12, flexShrink:0 }}>•</span>
+                    <span style={{ fontFamily:F, fontSize:11, color:C.text, lineHeight:1.5 }}>{r}</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Summary */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+              {[
+                { label:"Total RPT Value",         value:fmtAED(totalRPT),                                                        color:C.blue,  icon:"🔗" },
+                { label:"% of Revenue",            value:`${((totalRPT/1850000)*100).toFixed(1)}%`,                               color:C.amber, icon:"📊" },
+                { label:"Non-Compliant Entities",  value:rptData.entities.filter(e=>!e.compliant).length,                         color:C.red,   icon:"⚠️" },
+              ].map((s,i) => (
+                <Card key={i} style={{ padding:18 }}>
+                  <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+                  <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Entity cards */}
+            {rptData.entities.map((e,i) => (
+              <Card key={i} style={{ borderLeft:`4px solid ${riskColor(e.risk)}` }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12, flexWrap:"wrap", gap:8 }}>
+                  <div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>{e.name}</div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>
+                      {e.jurisdiction} · {e.relationship}
+                    </div>
+                  </div>
+                  <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                    <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                      background:riskBg(e.risk), color:riskColor(e.risk) }}>{e.risk} Risk</span>
+                    <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                      background:e.compliant?"#ECFDF5":"#FEF2F2", color:e.compliant?C.green:C.red }}>
+                      {e.compliant ? "✓ Arm's Length" : "✗ Non-Compliant"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Transactions */}
+                <div style={{ background:`${C.border}66`, borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8 }}>
+                    Transactions
+                  </div>
+                  {e.transactions.map((t,j) => (
+                    <div key={j} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", flexWrap:"wrap", gap:8 }}>
+                      <div>
+                        <div style={{ fontFamily:F, fontSize:13, color:C.text }}>{t.desc}</div>
+                        <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>{t.type}</div>
+                      </div>
+                      <div style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.text }}>{fmtAED(t.amount)}</div>
+                    </div>
+                  ))}
+                  <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:8 }}>TP Method: {e.tpMethod}</div>
+                </div>
+
+                {/* Documentation */}
+                <div style={{ marginBottom:12 }}>
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 }}>
+                    Documentation Status
+                  </div>
+                  {e.docStatus.map((d,j) => {
+                    const pending = d.includes("PENDING") || d.includes("needs") || d.includes("required");
+                    return (
+                      <div key={j} style={{ display:"flex", gap:8, padding:"4px 0", alignItems:"flex-start" }}>
+                        <span style={{ color:pending?C.amber:C.green, fontWeight:700, fontSize:13, flexShrink:0 }}>{pending?"⚠":"✓"}</span>
+                        <span style={{ fontFamily:F, fontSize:12, color:pending?C.amber:C.text }}>{d.replace("✓ ","")}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Action */}
+                <div style={{ padding:"10px 14px", borderRadius:8, background:riskBg(e.risk), border:`1px solid ${riskColor(e.risk)}33` }}>
+                  <span style={{ fontFamily:F, fontSize:12, color:riskColor(e.risk), fontWeight:600 }}>
+                    📌 {e.action}
+                  </span>
+                </div>
+              </Card>
+            ))}
+
+            <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:8 }}>💬 Garima's Note</div>
+              <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.8, margin:"0 0 12px" }}>
+                Your most urgent related party issue is the <strong>Al Rashidi Brothers service fee</strong> — underpriced at AED 120K vs AED 160–200K market rate.
+                The FTA can adjust this upward during audit and disallow the deduction in Al Rashidi Brothers' return.
+                I need three third-party quotes for comparable advisory services and a revised service agreement at AED 160K minimum before we file the CT return.
+                The Rashidi Holdings loan agreement is also outstanding — please send me a signed copy this week.
+              </p>
+              <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
+                borderRadius:8, border:"none", background:"#D97706", color:"white",
+                fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                💬 Discuss Related Parties with Garima
+              </button>
+            </Card>
+          </div>
+        );
+      })()}
+
+      {/* ── CONNECTED PERSONS (individuals) ── */}
+      {tab === "connected" && (() => {
+        // CTP010 — FTA Public Clarification on "director" and "officer" under Art. 36(2)(b)
+        const cpData = rd.connectedPersons || {
+          totalPayments: 340000,
+          persons: [
+            {
+              name:       "Ahmed Al Rashidi",
+              role:       "Managing Director & Shareholder",
+              // CTP010: shareholder = Art.36(2)(a); director on board = Art.36(2)(b)
+              // If both, treated as Connected Person under Art.36(2)(a) owner rule
+              connectionType: "owner+officer",
+              connectionRef:  "Art. 36(2)(a) — Owner + Art. 36(2)(b) — Director on Board",
+              ctp010Note:     "Ahmed holds a position on the board of directors (DMCC constitutional documents). He is also >25% shareholder. Per CTP010: where a Person is both a Related Party and Connected Person, they are treated as Related Party only if that applies — but here he is owner + officer. Job title includes 'Director' AND he holds a board seat, so both tests are satisfied.",
+              isNaturalPerson: true,
+              payments: [
+                { type:"Annual Salary",     amount:200000, basis:"Employment contract — Board approved Nov 2025" },
+                { type:"Performance Bonus", amount:30000,  basis:"Board resolution Dec 2025 — linked to AED 1.5M revenue target" },
+                { type:"Health Insurance",  amount:8000,   basis:"UAE standard package — market norm" },
+                { type:"Housing Allowance", amount:24000,  basis:"AED 2,000/month — part of total comp package" },
+              ],
+              totalComp:   262000,
+              marketLow:   200000,
+              marketHigh:  300000,
+              armslength:  true,
+              businessPurpose: true,
+              risk:        "Low",
+              // CTP010 s.4: title alone insufficient — must hold actual board position
+              titleNote:   "Job title 'Managing Director' + formal DMCC board appointment confirmed. Per CTP010: title alone insufficient — board seat in constitutional documents is the test.",
+              action:      "Maintain board appointment documents, employment contract, job description, and KPI-linked bonus framework on file. FTA will verify board seat against DMCC constitutional documents.",
+              docStatus: [
+                { item:"DMCC constitutional documents confirming board appointment", done:true  },
+                { item:"Employment contract — signed",                                done:true  },
+                { item:"Board resolution approving remuneration",                     done:true  },
+                { item:"Detailed job description with scope of authority",            done:false },
+                { item:"KPI framework linked to bonus (board-approved)",              done:false },
+                { item:"Payroll records (WPS or equivalent)",                         done:true  },
+                { item:"Market benchmarking study for MD role",                       done:false },
+              ],
+            },
+            {
+              name:       "Fatima Al Rashidi",
+              role:       "Marketing Consultant",
+              connectionType: "connected-spouse",
+              connectionRef:  "Art. 36(2)(c) — Related Party of owner/director (spouse)",
+              ctp010Note:     "Fatima is Ahmed's spouse. Under Art. 36(2)(c), a Related Party of an owner or director is also a Connected Person. She has no board seat and no C-suite title — so she is not a 'director' or 'officer' under CTP010. She is a Connected Person solely by virtue of being spouse of the owner.",
+              isNaturalPerson: true,
+              payments: [
+                { type:"Consultancy Fee", amount:60000, basis:"Consultancy agreement — Jan 2026 · 12-month retainer" },
+              ],
+              totalComp:   60000,
+              marketLow:   48000,
+              marketHigh:  90000,
+              armslength:  true,
+              businessPurpose: null, // needs evidence
+              risk:        "High",
+              titleNote:   "Per CTP010: Fatima has no board appointment and no strategic decision-making authority — she is NOT a 'director' or 'officer'. She is a Connected Person under Art. 36(2)(c) as spouse of owner.",
+              action:      "The risk is not the amount — it is proving business purpose. FTA will ask: what did she actually deliver? Collect all campaign reports, meeting records, content output, and deliverables for Q1 2026 immediately.",
+              docStatus: [
+                { item:"Consultancy agreement — signed Jan 2026",              done:true  },
+                { item:"Scope of work / deliverables defined in agreement",    done:false },
+                { item:"Q1 2026 work output evidence (reports, campaigns)",    done:false },
+                { item:"Time records or activity log",                         done:false },
+                { item:"Market rate benchmarking (3 comparable quotes)",       done:true  },
+                { item:"Business purpose memo — why external consultant",      done:false },
+                { item:"Invoice and payment trail",                            done:true  },
+              ],
+            },
+          ],
+        };
+
+        const riskColor = r => r==="High"?C.red:r==="Medium"?C.amber:C.green;
+        const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#F0FDF4";
+
+        return (
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+            {/* CTP010 Official Source Banner */}
+            <Card style={{ background:"#1E3A5F", border:"1px solid #2563EB", padding:"14px 18px" }}>
+              <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
+                <div style={{ width:36, height:36, borderRadius:8, background:"#2563EB",
+                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🏛️</div>
+                <div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"white", marginBottom:4 }}>
+                    FTA Public Clarification — CTP010
+                  </div>
+                  <div style={{ fontFamily:F, fontSize:12, color:"#93C5FD", lineHeight:1.6 }}>
+                    This tab reflects the official FTA clarification on the terms "director" and "officer"
+                    under <strong style={{color:"white"}}>Article 36(2)(b)</strong> of Federal Decree-Law No. 47 of 2022.
+                    Last updated: CTP010 (effective from CT Law implementation date).
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Legal definition — Art. 36 correct */}
+            <Card style={{ background:"#F5F3FF", border:"1px solid #C4B5FD", padding:"14px 18px" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.purple, marginBottom:8 }}>
+                📋 Connected Person — Art. 36(2) UAE CT Law (Federal Decree-Law No. 47 of 2022)
+              </div>
+              <p style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.7, margin:"0 0 12px" }}>
+                A <strong>Connected Person</strong> is an individual linked to the taxable person.
+                Payments to connected persons are deductible <em>only if</em> they satisfy
+                <strong> both</strong> conditions simultaneously (Art. 36(1)):
+                (1) the amount corresponds to <strong>Market Value</strong>, AND
+                (2) incurred <strong>wholly and exclusively for business purposes</strong>.
+              </p>
+
+              {/* Who qualifies — corrected Art. 36(2) */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:12 }}>
+                {[
+                  { who:"Owner of the Taxable Person (any %)",                   ref:"Art. 36(2)(a)" },
+                  { who:"Director — holds position on board of directors",        ref:"Art. 36(2)(b)" },
+                  { who:"Officer — C-suite with strategic decision authority",    ref:"Art. 36(2)(b)" },
+                  { who:"Related Party of owner/director/officer",                ref:"Art. 36(2)(c)" },
+                ].map((r,i) => (
+                  <div key={i} style={{ padding:"8px 10px", borderRadius:8, background:"white", border:"1px solid #DDD6FE" }}>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{r.who}</div>
+                    <div style={{ fontFamily:FM, fontSize:10, color:C.purple, marginTop:2 }}>{r.ref}</div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Director vs Officer distinction — CTP010 */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
+                <div style={{ padding:"12px 14px", borderRadius:10, background:"white", border:"1px solid #C4B5FD" }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:12, color:C.purple, marginBottom:6 }}>
+                    🪑 "DIRECTOR" — CTP010 Definition
+                  </div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.text, lineHeight:1.7 }}>
+                    Holds a position on the <strong>board of directors</strong> (executive, non-executive,
+                    temporary, permanent, or alternate). Must be formally <strong>appointed in constitutional
+                    documents</strong> (MOA, AOA, trust deed).
+                  </div>
+                  <div style={{ marginTop:8, padding:"6px 10px", borderRadius:6, background:"#FEF2F2" }}>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.red, fontWeight:600 }}>
+                      ⚠️ Job title "Director" alone does NOT qualify — must hold actual board seat
+                    </div>
+                  </div>
+                </div>
+                <div style={{ padding:"12px 14px", borderRadius:10, background:"white", border:"1px solid #C4B5FD" }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:12, color:C.purple, marginBottom:6 }}>
+                    👔 "OFFICER" — CTP010 Definition
+                  </div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.text, lineHeight:1.7 }}>
+                    Any person who: (a) has authority to <strong>plan, direct, and control</strong> the
+                    business (IAS 24 framework), OR (b) makes <strong>final strategic decisions</strong>
+                    on financial/operational matters, OR (c) has authority to <strong>legally bind</strong>
+                    the company.
+                  </div>
+                  <div style={{ marginTop:8, padding:"6px 10px", borderRadius:6, background:"#ECFDF5" }}>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.green, fontWeight:600 }}>
+                      ✓ Based on actual conduct, not just title — interim CEO = officer
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Two-test rule */}
+              <div style={{ padding:"12px 14px", borderRadius:10, background:"#4C1D95" }}>
+                <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#C4B5FD",
+                  textAlign:"center", marginBottom:8, letterSpacing:"0.05em" }}>
+                  ART. 36(1) — TWO TESTS MUST BOTH PASS FOR DEDUCTIBILITY
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr auto 1fr", gap:10, alignItems:"center" }}>
+                  <div style={{ textAlign:"center", padding:"10px", background:"rgba(255,255,255,0.1)", borderRadius:8 }}>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#C4B5FD", marginBottom:3 }}>TEST 1</div>
+                    <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:"white" }}>Market Value</div>
+                    <div style={{ fontFamily:F, fontSize:10, color:"#DDD6FE", marginTop:2 }}>Amount ≤ arm's length price</div>
+                  </div>
+                  <div style={{ fontFamily:F, fontSize:14, fontWeight:800, color:"#7C3AED", textAlign:"center" }}>AND</div>
+                  <div style={{ textAlign:"center", padding:"10px", background:"rgba(255,255,255,0.1)", borderRadius:8 }}>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#C4B5FD", marginBottom:3 }}>TEST 2</div>
+                    <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:"white" }}>Business Purpose</div>
+                    <div style={{ fontFamily:F, fontSize:10, color:"#DDD6FE", marginTop:2 }}>Wholly & exclusively for business</div>
+                  </div>
+                </div>
+                <div style={{ fontFamily:F, fontSize:11, color:"#DDD6FE", textAlign:"center", marginTop:8 }}>
+                  Only natural persons can be directors/officers · If also a Related Party → treated as Related Party only
+                </div>
+              </div>
+            </Card>
+
+            {/* Summary cards */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+              {[
+                { label:"Total Payments to Connected Persons", value:"AED " + cpData.totalPayments.toLocaleString(), color:C.purple, icon:"👤" },
+                { label:"Persons Identified",                  value:cpData.persons.length,                           color:C.blue,   icon:"🔍" },
+                { label:"High Risk — Evidence Gaps",           value:cpData.persons.filter(p=>p.risk==="High").length, color:C.red,    icon:"⚠️" },
+              ].map((s,i) => (
+                <Card key={i} style={{ padding:18 }}>
+                  <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+                  <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Person cards */}
+            {cpData.persons.map((p,i) => {
+              const doneCount = p.docStatus.filter(d=>d.done).length;
+              const docPct    = Math.round((doneCount/p.docStatus.length)*100);
+              return (
+                <Card key={i} style={{ borderLeft:`4px solid ${riskColor(p.risk)}` }}>
+                  {/* Header */}
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start",
+                    marginBottom:12, flexWrap:"wrap", gap:8 }}>
+                    <div>
+                      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>{p.name}</div>
+                      <div style={{ fontFamily:F, fontSize:13, color:C.purple, fontWeight:600, marginTop:1 }}>{p.role}</div>
+                      <div style={{ fontFamily:FM, fontSize:11, color:C.blue, marginTop:2 }}>{p.connectionRef}</div>
+                    </div>
+                    <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                      <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                        background:riskBg(p.risk), color:riskColor(p.risk) }}>{p.risk} Risk</span>
+                      <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                        background:"#F5F3FF", color:C.purple }}>
+                        {doneCount}/{p.docStatus.length} docs ({docPct}%)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* CTP010 classification note */}
+                  <div style={{ padding:"10px 14px", borderRadius:8, background:`${C.blue}08`,
+                    border:`1px solid ${C.blue}20`, marginBottom:14 }}>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
+                      textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>
+                      CTP010 Classification
+                    </div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.6 }}>{p.ctp010Note}</div>
+                  </div>
+
+                  {/* Job title nuance */}
+                  <div style={{ padding:"8px 12px", borderRadius:8,
+                    background:p.connectionType==="owner+officer"?"#ECFDF5":"#FEF2F2",
+                    border:`1px solid ${p.connectionType==="owner+officer"?"#86EFAC":"#FCA5A5"}`,
+                    marginBottom:14 }}>
+                    <div style={{ fontFamily:F, fontSize:12, color:p.connectionType==="owner+officer"?C.green:C.red }}>
+                      {p.titleNote}
+                    </div>
+                  </div>
+
+                  {/* Payments breakdown */}
+                  <div style={{ background:`${C.border}66`, borderRadius:8, padding:"10px 14px", marginBottom:14 }}>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+                      textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8 }}>
+                      Payments — AED {p.totalComp.toLocaleString()} total
+                    </div>
+                    {p.payments.map((pay,j) => (
+                      <div key={j} style={{ display:"flex", justifyContent:"space-between",
+                        padding:"6px 0", borderBottom:j<p.payments.length-1?`1px dashed ${C.border}`:"none",
+                        flexWrap:"wrap", gap:4 }}>
+                        <div>
+                          <div style={{ fontFamily:F, fontSize:13, color:C.text }}>{pay.type}</div>
+                          <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:1 }}>{pay.basis}</div>
+                        </div>
+                        <div style={{ fontFamily:FM, fontSize:13, fontWeight:700, color:C.text }}>
+                          AED {pay.amount.toLocaleString()}
+                        </div>
+                      </div>
+                    ))}
+                    <div style={{ display:"flex", justifyContent:"space-between", paddingTop:8,
+                      marginTop:4, borderTop:`1px solid ${C.text}` }}>
+                      <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text }}>Total</span>
+                      <span style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.purple }}>
+                        AED {p.totalComp.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Two tests */}
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
+                    <div style={{ padding:"10px 14px", borderRadius:8,
+                      background:p.armslength?"#F0FDF4":"#FEF2F2",
+                      border:`1px solid ${p.armslength?"#86EFAC":"#FCA5A5"}` }}>
+                      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, marginBottom:4 }}>
+                        TEST 1 — MARKET VALUE (Art. 36(1))
+                      </div>
+                      <div style={{ fontFamily:F, fontSize:13, fontWeight:700,
+                        color:p.armslength?C.green:C.red }}>
+                        {p.armslength ? "✓ Within market range" : "✗ Adjust pricing"}
+                      </div>
+                      <div style={{ fontFamily:FM, fontSize:11, color:C.muted, marginTop:4 }}>
+                        Market: AED {p.marketLow.toLocaleString()} – {p.marketHigh.toLocaleString()}
+                      </div>
+                    </div>
+                    <div style={{ padding:"10px 14px", borderRadius:8,
+                      background:p.businessPurpose===true?"#F0FDF4":p.businessPurpose===false?"#FEF2F2":"#FFFBEB",
+                      border:`1px solid ${p.businessPurpose===true?"#86EFAC":p.businessPurpose===false?"#FCA5A5":"#FCD34D"}` }}>
+                      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, marginBottom:4 }}>
+                        TEST 2 — BUSINESS PURPOSE (Art. 36(1))
+                      </div>
+                      <div style={{ fontFamily:F, fontSize:13, fontWeight:700,
+                        color:p.businessPurpose===true?C.green:p.businessPurpose===false?C.red:C.amber }}>
+                        {p.businessPurpose===true ? "✓ Wholly for business"
+                         : p.businessPurpose===false ? "✗ Personal element present"
+                         : "⚠️ Evidence required"}
+                      </div>
+                      <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:4 }}>
+                        Both tests required for deductibility
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Documentation checklist */}
+                  <div style={{ marginBottom:14 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
+                      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+                        textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                        Documentation Checklist
+                      </div>
+                      <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
+                        color:docPct>=80?C.green:docPct>=50?C.amber:C.red }}>
+                        {docPct}% complete
+                      </span>
+                    </div>
+                    {/* Progress bar */}
+                    <div style={{ height:6, borderRadius:6, background:C.border, marginBottom:10, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${docPct}%`, borderRadius:6,
+                        background:docPct>=80?C.green:docPct>=50?C.amber:C.red,
+                        transition:"width 0.4s" }}/>
+                    </div>
+                    {p.docStatus.map((d,j) => (
+                      <div key={j} style={{ display:"flex", gap:8, padding:"6px 0",
+                        borderBottom:j<p.docStatus.length-1?`1px dashed ${C.border}`:"none",
+                        alignItems:"flex-start" }}>
+                        <span style={{ color:d.done?C.green:C.amber, fontWeight:700,
+                          fontSize:13, flexShrink:0, marginTop:1 }}>{d.done?"✓":"✗"}</span>
+                        <span style={{ fontFamily:F, fontSize:12,
+                          color:d.done?C.text:C.amber, flex:1, lineHeight:1.4 }}>{d.item}</span>
+                        {!d.done && (
+                          <span style={{ padding:"2px 8px", borderRadius:100, background:"#FFFBEB",
+                            color:C.amber, fontSize:10, fontWeight:700, flexShrink:0 }}>Action</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Action */}
+                  <div style={{ padding:"10px 14px", borderRadius:8,
+                    background:riskBg(p.risk), border:`1px solid ${riskColor(p.risk)}33` }}>
+                    <span style={{ fontFamily:F, fontSize:12, color:riskColor(p.risk), fontWeight:600 }}>
+                      📌 {p.action}
+                    </span>
+                  </div>
+                </Card>
+              );
+            })}
+
+            {/* Garima note */}
+            <Card style={{ background:"#F5F3FF", border:"1px solid #C4B5FD" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.purple, marginBottom:8 }}>
+                💬 Garima's Note — Connected Persons (CTP010)
+              </div>
+              <p style={{ fontFamily:F, fontSize:13, color:"#4C1D95", lineHeight:1.85, margin:"0 0 12px" }}>
+                The FTA issued CTP010 specifically because many businesses were mis-classifying who counts as a
+                "director" or "officer". The key change: <strong>having "Director" in your job title
+                is not enough</strong> — the person must hold a formal board seat in your DMCC constitutional
+                documents. Ahmed qualifies on both counts, so we're fine there. The bigger risk is
+                <strong> Fatima's consultancy</strong>. The amount is within market range — but the FTA
+                will ask for work output evidence, not just a signed agreement. I need all Q1 deliverables
+                — campaign reports, meeting notes, content produced — by 20 April so I can prepare the
+                Connected Persons disclosure for the CT return. Also note: FTA requires disclosure of
+                all connected person payments in the Tax Return under Art. 55(1) if they exceed the
+                specified threshold. With AED 340K total payments, we are above that threshold.
+                I will prepare the full disclosure schedule.
+              </p>
+              <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
+                borderRadius:8, border:"none", background:C.purple, color:"white",
+                fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                💬 Discuss Connected Persons with Garima
+              </button>
+            </Card>
+          </div>
+        );
+      })()}
+
+
+      {/* ── ARM'S LENGTH TEST ── */}
+      {tab === "armslength" && (() => {
+        const alData = rd.armsLength || {
+          totalTransactions: 4,
+          compliant: 3,
+          nonCompliant: 1,
+          tests: [
+            {
+              category:    "Director / Shareholder Salary",
+              transaction: "Ahmed Al Rashidi — Annual remuneration AED 240,000",
+              method:      "Comparable Uncontrolled Price (CUP)",
+              marketRange: "AED 180,000 – AED 280,000",
+              actual:      240000,
+              marketLow:   180000,
+              marketHigh:  280000,
+              compliant:   true,
+              notes:       "Within DMCC CEO/MD market range for trading company with AED 1.85M revenue. Benchmarked against 12 comparable UAE free zone entities.",
+              evidence:    ["Board resolution — Nov 2025", "Employment contract signed", "DMCC salary benchmarking report"],
+            },
+            {
+              category:    "Intercompany Loan Interest",
+              transaction: "Loan to Rashidi Holdings — AED 850,000 @ 7.5% p.a.",
+              method:      "Comparable Uncontrolled Price (CUP) — market rate",
+              marketRange: "EIBOR + 2% to EIBOR + 3% = 7.3% – 8.3%",
+              actual:      63750, // interest charged
+              marketLow:   62050,
+              marketHigh:  70550,
+              compliant:   true,
+              notes:       "Rate of 7.5% p.a. is within the EIBOR + 2–3% range applicable to UAE dirham-denominated intercompany loans. Loan agreement required.",
+              evidence:    ["Loan agreement — PENDING", "EIBOR rate confirmation (CBUAE)", "Board approval minute"],
+            },
+            {
+              category:    "Service Fee to Related Company",
+              transaction: "Service fees from Al Rashidi Brothers — AED 120,000",
+              method:      "Comparable Uncontrolled Price (CUP)",
+              marketRange: "AED 160,000 – AED 200,000",
+              actual:      120000,
+              marketLow:   160000,
+              marketHigh:  200000,
+              compliant:   false,
+              notes:       "Charged at AED 120K vs market rate of AED 160–200K. Under-pricing of related party services is non-deductible under Art. 34 UAE CT Law and may be adjusted by FTA during audit.",
+              evidence:    ["Service agreement — needs revision", "Market comparables — 3 third-party quotes required"],
+            },
+            {
+              category:    "Related Party Rent",
+              transaction: "Office rent paid to Rashidi Family Trust — AED 40,000",
+              method:      "Comparable Uncontrolled Price (CUP) — market rent",
+              marketRange: "AED 38,000 – AED 45,000 (DMCC comparable)",
+              actual:      40000,
+              marketLow:   38000,
+              marketHigh:  45000,
+              compliant:   true,
+              notes:       "Rent of AED 40K p.a. is within the DMCC market range for equivalent floor space. Independent valuation recommended for audit file.",
+              evidence:    ["Lease agreement — valid until Dec 2026", "Independent valuation — PENDING"],
+            },
+          ],
+        };
+
+        const pct = Math.round((alData.compliant / alData.totalTransactions) * 100);
+
+        return (
+          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+
+            {/* Score header */}
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+              {[
+                { label:"Transactions Tested",      value:alData.totalTransactions, color:C.blue,  icon:"🔬" },
+                { label:"Arm's Length Compliant",   value:alData.compliant,          color:C.green, icon:"✅" },
+                { label:"Require Adjustment",        value:alData.nonCompliant,       color:alData.nonCompliant>0?C.red:C.green, icon:"⚠️" },
+              ].map((s,i) => (
+                <Card key={i} style={{ padding:18 }}>
+                  <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+                  <div style={{ fontFamily:F, fontSize:22, fontWeight:800, color:s.color }}>{s.value}</div>
+                </Card>
+              ))}
+            </div>
+
+            {/* Compliance bar */}
+            <Card>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
+                  Overall Arm's Length Compliance
+                </div>
+                <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color:pct===100?C.green:pct>=75?C.amber:C.red }}>
+                  {pct}%
+                </div>
+              </div>
+              <div style={{ height:10, borderRadius:10, background:C.border, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${pct}%`, borderRadius:10,
+                  background:pct===100?"#10B981":pct>=75?"#F59E0B":"#EF4444",
+                  transition:"width 0.5s" }}/>
+              </div>
+              <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:8 }}>
+                {pct < 100
+                  ? `${alData.nonCompliant} transaction${alData.nonCompliant>1?"s":""} require pricing adjustment before CT return filing`
+                  : "All tested transactions meet the arm's length standard"}
+              </div>
+            </Card>
+
+            {/* Test method explainer */}
+            <Card style={{ background:"#EFF6FF", border:"1px solid #93C5FD", padding:"14px 18px" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.blue, marginBottom:8 }}>
+                📋 Transfer Pricing Methods — UAE CT Law (Art. 34)
+              </div>
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                {[
+                  { method:"CUP (Comparable Uncontrolled Price)", desc:"Compare price of RPT to identical/similar transactions with third parties — most commonly used and preferred by FTA" },
+                  { method:"Cost Plus Method", desc:"Cost of supply + appropriate gross margin — used for intragroup services and manufacturing" },
+                  { method:"Resale Price Method", desc:"Resale price to third party minus gross margin — used for distribution arrangements" },
+                  { method:"TNMM (Transactional Net Margin)", desc:"Compare net margin of RPT to comparable third-party transactions — used when CUP is unavailable" },
+                ].map((m,i) => (
+                  <div key={i} style={{ padding:"8px 0", borderBottom:i<3?`1px solid ${C.border}`:"none" }}>
+                    <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text }}>{m.method}</div>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2, lineHeight:1.5 }}>{m.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            {/* Individual tests */}
+            {alData.tests.map((t,i) => (
+              <Card key={i} style={{ borderLeft:`4px solid ${t.compliant?C.green:C.red}` }}>
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12, flexWrap:"wrap", gap:8 }}>
+                  <div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{t.category}</div>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{t.transaction}</div>
+                  </div>
+                  <span style={{ padding:"4px 12px", borderRadius:100, fontSize:12, fontWeight:700, fontFamily:F,
+                    background:t.compliant?"#ECFDF5":"#FEF2F2", color:t.compliant?C.green:C.red,
+                    border:`1px solid ${t.compliant?"#86EFAC":"#FCA5A5"}` }}>
+                    {t.compliant ? "✓ Compliant" : "✗ Adjustment Required"}
+                  </span>
+                </div>
+
+                {/* Visual range bar */}
+                <div style={{ marginBottom:14 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:6 }}>
+                    <span style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600 }}>Market Range</span>
+                    <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>{t.marketRange}</span>
+                  </div>
+                  <div style={{ position:"relative", height:10, borderRadius:10, background:C.border }}>
+                    {/* Market range band */}
+                    <div style={{
+                      position:"absolute",
+                      left:`${Math.max(0, ((t.marketLow - t.marketLow * 0.8) / (t.marketHigh * 1.2 - t.marketLow * 0.8)) * 100)}%`,
+                      width:`${((t.marketHigh - t.marketLow) / (t.marketHigh * 1.2 - t.marketLow * 0.8)) * 100}%`,
+                      height:"100%", borderRadius:10,
+                      background:"#BBF7D0",
+                    }}/>
+                    {/* Actual marker */}
+                    <div style={{
+                      position:"absolute",
+                      left:`${Math.min(95, Math.max(2, ((t.actual - t.marketLow * 0.8) / (t.marketHigh * 1.2 - t.marketLow * 0.8)) * 100))}%`,
+                      top:-3, width:16, height:16, borderRadius:"50%",
+                      background:t.compliant?C.green:C.red,
+                      border:"2px solid white",
+                      boxShadow:"0 1px 4px rgba(0,0,0,0.2)",
+                      transform:"translateX(-50%)",
+                    }}/>
+                  </div>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
+                    <span style={{ fontFamily:FM, fontSize:11, color:C.dim }}>{fmtAED(t.marketLow)}</span>
+                    <span style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:t.compliant?C.green:C.red }}>
+                      Actual: {fmtAED(t.actual)}
+                    </span>
+                    <span style={{ fontFamily:FM, fontSize:11, color:C.dim }}>{fmtAED(t.marketHigh)}</span>
+                  </div>
+                </div>
+
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7, marginBottom:12 }}>
+                  <strong style={{ color:C.text }}>Method:</strong> {t.method}<br/>
+                  <strong style={{ color:C.text }}>Assessment:</strong> {t.notes}
+                </div>
+
+                {/* Evidence checklist */}
+                <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:10 }}>
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:6 }}>
+                    Documentation Required
+                  </div>
+                  {t.evidence.map((e,j) => {
+                    const pending = e.includes("PENDING") || e.includes("needs") || e.includes("required");
+                    return (
+                      <div key={j} style={{ display:"flex", gap:8, padding:"4px 0", alignItems:"center" }}>
+                        <span style={{ color:pending?C.amber:C.green, fontWeight:700, fontSize:13, flexShrink:0 }}>
+                          {pending ? "⚠" : "✓"}
+                        </span>
+                        <span style={{ fontFamily:F, fontSize:12, color:pending?C.amber:C.text }}>{e}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            ))}
+
+            <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:14,
+              borderRadius:12, border:"none", background:C.purple, color:"white",
+              fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>
+              💬 Get Transfer Pricing Documentation from Garima
+            </button>
+          </div>
+        );
+      })()}
+
+    </div>
+  );
+}
+
+// ─── NEW: REVENUE RECONCILIATION (IFRS vs VAT) ───────────────────────────────
+function generateRevReconPDF({ client, reportData }) {
+  const company  = client?.company || "Client";
+  const trnVAT   = client?.trnVAT  || "—";
+  const freezone = client?.freezone || "DMCC";
+  const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
+  const rr       = reportData?.revRecon || {};
+  const period   = rr.period   || reportData?.monthLabel || "Current Quarter";
+  const note     = rr.garimaNote || "Revenue reconciliation note not yet added. Please update in the admin panel UAE tab.";
+
+  const rows = (rr.rows && rr.rows.length)
+    ? rr.rows
+    : [
+        { desc:"Standard-rated UAE sales (5% VAT)",           ifrs:1500000, vat:1500000, diff:0,      explanation:"Identical — fully taxable in both IFRS and VAT" },
+        { desc:"Export sales — zero-rated",                   ifrs:350000,  vat:350000,  diff:0,      explanation:"Same amount — zero-rated in VAT, full revenue in IFRS" },
+        { desc:"Advance/deposits received (unearned revenue)", ifrs:0,       vat:85000,   diff:-85000, explanation:"VAT point triggered on receipt; IFRS revenue deferred until delivery" },
+        { desc:"Services — % completion basis",               ifrs:120000,  vat:0,        diff:120000, explanation:"IFRS recognises by % completion; VAT point on invoice date (next quarter)" },
+        { desc:"Exempt supplies",                             ifrs:45000,   vat:0,        diff:45000,  explanation:"IFRS records as revenue; VAT exempt — not included in VAT return" },
+        { desc:"Credit notes issued",                        ifrs:-28000,  vat:-28000,  diff:0,      explanation:"Both reduce revenue / output VAT equally" },
+      ];
+
+  const totalIFRS = rows.reduce((s,r)=>s+Number(r.ifrs||0),0);
+  const totalVAT  = rows.reduce((s,r)=>s+Number(r.vat||0),0);
+  const totalDiff = totalIFRS - totalVAT;
+
+  const tableRows = rows.map((r,i)=>{
+    const diff = Number(r.ifrs||0) - Number(r.vat||0);
+    const diffColor = diff===0?"#6B7280":diff>0?"#2563EB":"#D97706";
+    const diffLabel = diff===0?"—":diff>0?`+AED ${Math.abs(diff).toLocaleString()}`:`−AED ${Math.abs(diff).toLocaleString()}`;
+    return `<tr style="background:${i%2===0?"#fff":"#fafafa"}">
+      <td style="padding:10px 12px;font-size:12px;color:#374151;border-left:3px solid ${diff===0?"#E5E7EB":diff>0?"#2563EB":"#D97706"}">${r.desc}</td>
+      <td style="padding:10px 12px;font-family:monospace;font-weight:600;color:#111827;text-align:right">AED ${Number(r.ifrs||0).toLocaleString()}</td>
+      <td style="padding:10px 12px;font-family:monospace;font-weight:600;color:#111827;text-align:right">AED ${Number(r.vat||0).toLocaleString()}</td>
+      <td style="padding:10px 12px;font-family:monospace;font-weight:700;color:${diffColor};text-align:right">${diffLabel}</td>
+      <td style="padding:10px 12px;font-size:11px;color:#6B7280;line-height:1.5">${r.explanation||"—"}</td>
+    </tr>`;
+  }).join("");
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Revenue Reconciliation (IFRS vs VAT) — ${company} — ${period}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+@media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+.header { background:linear-gradient(135deg,#1E3A5F,#0891B2); padding:36px 48px; color:white; }
+.header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
+.header .sub { font-size:13px; opacity:0.8; margin-bottom:16px; }
+.header .meta { display:flex; gap:32px; font-size:11px; flex-wrap:wrap; }
+.header .meta-item label { opacity:0.6; display:block; font-size:9px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+.page { padding:36px 48px; max-width:860px; margin:0 auto; }
+.explain-box { background:#EFF6FF; border:1px solid #BFDBFE; border-left:4px solid #2563EB; border-radius:8px; padding:14px 16px; margin-bottom:20px; font-size:11.5px; color:#1E3A5F; line-height:1.75; }
+.explain-box strong { color:#1D4ED8; }
+.kpi-row { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:24px; }
+.kpi-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:14px 16px; text-align:center; }
+.kpi-card .val { font-size:22px; font-weight:800; font-family:monospace; margin-bottom:4px; }
+.kpi-card .lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#6B7280; }
+.section-title { font-size:16px; font-weight:800; color:#111827; margin-bottom:10px; border-left:4px solid #0891B2; padding-left:12px; }
+table { width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:8px; }
+th { background:#1E3A5F; color:white; padding:10px 12px; text-align:left; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; }
+th.num { text-align:right; }
+td { border-bottom:1px solid #F3F4F6; }
+tr.total td { background:#F0FDF4; font-weight:800; color:#065f46; border-top:2px solid #059669; padding:10px 12px; font-family:monospace; }
+tr.total td:first-child { font-family:Arial,sans-serif; }
+.garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:20px 0; font-size:12px; color:#78350F; line-height:1.85; }
+.garima strong { color:#92400E; }
+.disclaimer { font-size:10px; color:#9CA3AF; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:6px; padding:10px 12px; margin-top:16px; line-height:1.6; }
+.footer { margin-top:14px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+
+<div class="header">
+  <h1>Revenue Reconciliation</h1>
+  <div class="sub">IFRS Accounting Revenue vs UAE VAT Return Revenue — ${company}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${period}</div>
+    <div class="meta-item"><label>TRN (VAT)</label>${trnVAT}</div>
+    <div class="meta-item"><label>Free Zone</label>${freezone}</div>
+    <div class="meta-item"><label>IFRS Revenue</label>AED ${totalIFRS.toLocaleString()}</div>
+    <div class="meta-item"><label>VAT Revenue</label>AED ${totalVAT.toLocaleString()}</div>
+    <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="explain-box">
+    <strong>Why do IFRS and VAT revenue differ?</strong> IFRS (accounting) revenue is recognised based on performance obligations — when control of goods/services transfers to the customer. UAE VAT revenue is based on the tax point — typically the earlier of invoice date or date of supply. This creates timing differences (e.g. advances, % completion contracts) and scope differences (e.g. exempt supplies, non-taxable items). The FTA compares your VAT returns against your audited P&amp;L — unexplained differences trigger audit inquiries. This reconciliation is your explanation on file.
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card">
+      <div class="val" style="color:#2563EB">AED ${totalIFRS.toLocaleString()}</div>
+      <div class="lbl">IFRS Revenue (Books)</div>
+    </div>
+    <div class="kpi-card">
+      <div class="val" style="color:#0891B2">AED ${totalVAT.toLocaleString()}</div>
+      <div class="lbl">VAT Return Revenue</div>
+    </div>
+    <div class="kpi-card">
+      <div class="val" style="color:${Math.abs(totalDiff)<1000?"#059669":totalDiff>0?"#2563EB":"#D97706"}">
+        ${totalDiff===0?"Nil":totalDiff>0?`+AED ${Math.abs(totalDiff).toLocaleString()}`:`−AED ${Math.abs(totalDiff).toLocaleString()}`}
+      </div>
+      <div class="lbl">Net Difference (Explained)</div>
+    </div>
+  </div>
+
+  <div class="section-title">Reconciliation Table — ${period}</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:28%">Description</th>
+        <th class="num" style="width:14%">IFRS Amount (AED)</th>
+        <th class="num" style="width:14%">VAT Amount (AED)</th>
+        <th class="num" style="width:13%">Difference</th>
+        <th style="width:31%">Explanation</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${tableRows}
+      <tr class="total">
+        <td><strong>TOTAL</strong></td>
+        <td style="text-align:right"><strong>AED ${totalIFRS.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>AED ${totalVAT.toLocaleString()}</strong></td>
+        <td style="text-align:right;color:${Math.abs(totalDiff)<1000?"#059669":"#D97706"}">
+          <strong>${totalDiff===0?"Fully Reconciled":totalDiff>0?`+AED ${Math.abs(totalDiff).toLocaleString()}`:`−AED ${Math.abs(totalDiff).toLocaleString()}`}</strong>
+        </td>
+        <td style="font-size:11px;color:#065f46"><strong>${Math.abs(totalDiff)<1000?"✓ No unexplained differences":"All differences explained above"}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="garima">
+    <strong>Note from Garima — Revenue Reconciliation (${period}):</strong><br/>
+    ${note}
+  </div>
+
+  <div style="background:#F0FDF4;border:1px solid #86EFAC;border-left:4px solid #059669;border-radius:8px;padding:12px 14px;font-size:11px;color:#065f46;line-height:1.7">
+    <strong>FTA Audit Note:</strong> This reconciliation is maintained as part of our VAT compliance documentation. The FTA cross-references VAT return totals against audited financial statements. All differences shown above are explainable and documented. No unexplained revenue has been omitted from VAT returns.
+  </div>
+
+  <div class="disclaimer">
+    <strong>Disclaimer:</strong> This reconciliation is prepared for internal compliance and FTA audit readiness purposes. It should be reviewed by a licensed UAE tax advisor before submission. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
+  </div>
+  <div class="footer">
+    <span style="font-weight:800;color:#0891B2">Finzzup</span>
+    <span>${company} · Revenue Reconciliation (IFRS vs VAT) · ${period} · Confidential</span>
+    <span>Garima Agarwal CA · M.No. 160944</span>
+  </div>
+</div>
+</body></html>`;
+}
+
+// NEW: Revenue Reconciliation user-facing component
+function RevenueReconciliation({ client, reportData }) {
+  const rr      = reportData?.revRecon || {};
+  const period  = rr.period  || reportData?.monthLabel || "Current Quarter";
+  const note    = rr.garimaNote || "";
+
+  // Default demo rows if admin hasn't entered data yet
+  const demoRows = [
+    { desc:"Standard-rated UAE sales (5% VAT)",            ifrs:1500000, vat:1500000, explanation:"Identical — fully taxable in both IFRS and VAT" },
+    { desc:"Export sales — zero-rated",                    ifrs:350000,  vat:350000,  explanation:"Same amount — zero-rated in VAT, full revenue in IFRS" },
+    { desc:"Advance/deposits received (unearned revenue)",  ifrs:0,       vat:85000,   explanation:"VAT point triggered on receipt; IFRS revenue deferred until delivery" },
+    { desc:"Services — % completion basis",                ifrs:120000,  vat:0,        explanation:"IFRS recognises by % completion; VAT point on invoice date (next quarter)" },
+    { desc:"Exempt supplies",                              ifrs:45000,   vat:0,        explanation:"IFRS records as revenue; VAT exempt — not included in VAT return" },
+    { desc:"Credit notes issued",                         ifrs:-28000,  vat:-28000,   explanation:"Both reduce revenue / output VAT equally" },
+  ];
+
+  const rows = (rr.rows && rr.rows.length > 0) ? rr.rows : demoRows;
+  const isDemo = !(rr.rows && rr.rows.length > 0);
+
+  const totalIFRS = rows.reduce((s,r)=>s+Number(r.ifrs||0),0);
+  const totalVAT  = rows.reduce((s,r)=>s+Number(r.vat||0),0);
+  const totalDiff = totalIFRS - totalVAT;
+  const fullyReconciled = Math.abs(totalDiff) < 1000;
+
+  const diffColor = (ifrs, vat) => {
+    const d = Number(ifrs||0) - Number(vat||0);
+    return d === 0 ? C.muted : d > 0 ? C.blue : C.amber;
+  };
+  const diffLabel = (ifrs, vat) => {
+    const d = Number(ifrs||0) - Number(vat||0);
+    if (d === 0) return "—";
+    return d > 0
+      ? `+${fmtAED(Math.abs(d))}`
+      : `−${fmtAED(Math.abs(d))}`;
+  };
+
+  const handlePrint = () => {
+    const html = generateRevReconPDF({ client, reportData });
+    const w = window.open("","_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 600);
+  };
+
+  return (
+    <div style={{ padding:24 }}>
+      <UAEDisclaimer/>
+
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
+        marginBottom:20, flexWrap:"wrap", gap:12 }}>
+        <div>
+          <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.blue,
+            textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
+            NEW · UAE VAT Compliance
+          </div>
+          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, margin:0 }}>
+            Revenue Reconciliation
+          </h2>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4, lineHeight:1.5 }}>
+            IFRS accounting revenue vs UAE VAT return revenue — {period}
+          </p>
+        </div>
+        <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
+          padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
+          background:C.blue, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+          boxShadow:`0 4px 14px ${C.blue}40` }}>
+          📄 Download PDF
+        </button>
+      </div>
+
+      {/* What & Why explanation */}
+      <Card style={{ marginBottom:20, background:`${C.blue}06`, borderLeft:`4px solid ${C.blue}` }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ width:36, height:36, borderRadius:10, background:C.blue, flexShrink:0,
+            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>💡</div>
+          <div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:6 }}>
+              Why does IFRS revenue differ from VAT revenue?
+            </div>
+            <p style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.75, margin:0 }}>
+              <strong style={{color:C.text}}>IFRS</strong> recognises revenue when performance obligations are met (goods/services delivered).
+              <strong style={{color:C.text}}> UAE VAT</strong> uses the "tax point" — the earlier of invoice date or date of supply.
+              This creates timing differences (advances, % completion contracts) and scope differences (exempt supplies, unearned revenue).
+              The FTA cross-references your VAT returns against your audited P&L — <strong style={{color:C.text}}>unexplained differences trigger audit inquiries.</strong>
+              This reconciliation is your documented explanation.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* KPI Summary strip */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }}>
+        {[
+          { label:"IFRS Revenue (Books)", value:fmtAED(totalIFRS), color:C.blue,  icon:"📚", sub:"Per audited accounts" },
+          { label:"VAT Return Revenue",   value:fmtAED(totalVAT),  color:C.teal,  icon:"🧾", sub:"Declared to FTA" },
+          {
+            label: fullyReconciled ? "✅ Fully Reconciled" : "Net Difference",
+            value: fullyReconciled ? "Nil" : (totalDiff>0?"+":"")+fmtAED(Math.abs(totalDiff)),
+            color: fullyReconciled ? C.green : C.amber,
+            icon:  fullyReconciled ? "✅" : "⚠️",
+            sub:   fullyReconciled ? "No unexplained differences" : "All differences explained below"
+          },
+        ].map((s,i) => (
+          <Card key={i} style={{ padding:18 }}>
+            <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+            <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+            <div style={{ fontFamily:FM||"monospace", fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+            <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:4 }}>{s.sub}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* Demo data notice */}
+      {isDemo && (
+        <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
+          border:"1px solid #FCD34D", marginBottom:16,
+          fontFamily:F, fontSize:12, color:"#92400E" }}>
+          ⚠️ Showing demo data. Garima should enter actual reconciliation figures in the admin panel → UAE / Tax tab → Revenue Reconciliation.
+        </div>
+      )}
+
+      {/* Reconciliation Table */}
+      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+        {/* Table header */}
+        <div style={{ display:"grid", gridTemplateColumns:"28fr 14fr 14fr 12fr 32fr",
+          gap:0, background:"#1E3A5F", padding:"10px 16px" }}>
+          {["Description","IFRS Amount","VAT Amount","Difference","Explanation"].map((h,i) => (
+            <div key={i} style={{ fontFamily:F, fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.8)",
+              textTransform:"uppercase", letterSpacing:"0.07em",
+              textAlign:i>=1&&i<=3?"right":"left" }}>{h}</div>
+          ))}
+        </div>
+
+        {rows.map((r,i) => {
+          const d = Number(r.ifrs||0) - Number(r.vat||0);
+          const rowBorderColor = d===0 ? "transparent" : d>0 ? C.blue : C.amber;
+          return (
+            <div key={i} style={{ display:"grid", gridTemplateColumns:"28fr 14fr 14fr 12fr 32fr",
+              gap:0, padding:"11px 16px",
+              background:i%2===0?"white":"#FAFAFA",
+              borderBottom:`1px solid #F3F4F6`,
+              borderLeft:`3px solid ${rowBorderColor}` }}>
+              <div style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.4, paddingRight:8 }}>
+                {r.desc || "—"}
+              </div>
+              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:600, color:C.text,
+                textAlign:"right" }}>
+                {r.ifrs !== undefined ? fmtAED(Number(r.ifrs)) : "—"}
+              </div>
+              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:600, color:C.text,
+                textAlign:"right" }}>
+                {r.vat !== undefined ? fmtAED(Number(r.vat)) : "—"}
+              </div>
+              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:700,
+                color:diffColor(r.ifrs, r.vat), textAlign:"right" }}>
+                {diffLabel(r.ifrs, r.vat)}
+              </div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted, lineHeight:1.5, paddingLeft:8 }}>
+                {r.explanation || "—"}
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Total row */}
+        <div style={{ display:"grid", gridTemplateColumns:"28fr 14fr 14fr 12fr 32fr",
+          gap:0, padding:"13px 16px", background:"#F0FDF4",
+          borderTop:`2px solid ${C.green}` }}>
+          <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text }}>TOTAL</div>
+          <div style={{ fontFamily:"monospace", fontSize:13, fontWeight:800, color:C.text, textAlign:"right" }}>
+            {fmtAED(totalIFRS)}
+          </div>
+          <div style={{ fontFamily:"monospace", fontSize:13, fontWeight:800, color:C.text, textAlign:"right" }}>
+            {fmtAED(totalVAT)}
+          </div>
+          <div style={{ fontFamily:"monospace", fontSize:13, fontWeight:800,
+            color:fullyReconciled?C.green:C.amber, textAlign:"right" }}>
+            {fullyReconciled ? "Nil" : fmtAED(Math.abs(totalDiff))}
+          </div>
+          <div style={{ fontFamily:F, fontSize:11, fontWeight:700,
+            color:fullyReconciled?C.green:C.amber, paddingLeft:8 }}>
+            {fullyReconciled ? "✅ Fully Reconciled — no unexplained differences" : "⚠️ All differences explained above"}
+          </div>
+        </div>
+      </Card>
+
+      {/* Difference legend */}
+      <div style={{ display:"flex", gap:20, marginBottom:20, flexWrap:"wrap" }}>
+        {[
+          { color:"transparent", border:C.border, label:"No difference — IFRS = VAT" },
+          { color:C.blue,        label:"IFRS higher than VAT (timing/scope)" },
+          { color:C.amber,       label:"VAT higher than IFRS (advance receipts)" },
+        ].map((l,i) => (
+          <div key={i} style={{ display:"flex", alignItems:"center", gap:8 }}>
+            <div style={{ width:12, height:12, borderRadius:2,
+              background:l.color==="transparent"?"transparent":l.color,
+              border:l.color==="transparent"?`2px solid ${C.border}`:"none" }}/>
+            <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>{l.label}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Note from Garima */}
+      <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0,
+            background:"linear-gradient(135deg,#F59E0B,#D97706)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>
+              Note from Garima
+            </div>
+            <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
+              Garima Agarwal · CA · Revenue Reconciliation Analysis
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 14px" }}>
+              {note || "Revenue reconciliation note not yet added. Garima will update this section each quarter explaining the specific differences for this client."}
+            </p>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              <a href={WA} target="_blank" rel="noopener noreferrer"
+                style={{ display:"inline-flex", alignItems:"center", gap:6,
+                  background:"#25D366", color:"white", borderRadius:8,
+                  padding:"8px 16px", fontFamily:F, fontWeight:700,
+                  fontSize:12, textDecoration:"none" }}>
+                📱 WhatsApp Garima
+              </a>
+              <button onClick={handlePrint}
+                style={{ display:"inline-flex", alignItems:"center", gap:6,
+                  background:"#FEF3C7", color:"#92400E", borderRadius:8,
+                  padding:"8px 16px", fontFamily:F, fontWeight:700,
+                  fontSize:12, border:"1px solid #FDE68A", cursor:"pointer" }}>
+                📄 Download Full Report
+              </button>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* FTA Audit note */}
+      <div style={{ marginTop:16, padding:"12px 16px", borderRadius:10,
+        background:"#F0FDF4", border:"1px solid #86EFAC" }}>
+        <div style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700, marginBottom:4 }}>
+          🏛️ FTA Audit Readiness
+        </div>
+        <p style={{ fontFamily:F, fontSize:11, color:"#065f46", lineHeight:1.6, margin:0 }}>
+          This reconciliation is maintained as part of your VAT compliance file. The FTA cross-references VAT return totals against
+          audited financial statements under its risk-based audit selection. All differences are documented and explainable.
+          Keep this reconciliation on file for a minimum of 5 years per UAE VAT regulations.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── NEW: WORKING CAPITAL MANAGEMENT ─────────────────────────────────────────
+
+function generateWorkingCapitalPDF({ client, reportData }) {
+  const company  = client?.company || "Client";
+  const freezone = client?.freezone || "DMCC";
+  const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
+  const wc       = reportData?.workingCapital || {};
+  const period   = wc.period || reportData?.monthLabel || "Current Period";
+  const note     = wc.garimaNote || "Working capital note not yet added. Please update in the admin panel.";
+
+  const dso = Number(wc.dso || 38);
+  const dio = Number(wc.dio || 15);
+  const dpo = Number(wc.dpo || 28);
+  const ccc = dso + dio - dpo;
+
+  const arRows = (wc.arAging && wc.arAging.length)
+    ? wc.arAging
+    : [
+        { customer:"Gulf Fresh Foods LLC",    current:125000, d30:0,     d60:0,     d90:0,     risk:"Low",    action:"On schedule" },
+        { customer:"Emarat Trading Co.",      current:95000,  d30:0,     d60:0,     d90:0,     risk:"Low",    action:"On schedule" },
+        { customer:"Desert Star Logistics",   current:0,      d30:82500, d60:0,     d90:0,     risk:"Medium", action:"Send reminder" },
+        { customer:"Al Habtoor Properties",  current:0,      d30:35000, d60:42500, d90:0,     risk:"Medium", action:"Follow up call" },
+        { customer:"Al Manara Group",         current:0,      d30:0,     d60:0,     d90:87500, risk:"High",   action:"Demand letter NOW" },
+      ];
+
+  const totalAR      = arRows.reduce((s,r)=>s+Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0),0);
+  const total90plus  = arRows.reduce((s,r)=>s+Number(r.d90||0),0);
+
+  const riskColor = r => r==="High"?"#EF4444":r==="Medium"?"#D97706":"#059669";
+  const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#ECFDF5";
+
+  const arTableRows = arRows.map((r,i)=>{
+    const total = Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0);
+    const pct   = totalAR > 0 ? ((total/totalAR)*100).toFixed(1) : "0.0";
+    return `<tr style="background:${i%2===0?"#fff":"#fafafa"};border-left:3px solid ${riskColor(r.risk)}">
+      <td style="padding:9px 12px;font-size:12px;font-weight:600;color:#111827">${r.customer}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;color:${Number(r.current||0)>0?"#059669":"#9CA3AF"}">${Number(r.current||0)>0?"AED "+Number(r.current).toLocaleString():"—"}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;color:${Number(r.d30||0)>0?"#D97706":"#9CA3AF"}">${Number(r.d30||0)>0?"AED "+Number(r.d30).toLocaleString():"—"}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;color:${Number(r.d60||0)>0?"#EF4444":"#9CA3AF"}">${Number(r.d60||0)>0?"AED "+Number(r.d60).toLocaleString():"—"}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;font-weight:700;color:${Number(r.d90||0)>0?"#991B1B":"#9CA3AF"}">${Number(r.d90||0)>0?"AED "+Number(r.d90).toLocaleString():"—"}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;font-weight:700;color:#111827">AED ${total.toLocaleString()}</td>
+      <td style="padding:9px 12px;font-size:11px;text-align:right;color:#6B7280">${pct}%</td>
+      <td style="padding:9px 12px"><span style="background:${riskBg(r.risk)};color:${riskColor(r.risk)};font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px">${r.risk}</span></td>
+      <td style="padding:9px 12px;font-size:11px;color:${r.risk==="High"?"#991B1B":"#374151"};font-weight:${r.risk==="High"?"700":"400"}">${r.action}</td>
+    </tr>`;
+  }).join("");
+
+  const totalCurrent = arRows.reduce((s,r)=>s+Number(r.current||0),0);
+  const total30      = arRows.reduce((s,r)=>s+Number(r.d30||0),0);
+  const total60      = arRows.reduce((s,r)=>s+Number(r.d60||0),0);
+
+  const apRows = (wc.apSchedule && wc.apSchedule.length)
+    ? wc.apSchedule
+    : [
+        { supplier:"Al Rashidi Brothers Trading", amount:65000, terms:"Net 30", due:"15 Apr 2026", daysLeft:15, priority:"Upcoming" },
+        { supplier:"Emirates Paper & Packaging",  amount:48000, terms:"Net 30", due:"20 Apr 2026", daysLeft:20, priority:"On Track" },
+        { supplier:"Mashreq Bank — Loan EMI",     amount:35000, terms:"Monthly",due:"01 Apr 2026", daysLeft:-1, priority:"Overdue"  },
+        { supplier:"Gulf Freight Solutions",      amount:28500, terms:"Net 45", due:"30 Apr 2026", daysLeft:30, priority:"On Track" },
+        { supplier:"DEWA (Utilities)",            amount:12000, terms:"Monthly",due:"10 Apr 2026", daysLeft:10, priority:"Upcoming" },
+      ];
+
+  const apTableRows = apRows.map((r,i)=>{
+    const ov = r.priority==="Overdue";
+    return `<tr style="background:${ov?"#FEF2F2":i%2===0?"#fff":"#fafafa"}">
+      <td style="padding:9px 12px;font-size:12px;font-weight:600;color:#111827">${r.supplier}</td>
+      <td style="padding:9px 12px;font-family:monospace;font-weight:700;color:#111827;text-align:right">AED ${Number(r.amount||0).toLocaleString()}</td>
+      <td style="padding:9px 12px;font-size:11px;color:#6B7280">${r.terms||"—"}</td>
+      <td style="padding:9px 12px;font-size:11px;color:#374151">${r.due||"—"}</td>
+      <td style="padding:9px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:${ov?"#FEF2F2":r.priority==="Upcoming"?"#FFFBEB":"#ECFDF5"};color:${ov?"#EF4444":r.priority==="Upcoming"?"#D97706":"#059669"}">${r.priority}</span></td>
+    </tr>`;
+  }).join("");
+
+  const totalAP = apRows.reduce((s,r)=>s+Number(r.amount||0),0);
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Working Capital Report — ${company} — ${period}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+@media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
+.header { background:linear-gradient(135deg,#065f46,#059669,#0891B2); padding:36px 48px; color:white; }
+.header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
+.header .sub { font-size:13px; opacity:0.8; margin-bottom:16px; }
+.header .meta { display:flex; gap:32px; font-size:11px; flex-wrap:wrap; }
+.header .meta-item label { opacity:0.6; display:block; font-size:9px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+.page { padding:36px 48px; max-width:860px; margin:0 auto; }
+.ccc-visual { background:#F0FDF4; border:2px solid #059669; border-radius:12px; padding:22px; margin-bottom:24px; }
+.ccc-formula { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+.ccc-box { background:white; border:2px solid #059669; border-radius:10px; padding:12px 20px; text-align:center; min-width:110px; }
+.ccc-box .val { font-size:28px; font-weight:900; color:#059669; font-family:monospace; }
+.ccc-box .lbl { font-size:9px; font-weight:700; color:#065f46; text-transform:uppercase; letter-spacing:0.05em; margin-top:3px; }
+.ccc-op { font-size:22px; font-weight:700; color:#059669; }
+.ccc-result { background:#059669; color:white; border-radius:10px; padding:14px 24px; text-align:center; min-width:130px; }
+.ccc-result .val { font-size:32px; font-weight:900; font-family:monospace; }
+.ccc-result .lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-top:3px; opacity:0.85; }
+.ccc-notes { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; font-size:11px; color:#065f46; }
+.ccc-note { background:white; border-radius:7px; padding:9px 12px; line-height:1.6; }
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.kpi-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:13px; text-align:center; }
+.kpi-card .val { font-size:20px; font-weight:800; font-family:monospace; margin-bottom:4px; }
+.kpi-card .lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#6B7280; }
+.kpi-card .bench { font-size:9px; color:#9CA3AF; margin-top:3px; }
+.section-title { font-size:15px; font-weight:800; color:#111827; margin-bottom:10px; border-left:4px solid #059669; padding-left:12px; }
+table { width:100%; border-collapse:collapse; font-size:11px; margin-bottom:8px; }
+th { background:#064E3B; color:white; padding:8px 10px; text-align:left; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; }
+th.num { text-align:right; }
+td { border-bottom:1px solid #F3F4F6; }
+tr.total-row td { background:#ECFDF5; font-weight:800; color:#065f46; border-top:2px solid #059669; padding:9px 10px; font-family:monospace; }
+tr.total-row td:first-child { font-family:Arial,sans-serif; }
+.garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:16px 0; font-size:12px; color:#78350F; line-height:1.85; }
+.insight { background:#F0F9FF; border:1px solid #BAE6FD; border-left:4px solid #0891B2; border-radius:7px; padding:11px 14px; margin:10px 0; font-size:11px; color:#0C4A6E; line-height:1.6; }
+.alert  { background:#FEF2F2; border:1px solid #FCA5A5; border-left:4px solid #EF4444; border-radius:7px; padding:11px 14px; margin:10px 0; font-size:11px; color:#991B1B; line-height:1.6; }
+.footer { margin-top:14px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+
+<div class="header">
+  <h1>Working Capital Management Report</h1>
+  <div class="sub">Cash Conversion Cycle · AR Aging · AP Schedule · Liquidity Analysis — ${company} (${freezone})</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${period}</div>
+    <div class="meta-item"><label>CCC</label>${ccc} days</div>
+    <div class="meta-item"><label>Total AR</label>AED ${totalAR.toLocaleString()}</div>
+    <div class="meta-item"><label>Total AP</label>AED ${totalAP.toLocaleString()}</div>
+    <div class="meta-item"><label>90+ Days AR</label>AED ${total90plus.toLocaleString()}</div>
+    <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="garima"><strong>Note from Garima:</strong><br/>${note}</div>
+
+  <!-- CCC Visual -->
+  <div class="ccc-visual">
+    <div style="font-size:12px;font-weight:800;color:#065f46;text-align:center;margin-bottom:14px">
+      Cash Conversion Cycle — DSO + DIO − DPO = CCC
+    </div>
+    <div class="ccc-formula">
+      <div class="ccc-box"><div class="val">${dso}</div><div class="lbl">DSO (Days)</div></div>
+      <div class="ccc-op">+</div>
+      <div class="ccc-box"><div class="val">${dio}</div><div class="lbl">DIO (Days)</div></div>
+      <div class="ccc-op">−</div>
+      <div class="ccc-box"><div class="val">${dpo}</div><div class="lbl">DPO (Days)</div></div>
+      <div class="ccc-op">=</div>
+      <div class="ccc-result"><div class="val">${ccc}</div><div class="lbl">CCC (Days)</div></div>
+    </div>
+    <div class="ccc-notes">
+      <div class="ccc-note"><strong>DSO ${dso} days</strong> — Days to collect from customers. Target: &lt;35 days. ${dso>35?"Above target — collections need attention.":"Within target."}</div>
+      <div class="ccc-note"><strong>DIO ${dio} days</strong> — Days inventory held before sale. ${dio<=20?"✓ Excellent for trading company.":"Monitor stock levels."} Industry median: 20–30 days.</div>
+      <div class="ccc-note"><strong>DPO ${dpo} days</strong> — Days to pay suppliers. ${dpo<35?"Scope to extend to 45 days — would release additional working capital.":"Well managed."}</div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="val" style="color:#2563EB">${dso}d</div><div class="lbl">DSO</div><div class="bench">Target &lt;35 · Industry 30–45</div></div>
+    <div class="kpi-card"><div class="val" style="color:#059669">${dio}d</div><div class="lbl">DIO</div><div class="bench">Excellent · Industry 20–30</div></div>
+    <div class="kpi-card"><div class="val" style="color:#D97706">${dpo}d</div><div class="lbl">DPO</div><div class="bench">${dpo<35?"Extend to 45d":"Good"} · Industry 30–45</div></div>
+    <div class="kpi-card"><div class="val" style="color:${ccc<=30?"#059669":ccc<=45?"#D97706":"#EF4444"}">${ccc}d</div><div class="lbl">CCC</div><div class="bench">Lower = better · Target &lt;30</div></div>
+  </div>
+
+  <!-- AR Aging -->
+  <div class="section-title pb">AR Aging Schedule — ${period}</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:20%">Customer</th>
+        <th class="num" style="width:11%">Current (0–30d)</th>
+        <th class="num" style="width:10%">31–60 days</th>
+        <th class="num" style="width:10%">61–90 days</th>
+        <th class="num" style="width:10%">90+ days</th>
+        <th class="num" style="width:10%">Total AED</th>
+        <th class="num" style="width:7%">% of AR</th>
+        <th style="width:7%">Risk</th>
+        <th style="width:15%">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${arTableRows}
+      <tr class="total-row">
+        <td><strong>TOTAL</strong></td>
+        <td style="text-align:right"><strong>AED ${totalCurrent.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>AED ${total30.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>AED ${total60.toLocaleString()}</strong></td>
+        <td style="text-align:right;color:#EF4444"><strong>AED ${total90plus.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>AED ${totalAR.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>100%</strong></td>
+        <td colspan="2"></td>
+      </tr>
+    </tbody>
+  </table>
+  ${total90plus>0?`<div class="alert">⚠️ <strong>AED ${total90plus.toLocaleString()} is 90+ days overdue (${((total90plus/totalAR)*100).toFixed(1)}% of total AR).</strong> Under IFRS 9 ECL model, provision at minimum 50% = AED ${Math.round(total90plus*0.5).toLocaleString()} required if not collected within 30 days. Issue demand letter immediately.</div>`:""}
+
+  <!-- AP Schedule -->
+  <div class="section-title" style="margin-top:24px">AP Schedule — Outstanding Payables</div>
+  <table>
+    <thead>
+      <tr><th style="width:30%">Supplier</th><th class="num">Amount AED</th><th>Terms</th><th>Due Date</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      ${apTableRows}
+      <tr class="total-row">
+        <td><strong>TOTAL PAYABLES</strong></td>
+        <td style="text-align:right"><strong>AED ${totalAP.toLocaleString()}</strong></td>
+        <td colspan="3"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:16px">
+    <div class="insight"><strong>💡 Working Capital Opportunity:</strong> DSO ${dso} days vs DPO ${dpo} days — ${dso>dpo?"you collect slower than you pay. Priority: reduce DSO and extend DPO to improve cash position.":"collection is faster than payment — strong position. Maintain this discipline."}</div>
+    ${total90plus>0?`<div class="alert"><strong>🔴 Collection Priority:</strong> AED ${total90plus.toLocaleString()} at 90+ days. Every 30-day delay in collection increases credit loss risk. Issue demand letter, offer structured payment plan, consider withholding next delivery.</div>`:""}
+  </div>
+
+  <div class="footer">
+    <span style="font-weight:800;color:#059669">Finzzup</span>
+    <span>${company} · Working Capital Report · ${period} · Confidential</span>
+    <span>Garima Agarwal CA · M.No. 160944 · ${now}</span>
+  </div>
+</div>
+</body></html>`;
+}
+
+// NEW: Working Capital Management user component
+function WorkingCapital({ client, reportData }) {
+  const wc     = reportData?.workingCapital || {};
+  const period = wc.period || reportData?.monthLabel || "Current Period";
+  const note   = wc.garimaNote || "";
+
+  const dso = Number(wc.dso || 38);
+  const dio = Number(wc.dio || 15);
+  const dpo = Number(wc.dpo || 28);
+  const ccc = dso + dio - dpo;
+
+  const isDemo = !wc.dso;
+
+  const arRows = (wc.arAging && wc.arAging.length) ? wc.arAging : [
+    { customer:"Gulf Fresh Foods LLC",   current:125000, d30:0,     d60:0,     d90:0,     risk:"Low",    action:"On schedule" },
+    { customer:"Emarat Trading Co.",     current:95000,  d30:0,     d60:0,     d90:0,     risk:"Low",    action:"On schedule" },
+    { customer:"Desert Star Logistics",  current:0,      d30:82500, d60:0,     d90:0,     risk:"Medium", action:"Send reminder" },
+    { customer:"Al Habtoor Properties", current:0,      d30:35000, d60:42500, d90:0,     risk:"Medium", action:"Follow up call" },
+    { customer:"Al Manara Group",        current:0,      d30:0,     d60:0,     d90:87500, risk:"High",   action:"Demand letter NOW" },
+  ];
+
+  const apRows = (wc.apSchedule && wc.apSchedule.length) ? wc.apSchedule : [
+    { supplier:"Al Rashidi Brothers Trading", amount:65000, terms:"Net 30", due:"15 Apr 2026", priority:"Upcoming" },
+    { supplier:"Emirates Paper & Packaging",  amount:48000, terms:"Net 30", due:"20 Apr 2026", priority:"On Track" },
+    { supplier:"Mashreq Bank — Loan EMI",     amount:35000, terms:"Monthly",due:"01 Apr 2026", priority:"Overdue"  },
+    { supplier:"Gulf Freight Solutions",      amount:28500, terms:"Net 45", due:"30 Apr 2026", priority:"On Track" },
+    { supplier:"DEWA (Utilities)",            amount:12000, terms:"Monthly",due:"10 Apr 2026", priority:"Upcoming" },
+  ];
+
+  const totalAR     = arRows.reduce((s,r)=>s+Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0),0);
+  const total90     = arRows.reduce((s,r)=>s+Number(r.d90||0),0);
+  const totalAP     = apRows.reduce((s,r)=>s+Number(r.amount||0),0);
+  const totalCurrent= arRows.reduce((s,r)=>s+Number(r.current||0),0);
+  const total30     = arRows.reduce((s,r)=>s+Number(r.d30||0),0);
+  const total60     = arRows.reduce((s,r)=>s+Number(r.d60||0),0);
+
+  const riskColor = r => r==="High"?C.red:r==="Medium"?C.amber:C.green;
+  const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#ECFDF5";
+
+  const handlePrint = () => {
+    const html = generateWorkingCapitalPDF({ client, reportData });
+    const w = window.open("","_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(()=>w.print(),600);
+  };
+
+  return (
+    <div style={{ padding:24 }}>
+      <UAEDisclaimer/>
+
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
+        marginBottom:20, flexWrap:"wrap", gap:12 }}>
+        <div>
+          <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.green,
+            textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
+            NEW · Liquidity & Collections
+          </div>
+          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, margin:0 }}>
+            Working Capital Management
+          </h2>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
+            Cash Conversion Cycle · AR Aging · AP Schedule — {period}
+          </p>
+        </div>
+        <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
+          padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
+          background:C.green, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+          boxShadow:`0 4px 14px ${C.green}40` }}>
+          📄 Download PDF
+        </button>
+      </div>
+
+      {isDemo && (
+        <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
+          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
+          ⚠️ Showing demo data. Enter actual figures in admin panel → UAE / Tax tab → Working Capital.
+        </div>
+      )}
+
+      {/* CCC Visual */}
+      <Card style={{ marginBottom:20, background:"#F0FDF4", border:`2px solid ${C.green}` }}>
+        <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:"#065f46",
+          textAlign:"center", marginBottom:16 }}>
+          Cash Conversion Cycle — How Long Cash is Tied Up
+        </div>
+
+        {/* Formula */}
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
+          gap:12, marginBottom:20, flexWrap:"wrap" }}>
+          {[
+            { val:dso, lbl:"DSO", sub:"Days to collect", color:C.blue },
+            { op:"+" },
+            { val:dio, lbl:"DIO", sub:"Days in inventory", color:C.teal },
+            { op:"−" },
+            { val:dpo, lbl:"DPO", sub:"Days to pay", color:C.amber },
+            { op:"=" },
+          ].map((item,i) => item.op ? (
+            <div key={i} style={{ fontFamily:F, fontSize:22, fontWeight:700, color:C.green }}>{item.op}</div>
+          ) : (
+            <div key={i} style={{ background:"white", border:`2px solid ${C.green}`,
+              borderRadius:12, padding:"14px 22px", textAlign:"center", minWidth:110 }}>
+              <div style={{ fontFamily:"monospace", fontSize:30, fontWeight:900, color:item.color, lineHeight:1 }}>{item.val}</div>
+              <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:"#065f46",
+                textTransform:"uppercase", letterSpacing:"0.05em", marginTop:4 }}>{item.lbl}</div>
+              <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:2 }}>{item.sub}</div>
+            </div>
+          ))}
+          <div style={{ background:C.green, borderRadius:12, padding:"14px 24px", textAlign:"center", minWidth:130 }}>
+            <div style={{ fontFamily:"monospace", fontSize:34, fontWeight:900, color:"white", lineHeight:1 }}>{ccc}</div>
+            <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.85)",
+              textTransform:"uppercase", letterSpacing:"0.05em", marginTop:4 }}>CCC (Days)</div>
+            <div style={{ fontFamily:F, fontSize:10, color:"rgba(255,255,255,0.7)", marginTop:2 }}>Lower = better</div>
+          </div>
+        </div>
+
+        {/* Insight strips */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+          {[
+            { title:`DSO ${dso} days`, ok:dso<=35, note:dso<=35?"✓ Within 35-day target":"Above target — chase collections", bench:"Industry: 30–45 days" },
+            { title:`DIO ${dio} days`, ok:dio<=20, note:dio<=20?"✓ Excellent inventory velocity":"Monitor stock levels", bench:"Industry: 20–30 days" },
+            { title:`DPO ${dpo} days`, ok:dpo>=35, note:dpo<35?"Extend to 45 days — free up cash":"✓ Good supplier terms", bench:"Industry: 30–45 days" },
+          ].map((s,i) => (
+            <div key={i} style={{ background:"white", borderRadius:8, padding:"10px 14px" }}>
+              <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:"#065f46", marginBottom:4 }}>{s.title}</div>
+              <div style={{ fontFamily:F, fontSize:11, color:s.ok?C.green:C.amber, fontWeight:600, marginBottom:2 }}>{s.note}</div>
+              <div style={{ fontFamily:F, fontSize:10, color:C.dim }}>{s.bench}</div>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      {/* KPI strip */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
+        {[
+          { lbl:"Total AR",    val:fmtAED(totalAR),   color:C.blue,  sub:"Total receivables" },
+          { lbl:"90+ Days",    val:fmtAED(total90),   color:total90>0?C.red:C.green, sub:total90>0?"Escalate now":"Clean" },
+          { lbl:"Total AP",    val:fmtAED(totalAP),   color:C.amber, sub:"Total payables" },
+          { lbl:"Net WC",      val:fmtAED(totalAR-totalAP), color:totalAR>totalAP?C.green:C.red, sub:"AR minus AP" },
+        ].map((s,i) => (
+          <Card key={i} style={{ padding:16 }}>
+            <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.lbl}</div>
+            <div style={{ fontFamily:"monospace", fontSize:18, fontWeight:800, color:s.color }}>{s.val}</div>
+            <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:3 }}>{s.sub}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* AR Aging Table */}
+      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+        <div style={{ padding:"12px 18px", background:"#064E3B" }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
+            AR Aging Schedule — {period}
+          </div>
+          <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>
+            Total outstanding: {fmtAED(totalAR)} · {arRows.length} customers
+          </div>
+        </div>
+
+        {/* Column headers */}
+        <div style={{ display:"grid",
+          gridTemplateColumns:"22fr 11fr 11fr 11fr 11fr 11fr 8fr 8fr 15fr",
+          background:"#F9FAFB", padding:"8px 16px",
+          borderBottom:`1px solid ${C.border}` }}>
+          {["Customer","Current","31–60d","61–90d","90+d","Total","% AR","Risk","Action"].map((h,i) => (
+            <div key={i} style={{ fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
+              textTransform:"uppercase", letterSpacing:"0.06em",
+              textAlign:i>=1&&i<=6?"right":"left" }}>{h}</div>
+          ))}
+        </div>
+
+        {arRows.map((r,i) => {
+          const total = Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0);
+          const pct   = totalAR>0?((total/totalAR)*100).toFixed(1):"0.0";
+          const borderCol = r.risk==="High"?C.red:r.risk==="Medium"?C.amber:"transparent";
+          return (
+            <div key={i} style={{ display:"grid",
+              gridTemplateColumns:"22fr 11fr 11fr 11fr 11fr 11fr 8fr 8fr 15fr",
+              padding:"10px 16px", background:i%2===0?"white":"#FAFAFA",
+              borderBottom:`1px solid ${C.border}`,
+              borderLeft:`3px solid ${borderCol}` }}>
+              <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text }}>{r.customer}</div>
+              <div style={{ fontFamily:"monospace", fontSize:11, color:Number(r.current||0)>0?C.green:C.dim, textAlign:"right" }}>
+                {Number(r.current||0)>0?fmtAED(Number(r.current)):"—"}</div>
+              <div style={{ fontFamily:"monospace", fontSize:11, color:Number(r.d30||0)>0?C.amber:C.dim, textAlign:"right" }}>
+                {Number(r.d30||0)>0?fmtAED(Number(r.d30)):"—"}</div>
+              <div style={{ fontFamily:"monospace", fontSize:11, color:Number(r.d60||0)>0?C.red:C.dim, textAlign:"right" }}>
+                {Number(r.d60||0)>0?fmtAED(Number(r.d60)):"—"}</div>
+              <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700,
+                color:Number(r.d90||0)>0?"#991B1B":C.dim, textAlign:"right" }}>
+                {Number(r.d90||0)>0?fmtAED(Number(r.d90)):"—"}</div>
+              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:700, color:C.text, textAlign:"right" }}>
+                {fmtAED(total)}</div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted, textAlign:"right" }}>{pct}%</div>
+              <div style={{ textAlign:"right" }}>
+                <span style={{ padding:"2px 8px", borderRadius:100, fontSize:10,
+                  fontWeight:700, fontFamily:F, background:riskBg(r.risk), color:riskColor(r.risk) }}>
+                  {r.risk}
+                </span>
+              </div>
+              <div style={{ fontFamily:F, fontSize:11, color:r.risk==="High"?C.red:C.muted,
+                fontWeight:r.risk==="High"?700:400, paddingLeft:6 }}>{r.action}</div>
+            </div>
+          );
+        })}
+
+        {/* Total row */}
+        <div style={{ display:"grid",
+          gridTemplateColumns:"22fr 11fr 11fr 11fr 11fr 11fr 8fr 8fr 15fr",
+          padding:"11px 16px", background:"#ECFDF5",
+          borderTop:`2px solid ${C.green}`, borderLeft:`3px solid ${C.green}` }}>
+          <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text }}>TOTAL</div>
+          <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700, color:C.green, textAlign:"right" }}>{fmtAED(totalCurrent)}</div>
+          <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700, color:C.amber, textAlign:"right" }}>{fmtAED(total30)}</div>
+          <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700, color:C.red, textAlign:"right" }}>{fmtAED(total60)}</div>
+          <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:800, color:"#991B1B", textAlign:"right" }}>{fmtAED(total90)}</div>
+          <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:800, color:C.text, textAlign:"right" }}>{fmtAED(totalAR)}</div>
+          <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.green, textAlign:"right" }}>100%</div>
+          <div/><div/>
+        </div>
+      </Card>
+
+      {/* 90+ alert */}
+      {total90 > 0 && (
+        <div style={{ padding:"12px 16px", borderRadius:10, background:"#FEF2F2",
+          border:"1px solid #FCA5A5", borderLeft:`4px solid ${C.red}`,
+          marginBottom:20, fontFamily:F, fontSize:12, color:C.red }}>
+          <strong>⚠️ IFRS 9 ECL Provision Required:</strong> AED {fmtAED(total90)} is 90+ days overdue.
+          Provision AED {fmtAED(Math.round(total90*0.5))} (50% ECL) in accounts if not collected within 30 days.
+          Issue formal demand letter immediately.
+        </div>
+      )}
+
+      {/* AP Schedule */}
+      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+        <div style={{ padding:"12px 18px", background:"#064E3B" }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>AP Schedule — Outstanding Payables</div>
+          <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>
+            Total: {fmtAED(totalAP)} · DPO: {dpo} days
+          </div>
+        </div>
+        {apRows.map((r,i) => {
+          const ov = r.priority==="Overdue";
+          const priColor = ov?C.red:r.priority==="Upcoming"?C.amber:C.green;
+          const priBg    = ov?"#FEF2F2":r.priority==="Upcoming"?"#FFFBEB":"#ECFDF5";
+          return (
+            <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"11px 18px", background:ov?"#FEF2F2":i%2===0?"white":"#FAFAFA",
+              borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:10 }}>
+              <div>
+                <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{r.supplier}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>
+                  {r.terms} · Due: {r.due}
+                </div>
+              </div>
+              <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+                <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:C.text }}>
+                  {fmtAED(Number(r.amount||0))}
+                </div>
+                <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11,
+                  fontWeight:700, fontFamily:F, background:priBg, color:priColor }}>
+                  {r.priority}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+          padding:"12px 18px", background:"#ECFDF5", borderTop:`2px solid ${C.green}` }}>
+          <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text }}>TOTAL PAYABLES</div>
+          <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:C.green }}>
+            {fmtAED(totalAP)}
+          </div>
+        </div>
+      </Card>
+
+      {/* Recommendations */}
+      <Card style={{ marginBottom:20 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+          💡 Working Capital Recommendations
+        </div>
+        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+          {total90 > 0 && (
+            <div style={{ padding:"11px 14px", borderRadius:8, background:"#FEF2F2",
+              border:"1px solid #FCA5A5", borderLeft:`3px solid ${C.red}` }}>
+              <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.red, marginBottom:3 }}>
+                🔴 Immediate — 90+ Day Debtors
+              </div>
+              <div style={{ fontFamily:F, fontSize:11, color:"#7F1D1D", lineHeight:1.6 }}>
+                Issue formal demand letter, offer structured payment plan (50% now, balance in 45 days),
+                withhold next delivery until settled.
+              </div>
+            </div>
+          )}
+          {dpo < 35 && (
+            <div style={{ padding:"11px 14px", borderRadius:8, background:"#FFFBEB",
+              border:"1px solid #FCD34D", borderLeft:`3px solid ${C.amber}` }}>
+              <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.amber, marginBottom:3 }}>
+                🟡 Quick Win — Extend Supplier Payment Terms
+              </div>
+              <div style={{ fontFamily:F, fontSize:11, color:"#78350F", lineHeight:1.6 }}>
+                Current DPO {dpo} days vs industry norm 45 days. Negotiating extended terms
+                with key suppliers could release AED 60–80K of additional working capital without cost.
+              </div>
+            </div>
+          )}
+          {dso > 35 && (
+            <div style={{ padding:"11px 14px", borderRadius:8, background:"#EFF6FF",
+              border:"1px solid #BFDBFE", borderLeft:`3px solid ${C.blue}` }}>
+              <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.blue, marginBottom:3 }}>
+                🔵 Target — Reduce DSO from {dso} to 32 Days
+              </div>
+              <div style={{ fontFamily:F, fontSize:11, color:"#1E3A5F", lineHeight:1.6 }}>
+                Introduce 2% early payment discount for &lt;15 day settlement. Move repeat-offender
+                clients to upfront deposit model for new orders. Monthly AR review call.
+              </div>
+            </div>
+          )}
+          <div style={{ padding:"11px 14px", borderRadius:8, background:"#ECFDF5",
+            border:"1px solid #86EFAC", borderLeft:`3px solid ${C.green}` }}>
+            <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.green, marginBottom:3 }}>
+              🟢 Maintain — Inventory Management
+            </div>
+            <div style={{ fontFamily:F, fontSize:11, color:"#065f46", lineHeight:1.6 }}>
+              DIO {dio} days is excellent (top quartile for UAE trading companies).
+              Continue current just-in-time approach. No action required.
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Note from Garima */}
+      <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0,
+            background:"linear-gradient(135deg,#F59E0B,#D97706)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>Note from Garima</div>
+            <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
+              Garima Agarwal · CA · Working Capital Analysis
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 14px" }}>
+              {note || "Working capital analysis note not yet added. Garima will update this section each period with specific recommendations."}
+            </p>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              <a href={WA} target="_blank" rel="noopener noreferrer"
+                style={{ display:"inline-flex", alignItems:"center", gap:6,
+                  background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
+                  fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
+                📱 WhatsApp Garima
+              </a>
+              <button onClick={handlePrint}
+                style={{ display:"inline-flex", alignItems:"center", gap:6,
+                  background:"#FEF3C7", color:"#92400E", borderRadius:8, padding:"8px 16px",
+                  fontFamily:F, fontWeight:700, fontSize:12,
+                  border:"1px solid #FDE68A", cursor:"pointer" }}>
+                📄 Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+// ─── NEW: VERTICAL ANALYSIS & GP RATIO ───────────────────────────────────────
+
+function generateVerticalAnalysisPDF({ client, reportData }) {
+  const company  = client?.company  || "Client";
+  const freezone = client?.freezone || "DMCC";
+  const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
+  const va       = reportData?.verticalAnalysis || {};
+  const period   = va.period  || reportData?.monthLabel || "Current Period";
+  const note     = va.garimaNote || "Vertical analysis note not yet added.";
+
+  // Build rows — use admin data or defaults
+  const defaultRows = [
+    { label:"Revenue",              ifrs:1850000, prev:1400000, cogs:false, subtotal:false, total:false, section:"revenue" },
+    { label:"Cost of Goods Sold",   ifrs:1017500, prev:812000,  cogs:true,  subtotal:false, total:false, section:"cogs"    },
+    { label:"  Direct Materials",   ifrs:750000,  prev:582000,  cogs:false, subtotal:false, total:false, section:"cogs"    },
+    { label:"  Direct Labour",      ifrs:185000,  prev:140000,  cogs:false, subtotal:false, total:false, section:"cogs"    },
+    { label:"  Direct Overheads",   ifrs:82500,   prev:90000,   cogs:false, subtotal:false, total:false, section:"cogs"    },
+    { label:"Gross Profit",         ifrs:832500,  prev:588000,  cogs:false, subtotal:true,  total:false, section:"gp"      },
+    { label:"Salaries & Benefits",  ifrs:375000,  prev:360000,  cogs:false, subtotal:false, total:false, section:"opex"    },
+    { label:"Rent & Utilities",     ifrs:52000,   prev:52000,   cogs:false, subtotal:false, total:false, section:"opex"    },
+    { label:"Marketing & Sales",    ifrs:48000,   prev:42000,   cogs:false, subtotal:false, total:false, section:"opex"    },
+    { label:"Professional Fees",    ifrs:35000,   prev:30000,   cogs:false, subtotal:false, total:false, section:"opex"    },
+    { label:"Other OpEx",           ifrs:51500,   prev:48000,   cogs:false, subtotal:false, total:false, section:"opex"    },
+    { label:"Total OpEx",           ifrs:561500,  prev:532000,  cogs:false, subtotal:true,  total:false, section:"opex"    },
+    { label:"EBITDA",               ifrs:271000,  prev:56000,   cogs:false, subtotal:true,  total:false, section:"ebitda"  },
+    { label:"Depreciation",         ifrs:18000,   prev:18000,   cogs:false, subtotal:false, total:false, section:"below"   },
+    { label:"Finance Costs",        ifrs:12000,   prev:12000,   cogs:false, subtotal:false, total:false, section:"below"   },
+    { label:"Net Profit (PAT)",     ifrs:241000,  prev:26000,   cogs:false, subtotal:false, total:true,  section:"pat"     },
+  ];
+
+  const rows = (va.rows && va.rows.length >= 5) ? va.rows : defaultRows;
+  const revenue     = Number(rows[0]?.ifrs || 1850000);
+  const prevRevenue = Number(rows[0]?.prev || 1400000);
+
+  const sectionColors = {
+    revenue:"#EFF6FF", cogs:"#FEF2F2", gp:"#ECFDF5",
+    opex:"#FFF7ED", ebitda:"#EFF6FF", below:"#F9FAFB", pat:"#F0FDF4",
+  };
+  const sectionBorder = {
+    revenue:"#2563EB", cogs:"#EF4444", gp:"#059669",
+    opex:"#D97706", ebitda:"#2563EB", below:"#E5E7EB", pat:"#059669",
+  };
+
+  const tableRows = rows.map((r,i) => {
+    const pct      = revenue > 0 ? ((Number(r.ifrs||0)/revenue)*100).toFixed(1) : "—";
+    const prevPct  = prevRevenue > 0 ? ((Number(r.prev||0)/prevRevenue)*100).toFixed(1) : "—";
+    const pp       = (revenue > 0 && prevRevenue > 0)
+      ? (((Number(r.ifrs||0)/revenue) - (Number(r.prev||0)/prevRevenue))*100).toFixed(1)
+      : "—";
+    const ppColor  = pp === "—" ? "#6B7280"
+      : (r.section==="cogs"||r.section==="opex")
+        ? (Number(pp) < 0 ? "#059669" : "#EF4444")
+        : (Number(pp) > 0 ? "#059669" : "#EF4444");
+    const ppLabel  = pp === "—" ? "—" : `${Number(pp)>0?"+":""}${pp}pp`;
+
+    const isTotal    = r.total;
+    const isSubtotal = r.subtotal;
+    const indent     = r.label?.startsWith("  ");
+    const bg = isTotal ? "#ECFDF5" : isSubtotal ? `${sectionColors[r.section]||"#F9FAFB"}` : (i%2===0?"#fff":"#fafafa");
+    const fw = isTotal ? "800" : isSubtotal ? "700" : "400";
+    const borderL = isSubtotal || isTotal ? `3px solid ${sectionBorder[r.section]||"#E5E7EB"}` : "none";
+
+    return `<tr style="background:${bg};border-left:${borderL}${isTotal?";border-top:2px solid #059669":""}">
+      <td style="padding:${isSubtotal||isTotal?"10":"8"}px 12px;font-size:11.5px;font-weight:${fw};color:${isTotal?"#065f46":"#374151"};padding-left:${indent?"24":"12"}px">${r.label?.trim()}</td>
+      <td style="padding:8px 10px;font-family:monospace;font-weight:${fw};color:#111827;text-align:right">AED ${Number(r.ifrs||0).toLocaleString()}</td>
+      <td style="padding:8px 10px;font-family:monospace;font-weight:700;color:${r.section==="cogs"||r.section==="opex"?"#EF4444":"#059669"};text-align:right">${pct}%</td>
+      <td style="padding:8px 10px;font-family:monospace;font-weight:${fw};color:#6B7280;text-align:right">AED ${Number(r.prev||0).toLocaleString()}</td>
+      <td style="padding:8px 10px;font-family:monospace;color:#6B7280;text-align:right">${prevPct}%</td>
+      <td style="padding:8px 10px;font-family:monospace;font-weight:700;color:${ppColor};text-align:right">${Number(pp)>0?"▲":"▼"} ${ppLabel}</td>
+    </tr>`;
+  }).join("");
+
+  // GP Ratio benchmark
+  const gpRow     = rows.find(r=>r.section==="gp");
+  const gpAmt     = Number(gpRow?.ifrs || 832500);
+  const gpPct     = revenue > 0 ? ((gpAmt/revenue)*100).toFixed(1) : "—";
+  const gpPrevPct = prevRevenue > 0 ? ((Number(gpRow?.prev||588000)/prevRevenue)*100).toFixed(1) : "—";
+  const ebitdaRow = rows.find(r=>r.section==="ebitda");
+  const ebitdaPct = revenue > 0 ? ((Number(ebitdaRow?.ifrs||271000)/revenue)*100).toFixed(1) : "—";
+  const patRow    = rows.find(r=>r.section==="pat");
+  const patPct    = revenue > 0 ? ((Number(patRow?.ifrs||241000)/revenue)*100).toFixed(1) : "—";
+
+  const benchmarks = va.benchmarks || [
+    { metric:"Gross Margin",    yours:gpPct+"%",    industry:"38–42%", status:Number(gpPct)>=42?"Above":"Watch" },
+    { metric:"EBITDA Margin",   yours:ebitdaPct+"%",industry:"8–12%",  status:Number(ebitdaPct)>=10?"Above":"Watch" },
+    { metric:"Net Margin",      yours:patPct+"%",   industry:"5–8%",   status:Number(patPct)>=7?"Above":"Watch" },
+    { metric:"OpEx % Revenue",  yours:((561500/revenue)*100).toFixed(1)+"%",industry:"35–40%", status:"Above Avg" },
+  ];
+
+  const benchRows = benchmarks.map((b,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
+    <td style="padding:9px 12px;font-weight:600;color:#111827">${b.metric}</td>
+    <td style="padding:9px 12px;font-family:monospace;font-weight:800;color:#059669;text-align:right">${b.yours}</td>
+    <td style="padding:9px 12px;font-size:11px;color:#6B7280;text-align:center">${b.industry}</td>
+    <td style="padding:9px 12px;text-align:center"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:${b.status==="Above"||b.status==="Above Avg"?"#ECFDF5":"#FFFBEB"};color:${b.status==="Above"||b.status==="Above Avg"?"#059669":"#D97706"}">${b.status==="Above"||b.status==="Above Avg"?"✓ "+b.status:"⚠ "+b.status}</span></td>
+  </tr>`).join("");
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Vertical Analysis Report — ${company} — ${period}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+@media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
+.header { background:linear-gradient(135deg,#1a3a8f,#2563EB,#7C3AED); padding:36px 48px; color:white; }
+.header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
+.header .sub { font-size:13px; opacity:0.8; margin-bottom:16px; }
+.header .meta { display:flex; gap:32px; font-size:11px; flex-wrap:wrap; }
+.header .meta-item label { opacity:0.6; display:block; font-size:9px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+.page { padding:36px 48px; max-width:860px; margin:0 auto; }
+.explain-box { background:#EFF6FF; border:1px solid #BFDBFE; border-left:4px solid #2563EB; border-radius:8px; padding:12px 16px; margin-bottom:18px; font-size:11px; color:#1E3A5F; line-height:1.75; }
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:22px; }
+.kpi-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:13px; text-align:center; }
+.kpi-card .val { font-size:20px; font-weight:800; font-family:monospace; margin-bottom:4px; }
+.kpi-card .lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#6B7280; }
+.kpi-card .chg { font-size:10px; font-weight:700; margin-top:4px; }
+.section-title { font-size:15px; font-weight:800; color:#111827; margin-bottom:10px; border-left:4px solid #2563EB; padding-left:12px; }
+table { width:100%; border-collapse:collapse; margin-bottom:8px; }
+th { background:#1E3A5F; color:white; padding:9px 10px; text-align:left; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; }
+th.num { text-align:right; }
+td { border-bottom:1px solid #F3F4F6; }
+.garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:16px 0; font-size:12px; color:#78350F; line-height:1.85; }
+.footer { margin-top:14px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+
+<div class="header">
+  <h1>Vertical Analysis Report</h1>
+  <div class="sub">Common-Size P&amp;L · Every Line as % of Revenue · GP Ratio vs Industry — ${company} (${freezone})</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${period}</div>
+    <div class="meta-item"><label>Revenue</label>AED ${revenue.toLocaleString()}</div>
+    <div class="meta-item"><label>Gross Margin</label>${gpPct}%</div>
+    <div class="meta-item"><label>Net Margin</label>${patPct}%</div>
+    <div class="meta-item"><label>Base</label>Revenue = 100%</div>
+    <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="explain-box">
+    <strong>What is Vertical Analysis?</strong> Every line item is expressed as a percentage of revenue (the base = 100%). This reveals the true cost structure of the business regardless of size, and makes it easy to compare periods and benchmark against industry. The "Change (pp)" column shows percentage point movement — a cost line moving from 30% to 28% of revenue is a 2pp improvement, even if the absolute amount increased.
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="val" style="color:#2563EB">${gpPct}%</div><div class="lbl">Gross Margin</div><div class="chg" style="color:${Number(gpPct)>Number(gpPrevPct)?"#059669":"#EF4444"}">${Number(gpPct)>Number(gpPrevPct)?"▲":"▼"} vs ${gpPrevPct}% prior</div></div>
+    <div class="kpi-card"><div class="val" style="color:#059669">${ebitdaPct}%</div><div class="lbl">EBITDA Margin</div><div class="chg" style="color:#059669">▲ Strong improvement</div></div>
+    <div class="kpi-card"><div class="val" style="color:#7C3AED">${patPct}%</div><div class="lbl">Net Profit Margin</div><div class="chg" style="color:#059669">▲ Best quarter</div></div>
+    <div class="kpi-card"><div class="val" style="color:#D97706">${((Number(rows.find(r=>r.section==="opex"&&r.subtotal)?.ifrs||561500)/revenue)*100).toFixed(1)}%</div><div class="lbl">OpEx % Revenue</div><div class="chg" style="color:#059669">▲ Improving efficiency</div></div>
+  </div>
+
+  <div class="section-title">Common-Size P&amp;L — ${period} vs Prior Period</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:30%">Line Item</th>
+        <th class="num" style="width:15%">Current AED</th>
+        <th class="num" style="width:10%">% of Rev</th>
+        <th class="num" style="width:15%">Prior AED</th>
+        <th class="num" style="width:10%">% of Rev</th>
+        <th class="num" style="width:10%">Change (pp)</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+
+  <div class="garima"><strong>Note from Garima:</strong><br/>${note}</div>
+
+  <div class="section-title pb">GP Ratio — Industry Benchmark Comparison</div>
+  <table>
+    <thead>
+      <tr><th style="width:30%">Metric</th><th class="num" style="width:20%">Your Business</th><th style="width:25%;text-align:center">UAE Industry Range (${freezone} peers)</th><th style="width:25%;text-align:center">Assessment</th></tr>
+    </thead>
+    <tbody>${benchRows}</tbody>
+  </table>
+
+  <div class="footer">
+    <span style="font-weight:800;color:#2563EB">Finzzup</span>
+    <span>${company} · Vertical Analysis Report · ${period} · Confidential</span>
+    <span>Garima Agarwal CA · M.No. 160944 · ${now}</span>
+  </div>
+</div>
+</body></html>`;
+}
+
+// NEW: Vertical Analysis user component
+function VerticalAnalysis({ client, reportData }) {
+  const va     = reportData?.verticalAnalysis || {};
+  const period = va.period || reportData?.monthLabel || "Current Period";
+  const note   = va.garimaNote || "";
+  const [activeSection, setActiveSection] = useState("all");
+
+  const defaultRows = [
+    { label:"Revenue",             ifrs:1850000, prev:1400000, subtotal:false, total:false, section:"revenue" },
+    { label:"Cost of Goods Sold",  ifrs:1017500, prev:812000,  subtotal:true,  total:false, section:"cogs",   indent:false },
+    { label:"  Direct Materials",  ifrs:750000,  prev:582000,  subtotal:false, total:false, section:"cogs",   indent:true  },
+    { label:"  Direct Labour",     ifrs:185000,  prev:140000,  subtotal:false, total:false, section:"cogs",   indent:true  },
+    { label:"  Direct Overheads",  ifrs:82500,   prev:90000,   subtotal:false, total:false, section:"cogs",   indent:true  },
+    { label:"Gross Profit",        ifrs:832500,  prev:588000,  subtotal:true,  total:false, section:"gp"      },
+    { label:"Salaries & Benefits", ifrs:375000,  prev:360000,  subtotal:false, total:false, section:"opex"    },
+    { label:"Rent & Utilities",    ifrs:52000,   prev:52000,   subtotal:false, total:false, section:"opex"    },
+    { label:"Marketing & Sales",   ifrs:48000,   prev:42000,   subtotal:false, total:false, section:"opex"    },
+    { label:"Professional Fees",   ifrs:35000,   prev:30000,   subtotal:false, total:false, section:"opex"    },
+    { label:"Other OpEx",          ifrs:51500,   prev:48000,   subtotal:false, total:false, section:"opex"    },
+    { label:"Total OpEx",          ifrs:561500,  prev:532000,  subtotal:true,  total:false, section:"opex"    },
+    { label:"EBITDA",              ifrs:271000,  prev:56000,   subtotal:true,  total:false, section:"ebitda"  },
+    { label:"Depreciation",        ifrs:18000,   prev:18000,   subtotal:false, total:false, section:"below"   },
+    { label:"Finance Costs",       ifrs:12000,   prev:12000,   subtotal:false, total:false, section:"below"   },
+    { label:"Net Profit (PAT)",    ifrs:241000,  prev:26000,   subtotal:false, total:true,  section:"pat"     },
+  ];
+
+  const rows      = (va.rows && va.rows.length >= 5) ? va.rows : defaultRows;
+  const isDemo    = !(va.rows && va.rows.length >= 5);
+  const revenue   = Number(rows[0]?.ifrs || 1850000);
+  const prevRev   = Number(rows[0]?.prev || 1400000);
+
+  const pct  = (v) => revenue > 0 ? ((Number(v||0)/revenue)*100).toFixed(1) : "—";
+  const ppct = (v) => prevRev > 0 ? ((Number(v||0)/prevRev)*100).toFixed(1)  : "—";
+  const pp   = (cur, prev) => {
+    if (!revenue || !prevRev) return null;
+    return (((Number(cur||0)/revenue) - (Number(prev||0)/prevRev))*100);
+  };
+
+  const gpRow      = rows.find(r=>r.section==="gp");
+  const ebitdaRow  = rows.find(r=>r.section==="ebitda");
+  const patRow     = rows.find(r=>r.section==="pat");
+  const opexRow    = rows.find(r=>r.section==="opex"&&r.subtotal);
+  const cogsRow    = rows.find(r=>r.section==="cogs"&&r.subtotal);
+
+  const gpPct     = pct(gpRow?.ifrs);
+  const gpPrevPct = ppct(gpRow?.prev);
+  const gpPP      = pp(gpRow?.ifrs, gpRow?.prev);
+
+  const sectionColor = {
+    revenue:"#EFF6FF", cogs:"#FEF2F2", gp:"#ECFDF5",
+    opex:"#FFF7ED", ebitda:"#EFF6FF", below:"transparent", pat:"#F0FDF4",
+  };
+  const sectionBorder = {
+    revenue:C.blue, cogs:C.red, gp:C.green,
+    opex:C.amber, ebitda:C.blue, below:"transparent", pat:C.green,
+  };
+
+  // GP Ratio benchmark data
+  const benchmarks = va.benchmarks || [
+    { metric:"Gross Margin",   yours:gpPct+"%",           industry:"38–42%",  status: Number(gpPct)>=42 ? "above" : "watch" },
+    { metric:"EBITDA Margin",  yours:pct(ebitdaRow?.ifrs)+"%", industry:"8–12%",  status: Number(pct(ebitdaRow?.ifrs))>=10 ? "above" : "watch" },
+    { metric:"Net Margin",     yours:pct(patRow?.ifrs)+"%",    industry:"5–8%",   status: Number(pct(patRow?.ifrs))>=7  ? "above" : "watch" },
+    { metric:"OpEx % Revenue", yours:pct(opexRow?.ifrs)+"%",   industry:"35–40%", status: Number(pct(opexRow?.ifrs))<=35 ? "above" : "watch" },
+    { metric:"COGS % Revenue", yours:pct(cogsRow?.ifrs)+"%",   industry:"58–62%", status: Number(pct(cogsRow?.ifrs))<=58 ? "above" : "watch" },
+  ];
+
+  const handlePrint = () => {
+    const html = generateVerticalAnalysisPDF({ client, reportData });
+    const w = window.open("","_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(()=>w.print(),600);
+  };
+
+  return (
+    <div style={{ padding:24 }}>
+      <UAEDisclaimer/>
+
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
+        marginBottom:20, flexWrap:"wrap", gap:12 }}>
+        <div>
+          <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.blue,
+            textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
+            NEW · Margin Analysis
+          </div>
+          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, margin:0 }}>
+            Vertical Analysis & GP Ratio
+          </h2>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
+            Common-size P&L · Every line as % of revenue · Industry benchmarks — {period}
+          </p>
+        </div>
+        <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
+          padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
+          background:C.blue, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+          boxShadow:`0 4px 14px ${C.blue}40` }}>
+          📄 Download PDF
+        </button>
+      </div>
+
+      {isDemo && (
+        <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
+          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
+          ⚠️ Showing demo data. Enter actual P&L figures in admin panel → UAE / Tax tab → Vertical Analysis.
+        </div>
+      )}
+
+      {/* What is vertical analysis */}
+      <Card style={{ marginBottom:20, background:`${C.blue}06`, borderLeft:`4px solid ${C.blue}` }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ width:36, height:36, borderRadius:10, background:C.blue, flexShrink:0,
+            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📊</div>
+          <div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:6 }}>
+              What is Vertical Analysis?
+            </div>
+            <p style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.75, margin:0 }}>
+              Every P&L line is shown as a <strong style={{color:C.text}}>percentage of revenue</strong> (the base = 100%).
+              This reveals your true cost structure regardless of company size, and makes period-on-period comparison
+              meaningful even when revenue changes. The <strong style={{color:C.text}}>Change (pp)</strong> column shows
+              percentage point movement — a cost line falling from 30% to 28% of revenue is a 2pp improvement,
+              even if the absolute amount grew. Investors and auditors use this to spot margin trends and benchmark
+              against industry peers.
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* KPI strip */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
+        {[
+          { label:"Gross Margin",    val:gpPct+"%",                       prevVal:gpPrevPct+"%",                   color:C.blue,  good:Number(gpPP||0)>0  },
+          { label:"EBITDA Margin",   val:pct(ebitdaRow?.ifrs)+"%",        prevVal:ppct(ebitdaRow?.prev)+"%",       color:C.green, good:true },
+          { label:"Net Margin",      val:pct(patRow?.ifrs)+"%",           prevVal:ppct(patRow?.prev)+"%",          color:C.purple,good:true },
+          { label:"OpEx % Revenue",  val:pct(opexRow?.ifrs)+"%",          prevVal:ppct(opexRow?.prev)+"%",         color:C.amber, good:Number(pct(opexRow?.ifrs))<Number(ppct(opexRow?.prev)) },
+        ].map((s,i) => {
+          const trend = s.good;
+          return (
+            <Card key={i} style={{ padding:16 }}>
+              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{s.label}</div>
+                <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
+                  color:trend?C.green:C.red,
+                  background:trend?"#ECFDF5":"#FEF2F2",
+                  padding:"2px 7px", borderRadius:100 }}>
+                  {trend?"▲":"▼"}
+                </span>
+              </div>
+              <div style={{ fontFamily:"monospace", fontSize:22, fontWeight:800, color:s.color }}>{s.val}</div>
+              <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:4 }}>
+                Prior: {s.prevVal}
+              </div>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Main Vertical Analysis Table */}
+      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+        <div style={{ padding:"12px 18px", background:"#1E3A5F" }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
+            Common-Size P&L — {period}
+          </div>
+          <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>
+            Revenue = 100% base · pp = percentage points change
+          </div>
+        </div>
+
+        {/* Column headers */}
+        <div style={{ display:"grid", gridTemplateColumns:"30fr 14fr 9fr 14fr 9fr 10fr",
+          background:"#F0F4FF", padding:"8px 16px",
+          borderBottom:`1px solid ${C.border}` }}>
+          {[
+            { label:"Line Item", align:"left" },
+            { label:"Current AED", align:"right" },
+            { label:"% Rev", align:"right" },
+            { label:"Prior AED", align:"right" },
+            { label:"% Rev", align:"right" },
+            { label:"Change (pp)", align:"right" },
+          ].map((h,i) => (
+            <div key={i} style={{ fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
+              textTransform:"uppercase", letterSpacing:"0.07em", textAlign:h.align }}>{h.label}</div>
+          ))}
+        </div>
+
+        {rows.map((r,i) => {
+          const curPct  = pct(r.ifrs);
+          const prePct  = ppct(r.prev);
+          const ppVal   = pp(r.ifrs, r.prev);
+          const ppNum   = ppVal !== null ? ppVal.toFixed(1) : null;
+
+          // For costs (cogs/opex): falling % is good. For income lines: rising % is good.
+          const isCost  = r.section==="cogs"||r.section==="opex";
+          const isGood  = ppVal === null ? null : isCost ? ppVal < 0 : ppVal > 0;
+
+          const ppColor = ppNum === null ? C.dim : isGood ? C.green : C.red;
+          const ppLabel = ppNum === null ? "—"
+            : `${Number(ppNum)>0?"▲ +":"▼ "}${Math.abs(Number(ppNum)).toFixed(1)}pp`;
+
+          const isTotal    = r.total;
+          const isSubtotal = r.subtotal;
+          const indent     = r.indent || r.label?.startsWith("  ");
+
+          const rowBg = isTotal
+            ? "#ECFDF5"
+            : isSubtotal
+            ? sectionColor[r.section]||"#F9FAFB"
+            : i%2===0?"white":"#FAFAFA";
+          const rowBorder = (isSubtotal||isTotal) ? `3px solid ${sectionBorder[r.section]||C.border}` : "none";
+
+          return (
+            <div key={i} style={{ display:"grid",
+              gridTemplateColumns:"30fr 14fr 9fr 14fr 9fr 10fr",
+              padding:`${isSubtotal||isTotal?11:9}px 16px`,
+              background:rowBg,
+              borderBottom:`1px solid ${C.border}`,
+              borderLeft:rowBorder,
+              borderTop:isTotal?`2px solid ${C.green}`:"none" }}>
+              <div style={{ fontFamily:F,
+                fontSize:isTotal?13:12,
+                fontWeight:isTotal?800:isSubtotal?700:400,
+                color:isTotal?"#065f46":C.text,
+                paddingLeft:indent?16:0 }}>
+                {r.label?.trim()}
+              </div>
+              <div style={{ fontFamily:"monospace",
+                fontSize:12, fontWeight:isTotal||isSubtotal?700:400,
+                color:C.text, textAlign:"right" }}>
+                {fmtAED(Number(r.ifrs||0))}
+              </div>
+              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:700,
+                color:r.section==="cogs"||r.section==="opex"?C.red:C.green,
+                textAlign:"right" }}>
+                {curPct}%
+              </div>
+              <div style={{ fontFamily:"monospace", fontSize:11,
+                color:C.dim, textAlign:"right" }}>
+                {fmtAED(Number(r.prev||0))}
+              </div>
+              <div style={{ fontFamily:"monospace", fontSize:11,
+                color:C.dim, textAlign:"right" }}>
+                {prePct}%
+              </div>
+              <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700,
+                color:ppColor, textAlign:"right" }}>
+                {ppLabel}
+              </div>
+            </div>
+          );
+        })}
+      </Card>
+
+      {/* GP Ratio Benchmark */}
+      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+        <div style={{ padding:"12px 18px", background:"#064E3B" }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
+            GP Ratio — UAE Industry Benchmark
+          </div>
+          <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>
+            {client?.freezone||"DMCC"} trading company peers
+          </div>
+        </div>
+
+        {/* Table header */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr",
+          background:"#F9FAFB", padding:"8px 18px", borderBottom:`1px solid ${C.border}` }}>
+          {["Metric","Your Business","Industry Range","Assessment"].map((h,i) => (
+            <div key={i} style={{ fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
+              textTransform:"uppercase", letterSpacing:"0.07em",
+              textAlign:i===1||i===2?"center":"left" }}>{h}</div>
+          ))}
+        </div>
+
+        {benchmarks.map((b,i) => (
+          <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr",
+            padding:"11px 18px", background:i%2===0?"white":"#FAFAFA",
+            borderBottom:`1px solid ${C.border}` }}>
+            <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{b.metric}</div>
+            <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800,
+              color:b.status==="above"?C.green:C.amber, textAlign:"center" }}>{b.yours}</div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, textAlign:"center" }}>{b.industry}</div>
+            <div>
+              <span style={{ padding:"4px 12px", borderRadius:100, fontSize:11, fontWeight:700,
+                fontFamily:F,
+                background:b.status==="above"?"#ECFDF5":"#FFFBEB",
+                color:b.status==="above"?C.green:C.amber }}>
+                {b.status==="above" ? "✓ Above Benchmark" : "⚠ Watch"}
+              </span>
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      {/* Cost Structure Visual */}
+      <Card style={{ marginBottom:20 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+          Cost Structure — Where Does Every AED 1 of Revenue Go?
+        </div>
+        {[
+          { label:"Cost of Goods Sold",  pct:Number(pct(cogsRow?.ifrs)), color:C.red    },
+          { label:"Salaries & Benefits", pct:Number(pct(rows.find(r=>r.label?.includes("Salaries"))?.ifrs)), color:C.purple },
+          { label:"Other OpEx",          pct:Number(pct(opexRow?.ifrs))-Number(pct(rows.find(r=>r.label?.includes("Salaries"))?.ifrs)), color:C.amber },
+          { label:"Net Profit",          pct:Number(pct(patRow?.ifrs)),   color:C.green  },
+        ].filter(s=>s.pct>0).map((s,i) => (
+          <div key={i} style={{ marginBottom:12 }}>
+            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>{s.label}</span>
+              <span style={{ fontFamily:"monospace", fontSize:12, fontWeight:700, color:s.color }}>
+                {s.pct.toFixed(1)}%
+              </span>
+            </div>
+            <div style={{ height:10, borderRadius:6, background:C.border, overflow:"hidden" }}>
+              <div style={{ height:"100%", width:`${Math.min(s.pct,100)}%`,
+                background:s.color, borderRadius:6, transition:"width 0.5s" }}/>
+            </div>
+          </div>
+        ))}
+      </Card>
+
+      {/* Note from Garima */}
+      <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0,
+            background:"linear-gradient(135deg,#F59E0B,#D97706)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>
+              Note from Garima
+            </div>
+            <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
+              Garima Agarwal · CA · Margin & Cost Analysis
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 14px" }}>
+              {note || "Vertical analysis note not yet added. Garima will update this section with margin trends, cost structure insights, and benchmark comparisons."}
+            </p>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              <a href={WA} target="_blank" rel="noopener noreferrer"
+                style={{ display:"inline-flex", alignItems:"center", gap:6,
+                  background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
+                  fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
+                📱 WhatsApp Garima
+              </a>
+              <button onClick={handlePrint}
+                style={{ display:"inline-flex", alignItems:"center", gap:6,
+                  background:"#FEF3C7", color:"#92400E", borderRadius:8, padding:"8px 16px",
+                  fontFamily:F, fontWeight:700, fontSize:12,
+                  border:"1px solid #FDE68A", cursor:"pointer" }}>
+                📄 Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
@@ -9148,88 +11668,575 @@ function ComplianceCalendar({ client }) {
 }
 
 // ─── QFZP / FREE ZONE MODULE ──────────────────────────────────────────────────
-function QFZPModule({ client, reportData }) {
-  const rd        = reportData?.qfzp || {};
+function generateQFZPSubstancePDF({ client, reportData }) {
+  const company   = client?.company  || "Client";
   const freezone  = client?.freezone || "DMCC";
-  const qfzpScore = rd.qfzpScore || 84;
-
-  const qualifyingActivities = [
-    { activity:"Manufacturing / processing of goods",           qualified:true  },
-    { activity:"Holding of shares in UAE free zone entities",   qualified:true  },
-    { activity:"Treasury and financing activities (intra-grp)", qualified:true  },
-    { activity:"Shipping / distribution of goods",              qualified:true  },
-    { activity:"Sales to mainland UAE customers",               qualified:false, note:"Taxed at 9% — de-minimis risk" },
-    { activity:"Professional services to non-FZ clients",       qualified:false, note:"Non-qualifying — monitor ratio" },
-  ];
+  const trnCT     = client?.trnCT    || "—";
+  const now       = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
+  const qd        = reportData?.qfzpSubstance || {};
+  const period    = qd.period || reportData?.monthLabel || "Current Period";
+  const note      = qd.garimaNote || "QFZP substance note not yet added.";
+  const score     = Number(qd.overallScore || reportData?.qfzp?.qfzpScore || 82);
 
   const fzDetails = {
-    DMCC:  { name:"Dubai Multi Commodities Centre", regulator:"DMCC Authority",   audit:"Annual audit required" },
-    JAFZA: { name:"Jebel Ali Free Zone",             regulator:"JAFZA Authority", audit:"Annual audit required" },
-    ADGM:  { name:"Abu Dhabi Global Market",         regulator:"ADGM",            audit:"Annual audit required" },
-    RAK:   { name:"RAK Economic Zone",               regulator:"RAKEZ",           audit:"Audit required for QFZP" },
-    DIFC:  { name:"Dubai Int'l Financial Centre",    regulator:"DIFC Authority",  audit:"Annual audit required" },
+    DMCC:  { name:"Dubai Multi Commodities Centre", regulator:"DMCC Authority"  },
+    JAFZA: { name:"Jebel Ali Free Zone",             regulator:"JAFZA Authority" },
+    ADGM:  { name:"Abu Dhabi Global Market",         regulator:"ADGM"           },
+    RAK:   { name:"RAK Economic Zone",               regulator:"RAKEZ"          },
+    DIFC:  { name:"Dubai Int'l Financial Centre",    regulator:"DIFC Authority" },
   };
   const fz = fzDetails[freezone] || fzDetails.DMCC;
+
+  const cigas = (qd.cigas && qd.cigas.length) ? qd.cigas : [
+    { activity:"Trading — sourcing, procurement & distribution",         qualified:true,  pct:57, note:"Core activity — conducted from DMCC office" },
+    { activity:"Treasury — intercompany financing (Rashidi Holdings)",   qualified:true,  pct:18, note:"Intragroup — qualifies per Art. 18 schedule" },
+    { activity:"Export sales — outside UAE",                             qualified:true,  pct:17, note:"Zero-rated for VAT, qualifying for QFZP" },
+    { activity:"Advisory services to mainland UAE clients",              qualified:false, pct:8,  note:"⚠ Non-qualifying — above 5% de-minimis threshold" },
+  ];
+
+  const substanceItems = (qd.substanceItems && qd.substanceItems.length) ? qd.substanceItems : [
+    {
+      pillar:"Employees",
+      requirement:"Adequate number of qualified employees physically present in the free zone to conduct CIGA",
+      current:qd.employeeCount||"5 full-time employees at DMCC",
+      status:"met",
+      evidence:["Employment contracts on file","UAE visa/work permit copies","DMCC office access records","Monthly payroll — WPS registered"],
+      gap:"",
+    },
+    {
+      pillar:"Operating Expenditure",
+      requirement:"Adequate operating expenditure incurred in the free zone commensurate with the level of activities",
+      current:"AED " + (qd.opexAED||"412,000") + " p.a. DMCC-based opex",
+      status:"met",
+      evidence:["DMCC lease invoice AED 52,000 p.a.","Utilities — DEWA / district cooling","Staff costs (payroll)","Professional fees (audit, legal, CA)"],
+      gap:"",
+    },
+    {
+      pillar:"Physical Presence",
+      requirement:"Adequate physical assets — office premises in the free zone",
+      current:"1,200 sq ft leased office — " + freezone + " — Lease until Dec 2026",
+      status:"met",
+      evidence:["DMCC lease agreement (valid)","Office floor plan","DMCC license showing registered address","Utility bills confirming occupancy"],
+      gap:"",
+    },
+    {
+      pillar:"Core Income-Generating Activities (CIGA)",
+      requirement:"Core income-generating activities must be conducted in the free zone by the QFZP itself",
+      current:"Trading, sourcing, treasury — all conducted from DMCC office",
+      status:"watch",
+      evidence:["Board meeting minutes (DMCC)","Management decisions documented","Supplier & customer contracts","Correspondence from DMCC address"],
+      gap:"Mainland advisory services at 8% of revenue — above 5% de-minimis threshold. Review contract structure.",
+    },
+    {
+      pillar:"Audited Financial Statements",
+      requirement:"Mandatory annual audit and submission to free zone authority to maintain QFZP status",
+      current:"FY 2025 audit in progress — submission due 30 April 2026",
+      status:"action",
+      evidence:["Audit firm engagement letter — on file","Management accounts signed — PENDING"],
+      gap:"⚠ CRITICAL: Management accounts must be signed and sent to audit firm by 22 April 2026. Missing this deadline risks QFZP status.",
+    },
+  ];
+
+  const statusColor = s => s==="met"?"#059669":s==="watch"?"#D97706":"#EF4444";
+  const statusBg    = s => s==="met"?"#ECFDF5":s==="watch"?"#FFFBEB":"#FEF2F2";
+  const statusLabel = s => s==="met"?"✓ Met":s==="watch"?"⚠ Watch":"✗ Action Required";
+
+  const cigaRows = cigas.map((c,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}${!c.qualified?";border-left:3px solid #EF4444":""}">
+    <td style="padding:9px 12px;font-size:12px;font-weight:600;color:#111827">${c.activity}</td>
+    <td style="padding:9px 12px;text-align:center"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:${c.qualified?"#ECFDF5":"#FEF2F2"};color:${c.qualified?"#059669":"#EF4444"}">${c.qualified?"✓ Qualifying":"✗ Non-Qualifying"}</span></td>
+    <td style="padding:9px 12px;font-family:monospace;font-weight:700;text-align:right;color:${c.qualified?"#059669":"#EF4444"}">${c.pct}%</td>
+    <td style="padding:9px 12px;font-size:11px;color:#6B7280">${c.note}</td>
+    <td style="padding:9px 12px;font-size:11px;font-weight:700;color:${c.qualified?"#059669":"#EF4444"}">${c.qualified?"0% CT":"9% CT"}</td>
+  </tr>`).join("");
+
+  const qualPct   = cigas.filter(c=>c.qualified).reduce((s,c)=>s+Number(c.pct||0),0);
+  const nonQualPct = cigas.filter(c=>!c.qualified).reduce((s,c)=>s+Number(c.pct||0),0);
+
+  const substanceRows = substanceItems.map((s,i)=>`
+    <tr style="background:${statusBg(s.status)};border-left:3px solid ${statusColor(s.status)}">
+      <td style="padding:11px 12px;font-weight:700;color:#111827">${s.pillar}</td>
+      <td style="padding:11px 12px;font-size:11px;color:#374151;line-height:1.6">${s.requirement}</td>
+      <td style="padding:11px 12px;font-size:11px;color:#374151">${s.current}</td>
+      <td style="padding:11px 12px;text-align:center"><span style="font-size:10px;font-weight:700;padding:3px 10px;border-radius:100px;background:white;color:${statusColor(s.status)}">${statusLabel(s.status)}</span></td>
+    </tr>
+    ${s.gap ? `<tr style="background:#FEF2F2"><td colspan="4" style="padding:8px 12px 10px;font-size:11px;color:#991B1B;font-weight:600">📌 Gap: ${s.gap}</td></tr>` : ""}
+    <tr style="background:#F9FAFB"><td colspan="4" style="padding:6px 12px 10px;font-size:10px;color:#6B7280">
+      Evidence on file: ${s.evidence.join(" · ")}
+    </td></tr>`).join("");
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>QFZP Substance Tracker — ${company} — ${period}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+@media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
+.header { background:linear-gradient(135deg,#1E3A5F,#7C3AED,#4C1D95); padding:36px 48px; color:white; }
+.header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
+.header .sub { font-size:13px; opacity:0.8; margin-bottom:16px; }
+.header .meta { display:flex; gap:28px; font-size:11px; flex-wrap:wrap; }
+.header .meta-item label { opacity:0.6; display:block; font-size:9px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+.page { padding:36px 48px; max-width:860px; margin:0 auto; }
+.score-box { display:flex; align-items:center; gap:24px; background:#F5F3FF; border:2px solid #7C3AED; border-radius:14px; padding:22px 28px; margin-bottom:22px; }
+.score-num { font-size:56px; font-weight:900; color:#7C3AED; font-family:monospace; line-height:1; }
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:22px; }
+.kpi-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:13px; text-align:center; }
+.kpi-card .val { font-size:20px; font-weight:800; font-family:monospace; margin-bottom:4px; }
+.kpi-card .lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#6B7280; }
+.section-title { font-size:15px; font-weight:800; color:#111827; margin-bottom:10px; border-left:4px solid #7C3AED; padding-left:12px; }
+table { width:100%; border-collapse:collapse; margin-bottom:8px; }
+th { background:#4C1D95; color:white; padding:9px 10px; text-align:left; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; }
+th.num { text-align:right; }
+td { border-bottom:1px solid #F3F4F6; }
+.garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:16px 0; font-size:12px; color:#78350F; line-height:1.85; }
+.disclaimer { font-size:10px; color:#9CA3AF; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:6px; padding:10px 12px; margin-top:14px; line-height:1.6; }
+.footer { margin-top:12px; padding-top:10px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+
+<div class="header">
+  <h1>QFZP Substance Tracker</h1>
+  <div class="sub">Qualifying Free Zone Person — Annual Substance Review — ${company} (${freezone})</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${period}</div>
+    <div class="meta-item"><label>Free Zone</label>${fz.name}</div>
+    <div class="meta-item"><label>CT TRN</label>${trnCT}</div>
+    <div class="meta-item"><label>QFZP Score</label>${score}/100</div>
+    <div class="meta-item"><label>Qualifying Income</label>${qualPct}%</div>
+    <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
+  </div>
+</div>
+
+<div class="page">
+
+  <div class="score-box">
+    <div>
+      <div class="score-num">${score}</div>
+      <div style="font-size:11px;font-weight:700;color:#4C1D95;margin-top:4px">/100 — QFZP Compliance Score</div>
+    </div>
+    <div style="flex:1">
+      <div style="height:12px;background:#E5E7EB;border-radius:100px;overflow:hidden;margin-bottom:8px">
+        <div style="height:100%;width:${score}%;background:${score>=80?"#059669":score>=65?"#D97706":"#EF4444"};border-radius:100px"></div>
+      </div>
+      <div style="font-size:12px;color:#4C1D95;line-height:1.6">
+        ${score>=80?"✅ Strong compliance — maintain substance requirements and file audited financials on time."
+          :score>=65?"⚠️ Good but gaps exist — address action items before next FTA review."
+          :"🔴 Significant gaps — immediate action required to protect 0% CT rate."}
+      </div>
+    </div>
+  </div>
+
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="val" style="color:#059669">${qualPct}%</div><div class="lbl">Qualifying Income</div></div>
+    <div class="kpi-card"><div class="val" style="color:${nonQualPct>=5?"#EF4444":"#D97706"}">${nonQualPct}%</div><div class="lbl">Non-Qualifying</div></div>
+    <div class="kpi-card"><div class="val" style="color:#059669">0%</div><div class="lbl">CT Rate (QFZP)</div></div>
+    <div class="kpi-card"><div class="val" style="color:#7C3AED">${substanceItems.filter(s=>s.status==="action").length}</div><div class="lbl">Action Items</div></div>
+  </div>
+
+  <div class="garima"><strong>Note from Garima:</strong><br/>${note}</div>
+
+  <div class="section-title">CIGA Analysis — Qualifying vs Non-Qualifying Income</div>
+  <table>
+    <thead><tr><th style="width:35%">Activity</th><th style="width:15%;text-align:center">Classification</th><th class="num" style="width:10%">% of Rev</th><th style="width:30%">Notes</th><th style="width:10%;text-align:center">CT Rate</th></tr></thead>
+    <tbody>${cigaRows}</tbody>
+  </table>
+  ${nonQualPct>=5?`<div style="background:#FEF2F2;border:1px solid #FCA5A5;border-left:4px solid #EF4444;border-radius:7px;padding:10px 14px;margin:10px 0;font-size:11px;color:#991B1B">⚠️ <strong>De-minimis Alert:</strong> Non-qualifying income at ${nonQualPct}% of revenue — above the 5% de-minimis threshold. If this exceeds 5% in any tax period, all income loses 0% QFZP benefit and is taxed at 9%. Immediate contract restructuring recommended.</div>`:""}
+
+  <div class="section-title pb">5-Pillar Substance Requirements</div>
+  <table>
+    <thead><tr><th style="width:15%">Pillar</th><th style="width:30%">Requirement</th><th style="width:25%">Current Status</th><th style="width:10%;text-align:center">Assessment</th></tr></thead>
+    <tbody>${substanceRows}</tbody>
+  </table>
+
+  <div class="disclaimer">
+    <strong>Disclaimer:</strong> This tracker is maintained for internal QFZP compliance monitoring. The FTA may audit substance requirements at any time. All evidence listed should be physically maintained and available for inspection. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
+  </div>
+  <div class="footer">
+    <span style="font-weight:800;color:#7C3AED">Finzzup</span>
+    <span>${company} · QFZP Substance Tracker · ${period} · Confidential</span>
+    <span>Garima Agarwal CA · M.No. 160944</span>
+  </div>
+</div>
+</body></html>`;
+}
+
+// NEW: Full QFZP Substance Tracker (replaces basic QFZPModule)
+function QFZPModule({ client, reportData }) {
+  const qd       = reportData?.qfzpSubstance || {};
+  const rd       = reportData?.qfzp          || {};
+  const freezone = client?.freezone           || "DMCC";
+  const period   = qd.period || reportData?.monthLabel || "Current Period";
+  const note     = qd.garimaNote || "";
+  const score    = Number(qd.overallScore || rd.qfzpScore || 82);
+  const isDemo   = !qd.overallScore && !rd.qfzpScore;
+
+  const fzDetails = {
+    DMCC:  { name:"Dubai Multi Commodities Centre", regulator:"DMCC Authority",  deadline:"30 April" },
+    JAFZA: { name:"Jebel Ali Free Zone",             regulator:"JAFZA Authority", deadline:"30 April" },
+    ADGM:  { name:"Abu Dhabi Global Market",         regulator:"ADGM",           deadline:"30 June"  },
+    RAK:   { name:"RAK Economic Zone",               regulator:"RAKEZ",          deadline:"30 June"  },
+    DIFC:  { name:"Dubai Int'l Financial Centre",    regulator:"DIFC Authority",  deadline:"30 April" },
+  };
+  const fz = fzDetails[freezone] || fzDetails.DMCC;
+
+  const cigas = (qd.cigas && qd.cigas.length) ? qd.cigas : [
+    { activity:"Trading — sourcing, procurement & distribution",        qualified:true,  pct:57, note:"Core activity — conducted from DMCC office" },
+    { activity:"Treasury — intercompany financing (Rashidi Holdings)",  qualified:true,  pct:18, note:"Intragroup — qualifies per Art. 18 schedule" },
+    { activity:"Export sales — outside UAE",                            qualified:true,  pct:17, note:"Zero-rated VAT, qualifying for QFZP" },
+    { activity:"Advisory services to mainland UAE clients",             qualified:false, pct:8,  note:"⚠ Non-qualifying — above 5% de-minimis threshold" },
+  ];
+
+  const substanceItems = (qd.substanceItems && qd.substanceItems.length) ? qd.substanceItems : [
+    {
+      pillar:"👥 Employees",
+      requirement:"Adequate qualified employees physically present in the free zone to conduct CIGA",
+      current:qd.employeeCount ? `${qd.employeeCount} employees at ${freezone}` : "5 full-time employees at DMCC",
+      status:"met",
+      evidence:["Employment contracts","UAE visa/work permits","DMCC office access records","Monthly payroll (WPS)"],
+      gap:"",
+    },
+    {
+      pillar:"💰 Operating Expenditure",
+      requirement:"Adequate opex incurred in the free zone commensurate with level of activities",
+      current:`AED ${qd.opexAED||"412,000"} p.a. ${freezone}-based opex`,
+      status:"met",
+      evidence:["DMCC lease invoice","Utilities (DEWA/district cooling)","Payroll costs","Professional fees"],
+      gap:"",
+    },
+    {
+      pillar:"🏢 Physical Presence",
+      requirement:"Adequate physical assets — office premises in the free zone",
+      current:`${qd.officeSqft||"1,200"} sq ft leased office — ${freezone} — Lease until Dec 2026`,
+      status:"met",
+      evidence:["Lease agreement (valid)","Office floor plan","License showing registered address","Utility bills"],
+      gap:"",
+    },
+    {
+      pillar:"⚙️ Core Income-Generating Activities",
+      requirement:"CIGA must be conducted in the free zone by the QFZP — not outsourced to mainland/related parties",
+      current:"Trading, sourcing, treasury — DMCC office",
+      status:Number(cigas.find(c=>!c.qualified)?.pct||0)>=5?"watch":"met",
+      evidence:["Board meeting minutes (DMCC)","Management decisions documented","Supplier/customer contracts from DMCC address"],
+      gap:Number(cigas.find(c=>!c.qualified)?.pct||0)>=5
+        ? `Mainland services at ${cigas.find(c=>!c.qualified)?.pct||8}% — above 5% de-minimis threshold. Restructure contracts.`
+        : "",
+    },
+    {
+      pillar:"📋 Audited Financial Statements",
+      requirement:"Mandatory annual audit & submission to free zone authority to maintain QFZP status",
+      current:`FY 2025 audit in progress — submission due ${fz.deadline} 2026`,
+      status: qd.auditSubmitted ? "met" : "action",
+      evidence:["Audit firm engagement letter","Management accounts — PENDING sign-off"],
+      gap:qd.auditSubmitted ? "" : `⚠ CRITICAL: Sign management accounts and send to audit firm before ${fz.deadline} 2026. Missing this risks retroactive 9% CT on all income.`,
+    },
+  ];
+
+  const qualPct    = cigas.filter(c=>c.qualified).reduce((s,c)=>s+Number(c.pct||0),0);
+  const nonQualPct = cigas.filter(c=>!c.qualified).reduce((s,c)=>s+Number(c.pct||0),0);
+  const actionCount = substanceItems.filter(s=>s.status==="action").length;
+  const watchCount  = substanceItems.filter(s=>s.status==="watch").length;
+
+  const statusColor = s => s==="met"?C.green:s==="watch"?C.amber:C.red;
+  const statusBg    = s => s==="met"?"#ECFDF5":s==="watch"?"#FFFBEB":"#FEF2F2";
+  const statusLabel = s => s==="met"?"✓ Met":s==="watch"?"⚠ Watch":"✗ Action Required";
+
+  const handlePrint = () => {
+    const html = generateQFZPSubstancePDF({ client, reportData });
+    const w = window.open("","_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(()=>w.print(),600);
+  };
 
   return (
     <div style={{ padding:24 }}>
       <UAEDisclaimer/>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
+
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
+        marginBottom:20, flexWrap:"wrap", gap:12 }}>
         <div>
-          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>QFZP & Free Zone Status</h2>
-          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>{fz.name} ({freezone})</p>
+          <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.purple,
+            textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
+            NEW · QFZP Compliance · Federal Decree-Law No. 47 of 2022
+          </div>
+          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, margin:0 }}>
+            QFZP Substance Tracker
+          </h2>
+          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
+            {fz.name} ({freezone}) · {fz.regulator} · Audit deadline: {fz.deadline}
+          </p>
         </div>
-        <div style={{ textAlign:"right" }}>
-          <div style={{ fontFamily:F, fontSize:28, fontWeight:900, color:qfzpScore>=70?C.green:C.amber }}>{qfzpScore}/100</div>
-          <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>QFZP Compliance Score</div>
-        </div>
+        <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
+          padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
+          background:C.purple, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+          boxShadow:`0 4px 14px ${C.purple}40` }}>
+          📄 Download PDF
+        </button>
       </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }}>
-        <Card>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Free Zone</div>
-          <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:C.text }}>{freezone}</div>
-          <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>{fz.regulator}</div>
-        </Card>
-        <Card>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Audit Requirement</div>
-          <div style={{ fontFamily:F, fontSize:14, fontWeight:700, color:C.amber }}>{fz.audit}</div>
-        </Card>
-      </div>
+      {isDemo && (
+        <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
+          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
+          ⚠️ Showing demo data. Enter actual substance data in admin panel → UAE / Tax tab → QFZP Substance.
+        </div>
+      )}
 
-      <Card style={{ marginBottom:16 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>Qualifying vs Non-Qualifying Activities</div>
-        {qualifyingActivities.map((a,i) => (
-          <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:`1px solid ${C.border}`, alignItems:"flex-start" }}>
-            <span style={{ color:a.qualified?C.green:C.red, fontWeight:700, flexShrink:0, fontSize:15 }}>{a.qualified?"✓":"✗"}</span>
-            <div style={{ flex:1 }}>
-              <div style={{ fontFamily:F, fontSize:13, color:C.text }}>{a.activity}</div>
-              {a.note && <div style={{ fontFamily:F, fontSize:11, color:C.amber, marginTop:2 }}>⚠️ {a.note}</div>}
+      {/* Score + Status */}
+      <Card style={{ marginBottom:20, background:"#F5F3FF", border:`2px solid ${C.purple}` }}>
+        <div style={{ display:"flex", gap:24, alignItems:"center", flexWrap:"wrap" }}>
+          <div style={{ textAlign:"center", minWidth:120 }}>
+            <div style={{ fontFamily:"monospace", fontSize:56, fontWeight:900,
+              color:score>=80?C.green:score>=65?C.amber:C.red, lineHeight:1 }}>{score}</div>
+            <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.purple, marginTop:4 }}>
+              /100 · QFZP Score
             </div>
-            <span style={{ padding:"2px 8px", borderRadius:100, fontSize:10, fontWeight:700, fontFamily:F,
-              background:a.qualified?"#ECFDF5":"#FEF2F2", color:a.qualified?C.green:C.red }}>
-              {a.qualified?"0% CT":"9% CT"}
-            </span>
+          </div>
+          <div style={{ flex:1 }}>
+            <div style={{ height:12, background:C.border, borderRadius:100,
+              overflow:"hidden", marginBottom:10 }}>
+              <div style={{ height:"100%", width:`${score}%`, borderRadius:100,
+                background:score>=80?C.green:score>=65?C.amber:C.red,
+                transition:"width 0.5s" }}/>
+            </div>
+            <div style={{ fontFamily:F, fontSize:13, color:"#4C1D95", lineHeight:1.7, marginBottom:10 }}>
+              {score>=80
+                ? "✅ Strong compliance — maintain substance requirements and file audited financials on time."
+                : score>=65
+                ? "⚠️ Good but gaps exist — address action items before next FTA review."
+                : "🔴 Significant gaps — immediate action required to protect 0% CT rate."}
+            </div>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              {[
+                { label:`${substanceItems.filter(s=>s.status==="met").length} Met`, color:C.green,  bg:"#ECFDF5" },
+                { label:`${watchCount} Watch`,                                       color:C.amber,  bg:"#FFFBEB" },
+                { label:`${actionCount} Action Required`,                            color:C.red,    bg:"#FEF2F2" },
+              ].map((s,i) => (
+                <span key={i} style={{ padding:"4px 12px", borderRadius:100, fontSize:12,
+                  fontWeight:700, fontFamily:F, background:s.bg, color:s.color }}>
+                  {s.label}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* KPI strip */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
+        {[
+          { label:"Qualifying Income",     val:`${qualPct}%`,    color:C.green,  sub:"0% CT rate" },
+          { label:"Non-Qualifying Income", val:`${nonQualPct}%`, color:nonQualPct>=5?C.red:C.amber, sub:nonQualPct>=5?"⚠ Above 5% de-minimis":"Below 5% threshold" },
+          { label:"Effective CT Rate",     val:"0%",             color:C.green,  sub:"QFZP status active" },
+          { label:"Action Items",          val:actionCount,      color:actionCount>0?C.red:C.green, sub:actionCount>0?"Need resolution":"All clear" },
+        ].map((s,i) => (
+          <Card key={i} style={{ padding:16 }}>
+            <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+            <div style={{ fontFamily:"monospace", fontSize:22, fontWeight:800, color:s.color }}>{s.val}</div>
+            <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:4 }}>{s.sub}</div>
+          </Card>
+        ))}
+      </div>
+
+      {/* What is QFZP box */}
+      <Card style={{ marginBottom:20, background:`${C.purple}06`, borderLeft:`4px solid ${C.purple}` }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ width:36, height:36, borderRadius:10, background:C.purple, flexShrink:0,
+            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🏙️</div>
+          <div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:6 }}>
+              What is QFZP & Why Does Substance Matter?
+            </div>
+            <p style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.75, margin:0 }}>
+              A <strong style={{color:C.text}}>Qualifying Free Zone Person</strong> pays <strong style={{color:C.green}}>0% Corporate Tax</strong> on qualifying income
+              instead of the standard 9%. To maintain this status, the company must satisfy 5 substance requirements
+              every year — employees, opex, physical presence, CIGA in the free zone, and audited financials.
+              The FTA audits substance requirements and can <strong style={{color:C.red}}>revoke QFZP status retroactively</strong> if
+              any pillar fails — triggering 9% CT on all income for that period.
+              Non-qualifying income must stay below <strong style={{color:C.text}}>5% of revenue OR AED 5M</strong> (whichever is lower).
+            </p>
+          </div>
+        </div>
+      </Card>
+
+      {/* CIGA Table */}
+      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+        <div style={{ padding:"12px 18px", background:"#4C1D95" }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
+            CIGA Analysis — Core Income-Generating Activities
+          </div>
+          <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>
+            Qualifying income taxed at 0% · Non-qualifying at 9% · De-minimis: non-qualifying &lt;5% or &lt;AED 5M
+          </div>
+        </div>
+
+        {/* Column headers */}
+        <div style={{ display:"grid", gridTemplateColumns:"35fr 13fr 9fr 30fr 9fr",
+          background:"#F5F3FF", padding:"8px 18px", borderBottom:`1px solid ${C.border}` }}>
+          {["Activity","Classification","% Rev","Notes","CT Rate"].map((h,i) => (
+            <div key={i} style={{ fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
+              textTransform:"uppercase", letterSpacing:"0.07em",
+              textAlign:i===2||i===4?"right":"left" }}>{h}</div>
+          ))}
+        </div>
+
+        {cigas.map((c,i) => (
+          <div key={i} style={{ display:"grid", gridTemplateColumns:"35fr 13fr 9fr 30fr 9fr",
+            padding:"11px 18px", background:i%2===0?"white":"#FAFAFA",
+            borderBottom:`1px solid ${C.border}`,
+            borderLeft:c.qualified?"none":`3px solid ${C.red}` }}>
+            <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:c.qualified?400:500 }}>{c.activity}</div>
+            <div>
+              <span style={{ padding:"3px 8px", borderRadius:100, fontSize:10, fontWeight:700, fontFamily:F,
+                background:c.qualified?"#ECFDF5":"#FEF2F2", color:c.qualified?C.green:C.red }}>
+                {c.qualified?"✓ Qualifying":"✗ Non-Qual."}
+              </span>
+            </div>
+            <div style={{ fontFamily:"monospace", fontSize:13, fontWeight:700,
+              color:c.qualified?C.green:C.red, textAlign:"right" }}>{c.pct}%</div>
+            <div style={{ fontFamily:F, fontSize:11, color:c.qualified?C.muted:C.amber, paddingLeft:8, lineHeight:1.5 }}>
+              {c.note}
+            </div>
+            <div style={{ textAlign:"right" }}>
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
+                color:c.qualified?C.green:C.red }}>{c.qualified?"0% CT":"9% CT"}</span>
+            </div>
+          </div>
+        ))}
+
+        {/* Totals */}
+        <div style={{ display:"grid", gridTemplateColumns:"35fr 13fr 9fr 30fr 9fr",
+          padding:"12px 18px", background:"#F0FDF4", borderTop:`2px solid ${C.green}` }}>
+          <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text }}>Total Qualifying</div>
+          <div/>
+          <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:C.green, textAlign:"right" }}>{qualPct}%</div>
+          <div/>
+          <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.green, textAlign:"right" }}>0%</div>
+        </div>
+        {nonQualPct > 0 && (
+          <div style={{ display:"grid", gridTemplateColumns:"35fr 13fr 9fr 30fr 9fr",
+            padding:"12px 18px", background:nonQualPct>=5?"#FEF2F2":"#FFFBEB",
+            borderTop:`1px solid ${nonQualPct>=5?C.red:C.amber}` }}>
+            <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:nonQualPct>=5?C.red:C.amber }}>
+              Non-Qualifying {nonQualPct>=5?"⚠ ABOVE DE-MINIMIS":""}
+            </div>
+            <div/>
+            <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800,
+              color:nonQualPct>=5?C.red:C.amber, textAlign:"right" }}>{nonQualPct}%</div>
+            <div style={{ fontFamily:F, fontSize:11, color:nonQualPct>=5?C.red:C.amber, paddingLeft:8 }}>
+              {nonQualPct>=5?"⚠ De-minimis breach — restructure contracts immediately":"✓ Within de-minimis threshold"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, fontWeight:700,
+              color:nonQualPct>=5?C.red:C.amber, textAlign:"right" }}>9%</div>
+          </div>
+        )}
+      </Card>
+
+      {/* 5-Pillar Substance Requirements */}
+      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+        <div style={{ padding:"12px 18px", background:"#4C1D95" }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
+            5-Pillar Substance Requirements
+          </div>
+          <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>
+            All 5 must be satisfied every year to maintain QFZP status and 0% CT rate
+          </div>
+        </div>
+
+        {substanceItems.map((s,i) => (
+          <div key={i} style={{ borderBottom:`1px solid ${C.border}`,
+            borderLeft:`4px solid ${statusColor(s.status)}`,
+            background:statusBg(s.status)+"33" }}>
+
+            {/* Pillar header */}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+              padding:"14px 18px", flexWrap:"wrap", gap:8 }}>
+              <div style={{ flex:1 }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:2 }}>
+                  {s.pillar}
+                </div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, lineHeight:1.5 }}>
+                  {s.requirement}
+                </div>
+              </div>
+              <span style={{ padding:"5px 14px", borderRadius:100, fontSize:12, fontWeight:700,
+                fontFamily:F, background:statusBg(s.status), color:statusColor(s.status),
+                flexShrink:0 }}>
+                {statusLabel(s.status)}
+              </span>
+            </div>
+
+            {/* Current status */}
+            <div style={{ padding:"0 18px 12px" }}>
+              <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, marginBottom:8 }}>
+                📍 Current: {s.current}
+              </div>
+
+              {/* Evidence checklist */}
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:4, marginBottom:s.gap?10:0 }}>
+                {s.evidence.map((e,j) => (
+                  <div key={j} style={{ display:"flex", gap:6, alignItems:"center" }}>
+                    <span style={{ color:e.includes("PENDING")||e.includes("⚠")?C.amber:C.green,
+                      fontSize:12, fontWeight:700, flexShrink:0 }}>
+                      {e.includes("PENDING")||e.includes("⚠")?"⚠":"✓"}
+                    </span>
+                    <span style={{ fontFamily:F, fontSize:11,
+                      color:e.includes("PENDING")||e.includes("⚠")?C.amber:C.muted }}>{e}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Gap / Action */}
+              {s.gap && (
+                <div style={{ padding:"10px 14px", borderRadius:8, background:"#FEF2F2",
+                  border:`1px solid ${C.red}33` }}>
+                  <div style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:600, lineHeight:1.6 }}>
+                    📌 {s.gap}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         ))}
       </Card>
 
-      <Card style={{ borderLeft:"3px solid #2563EB", background:"#EFF6FF" }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.blue, marginBottom:8 }}>
-          🇦🇪 Note from Garima — QFZP
+      {/* Note from Garima */}
+      <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
+        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
+          <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0,
+            background:"linear-gradient(135deg,#F59E0B,#D97706)",
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>
+              Note from Garima
+            </div>
+            <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
+              Garima Agarwal · CA · QFZP Substance Analysis
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 14px" }}>
+              {note || "QFZP substance analysis not yet added. Garima will update this section with specific compliance observations and action items."}
+            </p>
+            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+              <a href={WA} target="_blank" rel="noopener noreferrer"
+                style={{ display:"inline-flex", alignItems:"center", gap:6,
+                  background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
+                  fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
+                📱 WhatsApp Garima
+              </a>
+              <button onClick={handlePrint}
+                style={{ display:"inline-flex", alignItems:"center", gap:6,
+                  background:"#FEF3C7", color:"#92400E", borderRadius:8, padding:"8px 16px",
+                  fontFamily:F, fontWeight:700, fontSize:12,
+                  border:"1px solid #FDE68A", cursor:"pointer" }}>
+                📄 Download PDF
+              </button>
+            </div>
+          </div>
         </div>
-        <p style={{ fontFamily:F, fontSize:13, color:"#1E3A8A", lineHeight:1.8, margin:"0 0 14px" }}>
-          Your QFZP score of {qfzpScore}/100 is solid, but the two gaps — mainland sales ratio and audited financials — need to be addressed before the next FTA review. The mainland sales (currently at {ctData?.nonQualifyingPct || 8}% of revenue) must stay below the 5% de-minimis threshold or below AED 5M annually. I recommend we review the contract structure for your non-free-zone clients in Q2. Audited financials are the other priority — your DMCC submission deadline is 30 April.
-        </p>
-        <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
-          borderRadius:8, border:"none", background:C.blue, color:"white",
-          fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-          📱 WhatsApp Garima
-        </button>
       </Card>
     </div>
   );
 }
+
 
 // ─── AUDIT READINESS ──────────────────────────────────────────────────────────
 function AuditReadiness({ client, reportData }) {
@@ -9399,7 +12406,377 @@ function Terms() {
 
 // ─── PORTAL SHELL ─────────────────────────────────────────────────────────────
 
+
 // My Report component — shows correct pack based on client type
+
+// ─── UAE PDF GENERATORS ───────────────────────────────────────────────────────
+
+function generateRPTPDF({ client, reportData }) {
+  const company  = client?.company || "Client";
+  const trnCT    = client?.trnCT   || "Pending";
+  const freezone = client?.freezone || "DMCC";
+  const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
+
+  // Build Related Party rows from admin data
+  const rptEntities = (reportData?.rptEntities || []).filter(e => e?.name);
+  const cpPersons   = (reportData?.connectedPersonsAdmin || []).filter(p => p?.name);
+
+  const rptRows = rptEntities.length ? rptEntities.map((e,i) => {
+    const compliant = e.compliant === "yes";
+    const partial   = e.compliant === "partial";
+    const statusColor = compliant ? "#059669" : partial ? "#D97706" : "#EF4444";
+    const statusLabel = compliant ? "✓ Arm's Length" : partial ? "⚠ Partial" : "✗ Adjustment Required";
+    return `<tr style="background:${i%2===0?"#fff":"#fafafa"}${!compliant?" border-left:3px solid #EF4444;":""}">
+      <td style="padding:10px 12px;font-size:12px;font-weight:600;color:#111827">${e.name || "—"}<br/><span style="font-size:10px;color:#6B7280;font-weight:400">${e.jurisdiction||""}</span></td>
+      <td style="padding:10px 12px;font-size:11px;color:#374151">${e.relationship||"—"}</td>
+      <td style="padding:10px 12px;font-size:11px;color:#374151">${e.txnType||"—"}</td>
+      <td style="padding:10px 12px;font-size:12px;font-family:monospace;font-weight:700;color:#111827">AED ${Number(e.amount||0).toLocaleString()}</td>
+      <td style="padding:10px 12px;font-size:11px;color:#374151">${e.tpMethod||"—"}</td>
+      <td style="padding:10px 12px;font-size:11px"><span style="font-weight:700;color:${statusColor}">${statusLabel}</span></td>
+    </tr>
+    ${!compliant && e.action ? `<tr style="background:#FEF2F2"><td colspan="6" style="padding:8px 12px;font-size:11px;color:#991B1B">📌 <strong>Action:</strong> ${e.action}</td></tr>` : ""}`;
+  }).join("") : `<tr><td colspan="6" style="padding:16px;text-align:center;color:#9CA3AF;font-size:12px">No related party data entered yet. Please update in the admin panel UAE tab.</td></tr>`;
+
+  const cpRows = cpPersons.length ? cpPersons.map((p,i) => {
+    const t1 = p.armsLength === "pass" ? "✓ Pass" : p.armsLength === "fail" ? "✗ Fail" : "⚠ Pending";
+    const t2 = p.businessPurpose === "pass" ? "✓ Pass" : p.businessPurpose === "fail" ? "✗ Fail" : "⚠ Evidence Needed";
+    const t1c = p.armsLength === "pass" ? "#059669" : "#EF4444";
+    const t2c = p.businessPurpose === "pass" ? "#059669" : p.businessPurpose === "fail" ? "#EF4444" : "#D97706";
+    return `<tr style="background:${i%2===0?"#fff":"#fafafa"}">
+      <td style="padding:10px 12px;font-size:12px;font-weight:600;color:#111827">${p.name||"—"}<br/><span style="font-size:10px;color:#6B7280;font-weight:400">${p.role||""}</span></td>
+      <td style="padding:10px 12px;font-size:11px;color:#7C3AED;font-family:monospace">${p.artRef||"—"}</td>
+      <td style="padding:10px 12px;font-size:12px;font-family:monospace;font-weight:700;color:#111827">AED ${Number(p.totalPayments||0).toLocaleString()}</td>
+      <td style="padding:10px 12px;font-size:11px;color:#374151">${p.marketRange||"—"}</td>
+      <td style="padding:10px 12px;font-size:11px"><span style="font-weight:700;color:${t1c}">${t1}</span></td>
+      <td style="padding:10px 12px;font-size:11px"><span style="font-weight:700;color:${t2c}">${t2}</span></td>
+    </tr>
+    ${p.action ? `<tr style="background:#FFFBEB"><td colspan="6" style="padding:8px 12px;font-size:11px;color:#92400E">📌 <strong>Action:</strong> ${p.action}</td></tr>` : ""}`;
+  }).join("") : `<tr><td colspan="6" style="padding:16px;text-align:center;color:#9CA3AF;font-size:12px">No connected persons data entered yet. Please update in the admin panel UAE tab.</td></tr>`;
+
+  const totalRPT = rptEntities.reduce((s,e)=>s+Number(e.amount||0),0);
+  const totalCP  = cpPersons.reduce((s,p)=>s+Number(p.totalPayments||0),0);
+  const rptNote  = reportData?.rptGarimaNote || "Please update related party notes in the admin panel.";
+  const cpNote   = reportData?.cpGarimaNote  || "Please update connected persons notes in the admin panel.";
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>Related Party & Connected Persons Report — ${company}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+@media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pagebreak { page-break-before:always; } }
+.cover { background:linear-gradient(135deg,#4C1D95,#7C3AED,#1E3A5F); padding:56px 56px 48px; color:white; min-height:200px; }
+.cover h1 { font-size:32px; font-weight:900; margin-bottom:8px; }
+.cover .sub { font-size:14px; opacity:0.8; margin-bottom:20px; }
+.cover .meta-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-top:24px; }
+.cover .meta-item label { font-size:9px; text-transform:uppercase; letter-spacing:0.1em; opacity:0.6; display:block; margin-bottom:3px; }
+.cover .meta-item span { font-size:13px; font-weight:700; }
+.law-box { background:#EDE9FE; border:1px solid #C4B5FD; border-left:4px solid #7C3AED; border-radius:8px; padding:12px 16px; margin:16px 0; font-size:11px; color:#4C1D95; line-height:1.7; }
+.law-box strong { color:#3730A3; }
+.page { padding:40px 48px; max-width:800px; margin:0 auto; }
+.section-header { font-size:10px; font-weight:700; color:#7C3AED; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:4px; }
+.section-title { font-size:17px; font-weight:800; color:#111827; margin-bottom:12px; border-left:4px solid #7C3AED; padding-left:12px; }
+table { width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:8px; }
+th { background:#4C1D95; color:white; padding:9px 12px; text-align:left; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; }
+td { border-bottom:1px solid #F3F4F6; vertical-align:top; }
+.summary-strip { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin:20px 0; }
+.summary-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:14px; text-align:center; }
+.summary-card .val { font-size:20px; font-weight:800; font-family:monospace; }
+.summary-card .lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#6B7280; margin-top:3px; }
+.garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:16px 0; font-size:12px; color:#78350F; line-height:1.8; }
+.garima strong { color:#92400E; }
+.disclaimer { font-size:10px; color:#9CA3AF; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:6px; padding:10px 12px; margin-top:20px; line-height:1.6; }
+.footer { margin-top:16px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+
+<div class="cover">
+  <div style="font-size:10px;font-weight:700;letter-spacing:0.12em;opacity:0.7;margin-bottom:24px">🏛️ UAE CORPORATE TAX · ART. 35 & 36 · CTP010</div>
+  <h1>Related Party &amp;<br/>Connected Persons Report</h1>
+  <div class="sub">${company} · CT TRN: ${trnCT} · ${freezone}</div>
+  <div style="font-size:12px;opacity:0.6">Prepared for CT Return filing · Federal Decree-Law No. 47 of 2022</div>
+  <div class="meta-grid">
+    <div class="meta-item"><label>Prepared by</label><span>Garima Agarwal, CA</span></div>
+    <div class="meta-item"><label>Date</label><span>${now}</span></div>
+    <div class="meta-item"><label>Classification</label><span>Strictly Confidential</span></div>
+    <div class="meta-item"><label>Total RPT Value</label><span>AED ${totalRPT.toLocaleString()}</span></div>
+    <div class="meta-item"><label>Total CP Payments</label><span>AED ${totalCP.toLocaleString()}</span></div>
+    <div class="meta-item"><label>Disclosure</label><span>Art. 55(1) Required</span></div>
+  </div>
+</div>
+
+<div class="page">
+  <div class="law-box">
+    <strong>Legal References:</strong> Art. 35 — Related Party definition (≥50% common ownership/control) · Art. 34 — Transfer pricing: all RPT at arm's length · Art. 36(2)(a) — Owner · Art. 36(2)(b) — Director/Officer per CTP010 · Art. 36(2)(c) — Related Party of owner/director · Art. 36(1) — Two-test rule: Market Value AND Business Purpose · Art. 55(1) — Mandatory disclosure in CT Return
+  </div>
+
+  <div class="summary-strip">
+    <div class="summary-card"><div class="val" style="color:#7C3AED">${rptEntities.length}</div><div class="lbl">Related Party Entities</div></div>
+    <div class="summary-card"><div class="val" style="color:#2563EB">${cpPersons.length}</div><div class="lbl">Connected Persons</div></div>
+    <div class="summary-card"><div class="val" style="color:#D97706">AED ${(totalRPT+totalCP).toLocaleString()}</div><div class="lbl">Total Disclosed Value</div></div>
+    <div class="summary-card"><div class="val" style="color:#EF4444">${[...rptEntities.filter(e=>e.compliant==="no"),...cpPersons.filter(p=>p.businessPurpose==="evidence"||p.businessPurpose==="fail")].length}</div><div class="lbl">Require Action</div></div>
+  </div>
+
+  <div class="section-header">Part A — Art. 35 &amp; 34</div>
+  <div class="section-title">Related Party Transactions (Entities)</div>
+  <table>
+    <thead><tr><th>Entity</th><th>Relationship</th><th>Transaction</th><th>Amount (AED)</th><th>TP Method</th><th>Arm's Length?</th></tr></thead>
+    <tbody>${rptRows}</tbody>
+  </table>
+
+  <div class="garima"><strong>Garima's Note — Related Parties:</strong><br/>${rptNote}</div>
+
+  <div class="section-header" style="margin-top:28px">Part B — Art. 36 + CTP010</div>
+  <div class="section-title">Connected Person Payments (Individuals)</div>
+  <div style="font-size:11px;color:#6B7280;margin-bottom:12px;background:#F5F3FF;border-radius:6px;padding:10px 12px;border:1px solid #C4B5FD">
+    <strong style="color:#4C1D95">CTP010 Reminder:</strong> "Director" = formal board seat in constitutional documents (job title alone insufficient). "Officer" = actual strategic decision authority. Only natural persons. Two-test rule: both Market Value AND Business Purpose must pass for deductibility.
+  </div>
+  <table>
+    <thead><tr><th>Person</th><th>Art. 36(2) Ref</th><th>Total Payments</th><th>Market Range</th><th>Test 1: Market Value</th><th>Test 2: Business Purpose</th></tr></thead>
+    <tbody>${cpRows}</tbody>
+  </table>
+
+  <div class="garima"><strong>Garima's Note — Connected Persons:</strong><br/>${cpNote}</div>
+
+  <div class="section-header" style="margin-top:28px">Part C — Art. 55(1)</div>
+  <div class="section-title">Mandatory Disclosure Summary</div>
+  <table>
+    <thead><tr><th>Party</th><th>Category</th><th>Legal Ref</th><th>Amount (AED)</th><th>Disclosure Required</th></tr></thead>
+    <tbody>
+      ${rptEntities.map((e,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}"><td style="padding:9px 12px;font-weight:600">${e.name||"—"}</td><td style="padding:9px 12px;color:#7C3AED;font-size:11px">Related Party</td><td style="padding:9px 12px;font-family:monospace;font-size:10px">Art. 35+34</td><td style="padding:9px 12px;font-family:monospace;font-weight:700">AED ${Number(e.amount||0).toLocaleString()}</td><td style="padding:9px 12px;color:#059669;font-size:11px">✓ Yes</td></tr>`).join("")}
+      ${cpPersons.map((p,i)=>`<tr style="background:${(i+rptEntities.length)%2===0?"#fff":"#fafafa"}"><td style="padding:9px 12px;font-weight:600">${p.name||"—"}</td><td style="padding:9px 12px;color:#2563EB;font-size:11px">Connected Person</td><td style="padding:9px 12px;font-family:monospace;font-size:10px">${p.artRef||"Art. 36"}</td><td style="padding:9px 12px;font-family:monospace;font-weight:700">AED ${Number(p.totalPayments||0).toLocaleString()}</td><td style="padding:9px 12px;color:#059669;font-size:11px">✓ Yes</td></tr>`).join("")}
+      <tr style="background:#EDE9FE;font-weight:800"><td style="padding:10px 12px" colspan="3">TOTAL — All Disclosed Transactions</td><td style="padding:10px 12px;font-family:monospace;font-weight:800;color:#4C1D95">AED ${(totalRPT+totalCP).toLocaleString()}</td><td style="padding:10px 12px;font-size:11px">Art. 55(1) disclosure filed with CT Return</td></tr>
+    </tbody>
+  </table>
+
+  <div class="disclaimer">
+    <strong>Disclaimer:</strong> This report is prepared for internal CT compliance purposes based on information provided by the client and entered by Garima Agarwal, CA. It reflects the FTA's position per CTP010. This report does not constitute legal or tax advice. Final CT Return filing should be reviewed and certified by a licensed UAE tax advisor. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
+  </div>
+  <div class="footer">
+    <span style="font-weight:800;color:#7C3AED">Finzzup</span>
+    <span>${company} · Related Party & Connected Persons Report · Strictly Confidential</span>
+    <span>Garima Agarwal CA · M.No. 160944</span>
+  </div>
+</div>
+</body></html>`;
+}
+
+function generateVATPDF({ client, reportData }) {
+  const company  = client?.company || "Client";
+  const trnVAT   = client?.trnVAT  || "—";
+  const freezone = client?.freezone || "DMCC";
+  const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
+  const vat      = reportData?.vat || {};
+  const period   = vat.filingPeriod  || reportData?.monthLabel || "Current Quarter";
+  const deadline = vat.nextDeadline  || "28th of following month";
+  const outputVAT  = Number(vat.outputVAT  || 0);
+  const inputVAT   = Number(vat.inputVAT   || 0);
+  const vatPayable = Number(vat.vatPayable  || (outputVAT - inputVAT));
+  const vatNote  = reportData?.vatGarimaNote || vat.garimaNote || "Please update VAT notes in the admin panel UAE tab.";
+
+  const histRows = (vat.pendingReturns||[
+    { period:"Q4 2025", due:"28 Jan 2026", status:"Filed", vatNet:"—" },
+  ]).map((r,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
+    <td style="padding:9px 12px">${r.period}</td>
+    <td style="padding:9px 12px">${r.due}</td>
+    <td style="padding:9px 12px;font-family:monospace;font-weight:700">${r.vatNet}</td>
+    <td style="padding:9px 12px"><span style="font-weight:700;color:${r.status==="Filed"?"#059669":"#D97706"}">${r.status==="Filed"?"✓ Filed":"⏳ Due"}</span></td>
+  </tr>`).join("");
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>VAT Compliance Report — ${company} — ${period}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+@media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+.header { background:linear-gradient(135deg,#00732F,#0891B2); padding:36px 48px; color:white; }
+.header h1 { font-size:28px; font-weight:900; margin-bottom:6px; }
+.header .sub { font-size:13px; opacity:0.8; margin-bottom:16px; }
+.header .meta { display:flex; gap:32px; font-size:11px; flex-wrap:wrap; }
+.header .meta-item label { opacity:0.6; display:block; font-size:9px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+.page { padding:36px 48px; max-width:800px; margin:0 auto; }
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.kpi-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:14px; text-align:center; }
+.kpi-card .val { font-size:20px; font-weight:800; font-family:monospace; margin-bottom:4px; }
+.kpi-card .lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#6B7280; }
+.section-title { font-size:16px; font-weight:800; color:#111827; margin-bottom:10px; border-left:4px solid #00732F; padding-left:12px; }
+table { width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:16px; }
+th { background:#064E3B; color:white; padding:9px 12px; text-align:left; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; }
+td { padding:9px 12px; border-bottom:1px solid #F3F4F6; }
+tr.payable td { background:#FFFBEB; font-weight:800; color:#92400E; }
+tr.total td { background:#F0FDF4; font-weight:800; color:#065f46; }
+.garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:16px 0; font-size:12px; color:#78350F; line-height:1.8; }
+.alert { background:#FEF2F2; border:1px solid #FCA5A5; border-left:4px solid #EF4444; border-radius:8px; padding:12px 14px; margin:12px 0; font-size:11px; color:#991B1B; }
+.footer { margin-top:16px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+<div class="header">
+  <h1>VAT Compliance Report</h1>
+  <div class="sub">${company} · ${freezone} · TRN: ${trnVAT}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${period}</div>
+    <div class="meta-item"><label>Due Date</label>${deadline}</div>
+    <div class="meta-item"><label>VAT Payable</label>AED ${vatPayable.toLocaleString()}</div>
+    <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
+  </div>
+</div>
+<div class="page">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="val" style="color:#2563EB">AED ${outputVAT.toLocaleString()}</div><div class="lbl">Output VAT Collected</div></div>
+    <div class="kpi-card"><div class="val" style="color:#059669">AED ${inputVAT.toLocaleString()}</div><div class="lbl">Input VAT Recoverable</div></div>
+    <div class="kpi-card"><div class="val" style="color:#D97706">AED ${vatPayable.toLocaleString()}</div><div class="lbl">Net VAT Payable</div></div>
+    <div class="kpi-card"><div class="val" style="color:#00732F">5%</div><div class="lbl">Standard VAT Rate</div></div>
+  </div>
+
+  <div class="alert">⏰ <strong>Payment Deadline: ${deadline}</strong> — AED ${vatPayable.toLocaleString()} must reach FTA by this date. Late payment penalty: AED 1,000 + 2% of unpaid tax per month.</div>
+
+  <div class="garima"><strong>Garima's Note:</strong><br/>${vatNote}</div>
+
+  <div class="section-title">VAT Return Summary</div>
+  <table>
+    <thead><tr><th>Item</th><th>Amount (AED)</th></tr></thead>
+    <tbody>
+      <tr><td>Output VAT (on standard-rated supplies)</td><td style="font-family:monospace;font-weight:700">${outputVAT.toLocaleString()}</td></tr>
+      <tr><td>Less: Input VAT (recoverable)</td><td style="font-family:monospace;font-weight:700;color:#059669">(${inputVAT.toLocaleString()})</td></tr>
+      <tr class="payable"><td><strong>Net VAT Payable — ${period}</strong></td><td style="font-family:monospace"><strong>AED ${vatPayable.toLocaleString()}</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Filing History</div>
+  <table>
+    <thead><tr><th>Period</th><th>Deadline</th><th>VAT Amount (AED)</th><th>Status</th></tr></thead>
+    <tbody>${histRows}</tbody>
+  </table>
+
+  <div style="font-size:10px;color:#9CA3AF;margin-top:16px;line-height:1.6">
+    <strong>Disclaimer:</strong> This report is prepared for compliance tracking. Final VAT return filing and payment should be confirmed with a licensed UAE tax advisor. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
+  </div>
+  <div class="footer">
+    <span style="font-weight:800;color:#00732F">Finzzup</span>
+    <span>${company} · VAT Compliance Report · ${period} · Confidential</span>
+    <span>Garima Agarwal CA · M.No. 160944</span>
+  </div>
+</div>
+</body></html>`;
+}
+
+function generateQFZPPDF({ client, reportData }) {
+  const company   = client?.company || "Client";
+  const trnCT     = client?.trnCT   || "—";
+  const freezone  = client?.freezone || "DMCC";
+  const now       = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
+  const ct        = reportData?.ct   || {};
+  const qfzp      = reportData?.qfzp || {};
+  const revenue        = Number(ct.revenue        || 0);
+  const accountingProfit = Number(ct.taxableIncome || 0);
+  const qualifyingPct  = Number(ct.qualifyingPct  || 92);
+  const nonQualPct     = Number(ct.nonQualifyingPct || 8);
+  const qfzpScore      = Number(qfzp.qfzpScore    || 82);
+  const auditScore     = Number(reportData?.auditReadiness?.auditScore || 65);
+  const sbrEligible    = client?.sbrEligible ?? (revenue > 0 && revenue <= 3000000);
+  const qfzpStatus     = client?.qfzpStatus ?? true;
+  const effectiveCT    = (qfzpStatus || sbrEligible) ? 0 : 9;
+  const qualIncome     = Math.round(accountingProfit * qualifyingPct / 100);
+  const nonQualIncome  = accountingProfit - qualIncome;
+  const ctPayable      = qfzpStatus ? 0 : Math.round(nonQualIncome * 0.09);
+  const ctDue          = client?.financialYearEnd === "31 Mar" ? "31 Dec" : "30 Sep";
+  const ctNote         = reportData?.ctGarimaNote || "Please update CT notes in the admin panel UAE tab.";
+
+  const substanceItems = reportData?.ct?.substanceItems || [
+    { item:"Adequate employees in free zone",   done:true  },
+    { item:"Adequate operating expenditure",    done:true  },
+    { item:"Physical presence in free zone",    done:true  },
+    { item:"Core income-generating activities", done:true  },
+    { item:"Audited financial statements",      done:false },
+  ];
+
+  const substanceRows = substanceItems.map((s,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
+    <td style="padding:9px 12px;font-size:12px;color:${s.done?"#059669":"#EF4444"};font-weight:700">${s.done?"✓":"✗"}</td>
+    <td style="padding:9px 12px;font-size:12px;color:#374151">${s.item}</td>
+    <td style="padding:9px 12px;font-size:11px">${s.done?'<span style="color:#059669;font-weight:700">✓ Met</span>':'<span style="background:#FEF2F2;color:#EF4444;font-weight:700;padding:2px 8px;border-radius:100px">Action Required</span>'}</td>
+  </tr>`).join("");
+
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<title>QFZP & Corporate Tax Report — ${company}</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+@media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+.header { background:linear-gradient(135deg,#1E3A5F,#7C3AED,#4C1D95); padding:36px 48px; color:white; }
+.header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
+.header .sub { font-size:13px; opacity:0.8; margin-bottom:16px; }
+.header .meta { display:flex; gap:28px; font-size:11px; flex-wrap:wrap; }
+.header .meta-item label { opacity:0.6; display:block; font-size:9px; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:2px; }
+.page { padding:36px 48px; max-width:800px; margin:0 auto; }
+.kpi-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+.kpi-card { background:#F9FAFB; border:1px solid #E5E7EB; border-radius:10px; padding:14px; text-align:center; }
+.kpi-card .val { font-size:20px; font-weight:800; font-family:monospace; margin-bottom:4px; }
+.kpi-card .lbl { font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; color:#6B7280; }
+.section-title { font-size:16px; font-weight:800; color:#111827; margin-bottom:10px; border-left:4px solid #7C3AED; padding-left:12px; }
+table { width:100%; border-collapse:collapse; font-size:11.5px; margin-bottom:16px; }
+th { background:#4C1D95; color:white; padding:9px 12px; text-align:left; font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; }
+td { padding:9px 12px; border-bottom:1px solid #F3F4F6; }
+tr.total td { background:#ECFDF5; font-weight:800; color:#065f46; border-top:2px solid #059669; }
+tr.add-row td { color:#D97706; }
+tr.less-row td { color:#059669; }
+.garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:16px 0; font-size:12px; color:#78350F; line-height:1.8; }
+.sbr-box { border-radius:8px; padding:12px 14px; margin:12px 0; font-size:11px; line-height:1.7; }
+.footer { margin-top:16px; padding-top:12px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
+</style></head><body>
+<div class="header">
+  <h1>QFZP Compliance &amp; Corporate Tax Report</h1>
+  <div class="sub">${company} · ${freezone} · CT TRN: ${trnCT}</div>
+  <div class="meta">
+    <div class="meta-item"><label>CT Return Due</label>${ctDue} 2026</div>
+    <div class="meta-item"><label>Effective CT Rate</label>${effectiveCT}%</div>
+    <div class="meta-item"><label>QFZP Score</label>${qfzpScore}/100</div>
+    <div class="meta-item"><label>SBR Eligible</label>${sbrEligible?"✅ Yes":"❌ No"}</div>
+    <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
+  </div>
+</div>
+<div class="page">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="val" style="color:#059669">${effectiveCT}%</div><div class="lbl">Effective CT Rate</div></div>
+    <div class="kpi-card"><div class="val" style="color:#059669">AED ${ctPayable.toLocaleString()}</div><div class="lbl">CT Payable</div></div>
+    <div class="kpi-card"><div class="val" style="color:#7C3AED">${qualifyingPct}%</div><div class="lbl">Qualifying Income</div></div>
+    <div class="kpi-card"><div class="val" style="color:${nonQualPct>=5?"#EF4444":"#D97706"}">${nonQualPct}%</div><div class="lbl">Non-Qualifying</div></div>
+  </div>
+
+  <div class="garima"><strong>Garima's Note:</strong><br/>${ctNote}</div>
+
+  <div class="section-title">QFZP Substance Requirements</div>
+  <table>
+    <thead><tr><th>✓/✗</th><th>Requirement</th><th>Status</th></tr></thead>
+    <tbody>${substanceRows}</tbody>
+  </table>
+
+  <div class="sbr-box" style="background:${sbrEligible?"#F0FDF4":"#FEF2F2"};border:1px solid ${sbrEligible?"#86EFAC":"#FCA5A5"}">
+    <strong style="color:${sbrEligible?"#15803D":"#991B1B"}">${sbrEligible?"✅ Small Business Relief (SBR) — Eligible":"❌ SBR — Not Eligible"}</strong><br/>
+    ${sbrEligible?`Revenue AED ${revenue.toLocaleString()} is below the AED 3,000,000 SBR threshold. Elect SBR in CT Return by ${ctDue} 2026.`:`Revenue AED ${revenue.toLocaleString()} exceeds the AED 3,000,000 SBR threshold.`}
+  </div>
+
+  <div class="section-title" style="margin-top:20px">CT Taxable Income Computation</div>
+  <table>
+    <thead><tr><th>Item</th><th>Article</th><th>Amount (AED)</th></tr></thead>
+    <tbody>
+      <tr><td>Accounting Profit (per audited FS)</td><td>—</td><td style="font-family:monospace;font-weight:700">${accountingProfit.toLocaleString()}</td></tr>
+      <tr class="less-row"><td>Less: QFZP qualifying income (${qualifyingPct}%)</td><td>Art. 18</td><td style="font-family:monospace;font-weight:700">(${qualIncome.toLocaleString()})</td></tr>
+      ${sbrEligible?`<tr class="less-row"><td>Less: SBR relief (if elected)</td><td>Cabinet Decision</td><td style="font-family:monospace;font-weight:700">(${nonQualIncome.toLocaleString()})</td></tr>`:""}
+      <tr class="total"><td><strong>Final Taxable Income</strong></td><td>—</td><td style="font-family:monospace"><strong>${(sbrEligible?0:nonQualIncome).toLocaleString() || "NIL"}</strong></td></tr>
+      <tr class="total"><td><strong>CT Payable</strong></td><td>—</td><td style="font-family:monospace"><strong>AED ${ctPayable.toLocaleString()}</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div style="font-size:10px;color:#9CA3AF;margin-top:16px;line-height:1.6">
+    <strong>Disclaimer:</strong> This report is for CT compliance tracking. Final CT Return filing should be reviewed by a licensed UAE tax advisor. Garima Agarwal, CA (M.No. 160944) · Finzzup · ${now}
+  </div>
+  <div class="footer">
+    <span style="font-weight:800;color:#7C3AED">Finzzup</span>
+    <span>${company} · QFZP &amp; CT Report · Confidential</span>
+    <span>Garima Agarwal CA · M.No. 160944</span>
+  </div>
+</div>
+</body></html>`;
+}
 
 // ─── PDF REPORT GENERATOR ────────────────────────────────────────────────────
 function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
@@ -9859,7 +13236,7 @@ function Portal({ client, onLogout }) {
   const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
   const DEMO_REPORT_DATA = {
     monthLabel: "March 2026",
-    score: 72,
+    healthScore: 72,
     varianceSummary: "Revenue beat plan by ₹4.2L driven by new Gulf client onboarded in Feb. COGS savings of ₹2.3L from vendor renegotiation boosted GP margin to 41.0%. Watch: HR costs up 12% due to 2 new hires — keep Q2 opex tight.",
     pl: {
       revenue:      { actual:"₹84.2L",  prev:"₹79.1L"  },
@@ -10041,11 +13418,14 @@ function Portal({ client, onLogout }) {
     treasury:   <Treasury   client={client} reportData={resolvedReportData}/>,
     terms:      <Terms/>,
     // ── UAE modules (only rendered for UAE/Cross-Border clients) ──
-    vat:        <VATDashboard    client={client} reportData={resolvedReportData}/>,
-    corptax:    <CorporateTax    client={client} reportData={resolvedReportData}/>,
-    compliance: <ComplianceCalendar client={client}/>,
-    qfzp:       <QFZPModule      client={client} reportData={resolvedReportData}/>,
-    auditready: <AuditReadiness  client={client} reportData={resolvedReportData}/>,
+    vat:             <VATDashboard          client={client} reportData={resolvedReportData}/>,
+    revrecon:        <RevenueReconciliation client={client} reportData={resolvedReportData}/>,
+    workingcapital:  <WorkingCapital        client={client} reportData={resolvedReportData}/>,
+    verticalanalysis:<VerticalAnalysis      client={client} reportData={resolvedReportData}/>, // NEW
+    corptax:         <CorporateTax          client={client} reportData={resolvedReportData}/>,
+    compliance:      <ComplianceCalendar    client={client}/>,
+    qfzp:            <QFZPModule            client={client} reportData={resolvedReportData}/>,
+    auditready:      <AuditReadiness        client={client} reportData={resolvedReportData}/>,
   };
 
   return (
@@ -12818,6 +16198,537 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onChange={v=>setReportData(r=>({...r,qfzp:{...(r.qfzp||{}),qfzpScore:Number(v)||v}}))} placeholder="e.g. 82" mono/>
                   <AdminInput C={C} F={F} FM={FM} label="Audit Readiness Score (0–100)" val={reportData?.auditReadiness?.auditScore||""}
                     onChange={v=>setReportData(r=>({...r,auditReadiness:{...(r.auditReadiness||{}),auditScore:Number(v)||v}}))} placeholder="e.g. 65" mono/>
+                </Card>
+
+                {/* ── NEW: QFZP SUBSTANCE ADMIN ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    🏙️ QFZP Substance Tracker
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Track all 5 substance pillars for QFZP compliance. Used in the Substance Tracker page and downloadable PDF.
+                  </p>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Period"
+                      val={reportData?.qfzpSubstance?.period||""}
+                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),period:v}}))}
+                      placeholder="e.g. FY 2025"/>
+                    <AdminInput C={C} F={F} FM={FM} label="Overall Score (0–100)" mono
+                      val={reportData?.qfzpSubstance?.overallScore||""}
+                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),overallScore:Number(v)||v}}))}
+                      placeholder="e.g. 82"/>
+                    <AdminSelect C={C} F={F} label="Audited FS Submitted?"
+                      val={reportData?.qfzpSubstance?.auditSubmitted?"yes":"no"}
+                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),auditSubmitted:v==="yes"}}))}
+                      options={[{value:"no",label:"❌ No — Action Required"},{value:"yes",label:"✅ Yes — Submitted"}]}/>
+                  </div>
+
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Employee Count" mono
+                      val={reportData?.qfzpSubstance?.employeeCount||""}
+                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),employeeCount:v}}))}
+                      placeholder="e.g. 5"/>
+                    <AdminInput C={C} F={F} FM={FM} label="Annual OpEx (AED)" mono
+                      val={reportData?.qfzpSubstance?.opexAED||""}
+                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),opexAED:v}}))}
+                      placeholder="e.g. 412000"/>
+                    <AdminInput C={C} F={F} FM={FM} label="Office Size (sq ft)" mono
+                      val={reportData?.qfzpSubstance?.officeSqft||""}
+                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),officeSqft:v}}))}
+                      placeholder="e.g. 1200"/>
+                  </div>
+
+                  {/* CIGA rows */}
+                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text,
+                    margin:"14px 0 10px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                    CIGA — Income Activities (qualifying vs non-qualifying)
+                  </div>
+                  {[0,1,2,3].map(i => (
+                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
+                      borderRadius:8, padding:10, marginBottom:8 }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"3fr 1fr 1fr", gap:8 }}>
+                        <AdminInput C={C} F={F} FM={FM} label={`Activity ${i+1}`}
+                          val={reportData?.qfzpSubstance?.cigas?.[i]?.activity||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.qfzpSubstance?.cigas)||[{},{},{},{}])];
+                            arr[i]={...arr[i],activity:v};
+                            return {...r,qfzpSubstance:{...(r.qfzpSubstance||{}),cigas:arr}};
+                          })}
+                          placeholder="e.g. Trading — sourcing & distribution"/>
+                        <AdminInput C={C} F={F} FM={FM} label="% of Revenue" mono
+                          val={reportData?.qfzpSubstance?.cigas?.[i]?.pct||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.qfzpSubstance?.cigas)||[{},{},{},{}])];
+                            arr[i]={...arr[i],pct:Number(v)||0};
+                            return {...r,qfzpSubstance:{...(r.qfzpSubstance||{}),cigas:arr}};
+                          })}
+                          placeholder="e.g. 57"/>
+                        <AdminSelect C={C} F={F} label="Qualifying?"
+                          val={reportData?.qfzpSubstance?.cigas?.[i]?.qualified===false?"no":"yes"}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.qfzpSubstance?.cigas)||[{},{},{},{}])];
+                            arr[i]={...arr[i],qualified:v==="yes"};
+                            return {...r,qfzpSubstance:{...(r.qfzpSubstance||{}),cigas:arr}};
+                          })}
+                          options={[{value:"yes",label:"✅ Qualifying (0% CT)"},{value:"no",label:"❌ Non-Qualifying (9%)"}]}/>
+                      </div>
+                      <AdminInput C={C} F={F} FM={FM} label="Notes"
+                        val={reportData?.qfzpSubstance?.cigas?.[i]?.note||""}
+                        onChange={v=>setReportData(r=>{
+                          const arr=[...((r.qfzpSubstance?.cigas)||[{},{},{},{}])];
+                          arr[i]={...arr[i],note:v};
+                          return {...r,qfzpSubstance:{...(r.qfzpSubstance||{}),cigas:arr}};
+                        })}
+                        placeholder="e.g. Core activity — conducted from DMCC office"/>
+                    </div>
+                  ))}
+
+                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
+                    val={reportData?.qfzpSubstance?.garimaNote||""}
+                    onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),garimaNote:v}}))}
+                    placeholder="QFZP substance analysis — gaps, audit risks, de-minimis watch, action items..."/>
+                </Card>
+
+                {/* ── NEW: VERTICAL ANALYSIS ADMIN ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    📊 Vertical Analysis — P&L Lines
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Enter P&L line items with current and prior period amounts. % of revenue and change (pp) are calculated automatically. Minimum 5 rows required to override demo data.
+                  </p>
+                  <AdminInput C={C} F={F} FM={FM} label="Period"
+                    val={reportData?.verticalAnalysis?.period||""}
+                    onChange={v=>setReportData(r=>({...r,verticalAnalysis:{...(r.verticalAnalysis||{}),period:v}}))}
+                    placeholder="e.g. Q1 2026 (Jan–Mar)"/>
+
+                  {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(i => (
+                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
+                      borderRadius:8, padding:10, marginBottom:8 }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:8 }}>
+                        <AdminInput C={C} F={F} FM={FM} label={`Row ${i+1} — Label`}
+                          val={reportData?.verticalAnalysis?.rows?.[i]?.label||""}
+                          onChange={v=>setReportData(r=>{
+                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
+                            rows[i]={...rows[i],label:v};
+                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
+                          })}
+                          placeholder={["Revenue","Cost of Goods Sold","Gross Profit","Salaries & Benefits","EBITDA","Net Profit (PAT)"][i]||"Line item"}/>
+                        <AdminInput C={C} F={F} FM={FM} label="Current (AED)" mono
+                          val={reportData?.verticalAnalysis?.rows?.[i]?.ifrs||""}
+                          onChange={v=>setReportData(r=>{
+                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
+                            rows[i]={...rows[i],ifrs:Number(v)||0};
+                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
+                          })}
+                          placeholder="0"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Prior Period (AED)" mono
+                          val={reportData?.verticalAnalysis?.rows?.[i]?.prev||""}
+                          onChange={v=>setReportData(r=>{
+                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
+                            rows[i]={...rows[i],prev:Number(v)||0};
+                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
+                          })}
+                          placeholder="0"/>
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:6 }}>
+                        <AdminSelect C={C} F={F} label="Section"
+                          val={reportData?.verticalAnalysis?.rows?.[i]?.section||"opex"}
+                          onChange={v=>setReportData(r=>{
+                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
+                            rows[i]={...rows[i],section:v};
+                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
+                          })}
+                          options={[
+                            {value:"revenue",label:"Revenue"},
+                            {value:"cogs",   label:"COGS / Direct Costs"},
+                            {value:"gp",     label:"Gross Profit"},
+                            {value:"opex",   label:"Operating Expenses"},
+                            {value:"ebitda", label:"EBITDA"},
+                            {value:"below",  label:"Below EBITDA (D&A, Finance)"},
+                            {value:"pat",    label:"Net Profit (PAT)"},
+                          ]}/>
+                        <AdminSelect C={C} F={F} label="Row Type"
+                          val={reportData?.verticalAnalysis?.rows?.[i]?.subtotal?"subtotal":reportData?.verticalAnalysis?.rows?.[i]?.total?"total":"normal"}
+                          onChange={v=>setReportData(r=>{
+                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
+                            rows[i]={...rows[i],subtotal:v==="subtotal",total:v==="total"};
+                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
+                          })}
+                          options={[
+                            {value:"normal",   label:"Normal line item"},
+                            {value:"subtotal", label:"Subtotal / Key metric (bold)"},
+                            {value:"total",    label:"Grand total (Net Profit)"},
+                          ]}/>
+                      </div>
+                    </div>
+                  ))}
+
+                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
+                    val={reportData?.verticalAnalysis?.garimaNote||""}
+                    onChange={v=>setReportData(r=>({...r,verticalAnalysis:{...(r.verticalAnalysis||{}),garimaNote:v}}))}
+                    placeholder="Your margin analysis — GP trend, cost structure insights, benchmark vs industry..."/>
+                </Card>
+
+                {/* ── NEW: WORKING CAPITAL ADMIN ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    💧 Working Capital — CCC & AR Aging
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Enter DSO/DIO/DPO and AR aging by customer. Shown on Working Capital page and in downloadable PDF report.
+                  </p>
+
+                  {/* Period + CCC inputs */}
+                  <AdminInput C={C} F={F} FM={FM} label="Period (e.g. Q1 2026)"
+                    val={reportData?.workingCapital?.period||""}
+                    onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),period:v}}))}
+                    placeholder="e.g. Q1 2026 (Jan–Mar)"/>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="DSO (Days)" mono
+                      val={reportData?.workingCapital?.dso||""}
+                      onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),dso:Number(v)||v}}))}
+                      placeholder="e.g. 38"/>
+                    <AdminInput C={C} F={F} FM={FM} label="DIO (Days)" mono
+                      val={reportData?.workingCapital?.dio||""}
+                      onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),dio:Number(v)||v}}))}
+                      placeholder="e.g. 15"/>
+                    <AdminInput C={C} F={F} FM={FM} label="DPO (Days)" mono
+                      val={reportData?.workingCapital?.dpo||""}
+                      onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),dpo:Number(v)||v}}))}
+                      placeholder="e.g. 28"/>
+                  </div>
+
+                  {/* AR Aging rows */}
+                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text,
+                    margin:"16px 0 10px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                    AR Aging by Customer
+                  </div>
+                  {[0,1,2,3,4].map(i => (
+                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
+                      borderRadius:10, padding:12, marginBottom:10 }}>
+                      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+                        marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                        Customer {i+1}
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="Customer Name"
+                          val={reportData?.workingCapital?.arAging?.[i]?.customer||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],customer:v};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
+                          })}
+                          placeholder="e.g. Gulf Fresh Foods LLC"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Action Required"
+                          val={reportData?.workingCapital?.arAging?.[i]?.action||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],action:v};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
+                          })}
+                          placeholder="e.g. On schedule / Send reminder / Demand letter"/>
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="Current 0–30d (AED)" mono
+                          val={reportData?.workingCapital?.arAging?.[i]?.current||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],current:Number(v)||0};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
+                          })}
+                          placeholder="0"/>
+                        <AdminInput C={C} F={F} FM={FM} label="31–60 days (AED)" mono
+                          val={reportData?.workingCapital?.arAging?.[i]?.d30||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],d30:Number(v)||0};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
+                          })}
+                          placeholder="0"/>
+                        <AdminInput C={C} F={F} FM={FM} label="61–90 days (AED)" mono
+                          val={reportData?.workingCapital?.arAging?.[i]?.d60||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],d60:Number(v)||0};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
+                          })}
+                          placeholder="0"/>
+                        <AdminInput C={C} F={F} FM={FM} label="90+ days (AED)" mono
+                          val={reportData?.workingCapital?.arAging?.[i]?.d90||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],d90:Number(v)||0};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
+                          })}
+                          placeholder="0"/>
+                      </div>
+                      <div style={{ marginTop:8 }}>
+                        <AdminSelect C={C} F={F} label="Risk Level"
+                          val={reportData?.workingCapital?.arAging?.[i]?.risk||"Low"}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],risk:v};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
+                          })}
+                          options={[
+                            {value:"Low",    label:"🟢 Low — current, on schedule"},
+                            {value:"Medium", label:"🟡 Medium — 30–60 days, follow up"},
+                            {value:"High",   label:"🔴 High — 90+ days, escalate"},
+                          ]}/>
+                      </div>
+                    </div>
+                  ))}
+
+                  {/* AP Schedule rows */}
+                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text,
+                    margin:"16px 0 10px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
+                    AP Schedule (Outstanding Payables)
+                  </div>
+                  {[0,1,2,3,4].map(i => (
+                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
+                      borderRadius:10, padding:12, marginBottom:10 }}>
+                      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+                        marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                        Supplier {i+1}
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="Supplier Name"
+                          val={reportData?.workingCapital?.apSchedule?.[i]?.supplier||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],supplier:v};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
+                          })}
+                          placeholder="e.g. Emirates Paper & Packaging"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Amount (AED)" mono
+                          val={reportData?.workingCapital?.apSchedule?.[i]?.amount||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],amount:Number(v)||0};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
+                          })}
+                          placeholder="e.g. 48000"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Payment Terms"
+                          val={reportData?.workingCapital?.apSchedule?.[i]?.terms||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],terms:v};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
+                          })}
+                          placeholder="e.g. Net 30"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Due Date"
+                          val={reportData?.workingCapital?.apSchedule?.[i]?.due||""}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],due:v};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
+                          })}
+                          placeholder="e.g. 20 Apr 2026"/>
+                      </div>
+                      <div style={{ marginTop:8 }}>
+                        <AdminSelect C={C} F={F} label="Status"
+                          val={reportData?.workingCapital?.apSchedule?.[i]?.priority||"On Track"}
+                          onChange={v=>setReportData(r=>{
+                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
+                            arr[i]={...arr[i],priority:v};
+                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
+                          })}
+                          options={[
+                            {value:"On Track", label:"🟢 On Track"},
+                            {value:"Upcoming", label:"🟡 Upcoming — pay soon"},
+                            {value:"Overdue",  label:"🔴 Overdue — pay now"},
+                          ]}/>
+                      </div>
+                    </div>
+                  ))}
+
+                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
+                    val={reportData?.workingCapital?.garimaNote||""}
+                    onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),garimaNote:v}}))}
+                    placeholder="Your working capital analysis — DSO trends, collection priorities, AP optimisation..."/>
+                </Card>
+
+                {/* ── NEW: REVENUE RECONCILIATION ADMIN ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    ⚖️ Revenue Reconciliation (IFRS vs VAT)
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Enter each reconciling line. IFRS Amount = per audited books. VAT Amount = per VAT return. Difference is auto-calculated. Shown on client's Revenue Reconciliation page and in downloadable PDF.
+                  </p>
+                  <AdminInput C={C} F={F} FM={FM} label="Period (e.g. Q1 2026)"
+                    val={reportData?.revRecon?.period||""}
+                    onChange={v=>setReportData(r=>({...r,revRecon:{...(r.revRecon||{}),period:v}}))}
+                    placeholder="e.g. Q1 2026 (Jan–Mar)"/>
+                  {[0,1,2,3,4,5].map(i => (
+                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
+                      borderRadius:10, padding:12, marginBottom:10 }}>
+                      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+                        marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
+                        Row {i+1}
+                      </div>
+                      <AdminInput C={C} F={F} FM={FM} label="Description"
+                        val={reportData?.revRecon?.rows?.[i]?.desc||""}
+                        onChange={v=>setReportData(r=>{
+                          const rows=[...((r.revRecon?.rows)||[{},{},{},{},{},{}])];
+                          rows[i]={...rows[i],desc:v};
+                          return {...r,revRecon:{...(r.revRecon||{}),rows}};
+                        })}
+                        placeholder="e.g. Standard-rated UAE sales (5% VAT)"/>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="IFRS Amount (AED)" mono
+                          val={reportData?.revRecon?.rows?.[i]?.ifrs||""}
+                          onChange={v=>setReportData(r=>{
+                            const rows=[...((r.revRecon?.rows)||[{},{},{},{},{},{}])];
+                            rows[i]={...rows[i],ifrs:Number(v)||0};
+                            return {...r,revRecon:{...(r.revRecon||{}),rows}};
+                          })}
+                          placeholder="e.g. 1500000"/>
+                        <AdminInput C={C} F={F} FM={FM} label="VAT Return Amount (AED)" mono
+                          val={reportData?.revRecon?.rows?.[i]?.vat||""}
+                          onChange={v=>setReportData(r=>{
+                            const rows=[...((r.revRecon?.rows)||[{},{},{},{},{},{}])];
+                            rows[i]={...rows[i],vat:Number(v)||0};
+                            return {...r,revRecon:{...(r.revRecon||{}),rows}};
+                          })}
+                          placeholder="e.g. 1500000"/>
+                      </div>
+                      <AdminInput C={C} F={F} FM={FM} label="Explanation (shown in report)"
+                        val={reportData?.revRecon?.rows?.[i]?.explanation||""}
+                        onChange={v=>setReportData(r=>{
+                          const rows=[...((r.revRecon?.rows)||[{},{},{},{},{},{}])];
+                          rows[i]={...rows[i],explanation:v};
+                          return {...r,revRecon:{...(r.revRecon||{}),rows}};
+                        })}
+                        placeholder="e.g. VAT point triggered on receipt; IFRS defers to delivery"/>
+                    </div>
+                  ))}
+                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
+                    val={reportData?.revRecon?.garimaNote||""}
+                    onChange={v=>setReportData(r=>({...r,revRecon:{...(r.revRecon||{}),garimaNote:v}}))}
+                    placeholder="Your analysis — key timing differences, FTA audit risks, action items..."/>
+                </Card>
+
+                {/* ── RELATED PARTY TRANSACTIONS ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏢 Related Party Transactions (Art. 35 & 34)</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Enter each related party entity and transaction. Used to generate the RPT & Connected Persons Report for CT Return filing.
+                  </p>
+                  {[0,1,2].map(i => (
+                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`, borderRadius:10, padding:14, marginBottom:12 }}>
+                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10 }}>
+                        Related Party {i+1}
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="Entity Name"
+                          val={reportData?.rptEntities?.[i]?.name||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],name:v}; return {...r,rptEntities:arr}; })}
+                          placeholder="e.g. Rashidi Holdings Ltd"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Jurisdiction"
+                          val={reportData?.rptEntities?.[i]?.jurisdiction||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],jurisdiction:v}; return {...r,rptEntities:arr}; })}
+                          placeholder="e.g. UAE (Abu Dhabi)"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Relationship"
+                          val={reportData?.rptEntities?.[i]?.relationship||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],relationship:v}; return {...r,rptEntities:arr}; })}
+                          placeholder="e.g. Common shareholder >50%"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Transaction Type"
+                          val={reportData?.rptEntities?.[i]?.txnType||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],txnType:v}; return {...r,rptEntities:arr}; })}
+                          placeholder="e.g. Intercompany loan — interest"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Amount (AED)" mono
+                          val={reportData?.rptEntities?.[i]?.amount||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],amount:v}; return {...r,rptEntities:arr}; })}
+                          placeholder="e.g. 63750"/>
+                        <AdminInput C={C} F={F} FM={FM} label="TP Method"
+                          val={reportData?.rptEntities?.[i]?.tpMethod||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],tpMethod:v}; return {...r,rptEntities:arr}; })}
+                          placeholder="e.g. CUP — EIBOR + 2.5%"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Market Range"
+                          val={reportData?.rptEntities?.[i]?.marketRange||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],marketRange:v}; return {...r,rptEntities:arr}; })}
+                          placeholder="e.g. AED 160,000–200,000"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Action / Risk Note"
+                          val={reportData?.rptEntities?.[i]?.action||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],action:v}; return {...r,rptEntities:arr}; })}
+                          placeholder="e.g. Obtain signed loan agreement"/>
+                      </div>
+                      <div style={{ marginTop:10 }}>
+                        <AdminSelect C={C} F={F} label="Arm's Length?"
+                          val={reportData?.rptEntities?.[i]?.compliant||"yes"}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],compliant:v}; return {...r,rptEntities:arr}; })}
+                          options={[{value:"yes",label:"✅ Yes — Arm's Length"},{value:"no",label:"❌ No — Adjustment Required"},{value:"partial",label:"⚠️ Partially Compliant"}]}/>
+                      </div>
+                    </div>
+                  ))}
+                  <AdminInput C={C} F={F} FM={FM} label="RPT Garima Note (shown in report)"
+                    val={reportData?.rptGarimaNote||""}
+                    onChange={v=>setReportData(r=>({...r,rptGarimaNote:v}))}
+                    placeholder="Your analysis and action items for related party transactions..."/>
+                </Card>
+
+                {/* ── CONNECTED PERSONS ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>👤 Connected Persons (Art. 36 + CTP010)</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Enter each individual connected person. Per CTP010: only natural persons. Director = board seat in constitutional docs. Officer = actual strategic authority.
+                  </p>
+                  {[0,1,2].map(i => (
+                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`, borderRadius:10, padding:14, marginBottom:12 }}>
+                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10 }}>
+                        Connected Person {i+1}
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="Full Name"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.name||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],name:v}; return {...r,connectedPersonsAdmin:arr}; })}
+                          placeholder="e.g. Ahmed Al Rashidi"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Role / Title"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.role||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],role:v}; return {...r,connectedPersonsAdmin:arr}; })}
+                          placeholder="e.g. Managing Director & Shareholder"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Art. 36(2) Reference"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.artRef||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],artRef:v}; return {...r,connectedPersonsAdmin:arr}; })}
+                          placeholder="e.g. Art. 36(2)(a) Owner + 36(2)(b) Director"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Total Payments (AED)" mono
+                          val={reportData?.connectedPersonsAdmin?.[i]?.totalPayments||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],totalPayments:v}; return {...r,connectedPersonsAdmin:arr}; })}
+                          placeholder="e.g. 262000"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Market Range (AED)"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.marketRange||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],marketRange:v}; return {...r,connectedPersonsAdmin:arr}; })}
+                          placeholder="e.g. AED 200,000 – AED 300,000"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Payment Breakdown (summary)"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.paymentBreakdown||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],paymentBreakdown:v}; return {...r,connectedPersonsAdmin:arr}; })}
+                          placeholder="e.g. Salary 200K + Bonus 30K + Benefits 32K"/>
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:10 }}>
+                        <AdminSelect C={C} F={F} label="Test 1 — Arm's Length?"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.armsLength||"pass"}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],armsLength:v}; return {...r,connectedPersonsAdmin:arr}; })}
+                          options={[{value:"pass",label:"✅ Pass — within market range"},{value:"fail",label:"❌ Fail — above market value"},{value:"pending",label:"⚠️ Pending benchmarking"}]}/>
+                        <AdminSelect C={C} F={F} label="Test 2 — Business Purpose?"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.businessPurpose||"pass"}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],businessPurpose:v}; return {...r,connectedPersonsAdmin:arr}; })}
+                          options={[{value:"pass",label:"✅ Pass — business purpose confirmed"},{value:"fail",label:"❌ Fail — personal element"},{value:"evidence",label:"⚠️ Evidence required"}]}/>
+                      </div>
+                      <div style={{ marginTop:10 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="Action / Risk Note"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.action||""}
+                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],action:v}; return {...r,connectedPersonsAdmin:arr}; })}
+                          placeholder="e.g. Collect Q1 deliverables evidence by 20 April"/>
+                      </div>
+                    </div>
+                  ))}
+                  <AdminInput C={C} F={F} FM={FM} label="Connected Persons Garima Note"
+                    val={reportData?.cpGarimaNote||""}
+                    onChange={v=>setReportData(r=>({...r,cpGarimaNote:v}))}
+                    placeholder="Your analysis of connected person payments and compliance risks..."/>
                 </Card>
 
                 <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData}
