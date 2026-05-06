@@ -8629,8 +8629,8 @@ function VATDashboard({ client, reportData }) {
 }
 
 // ─── CORPORATE TAX MODULE ─────────────────────────────────────────────────────
-function CorporateTax({ client, reportData }) {
-  const [tab, setTab] = useState("overview");
+function CorporateTax({ client, reportData, initialTab }) {
+  const [tab, setTab] = useState(initialTab || "overview");
   const rd = reportData?.ct || {};
 
   const revenue       = rd.revenue     || 1850000;
@@ -8674,33 +8674,65 @@ function CorporateTax({ client, reportData }) {
     })(),
   };
 
-  const tabs = [["overview","🏛️ Overview"],["sbr","💡 SBR Eligibility"],["qfzp","🏙️ QFZP Tracker"],["recon","📊 Tax Reconciliation"],["rpt","🏢 Related Parties"],["connected","👤 Connected Persons"],["armslength","⚖️ Arm's Length"]];
+  const ctGroups = [
+    { label:"Corporate Tax", items:[
+      { id:"overview",   emoji:"🏛️", label:"CT Overview"         },
+      { id:"sbr",        emoji:"💡", label:"SBR Eligibility"      },
+      { id:"recon",      emoji:"📊", label:"Tax Reconciliation"   },
+    ]},
+    { label:"QFZP & Substance", items:[
+      { id:"qfzp",       emoji:"🏙️", label:"QFZP Tracker"        },
+    ]},
+    { label:"Related Party & Transfer Pricing", items:[
+      { id:"rpt",        emoji:"🏢", label:"Related Party Report" },
+      { id:"connected",  emoji:"👤", label:"Connected Persons"    },
+      { id:"armslength", emoji:"⚖️", label:"Arm's Length Tests"   },
+    ]},
+  ];
+
+  // Download handlers per CT section
+  const downloadCT = (section) => {
+    let html = "";
+    if (section === "rpt" || section === "connected" || section === "armslength") {
+      html = generateRPTPDF({client, reportData});
+    } else if (section === "recon") {
+      html = generateRevReconPDF({client, reportData});
+    } else if (section === "qfzp") {
+      html = generateQFZPPDF({client, reportData});
+    } else {
+      // overview / sbr — generate a simple CT summary
+      html = generateCTSummaryPDF({client, reportData, ctData});
+    }
+    const w = window.open("","_blank");
+    w.document.write(html);
+    w.document.close();
+    setTimeout(() => w.print(), 600);
+  };
 
   return (
-    <div style={{ padding:24 }}>
-      <UAEDisclaimer/>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
+    <PackLayout tab={tab} setTab={setTab} groups={ctGroups} accent={C.purple}>
+      {/* Header bar */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12, padding:"4px 0" }}>
         <div>
-          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>Corporate Tax (CT)</h2>
-          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>UAE Corporate Tax — effective June 2023</p>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:17, color:C.text }}>Corporate Tax (CT)</div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>UAE Corporate Tax — effective June 2023</div>
         </div>
-        <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
           <span style={{ padding:"4px 12px", borderRadius:100, background:"#E8FAF3", border:"1px solid #86EFAC",
             color:C.green, fontSize:12, fontWeight:700, fontFamily:F }}>CT Rate: {ctData.effectiveCTRate}%</span>
           <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>TRN: {ctData.trnCT}</span>
+          <button onClick={() => downloadCT(tab)} style={{ display:"flex", alignItems:"center", gap:6,
+            padding:"7px 14px", borderRadius:8, border:"none", cursor:"pointer",
+            background:C.purple, color:"white", fontFamily:F, fontWeight:700, fontSize:12 }}>
+            📄 Download Report
+          </button>
         </div>
       </div>
+      <UAEDisclaimer/>
 
-      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
-        {tabs.map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
-            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
-            background:tab===id?C.purple:"#F3F4F6", color:tab===id?"white":C.muted,
-            outline:`1.5px solid ${tab===id?C.purple:C.border}` }}>
-            {lbl}
-          </button>
-        ))}
-      </div>
+
+
+
 
       {tab === "overview" && (
         <>
@@ -9845,8 +9877,58 @@ function CorporateTax({ client, reportData }) {
         );
       })()}
 
-    </div>
+    </PackLayout>
   );
+}
+
+// ─── CT SUMMARY PDF (Overview + SBR) ─────────────────────────────────────────
+function generateCTSummaryPDF({ client, reportData, ctData }) {
+  const company  = client?.company || "Client";
+  const freezone = client?.freezone || "DMCC";
+  const period   = reportData?.monthLabel || "Current Period";
+  const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
+  const ctNote   = reportData?.ctGarimaNote || "Corporate Tax summary prepared by Garima Agarwal, CA.";
+  const sbrNote  = ctData?.sbrEligible
+    ? "Revenue is below AED 3,000,000 — Small Business Relief eligible. Elect in CT return."
+    : "Revenue exceeds AED 3,000,000 — SBR not available. Standard 9% CT applies to taxable income.";
+  const rows = (ctData?.adjustments || []).map(a =>
+    "<tr><td style='padding:9px 12px;font-size:12px'>" + a.item + "</td>" +
+    "<td style='padding:9px 12px;font-size:12px;font-family:monospace;text-align:right;color:" + (a.sign>0?"#059669":"#EF4444") + "'>" +
+    (a.sign>0?"+":"−") + "AED " + Math.abs(a.amount).toLocaleString() + "</td>" +
+    "<td style='padding:9px 12px;font-size:11px;color:#6B7280'>" + (a.note||"") + "</td></tr>"
+  ).join("");
+  return "<!DOCTYPE html><html><head><meta charset='UTF-8'/><title>CT Summary — " + company + "</title>" +
+  "<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px}" +
+  "@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}" +
+  ".hdr{background:linear-gradient(135deg,#4C1D95,#7C3AED);padding:32px 48px;color:white}" +
+  ".hdr h1{font-size:24px;font-weight:900;margin-bottom:4px}.hdr .sub{font-size:12px;opacity:0.8}" +
+  ".body{padding:32px 48px}.section{margin-bottom:28px}" +
+  ".section h2{font-size:14px;font-weight:700;color:#4C1D95;margin-bottom:12px;padding-bottom:6px;border-bottom:2px solid #EDE9FE}" +
+  "table{width:100%;border-collapse:collapse}th{background:#F5F3FF;padding:9px 12px;font-size:11px;font-weight:700;text-align:left}" +
+  "tr:nth-child(even){background:#FAFAFA}.note{background:#F5F3FF;border-left:3px solid #7C3AED;padding:12px 16px;border-radius:6px;font-size:12px;color:#4C1D95;margin-top:12px}" +
+  ".kpi{display:inline-block;background:#EDE9FE;border-radius:8px;padding:10px 18px;margin:6px;text-align:center}" +
+  ".kpi .val{font-size:20px;font-weight:900;color:#4C1D95}.kpi .lbl{font-size:10px;color:#7C3AED;margin-top:2px}" +
+  "</style></head><body>" +
+  "<div class='hdr'><h1>Corporate Tax Summary</h1><div class='sub'>" + company + " · " + freezone + " · " + period + "</div>" +
+  "<div class='sub' style='margin-top:4px'>Prepared by Garima Agarwal, CA · " + now + "</div></div>" +
+  "<div class='body'>" +
+  "<div class='section'><h2>CT Position</h2>" +
+  "<div><span class='kpi'><div class='val'>" + ctData.effectiveCTRate + "%</div><div class='lbl'>Effective CT Rate</div></span>" +
+  "<span class='kpi'><div class='val'>AED " + (ctData.ctPayable||0).toLocaleString() + "</div><div class='lbl'>CT Payable</div></span>" +
+  "<span class='kpi'><div class='val'>" + ctData.ctDue + "</div><div class='lbl'>Return Due</div></span>" +
+  "<span class='kpi'><div class='val'>" + ctData.qualifyingPct + "%</div><div class='lbl'>Qualifying Income</div></span></div>" +
+  "<div class='note'>" + ctNote + "</div></div>" +
+  "<div class='section'><h2>Taxable Income Reconciliation</h2>" +
+  "<table><thead><tr><th>Adjustment Item</th><th style='text-align:right'>Amount</th><th>Note</th></tr></thead><tbody>" + rows +
+  "<tr style='font-weight:700;background:#EDE9FE'><td style='padding:9px 12px'>Taxable Income</td>" +
+  "<td style='padding:9px 12px;font-family:monospace;text-align:right'>AED " + (ctData.taxableFinalIncome||0).toLocaleString() + "</td><td></td></tr>" +
+  "</tbody></table></div>" +
+  "<div class='section'><h2>Small Business Relief (SBR)</h2>" +
+  "<table><thead><tr><th>Check</th><th>Status</th></tr></thead><tbody>" +
+  "<tr><td style='padding:9px 12px'>Revenue vs AED 3M threshold</td><td style='padding:9px 12px;font-weight:700;color:" + (ctData.sbrEligible?"#059669":"#EF4444") + "'>" + (ctData.sbrEligible?"✅ Below threshold":"❌ Exceeds threshold") + "</td></tr>" +
+  "<tr><td style='padding:9px 12px'>QFZP Status</td><td style='padding:9px 12px'>" + (ctData.qfzpStatus?"QFZP — cannot elect both SBR and QFZP":"Not QFZP") + "</td></tr>" +
+  "</tbody></table><div class='note'>" + sbrNote + "</div></div>" +
+  "</div></body></html>";
 }
 
 // ─── NEW: REVENUE RECONCILIATION (IFRS vs VAT) ───────────────────────────────
@@ -13025,148 +13107,28 @@ function UAECFOReport({ client, reportData, kpis }) {
           )}
 
           {/* ── WORKING CAPITAL (redirect to dedicated page) ── */}
-          {tab === "workingcap" && (
-            <div style={{ padding:20 }}>
-              <Card style={{ background:`${C.green}06`, borderLeft:`4px solid ${C.green}`, textAlign:"center", padding:32 }}>
-                <div style={{ fontSize:32, marginBottom:12 }}>💧</div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>Working Capital Management</div>
-                <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:16 }}>
-                  Full Working Capital report — CCC, AR Aging, AP Schedule and recommendations — is available on the dedicated page.
-                </p>
-                <button onClick={() => {/* setPage will be unavailable here — show inline instead */}}
-                  style={{ padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
-                    background:C.green, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
-                  Go to Working Capital →
-                </button>
-              </Card>
-            </div>
-          )}
+          {tab === "workingcap" && <WorkingCapital client={client} reportData={reportData}/>}
 
           {/* ── AR MANAGEMENT ── */}
-          {tab === "ar" && (
-            <div style={{ padding:20 }}>
-              <Card style={{ background:"#EFF6FF", borderLeft:`4px solid ${C.blue}`, textAlign:"center", padding:32 }}>
-                <div style={{ fontSize:32, marginBottom:12 }}>📋</div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>AR Management Report</div>
-                <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:16 }}>
-                  Detailed AR aging by invoice, DSO trend, IFRS 9 ECL provision, and collection action plan — available as a downloadable PDF report.
-                </p>
-                <button onClick={() => { const html = generateWorkingCapitalPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                  style={{ padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
-                    background:C.blue, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
-                  📄 Download AR Report
-                </button>
-              </Card>
-            </div>
-          )}
+          {tab === "ar" && <WorkingCapital client={client} reportData={reportData}/>}
 
           {/* ── VAT REPORT ── */}
-          {tab === "vatreport" && (
-            <div style={{ padding:20 }}>
-              <Card style={{ background:"#ECFDF5", borderLeft:`4px solid ${C.green}`, textAlign:"center", padding:32 }}>
-                <div style={{ fontSize:32, marginBottom:12 }}>🧾</div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>VAT Compliance Report</div>
-                <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:16 }}>
-                  Full VAT return summary — Output VAT, Input VAT, net payable, FTA box-by-box breakdown, and filing history — available from the VAT Dashboard.
-                </p>
-                <button onClick={() => { const html = generateVATPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                  style={{ padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
-                    background:C.green, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
-                  📄 Download VAT Report
-                </button>
-              </Card>
-            </div>
-          )}
+          {tab === "vatreport" && <VATDashboard client={client} reportData={reportData}/>}
 
           {/* ── REVENUE RECONCILIATION ── */}
-          {tab === "revrecon" && (
-            <div style={{ padding:20 }}>
-              <Card style={{ background:"#EFF6FF", borderLeft:`4px solid ${C.blue}`, textAlign:"center", padding:32 }}>
-                <div style={{ fontSize:32, marginBottom:12 }}>⚖️</div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>Revenue Reconciliation</div>
-                <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:16 }}>
-                  IFRS vs VAT revenue reconciliation — full table with difference explanations — available on the dedicated Revenue Reconciliation page.
-                </p>
-                <button onClick={() => { const html = generateRevReconPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                  style={{ padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
-                    background:C.blue, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
-                  📄 Download Reconciliation PDF
-                </button>
-              </Card>
-            </div>
-          )}
+          {tab === "revrecon" && <RevenueReconciliation client={client} reportData={reportData}/>}
 
           {/* ── RELATED PARTY REPORT ── */}
-          {tab === "rpt" && (
-            <div style={{ padding:20 }}>
-              <Card style={{ background:"#F5F3FF", borderLeft:`4px solid ${C.purple}`, textAlign:"center", padding:32 }}>
-                <div style={{ fontSize:32, marginBottom:12 }}>🏢</div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>Related Party & Connected Persons Report</div>
-                <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:16 }}>
-                  Full Art. 35/36 + CTP010 disclosure schedule for CT Return — entity transactions, connected person payments, arm's length analysis, and Art. 55(1) mandatory disclosure.
-                </p>
-                <button onClick={() => { const html = generateRPTPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                  style={{ padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
-                    background:C.purple, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
-                  📄 Download RPT + CP Report
-                </button>
-              </Card>
-            </div>
-          )}
+          {tab === "rpt" && <CorporateTax client={client} reportData={reportData} initialTab="rpt"/>}
 
           {/* ── CONNECTED PERSONS ── */}
-          {tab === "connected" && (
-            <div style={{ padding:20 }}>
-              <Card style={{ background:"#F5F3FF", borderLeft:`4px solid ${C.purple}`, textAlign:"center", padding:32 }}>
-                <div style={{ fontSize:32, marginBottom:12 }}>👤</div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>Connected Persons Report (CTP010)</div>
-                <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:16 }}>
-                  Art. 36 + CTP010 — director/officer classification, two-test analysis (Market Value + Business Purpose), and documentation checklist. Included in the RPT + CP report.
-                </p>
-                <button onClick={() => { const html = generateRPTPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                  style={{ padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
-                    background:C.purple, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
-                  📄 Download Connected Persons Report
-                </button>
-              </Card>
-            </div>
-          )}
+          {tab === "connected" && <CorporateTax client={client} reportData={reportData} initialTab="connected"/>}
 
           {/* ── QFZP ── */}
-          {tab === "qfzp" && (
-            <div style={{ padding:20 }}>
-              <Card style={{ background:"#F5F3FF", borderLeft:`4px solid ${C.purple}`, textAlign:"center", padding:32 }}>
-                <div style={{ fontSize:32, marginBottom:12 }}>🏙️</div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>QFZP Substance Tracker</div>
-                <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:16 }}>
-                  5-pillar substance requirements, CIGA analysis, qualifying vs non-qualifying income, and de-minimis watch — available on the QFZP page and as a downloadable PDF.
-                </p>
-                <button onClick={() => { const html = generateQFZPPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                  style={{ padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
-                    background:C.purple, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
-                  📄 Download QFZP Report
-                </button>
-              </Card>
-            </div>
-          )}
+          {tab === "qfzp" && <QFZPModule client={client} reportData={reportData}/>}
 
           {/* ── VERTICAL ANALYSIS ── */}
-          {tab === "vertical" && (
-            <div style={{ padding:20 }}>
-              <Card style={{ background:"#EFF6FF", borderLeft:`4px solid ${C.blue}`, textAlign:"center", padding:32 }}>
-                <div style={{ fontSize:32, marginBottom:12 }}>📊</div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>Vertical Analysis & GP Ratio</div>
-                <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:16 }}>
-                  Common-size P&L — every line as % of revenue, period-on-period change (pp), and GP Ratio vs DMCC industry benchmark. Available on the Vertical Analysis page.
-                </p>
-                <button onClick={() => { const html = generateVerticalAnalysisPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                  style={{ padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
-                    background:C.blue, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
-                  📄 Download Vertical Analysis PDF
-                </button>
-              </Card>
-            </div>
-          )}
+          {tab === "vertical" && <VerticalAnalysis client={client} reportData={reportData}/>}
 
         </div>
       </PackLayout>
