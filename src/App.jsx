@@ -777,16 +777,11 @@ function getNav(client) {
     base.push({ id:"engagement", icon:"⚖️", label:"Valuation Status" });
   }
 
-  // ── UAE-specific modules (only shown for UAE/Cross-Border clients) ──
+  // ── UAE-specific modules ──
   if (uae) {
-    base.push({ id:"vat",            icon:"🧾", label:"VAT Dashboard"        });
-    base.push({ id:"revrecon",       icon:"⚖️", label:"Rev. Reconciliation"  });
-    base.push({ id:"workingcapital", icon:"💧", label:"Working Capital"       });
-    base.push({ id:"verticalanalysis",icon:"📊", label:"Vertical Analysis"   }); // NEW
-    base.push({ id:"corptax",        icon:"🏛️", label:"Corporate Tax"        });
-    base.push({ id:"compliance",     icon:"📅", label:"Compliance Cal."      });
-    base.push({ id:"qfzp",           icon:"🏙️", label:"QFZP / Free Zone"    });
-    base.push({ id:"auditready",     icon:"✅", label:"Audit Readiness"      });
+    base.push({ id:"corptax",    icon:"🏛️", label:"Corporate Tax"  });
+    base.push({ id:"compliance", icon:"📅", label:"Compliance Cal." });
+    base.push({ id:"auditready", icon:"✅", label:"Audit Readiness" });
   }
 
   base.push({ id:"market",     icon:"🌐", label:"Market Intel"  });
@@ -12925,9 +12920,7 @@ function UAECFOReport({ client, reportData, kpis }) {
     {
       label: "Cash & Liquidity",
       items: [
-        { id:"cashflow",    emoji:"💰", label:"Cash Flow Forecast"       },
-        { id:"workingcap",  emoji:"💧", label:"Working Capital"          },
-        { id:"ar",          emoji:"📋", label:"AR Management"            },
+        { id:"workingcap",  emoji:"💧", label:"Working Capital & AR"     },
       ]
     },
     {
@@ -12935,8 +12928,6 @@ function UAECFOReport({ client, reportData, kpis }) {
       items: [
         { id:"vatreport",   emoji:"🧾", label:"VAT Compliance Report"    },
         { id:"revrecon",    emoji:"⚖️", label:"Revenue Reconciliation"  },
-        { id:"rpt",         emoji:"🏢", label:"Related Party Report"     },
-        { id:"connected",   emoji:"👤", label:"Connected Persons"        },
         { id:"qfzp",        emoji:"🏙️", label:"QFZP Tracker"           },
       ]
     },
@@ -13839,25 +13830,65 @@ function AIChatbot({ client, reportData, kpis }) {
 // ─── ADMIN PANEL ──────────────────────────────────────────────────────────────
 
 // ─── ADMIN SHARED COMPONENTS (defined outside to prevent focus loss on re-render) ─
-function AdminInput({ label, val, onChange, type="text", placeholder="", mono=false, C, F, FM }) {
+// Format a raw number into Indian lakh notation for display: 100000 → "1,00,000"
+function fmtLakh(val) {
+  const n = Number(String(val).replace(/,/g, ""));
+  if (isNaN(n)) return val;
+  const s = Math.abs(Math.round(n)).toString();
+  if (s.length <= 3) return (n < 0 ? "-" : "") + s;
+  const last3 = s.slice(-3);
+  const rest = s.slice(0, -3);
+  const formatted = rest.replace(/\B(?=(\d{2})+(?!\d))/g, ",") + "," + last3;
+  return (n < 0 ? "-" : "") + formatted;
+}
+
+function AdminInput({ label, val, onChange, type="text", placeholder="", mono=false, multiline=false, lakh=false, C, F, FM }) {
   const [local, setLocal] = React.useState(val ?? "");
-  // Sync if parent resets (e.g. client switch)
   React.useEffect(() => { setLocal(val ?? ""); }, [val]);
+
+  const sharedStyle = { width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+    border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
+    background:C.bg, outline:"none", boxSizing:"border-box" };
+
+  // Show lakh-formatted hint below the field when lakh=true
+  const lakhHint = lakh && local && !isNaN(Number(String(local).replace(/,/g,"")))
+    ? fmtLakh(local)
+    : null;
+
   return (
     <div style={{ marginBottom:12 }}>
       <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
         letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
-      <input
-        value={local}
-        type={type}
-        placeholder={placeholder}
-        onChange={e => setLocal(e.target.value)}
-        onBlur={e => { onChange(local); e.target.style.borderColor = C.border; }}
-        onFocus={e => e.target.style.borderColor = C.amber}
-        style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-          border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
-          background:C.bg, outline:"none", boxSizing:"border-box" }}
-      />
+      {multiline ? (
+        <textarea
+          value={local}
+          placeholder={placeholder}
+          rows={3}
+          onChange={e => setLocal(e.target.value)}
+          onBlur={e => { onChange(local); e.target.style.borderColor = C.border; }}
+          onFocus={e => e.target.style.borderColor = C.amber}
+          style={{ ...sharedStyle, resize:"vertical", lineHeight:1.6 }}
+        />
+      ) : (
+        <input
+          value={local}
+          type={type}
+          placeholder={placeholder}
+          onChange={e => setLocal(e.target.value)}
+          onBlur={e => { onChange(local); e.target.style.borderColor = C.border; }}
+          onFocus={e => e.target.style.borderColor = C.amber}
+          style={sharedStyle}
+        />
+      )}
+      {lakhHint && (
+        <div style={{ fontFamily:FM, fontSize:11, color:C.muted, marginTop:3 }}>
+          = {lakhHint} &nbsp;·&nbsp; {Number(String(local).replace(/,/g,"")) >= 100000
+            ? (Number(String(local).replace(/,/g,"")) / 100000).toFixed(2) + "L"
+            : Number(String(local).replace(/,/g,"")) >= 1000
+              ? (Number(String(local).replace(/,/g,"")) / 1000).toFixed(1) + "K"
+              : local}
+        </div>
+      )}
     </div>
   );
 }
@@ -16364,11 +16395,11 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     Shown on the client's VAT Dashboard tab.
                   </p>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Output VAT (AED)" val={reportData?.vat?.outputVAT||""}
+                    <AdminInput C={C} F={F} FM={FM} label="Output VAT (AED)" lakh val={reportData?.vat?.outputVAT||""}
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),outputVAT:Number(v)||v}}))} placeholder="e.g. 185000" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Input VAT (AED)" val={reportData?.vat?.inputVAT||""}
+                    <AdminInput C={C} F={F} FM={FM} label="Input VAT (AED)" lakh val={reportData?.vat?.inputVAT||""}
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),inputVAT:Number(v)||v}}))} placeholder="e.g. 92500" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="VAT Payable (AED)" val={reportData?.vat?.vatPayable||""}
+                    <AdminInput C={C} F={F} FM={FM} label="VAT Payable (AED)" lakh val={reportData?.vat?.vatPayable||""}
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),vatPayable:Number(v)||v}}))} placeholder="e.g. 92500" mono/>
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
@@ -16391,9 +16422,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     Shown on the client's Corporate Tax tab.
                   </p>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Revenue (AED)" val={reportData?.ct?.revenue||""}
+                    <AdminInput C={C} F={F} FM={FM} label="Revenue (AED)" lakh val={reportData?.ct?.revenue||""}
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),revenue:Number(v)||v}}))} placeholder="e.g. 1850000" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Accounting Profit (AED)" val={reportData?.ct?.taxableIncome||""}
+                    <AdminInput C={C} F={F} FM={FM} label="Accounting Profit (AED)" lakh val={reportData?.ct?.taxableIncome||""}
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),taxableIncome:Number(v)||v}}))} placeholder="e.g. 271000" mono/>
                     <AdminInput C={C} F={F} FM={FM} label="Qualifying Income %" val={reportData?.ct?.qualifyingPct||""}
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),qualifyingPct:Number(v)||v}}))} placeholder="e.g. 92" mono/>
@@ -16461,7 +16492,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       val={reportData?.qfzpSubstance?.employeeCount||""}
                       onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),employeeCount:v}}))}
                       placeholder="e.g. 5"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Annual OpEx (AED)" mono
+                    <AdminInput C={C} F={F} FM={FM} label="Annual OpEx (AED)" mono lakh
                       val={reportData?.qfzpSubstance?.opexAED||""}
                       onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),opexAED:v}}))}
                       placeholder="e.g. 412000"/>
@@ -16663,7 +16694,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           placeholder="e.g. On schedule / Send reminder / Demand letter"/>
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="Current 0–30d (AED)" mono
+                        <AdminInput C={C} F={F} FM={FM} label="Current 0–30d (AED)" mono lakh
                           val={reportData?.workingCapital?.arAging?.[i]?.current||""}
                           onChange={v=>setReportData(r=>{
                             const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
@@ -16671,7 +16702,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                             return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
                           })}
                           placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="31–60 days (AED)" mono
+                        <AdminInput C={C} F={F} FM={FM} label="31–60 days (AED)" mono lakh
                           val={reportData?.workingCapital?.arAging?.[i]?.d30||""}
                           onChange={v=>setReportData(r=>{
                             const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
@@ -16679,7 +16710,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                             return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
                           })}
                           placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="61–90 days (AED)" mono
+                        <AdminInput C={C} F={F} FM={FM} label="61–90 days (AED)" mono lakh
                           val={reportData?.workingCapital?.arAging?.[i]?.d60||""}
                           onChange={v=>setReportData(r=>{
                             const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
@@ -16687,7 +16718,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                             return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
                           })}
                           placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="90+ days (AED)" mono
+                        <AdminInput C={C} F={F} FM={FM} label="90+ days (AED)" mono lakh
                           val={reportData?.workingCapital?.arAging?.[i]?.d90||""}
                           onChange={v=>setReportData(r=>{
                             const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
@@ -17083,15 +17114,15 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     These 3 figures appear as KPI cards on the Cash Flow Forecast tab. Format: AED 580K or AED 487,000.
                   </p>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Projected Cash — End of Quarter" mono
+                    <AdminInput C={C} F={F} FM={FM} label="Projected Cash — End of Quarter" mono lakh
                       val={reportData?.projectedCash||""}
                       onChange={v=>setReportData(r=>({...r,projectedCash:v}))}
                       placeholder="e.g. AED 580K"/>
-                    <AdminInput C={C} F={F} FM={FM} label="VAT Reserve Required" mono
+                    <AdminInput C={C} F={F} FM={FM} label="VAT Reserve Required" mono lakh
                       val={reportData?.vatReserve||""}
                       onChange={v=>setReportData(r=>({...r,vatReserve:v}))}
                       placeholder="e.g. AED 92.5K"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Net Cash After Obligations" mono
+                    <AdminInput C={C} F={F} FM={FM} label="Net Cash After Obligations" mono lakh
                       val={reportData?.netCashAfterObl||""}
                       onChange={v=>setReportData(r=>({...r,netCashAfterObl:v}))}
                       placeholder="e.g. AED 487K"/>
