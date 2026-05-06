@@ -11107,17 +11107,51 @@ td { border-bottom:1px solid #F3F4F6; }
 
 // NEW: Vertical Analysis user component
 function VerticalAnalysis({ client, reportData }) {
-  const va     = reportData?.verticalAnalysis || {};
-  const period = va.period || reportData?.monthLabel || "Current Period";
-  const note   = va.garimaNote || "";
-  const [activeSection, setActiveSection] = useState("all");
+  const acc = "#00732F"; // UAE green accent
+  const [view, setView] = React.useState("pnl"); // pnl | geography | department
+
+  // ── AED formatter ──────────────────────────────────────────────────────────
+  const fmtAED2 = (n) => {
+    if (!n && n !== 0) return "—";
+    const abs = Math.abs(n), sign = n < 0 ? "-" : "";
+    if (abs >= 1000000) return `${sign}AED ${(abs/1000000).toFixed(2)}M`;
+    if (abs >= 1000)    return `${sign}AED ${(abs/1000).toFixed(0)}K`;
+    return `${sign}AED ${abs.toFixed(0)}`;
+  };
+
+  // ── Geography & Department data (same keys as India admin BI tab) ──────────
+  const parseAmt = (v) => { const n = Number(String(v||0).replace(/[^0-9.-]/g,"")); return isNaN(n)?0:n; };
+
+  const geoIndia   = reportData?.geoIndia   || {};
+  const geoGlobal  = reportData?.geoGlobal  || {};
+  const deptRaw    = reportData?.depts       || {};
+
+  const indiaRegions = Object.entries(geoIndia).map(([name,d])=>({
+    name, revenue:parseAmt(d.revenue), cost:parseAmt(d.cost)
+  })).filter(d=>d.revenue>0||d.cost>0);
+
+  const globalRegions = Object.entries(geoGlobal).map(([name,d])=>({
+    name, revenue:parseAmt(d.revenue), cost:parseAmt(d.cost)
+  })).filter(d=>d.revenue>0||d.cost>0);
+
+  const deptList = Object.entries(deptRaw).map(([name,d])=>({
+    name, revenue:parseAmt(d.revenue), cost:parseAmt(d.cost), budget:parseAmt(d.budget)
+  })).filter(d=>d.revenue>0||d.cost>0);
+
+  const hasGeo  = indiaRegions.length > 0 || globalRegions.length > 0;
+  const hasDept = deptList.length > 0;
+
+  // ── P&L Vertical Analysis data ─────────────────────────────────────────────
+  const va      = reportData?.verticalAnalysis || {};
+  const period  = va.period || reportData?.monthLabel || "Current Period";
+  const vaNote  = va.garimaNote || reportData?.verticalGarimaNote || "";
 
   const defaultRows = [
     { label:"Revenue",             ifrs:1850000, prev:1400000, subtotal:false, total:false, section:"revenue" },
-    { label:"Cost of Goods Sold",  ifrs:1017500, prev:812000,  subtotal:true,  total:false, section:"cogs",   indent:false },
-    { label:"  Direct Materials",  ifrs:750000,  prev:582000,  subtotal:false, total:false, section:"cogs",   indent:true  },
-    { label:"  Direct Labour",     ifrs:185000,  prev:140000,  subtotal:false, total:false, section:"cogs",   indent:true  },
-    { label:"  Direct Overheads",  ifrs:82500,   prev:90000,   subtotal:false, total:false, section:"cogs",   indent:true  },
+    { label:"Cost of Goods Sold",  ifrs:1017500, prev:812000,  subtotal:true,  total:false, section:"cogs"    },
+    { label:"  Direct Materials",  ifrs:750000,  prev:582000,  subtotal:false, total:false, section:"cogs"    },
+    { label:"  Direct Labour",     ifrs:185000,  prev:140000,  subtotal:false, total:false, section:"cogs"    },
+    { label:"  Direct Overheads",  ifrs:82500,   prev:90000,   subtotal:false, total:false, section:"cogs"    },
     { label:"Gross Profit",        ifrs:832500,  prev:588000,  subtotal:true,  total:false, section:"gp"      },
     { label:"Salaries & Benefits", ifrs:375000,  prev:360000,  subtotal:false, total:false, section:"opex"    },
     { label:"Rent & Utilities",    ifrs:52000,   prev:52000,   subtotal:false, total:false, section:"opex"    },
@@ -11131,338 +11165,262 @@ function VerticalAnalysis({ client, reportData }) {
     { label:"Net Profit (PAT)",    ifrs:241000,  prev:26000,   subtotal:false, total:true,  section:"pat"     },
   ];
 
-  const rows      = (va.rows && va.rows.length >= 5) ? va.rows : defaultRows;
-  const isDemo    = !(va.rows && va.rows.length >= 5);
-  const revenue   = Number(rows[0]?.ifrs || 1850000);
-  const prevRev   = Number(rows[0]?.prev || 1400000);
+  const rows    = (va.rows && va.rows.length >= 5) ? va.rows : defaultRows;
+  const isDemo  = !(va.rows && va.rows.length >= 5);
+  const revenue = Number(rows.find(r=>r.section==="revenue")?.ifrs || 1850000);
+  const prevRev = Number(rows.find(r=>r.section==="revenue")?.prev || 1400000);
 
-  const pct  = (v) => revenue > 0 ? ((Number(v||0)/revenue)*100).toFixed(1) : "—";
-  const ppct = (v) => prevRev > 0 ? ((Number(v||0)/prevRev)*100).toFixed(1)  : "—";
-  const pp   = (cur, prev) => {
-    if (!revenue || !prevRev) return null;
-    return (((Number(cur||0)/revenue) - (Number(prev||0)/prevRev))*100);
-  };
-
-  const gpRow      = rows.find(r=>r.section==="gp");
-  const ebitdaRow  = rows.find(r=>r.section==="ebitda");
-  const patRow     = rows.find(r=>r.section==="pat");
-  const opexRow    = rows.find(r=>r.section==="opex"&&r.subtotal);
-  const cogsRow    = rows.find(r=>r.section==="cogs"&&r.subtotal);
-
-  const gpPct     = pct(gpRow?.ifrs);
-  const gpPrevPct = ppct(gpRow?.prev);
-  const gpPP      = pp(gpRow?.ifrs, gpRow?.prev);
-
-  const sectionColor = {
-    revenue:"#EFF6FF", cogs:"#FEF2F2", gp:"#ECFDF5",
-    opex:"#FFF7ED", ebitda:"#EFF6FF", below:"transparent", pat:"#F0FDF4",
-  };
-  const sectionBorder = {
-    revenue:C.blue, cogs:C.red, gp:C.green,
-    opex:C.amber, ebitda:C.blue, below:"transparent", pat:C.green,
-  };
-
-  // GP Ratio benchmark data
-  const benchmarks = va.benchmarks || [
-    { metric:"Gross Margin",   yours:gpPct+"%",           industry:"38–42%",  status: Number(gpPct)>=42 ? "above" : "watch" },
-    { metric:"EBITDA Margin",  yours:pct(ebitdaRow?.ifrs)+"%", industry:"8–12%",  status: Number(pct(ebitdaRow?.ifrs))>=10 ? "above" : "watch" },
-    { metric:"Net Margin",     yours:pct(patRow?.ifrs)+"%",    industry:"5–8%",   status: Number(pct(patRow?.ifrs))>=7  ? "above" : "watch" },
-    { metric:"OpEx % Revenue", yours:pct(opexRow?.ifrs)+"%",   industry:"35–40%", status: Number(pct(opexRow?.ifrs))<=35 ? "above" : "watch" },
-    { metric:"COGS % Revenue", yours:pct(cogsRow?.ifrs)+"%",   industry:"58–62%", status: Number(pct(cogsRow?.ifrs))<=58 ? "above" : "watch" },
-  ];
-
-  const handlePrint = () => {
-    const html = generateVerticalAnalysisPDF({ client, reportData });
-    const w = window.open("","_blank");
-    w.document.write(html);
-    w.document.close();
-    setTimeout(()=>w.print(),600);
+  // ── Donut chart (reused from India BI) ────────────────────────────────────
+  const DonutChart = ({ data, valueKey="revenue", size=140 }) => {
+    const items = data.filter(d=>(d[valueKey]||0)>0);
+    const total = items.reduce((s,d)=>s+(d[valueKey]||0),0);
+    if (!items.length||!total) return <div style={{fontFamily:F,fontSize:12,color:C.muted,padding:16}}>No data</div>;
+    const COLORS=["#00732F","#7C3AED","#3B6FF7","#F59E0B","#EF4444","#10B981","#8B5CF6"];
+    const cx=size/2,cy=size/2,r=size*0.38,inner=size*0.22;
+    let cum=0;
+    const slices=items.map((d,i)=>{
+      const angle=((d[valueKey]||0)/total)*2*Math.PI;
+      const s=cum; cum+=angle;
+      const large=angle>Math.PI?1:0;
+      const x1=cx+r*Math.cos(s),y1=cy+r*Math.sin(s);
+      const x2=cx+r*Math.cos(cum),y2=cy+r*Math.sin(cum);
+      const xi1=cx+inner*Math.cos(s),yi1=cy+inner*Math.sin(s);
+      const xi2=cx+inner*Math.cos(cum),yi2=cy+inner*Math.sin(cum);
+      return {d:`M${xi1},${yi1} L${x1},${y1} A${r},${r} 0 ${large},1 ${x2},${y2} L${xi2},${yi2} A${inner},${inner} 0 ${large},0 ${xi1},${yi1}Z`,
+        color:COLORS[i%COLORS.length],pct:((d[valueKey]||0)/total*100).toFixed(1),name:d.name};
+    });
+    return (
+      <div style={{display:"flex",alignItems:"center",gap:16,flexWrap:"wrap"}}>
+        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+          {slices.map((s,i)=><path key={i} d={s.d} fill={s.color}/>)}
+        </svg>
+        <div style={{display:"flex",flexDirection:"column",gap:4}}>
+          {slices.map((s,i)=>(
+            <div key={i} style={{display:"flex",alignItems:"center",gap:6}}>
+              <div style={{width:10,height:10,borderRadius:2,background:s.color,flexShrink:0}}/>
+              <span style={{fontFamily:F,fontSize:11,color:C.text}}>{s.name}</span>
+              <span style={{fontFamily:FM,fontSize:11,color:C.muted,marginLeft:"auto"}}>{s.pct}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
-    <div style={{ padding:24 }}>
+    <div style={{display:"flex",flexDirection:"column",gap:20,padding:24}}>
       <UAEDisclaimer/>
 
-      {/* Header */}
-      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
-        marginBottom:20, flexWrap:"wrap", gap:12 }}>
-        <div>
-          <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.blue,
-            textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
-            NEW · Margin Analysis
-          </div>
-          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, margin:0 }}>
-            Vertical Analysis & GP Ratio
-          </h2>
-          <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
-            Common-size P&L · Every line as % of revenue · Industry benchmarks — {period}
-          </p>
-        </div>
-        <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
-          padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
-          background:C.blue, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
-          boxShadow:`0 4px 14px ${C.blue}40` }}>
-          📄 Download PDF
-        </button>
+      {/* View toggle */}
+      <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
+        {[
+          {id:"pnl",        label:"P&L Analysis",    emoji:"📊"},
+          {id:"geography",  label:"Geography",        emoji:"🌍"},
+          {id:"department", label:"By Department",    emoji:"🏢"},
+        ].map(v=>(
+          <button key={v.id} onClick={()=>setView(v.id)} style={{
+            padding:"8px 18px",borderRadius:20,border:"none",cursor:"pointer",
+            fontFamily:F,fontSize:13,fontWeight:600,transition:"all 0.15s",
+            background:view===v.id?acc:"#F3F4F6",
+            color:view===v.id?"white":C.muted,
+            outline:`1.5px solid ${view===v.id?acc:C.border}`,
+          }}>
+            {v.emoji} {v.label}
+          </button>
+        ))}
       </div>
 
-      {isDemo && (
-        <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
-          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
-          ⚠️ Showing demo data. Enter actual P&L figures in admin panel → UAE / Tax tab → Vertical Analysis.
-        </div>
-      )}
-
-      {/* What is vertical analysis */}
-      <Card style={{ marginBottom:20, background:`${C.blue}06`, borderLeft:`4px solid ${C.blue}` }}>
-        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:C.blue, flexShrink:0,
-            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📊</div>
-          <div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:6 }}>
-              What is Vertical Analysis?
+      {/* ── P&L VIEW ── */}
+      {view === "pnl" && (
+        <>
+          {isDemo && (
+            <div style={{padding:"10px 16px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:8,fontFamily:F,fontSize:12,color:"#92400E"}}>
+              ⚠️ Showing demo data. Enter actual figures in admin panel → UAE / Tax tab → Vertical Analysis.
             </div>
-            <p style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.75, margin:0 }}>
-              Every P&L line is shown as a <strong style={{color:C.text}}>percentage of revenue</strong> (the base = 100%).
-              This reveals your true cost structure regardless of company size, and makes period-on-period comparison
-              meaningful even when revenue changes. The <strong style={{color:C.text}}>Change (pp)</strong> column shows
-              percentage point movement — a cost line falling from 30% to 28% of revenue is a 2pp improvement,
-              even if the absolute amount grew. Investors and auditors use this to spot margin trends and benchmark
-              against industry peers.
-            </p>
-          </div>
-        </div>
-      </Card>
-
-      {/* KPI strip */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:20 }}>
-        {[
-          { label:"Gross Margin",    val:gpPct+"%",                       prevVal:gpPrevPct+"%",                   color:C.blue,  good:Number(gpPP||0)>0  },
-          { label:"EBITDA Margin",   val:pct(ebitdaRow?.ifrs)+"%",        prevVal:ppct(ebitdaRow?.prev)+"%",       color:C.green, good:true },
-          { label:"Net Margin",      val:pct(patRow?.ifrs)+"%",           prevVal:ppct(patRow?.prev)+"%",          color:C.purple,good:true },
-          { label:"OpEx % Revenue",  val:pct(opexRow?.ifrs)+"%",          prevVal:ppct(opexRow?.prev)+"%",         color:C.amber, good:Number(pct(opexRow?.ifrs))<Number(ppct(opexRow?.prev)) },
-        ].map((s,i) => {
-          const trend = s.good;
-          return (
-            <Card key={i} style={{ padding:16 }}>
-              <div style={{ display:"flex", justifyContent:"space-between", marginBottom:8 }}>
-                <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{s.label}</div>
-                <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
-                  color:trend?C.green:C.red,
-                  background:trend?"#ECFDF5":"#FEF2F2",
-                  padding:"2px 7px", borderRadius:100 }}>
-                  {trend?"▲":"▼"}
-                </span>
-              </div>
-              <div style={{ fontFamily:"monospace", fontSize:22, fontWeight:800, color:s.color }}>{s.val}</div>
-              <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:4 }}>
-                Prior: {s.prevVal}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Main Vertical Analysis Table */}
-      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
-        <div style={{ padding:"12px 18px", background:"#1E3A5F" }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
-            Common-Size P&L — {period}
-          </div>
-          <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>
-            Revenue = 100% base · pp = percentage points change
-          </div>
-        </div>
-
-        {/* Column headers */}
-        <div style={{ display:"grid", gridTemplateColumns:"30fr 14fr 9fr 14fr 9fr 10fr",
-          background:"#F0F4FF", padding:"8px 16px",
-          borderBottom:`1px solid ${C.border}` }}>
-          {[
-            { label:"Line Item", align:"left" },
-            { label:"Current AED", align:"right" },
-            { label:"% Rev", align:"right" },
-            { label:"Prior AED", align:"right" },
-            { label:"% Rev", align:"right" },
-            { label:"Change (pp)", align:"right" },
-          ].map((h,i) => (
-            <div key={i} style={{ fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
-              textTransform:"uppercase", letterSpacing:"0.07em", textAlign:h.align }}>{h.label}</div>
-          ))}
-        </div>
-
-        {rows.map((r,i) => {
-          const curPct  = pct(r.ifrs);
-          const prePct  = ppct(r.prev);
-          const ppVal   = pp(r.ifrs, r.prev);
-          const ppNum   = ppVal !== null ? ppVal.toFixed(1) : null;
-
-          // For costs (cogs/opex): falling % is good. For income lines: rising % is good.
-          const isCost  = r.section==="cogs"||r.section==="opex";
-          const isGood  = ppVal === null ? null : isCost ? ppVal < 0 : ppVal > 0;
-
-          const ppColor = ppNum === null ? C.dim : isGood ? C.green : C.red;
-          const ppLabel = ppNum === null ? "—"
-            : `${Number(ppNum)>0?"▲ +":"▼ "}${Math.abs(Number(ppNum)).toFixed(1)}pp`;
-
-          const isTotal    = r.total;
-          const isSubtotal = r.subtotal;
-          const indent     = r.indent || r.label?.startsWith("  ");
-
-          const rowBg = isTotal
-            ? "#ECFDF5"
-            : isSubtotal
-            ? sectionColor[r.section]||"#F9FAFB"
-            : i%2===0?"white":"#FAFAFA";
-          const rowBorder = (isSubtotal||isTotal) ? `3px solid ${sectionBorder[r.section]||C.border}` : "none";
-
-          return (
-            <div key={i} style={{ display:"grid",
-              gridTemplateColumns:"30fr 14fr 9fr 14fr 9fr 10fr",
-              padding:`${isSubtotal||isTotal?11:9}px 16px`,
-              background:rowBg,
-              borderBottom:`1px solid ${C.border}`,
-              borderLeft:rowBorder,
-              borderTop:isTotal?`2px solid ${C.green}`:"none" }}>
-              <div style={{ fontFamily:F,
-                fontSize:isTotal?13:12,
-                fontWeight:isTotal?800:isSubtotal?700:400,
-                color:isTotal?"#065f46":C.text,
-                paddingLeft:indent?16:0 }}>
-                {r.label?.trim()}
-              </div>
-              <div style={{ fontFamily:"monospace",
-                fontSize:12, fontWeight:isTotal||isSubtotal?700:400,
-                color:C.text, textAlign:"right" }}>
-                {fmtAED(Number(r.ifrs||0))}
-              </div>
-              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:700,
-                color:r.section==="cogs"||r.section==="opex"?C.red:C.green,
-                textAlign:"right" }}>
-                {curPct}%
-              </div>
-              <div style={{ fontFamily:"monospace", fontSize:11,
-                color:C.dim, textAlign:"right" }}>
-                {fmtAED(Number(r.prev||0))}
-              </div>
-              <div style={{ fontFamily:"monospace", fontSize:11,
-                color:C.dim, textAlign:"right" }}>
-                {prePct}%
-              </div>
-              <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700,
-                color:ppColor, textAlign:"right" }}>
-                {ppLabel}
-              </div>
-            </div>
-          );
-        })}
-      </Card>
-
-      {/* GP Ratio Benchmark */}
-      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
-        <div style={{ padding:"12px 18px", background:"#064E3B" }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
-            GP Ratio — UAE Industry Benchmark
-          </div>
-          <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>
-            {client?.freezone||"DMCC"} trading company peers
-          </div>
-        </div>
-
-        {/* Table header */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr",
-          background:"#F9FAFB", padding:"8px 18px", borderBottom:`1px solid ${C.border}` }}>
-          {["Metric","Your Business","Industry Range","Assessment"].map((h,i) => (
-            <div key={i} style={{ fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
-              textTransform:"uppercase", letterSpacing:"0.07em",
-              textAlign:i===1||i===2?"center":"left" }}>{h}</div>
-          ))}
-        </div>
-
-        {benchmarks.map((b,i) => (
-          <div key={i} style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr",
-            padding:"11px 18px", background:i%2===0?"white":"#FAFAFA",
-            borderBottom:`1px solid ${C.border}` }}>
-            <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{b.metric}</div>
-            <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800,
-              color:b.status==="above"?C.green:C.amber, textAlign:"center" }}>{b.yours}</div>
-            <div style={{ fontFamily:F, fontSize:12, color:C.muted, textAlign:"center" }}>{b.industry}</div>
-            <div>
-              <span style={{ padding:"4px 12px", borderRadius:100, fontSize:11, fontWeight:700,
-                fontFamily:F,
-                background:b.status==="above"?"#ECFDF5":"#FFFBEB",
-                color:b.status==="above"?C.green:C.amber }}>
-                {b.status==="above" ? "✓ Above Benchmark" : "⚠ Watch"}
-              </span>
-            </div>
-          </div>
-        ))}
-      </Card>
-
-      {/* Cost Structure Visual */}
-      <Card style={{ marginBottom:20 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
-          Cost Structure — Where Does Every AED 1 of Revenue Go?
-        </div>
-        {[
-          { label:"Cost of Goods Sold",  pct:Number(pct(cogsRow?.ifrs)), color:C.red    },
-          { label:"Salaries & Benefits", pct:Number(pct(rows.find(r=>r.label?.includes("Salaries"))?.ifrs)), color:C.purple },
-          { label:"Other OpEx",          pct:Number(pct(opexRow?.ifrs))-Number(pct(rows.find(r=>r.label?.includes("Salaries"))?.ifrs)), color:C.amber },
-          { label:"Net Profit",          pct:Number(pct(patRow?.ifrs)),   color:C.green  },
-        ].filter(s=>s.pct>0).map((s,i) => (
-          <div key={i} style={{ marginBottom:12 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
-              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>{s.label}</span>
-              <span style={{ fontFamily:"monospace", fontSize:12, fontWeight:700, color:s.color }}>
-                {s.pct.toFixed(1)}%
-              </span>
-            </div>
-            <div style={{ height:10, borderRadius:6, background:C.border, overflow:"hidden" }}>
-              <div style={{ height:"100%", width:`${Math.min(s.pct,100)}%`,
-                background:s.color, borderRadius:6, transition:"width 0.5s" }}/>
-            </div>
-          </div>
-        ))}
-      </Card>
-
-      {/* Note from Garima */}
-      <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
-        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0,
-            background:"linear-gradient(135deg,#F59E0B,#D97706)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>
-              Note from Garima
-            </div>
-            <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
-              Garima Agarwal · CA · Margin & Cost Analysis
-            </div>
-            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 14px" }}>
-              {note || "Vertical analysis note not yet added. Garima will update this section with margin trends, cost structure insights, and benchmark comparisons."}
-            </p>
-            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-              <a href={WA} target="_blank" rel="noopener noreferrer"
-                style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
-                  fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                📱 WhatsApp Garima
-              </a>
-              <button onClick={handlePrint}
-                style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:8, padding:"8px 16px",
-                  fontFamily:F, fontWeight:700, fontSize:12,
-                  border:"1px solid #FDE68A", cursor:"pointer" }}>
+          )}
+          <Card>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
+              <div style={{fontFamily:F,fontWeight:700,fontSize:15,color:C.text}}>Common-Size P&L — {period}</div>
+              <button onClick={()=>{const html=generateVerticalAnalysisPDF({client,reportData});const w=window.open("","_blank");w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);}}
+                style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",background:acc,color:"white",fontFamily:F,fontWeight:700,fontSize:12}}>
                 📄 Download PDF
               </button>
             </div>
-          </div>
-        </div>
-      </Card>
+            <div style={{overflowX:"auto"}}>
+              <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:F}}>
+                <thead>
+                  <tr style={{background:"#F9FAFB"}}>
+                    <th style={{padding:"9px 12px",textAlign:"left",fontWeight:700,color:C.muted,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`2px solid ${C.border}`}}>Line Item</th>
+                    <th style={{padding:"9px 12px",textAlign:"right",fontWeight:700,color:C.muted,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`2px solid ${C.border}`}}>Current (AED)</th>
+                    <th style={{padding:"9px 12px",textAlign:"right",fontWeight:700,color:C.muted,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`2px solid ${C.border}`}}>% of Rev</th>
+                    <th style={{padding:"9px 12px",textAlign:"right",fontWeight:700,color:C.muted,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`2px solid ${C.border}`}}>Prior (AED)</th>
+                    <th style={{padding:"9px 12px",textAlign:"right",fontWeight:700,color:C.muted,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`2px solid ${C.border}`}}>Prior %</th>
+                    <th style={{padding:"9px 12px",textAlign:"right",fontWeight:700,color:C.muted,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`2px solid ${C.border}`}}>Δ pp</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row,i)=>{
+                    const pct     = revenue>0 ? ((Number(row.ifrs)/revenue)*100).toFixed(1) : "—";
+                    const prevPct = prevRev>0 ? ((Number(row.prev)/prevRev)*100).toFixed(1) : "—";
+                    const delta   = (pct!=="—"&&prevPct!=="—") ? (parseFloat(pct)-parseFloat(prevPct)).toFixed(1) : "—";
+                    const isTot   = row.total || row.subtotal;
+                    const isRev   = row.section==="revenue";
+                    const bg      = isRev?"#F0FDF4":isTot?"#F9FAFB":"white";
+                    const fwt     = isTot||isRev?700:400;
+                    const deltaColor = delta==="—"?"#9CA3AF":parseFloat(delta)>0?C.green:parseFloat(delta)<0?C.red:C.muted;
+                    return (
+                      <tr key={i} style={{background:bg,borderBottom:`1px solid ${C.border}`}}>
+                        <td style={{padding:"8px 12px",fontWeight:fwt,color:C.text,paddingLeft:row.label.startsWith("  ")?24:12}}>{row.label.trim()}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,fontWeight:fwt,color:C.text}}>{Number(row.ifrs).toLocaleString()}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,fontWeight:fwt,color:isRev?acc:C.text}}>{isRev?"100.0%":pct+"%"}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,color:C.muted}}>{Number(row.prev).toLocaleString()}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,color:C.muted}}>{isRev?"100.0%":prevPct+"%"}</td>
+                        <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,fontWeight:700,color:deltaColor}}>{delta==="—"?"—":(parseFloat(delta)>0?"+":"")+delta+"pp"}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+          {vaNote && (
+            <Card style={{background:"#F0FDF4",borderLeft:`4px solid ${acc}`}}>
+              <div style={{fontFamily:F,fontWeight:700,fontSize:13,color:"#14532D",marginBottom:6}}>💬 Note from Garima</div>
+              <p style={{fontFamily:F,fontSize:13,color:"#166534",lineHeight:1.8,margin:0}}>{vaNote}</p>
+            </Card>
+          )}
+        </>
+      )}
+
+      {/* ── GEOGRAPHY VIEW ── */}
+      {view === "geography" && (
+        <>
+          {!hasGeo ? (
+            <Card><div style={{textAlign:"center",padding:"32px 0",fontFamily:F,fontSize:13,color:C.muted}}>
+              No geography data entered yet. Ask Garima to update in the admin panel under BI & Scenarios.
+            </div></Card>
+          ) : (
+            <>
+              {globalRegions.length > 0 && (
+                <Card>
+                  <div style={{fontFamily:F,fontWeight:700,fontSize:14,color:C.text,marginBottom:16}}>🌍 Global Revenue Split</div>
+                  <div style={{display:"flex",gap:24,flexWrap:"wrap",alignItems:"flex-start"}}>
+                    <DonutChart data={globalRegions} valueKey="revenue" size={140}/>
+                    <div style={{flex:1,minWidth:200}}>
+                      <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:F}}>
+                        <thead><tr style={{background:"#F9FAFB"}}>
+                          <th style={{padding:"7px 10px",textAlign:"left",color:C.muted,fontSize:10,fontWeight:700}}>Region</th>
+                          <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Revenue</th>
+                          <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Cost</th>
+                          <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Margin</th>
+                        </tr></thead>
+                        <tbody>
+                          {globalRegions.map((r,i)=>{
+                            const gp = r.revenue - r.cost;
+                            const margin = r.revenue>0 ? ((gp/r.revenue)*100).toFixed(0) : "—";
+                            return (
+                              <tr key={i} style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"white":"#FAFAFA"}}>
+                                <td style={{padding:"7px 10px",fontWeight:600,color:C.text}}>{r.name}</td>
+                                <td style={{padding:"7px 10px",textAlign:"right",fontFamily:FM,color:C.text}}>{fmtAED2(r.revenue)}</td>
+                                <td style={{padding:"7px 10px",textAlign:"right",fontFamily:FM,color:C.muted}}>{fmtAED2(r.cost)}</td>
+                                <td style={{padding:"7px 10px",textAlign:"right",fontFamily:FM,fontWeight:700,color:parseFloat(margin)>=40?acc:parseFloat(margin)>=20?C.amber:C.red}}>{margin}%</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Card>
+              )}
+              {indiaRegions.length > 0 && (
+                <Card>
+                  <div style={{fontFamily:F,fontWeight:700,fontSize:14,color:C.text,marginBottom:16}}>🇮🇳 India Regional Split</div>
+                  <div style={{display:"flex",gap:24,flexWrap:"wrap",alignItems:"flex-start"}}>
+                    <DonutChart data={indiaRegions} valueKey="revenue" size={140}/>
+                    <div style={{flex:1,minWidth:200}}>
+                      <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:F}}>
+                        <thead><tr style={{background:"#F9FAFB"}}>
+                          <th style={{padding:"7px 10px",textAlign:"left",color:C.muted,fontSize:10,fontWeight:700}}>Region</th>
+                          <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Revenue</th>
+                          <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Cost</th>
+                          <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Margin</th>
+                        </tr></thead>
+                        <tbody>
+                          {indiaRegions.map((r,i)=>{
+                            const gp = r.revenue - r.cost;
+                            const margin = r.revenue>0 ? ((gp/r.revenue)*100).toFixed(0) : "—";
+                            return (
+                              <tr key={i} style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"white":"#FAFAFA"}}>
+                                <td style={{padding:"7px 10px",fontWeight:600,color:C.text}}>{r.name}</td>
+                                <td style={{padding:"7px 10px",textAlign:"right",fontFamily:FM,color:C.text}}>{fmtAED2(r.revenue)}</td>
+                                <td style={{padding:"7px 10px",textAlign:"right",fontFamily:FM,color:C.muted}}>{fmtAED2(r.cost)}</td>
+                                <td style={{padding:"7px 10px",textAlign:"right",fontFamily:FM,fontWeight:700,color:parseFloat(margin)>=40?acc:parseFloat(margin)>=20?C.amber:C.red}}>{margin}%</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </Card>
+              )}
+            </>
+          )}
+        </>
+      )}
+
+      {/* ── DEPARTMENT VIEW ── */}
+      {view === "department" && (
+        <>
+          {!hasDept ? (
+            <Card><div style={{textAlign:"center",padding:"32px 0",fontFamily:F,fontSize:13,color:C.muted}}>
+              No department data entered yet. Ask Garima to update in the admin panel under BI & Scenarios.
+            </div></Card>
+          ) : (
+            <>
+              <Card>
+                <div style={{fontFamily:F,fontWeight:700,fontSize:14,color:C.text,marginBottom:16}}>🏢 Revenue & Margin by Department</div>
+                <DonutChart data={deptList} valueKey="revenue" size={140}/>
+                <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:F,marginTop:16}}>
+                  <thead><tr style={{background:"#F9FAFB"}}>
+                    <th style={{padding:"8px 12px",textAlign:"left",color:C.muted,fontSize:10,fontWeight:700}}>Department</th>
+                    <th style={{padding:"8px 12px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Revenue</th>
+                    <th style={{padding:"8px 12px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Cost</th>
+                    <th style={{padding:"8px 12px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Budget</th>
+                    <th style={{padding:"8px 12px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>GP Margin</th>
+                    <th style={{padding:"8px 12px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>vs Budget</th>
+                  </tr></thead>
+                  <tbody>
+                    {deptList.map((d,i)=>{
+                      const gp = d.revenue - d.cost;
+                      const margin = d.revenue>0 ? ((gp/d.revenue)*100).toFixed(0) : "—";
+                      const budgetDiff = d.budget>0 ? d.cost - d.budget : null;
+                      const budgetOk = budgetDiff !== null && budgetDiff <= 0;
+                      return (
+                        <tr key={i} style={{borderBottom:`1px solid ${C.border}`,background:i%2===0?"white":"#FAFAFA"}}>
+                          <td style={{padding:"8px 12px",fontWeight:600,color:C.text}}>{d.name}</td>
+                          <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,color:C.text}}>{fmtAED2(d.revenue)}</td>
+                          <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,color:C.muted}}>{fmtAED2(d.cost)}</td>
+                          <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,color:C.muted}}>{d.budget>0?fmtAED2(d.budget):"—"}</td>
+                          <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,fontWeight:700,color:parseFloat(margin)>=40?acc:parseFloat(margin)>=20?C.amber:C.red}}>{margin==="—"?"—":margin+"%"}</td>
+                          <td style={{padding:"8px 12px",textAlign:"right",fontFamily:FM,fontWeight:700,color:budgetDiff===null?"#9CA3AF":budgetOk?acc:C.red}}>
+                            {budgetDiff===null?"—":budgetOk?"✓ Under":`+${fmtAED2(budgetDiff)}`}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </Card>
+            </>
+          )}
+        </>
+      )}
     </div>
   );
 }
+
 
 // ─── UNIFIED COMPLIANCE CALENDAR ─────────────────────────────────────────────
 function ComplianceCalendar({ client }) {
