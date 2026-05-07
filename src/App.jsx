@@ -15421,7 +15421,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                     {actions.map(a => (
                       <div key={a.id} style={{ display:"flex", alignItems:"flex-start", gap:10,
-                        padding:"10px 14px", borderRadius:16, background:a.done?`${C.green}06`:C.bg,
+                        padding:"10px 14px", borderRadius:12, background:a.done?`${C.green}06`:C.bg,
                         border:`1px solid ${a.done?C.green+"25":C.border}` }}>
                         <div onClick={() => toggleAction(a)} style={{ width:20, height:20, borderRadius:16,
                           background:a.done?C.green:C.bg3, display:"flex", alignItems:"center",
@@ -15550,7 +15550,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   )}
                   <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                     {invoices.map(inv => (
-                      <div key={inv.id} style={{ padding:"14px 16px", borderRadius:16,
+                      <div key={inv.id} style={{ padding:"14px 16px", borderRadius:12,
                         border:`1px solid ${inv.status==="paid" ? C.green+"30" : C.amber+"30"}`,
                         background: inv.status==="paid" ? `${C.green}04` : `${C.amber}04` }}>
                         <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
@@ -15859,7 +15859,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onChange={v => setReportData(r=>({...r,score:v}))} placeholder="e.g. 72" mono/>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10, marginTop:4 }}>Score Breakdown</div>
                   {(reportData.scoreBreakdown || []).map((item, i) => (
-                    <div key={i} style={{ marginBottom:12, padding:"12px 14px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
+                    <div key={i} style={{ marginBottom:12, padding:"12px 14px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}` }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{item.label}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10 }}>
                         <InlineInput value={item.score}
@@ -15894,7 +15894,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         val={reportData.loanScore || ""}
                         onChange={v => setReportData(r => ({...r, loanScore: v}))}
                         placeholder="e.g. 68" mono/>
-                      <div style={{ padding:"12px 14px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
+                      <div style={{ padding:"12px 14px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}` }}>
                         <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.06em" }}>Score Guide</div>
                         <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.8 }}>
                           <span style={{ color:C.red }}>0–54</span> Early Stage<br/>
