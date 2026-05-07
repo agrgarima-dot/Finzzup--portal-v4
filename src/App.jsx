@@ -401,16 +401,39 @@ const Card = ({ children, style={}, accent, hover=true }) => {
     <div
       onMouseEnter={hover ? ()=>setHov(true) : undefined}
       onMouseLeave={hover ? ()=>setHov(false) : undefined}
-      style={{ background:"#FFFFFF",
+      style={{
+        background:"#FFFFFF",
         border:`1px solid ${C.border}`,
-        borderLeft: accent ? `4px solid ${accent}` : `1px solid ${C.border}`,
         borderRadius:20,
         padding:24,
-        boxShadow: hov ? "0 12px 40px rgba(37,99,235,0.14)" : "0 4px 20px rgba(37,99,235,0.06)",
+        boxShadow: hov ? "0 8px 32px rgba(0,0,0,0.10)" : "0 2px 12px rgba(0,0,0,0.06)",
         transform: hov ? "translateY(-2px)" : "translateY(0)",
         transition:"box-shadow 0.2s ease, transform 0.2s ease",
         ...style }}>
       {children}
+    </div>
+  );
+};
+
+// StatCard — matches screenshot: icon top-left + big coloured number + grey label
+const StatCard = ({ icon, iconColor, value, label, sub, hover=true }) => {
+  const [hov, setHov] = React.useState(false);
+  return (
+    <div
+      onMouseEnter={()=>setHov(true)}
+      onMouseLeave={()=>setHov(false)}
+      style={{
+        background:"#FFFFFF", borderRadius:20, padding:24,
+        border:`1px solid ${C.border}`,
+        boxShadow: hov ? "0 8px 32px rgba(0,0,0,0.10)" : "0 2px 12px rgba(0,0,0,0.06)",
+        transform: hov ? "translateY(-2px)" : "translateY(0)",
+        transition:"box-shadow 0.2s ease, transform 0.2s ease",
+        display:"flex", flexDirection:"column", gap:6 }}>
+      {icon && <i className={"ti " + icon} style={{ fontSize:22, color:iconColor||C.blue }}/>}
+      <div style={{ fontFamily:FM, fontSize:22, fontWeight:700,
+        color:iconColor||C.blue, lineHeight:1.1, marginTop:4 }}>{value}</div>
+      <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{label}</div>
+      {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>{sub}</div>}
     </div>
   );
 };
@@ -1258,7 +1281,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>
           {displayKpis.slice(0,6).map((kpi,i) => (
             <div key={i} style={{ background:"white", borderRadius:16, padding:"12px 14px",
-              border:`1px solid ${C.border}`, borderTop:`3px solid ${kpi.color||accentColor}`,
+              border:`1px solid ${C.border}`,
               boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
               <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
                 textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4 }}>
@@ -1621,7 +1644,7 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
       {/* KPI grid — 6 tiles */}
       <div className="ns-grid-6">
         {displayKpis.slice(0,6).map((k,i) => (
-          <div key={i} className="ns-kpi-tile" style={{ borderTop:`3px solid ${k.color||accent}` }}>
+          <div key={i} className="ns-kpi-tile" style={{  }}>
             <div className="label">{k.label}</div>
             <div className="value">{k.value}</div>
             {k.prev && k.prev!=="—" && (
@@ -1750,11 +1773,9 @@ function CashFlow({ reportData, client, kpis }) {
   const KpiBar = ({ items }) => (
     <div style={{ display:"grid", gridTemplateColumns:`repeat(${items.length},1fr)`, gap:12, marginBottom:20 }} className="cf-kpi">
       {items.map((k,i) => (
-        <div key={i} style={{ padding:"12px 14px", borderRadius:20, background:"#fff",
-          border:`1px solid ${C.border}`,
-          borderTop:`3px solid ${k.color||C.blue}`,
-          textAlign:"center" }}>
-          <div style={{ fontFamily:F, fontSize:10, fontWeight:600, color:C.dim, marginBottom:5, textTransform:"uppercase", letterSpacing:"0.07em" }}>{k.label}</div>
+        <div key={i} style={{ padding:24, borderRadius:20, background:"#FFFFFF",
+          border:`1px solid ${C.border}`, textAlign:"left" }}>
+          <div style={{ fontFamily:F, fontSize:11, fontWeight:400, color:C.muted, marginBottom:8 }}>{k.label}</div>
           <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:k.color }}>{k.value}</div>
           {k.sub && <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:k.trend==="down"?C.red:C.dim, marginTop:3 }}>{k.sub}</div>}
         </div>
@@ -2355,7 +2376,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
           { label:"Due This Week",    value:pending.filter(a=>a.due).length, color:C.amber },
           { label:"Completed",        value:done.length,    color:C.green  },
         ].map((s,i) => (
-          <div key={i} className="ns-kpi-tile" style={{ borderTop:`3px solid ${s.color}` }}>
+          <div key={i} className="ns-kpi-tile" style={{  }}>
             <div className="label">{s.label}</div>
             <div className="value" style={{ color:s.color, fontFamily:FM, fontSize:18, fontWeight:700 }}>{s.value}</div>
           </div>
@@ -7522,7 +7543,7 @@ function Calendar() {
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:20 }} className="cal-grid">
         <a href="https://calendly.com/agrgarima/30min" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
-          <Card style={{ padding:24, borderTop:`3px solid ${k.color||C.blue}`, cursor:"pointer",
+          <Card style={{ padding:24, cursor:"pointer",
             transition:"box-shadow 0.2s" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(59,111,247,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
@@ -7546,7 +7567,7 @@ function Calendar() {
 
         <a href="https://calendly.com/agrgarima/cfo-strategy-call" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
-          <Card style={{ padding:24, borderTop:`3px solid ${C.purple}`, cursor:"pointer",
+          <Card style={{ padding:24, cursor:"pointer",
             transition:"box-shadow 0.2s" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(124,92,245,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
@@ -13076,7 +13097,7 @@ function UAECFOReport({ client, reportData, kpis }) {
                   { label:"VAT Reserve Required",            value:reportData?.vatReserve       || "AED 92.5K",                                   color:C.amber,  icon:"ti-receipt" },
                   { label:"Net Cash After Obligations",      value:reportData?.netCashAfterObl  || "AED 487K",                                    color:C.green,  icon:"ti-circle-check" },
                 ].map((s,i) => (
-                  <Card key={i} style={{ padding:18, borderTop:`3px solid ${s.color}` }}>
+                  <Card key={i} style={{ padding:18,  }}>
                     <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                     <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
                     <div style={{ fontFamily:FM, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
