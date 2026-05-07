@@ -242,7 +242,7 @@ function Icon({ name, size=16, color="currentColor", style={} }) {
   return icons[name] || icons["info"];
 }
 // Generates a one-line meaningful insight for any KPI based on label, value, trend, prev
-// ── FIXED kpiContext (Yeh pura paste kar do) ──
+// ── FIXED & CLEAN kpiContext (Yeh pura paste kar do) ──
 function kpiContext(k = {}) {
   const label = (k.label || "").toLowerCase();
   const up    = k.trend === "up";
@@ -264,20 +264,32 @@ function kpiContext(k = {}) {
   }
 
   if (label.includes("revenue")) {
-    return up ? Up from ${prev || "last month"} — growth on track : Down from ${prev || "last month"} — review pipeline;
+    return up 
+      ? Up from ${prev || "last month"} — growth on track 
+      : Down from ${prev || "last month"} — review pipeline;
   }
+
   if (label.includes("margin") || label.includes("gross")) {
     const num = parseFloat(val) || 0;
     if (num >= 60) return "Excellent margin — strong unit economics";
     if (num >= 40) return "Healthy margin · target 45%+ before raise";
-    return prev ? (up ? Improving from ${prev} : Declined from ${prev} — review COGS) : "Monitor cost of goods sold";
+    return prev 
+      ? (up ? Improving from ${prev} : Declined from ${prev} — review COGS) 
+      : "Monitor cost of goods sold";
   }
+
   if (label.includes("cash") || label.includes("balance")) {
-    return up ? Up from ${prev || "last month"} — healthy position : Down from ${prev || "last month"} — monitor burn;
+    return up 
+      ? Up from ${prev || "last month"} — healthy position 
+      : Down from ${prev || "last month"} — monitor burn;
   }
+
   if (label.includes("burn")) {
-    return up ? Improved from ${prev || "last month"} — efficiency gaining : Up from ${prev || "last month"} — review spend;
+    return up 
+      ? Improved from ${prev || "last month"} — efficiency gaining 
+      : Up from ${prev || "last month"} — review spend;
   }
+
   if (label.includes("runway")) {
     const num = parseFloat(val) || 0;
     if (num >= 12) return "Strong runway — focus on growth";
@@ -286,9 +298,10 @@ function kpiContext(k = {}) {
   }
 
   // generic fallback
-  return prev ? (up ? Improved from ${prev} : Changed from ${prev}) : "Updated by Garima";
+  return prev 
+    ? (up ? Improved from ${prev} : Changed from ${prev}) 
+    : "Updated by Garima";
 }
-
 
 const CASHFLOW = [
   { month:"Sep", value:185, forecast:null },
