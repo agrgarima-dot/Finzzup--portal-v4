@@ -756,42 +756,42 @@ function getNav(client) {
   const uae  = isUAE(client);
 
   const base = [
-    { id:"overview",  icon:"🏠", label:"Overview"  },
-    { id:"dashboard", icon:"📊", label:"Dashboard" },
+    { id:"overview",  icon:"ti-home", label:"Overview"  },
+    { id:"dashboard", icon:"ti-layout-dashboard", label:"Dashboard" },
   ];
 
   if (type === "cfo" || type === "both") {
-    base.push({ id:"cashflow", icon:"💵", label:"Cash Flow"    });
+    base.push({ id:"cashflow", icon:"ti-trending-up", label:"Cash Flow"    });
     if (pack === "msme" || pack === "corporate" || uae) {
-      base.push({ id:"treasury", icon:"🏛️", label:"Treasury" });
+      base.push({ id:"treasury", icon:"ti-layers", label:"Treasury" });
     }
-    base.push({ id:"actions",  icon:"✅", label:"Action Items" });
+    base.push({ id:"actions",  icon:"ti-checkbox", label:"Action Items" });
   }
 
   const reportLabel = pack === "msme" ? "MSME Report"
     : pack === "corporate" ? "Board Report"
     : "CFO Report";
-  base.push({ id:"myreport", icon:"📋", label:reportLabel });
+  base.push({ id:"myreport", icon:"ti-file-analytics", label:reportLabel });
 
   // Valuation Status — India only, not for UAE clients
   if (!uae && (type === "valuation" || type === "both")) {
-    base.push({ id:"engagement", icon:"⚖️", label:"Valuation Status" });
+    base.push({ id:"engagement", icon:"ti-scale", label:"Valuation Status" });
   }
 
   // ── UAE-specific modules ──
   if (uae) {
-    base.push({ id:"corptax",    icon:"🏛️", label:"Corporate Tax"  });
-    base.push({ id:"compliance", icon:"📅", label:"Compliance Cal." });
-    base.push({ id:"auditready", icon:"✅", label:"Audit Readiness" });
+    base.push({ id:"corptax",    icon:"ti-layers", label:"Corporate Tax"  });
+    base.push({ id:"compliance", icon:"ti-calendar-event", label:"Compliance Cal." });
+    base.push({ id:"auditready", icon:"ti-shield-check", label:"Audit Readiness" });
   }
 
-  base.push({ id:"market",    icon:"🌐", label:"Market Intel" });
-  base.push({ id:"calendar",  icon:"📅", label:"Book a Call"  });
+  base.push({ id:"market",    icon:"ti-world", label:"Market Intel" });
+  base.push({ id:"calendar",  icon:"ti-calendar-check", label:"Book a Call"  });
   if (!uae) {
-    base.push({ id:"newrequest", icon:"➕", label:"New Request"  });
-    base.push({ id:"invoices",   icon:"🧾", label:"Invoices", badge:2 });
+    base.push({ id:"newrequest", icon:"ti-circle-plus", label:"New Request"  });
+    base.push({ id:"invoices",   icon:"ti-receipt", label:"Invoices", badge:2 });
   }
-  base.push({ id:"documents", icon:"📁", label:"My Documents" });
+  base.push({ id:"documents", icon:"ti-folder", label:"My Documents" });
   return base;
 }
 
@@ -805,64 +805,75 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
     { label:"Account",      ids:["calendar","newrequest","documents","invoices","engagement"] },
   ];
   return (
-    <aside style={{ width:collapsed?52:200, minHeight:"100vh", background:"#1a1a2e",
+    <aside style={{ width:collapsed?52:210, minHeight:"100vh", background:C.navy,
       flexShrink:0, display:"flex", flexDirection:"column", transition:"width 0.2s",
-      overflow:"hidden", borderRight:"1px solid #2d2d4e" }}>
-      <div style={{ padding:collapsed?"14px 0":"12px 14px", display:"flex",
+      overflow:"hidden", borderRight:"1px solid #1E2D44" }}>
+
+      {/* Logo */}
+      <div style={{ padding:collapsed?"14px 0":"12px 16px", display:"flex",
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
-        borderBottom:"1px solid #2d2d4e", minHeight:48 }}>
-        {!collapsed && <Logo size={24} dark={true} showTagline={false}/>}
-        {collapsed && <Logo size={20} dark={true} collapsed={true}/>}
+        borderBottom:"1px solid #1E2D44", minHeight:46 }}>
+        {!collapsed && <Logo size={22} dark showTagline={false}/>}
+        {collapsed && <Logo size={18} dark collapsed/>}
         <button onClick={()=>setCollapsed(c=>!c)} style={{ background:"none", border:"none",
-          cursor:"pointer", color:"rgba(255,255,255,0.3)", fontSize:16, padding:2, lineHeight:1 }}>
-          {collapsed?"›":"‹"}
+          cursor:"pointer", color:"rgba(255,255,255,0.25)", fontSize:18, lineHeight:1,
+          padding:"2px 0", display:"flex", alignItems:"center" }}>
+          {collapsed ? "›" : "‹"}
         </button>
       </div>
+
+      {/* Client chip */}
       {!collapsed && (
-        <div style={{ padding:"10px 14px", borderBottom:"1px solid #2d2d4e", background:"#141428" }}>
-          <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", fontFamily:F,
+        <div style={{ padding:"10px 16px", borderBottom:"1px solid #1E2D44",
+          background:"rgba(0,0,0,0.15)" }}>
+          <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", fontFamily:F,
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2 }}>Client</div>
-          <div style={{ fontSize:12, fontWeight:700, color:"white", fontFamily:F, lineHeight:1.3 }}>
-            {client?.name}
-          </div>
-          <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontFamily:F, marginTop:1 }}>
-            {client?.company}
-          </div>
+          <div style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.9)",
+            fontFamily:F, lineHeight:1.3 }}>{client?.name}</div>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontFamily:F,
+            marginTop:1 }}>{client?.company}</div>
         </div>
       )}
-      <nav style={{ flex:1, overflowY:"auto", padding:"6px 0" }}>
-        {groups.map((g,gi) => {
-          const items = nav.filter(n=>g.ids.includes(n.id));
+
+      {/* Nav groups */}
+      <nav style={{ flex:1, overflowY:"auto", padding:"8px 0" }}>
+        {groups.map((g, gi) => {
+          const items = nav.filter(n => g.ids.includes(n.id));
           if (!items.length) return null;
           return (
-            <div key={gi} style={{ marginBottom:4 }}>
+            <div key={gi} style={{ marginBottom:6 }}>
               {!collapsed && (
-                <div style={{ padding:"7px 14px 2px", fontSize:9, fontWeight:700,
+                <div style={{ padding:"6px 16px 3px", fontSize:9, fontWeight:600,
                   color:"rgba(255,255,255,0.2)", textTransform:"uppercase",
                   letterSpacing:"0.12em", fontFamily:F }}>{g.label}</div>
               )}
               {items.map(n => (
-                <button key={n.id} onClick={()=>setPage(n.id)} title={collapsed?n.label:undefined}
-                  style={{ display:"flex", alignItems:"center", gap:9, width:"100%",
-                    padding:collapsed?"10px 0":"6px 14px",
+                <button key={n.id} onClick={()=>setPage(n.id)}
+                  title={collapsed ? n.label : undefined}
+                  style={{ display:"flex", alignItems:"center",
+                    gap:collapsed?0:9, width:"100%",
+                    padding:collapsed?"9px 0":"6px 16px",
                     justifyContent:collapsed?"center":"flex-start",
-                    background:page===n.id?"rgba(37,99,235,0.22)":"transparent",
+                    background:page===n.id?"rgba(255,255,255,0.08)":"transparent",
                     border:"none", cursor:"pointer",
-                    borderLeft:page===n.id?`3px solid ${C.blue}`:"3px solid transparent",
+                    borderLeft:page===n.id?`2px solid ${C.blue}`:"2px solid transparent",
                     transition:"all 0.12s", fontFamily:F }}>
-                  <span style={{ fontSize:14, opacity:page===n.id?1:0.45 }}>{n.icon}</span>
+                  <i className={"ti " + n.icon}
+                    style={{ fontSize:15,
+                      color:page===n.id?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.35)",
+                      display:"inline-block", width:collapsed?undefined:16,
+                      textAlign:"center" }}/>
                   {!collapsed && (
-                    <span style={{ fontSize:12, fontWeight:page===n.id?700:500, flex:1,
-                      textAlign:"left",
-                      color:page===n.id?"white":"rgba(255,255,255,0.45)",
+                    <span style={{ fontSize:12, fontWeight:page===n.id?500:400,
+                      color:page===n.id?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.4)",
                       whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                       {n.label}
                     </span>
                   )}
                   {!collapsed && n.badge && (
-                    <span style={{ background:C.red, color:"white", borderRadius:6,
-                      padding:"0 5px", fontSize:9, fontWeight:900, fontFamily:F,
-                      minWidth:16, textAlign:"center" }}>{n.badge}</span>
+                    <span style={{ marginLeft:"auto", background:C.red, color:"white",
+                      borderRadius:10, padding:"0 5px", fontSize:9, fontWeight:700,
+                      fontFamily:F }}>{n.badge}</span>
                   )}
                 </button>
               ))}
@@ -870,22 +881,27 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
           );
         })}
       </nav>
-      <div style={{ borderTop:"1px solid #2d2d4e", padding:collapsed?"8px 0":"8px 10px" }}>
+
+      {/* Footer */}
+      <div style={{ borderTop:"1px solid #1E2D44", padding:collapsed?"8px 0":"8px 12px" }}>
         {!collapsed && (
           <button onClick={()=>setPage("terms")}
             style={{ width:"100%", padding:"5px 8px", background:"none", border:"none",
-              cursor:"pointer", fontFamily:F, fontSize:10, color:"rgba(255,255,255,0.2)",
-              textAlign:"left", marginBottom:2 }}>📜 Terms & Privacy
+              cursor:"pointer", fontFamily:F, fontSize:10,
+              color:"rgba(255,255,255,0.18)", textAlign:"left",
+              display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
+            <i className="ti ti-license" style={{ fontSize:13 }}/>
+            Terms & Privacy
           </button>
         )}
         <button onClick={onLogout}
-          style={{ display:"flex", alignItems:"center", gap:7, width:"100%",
+          style={{ display:"flex", alignItems:"center", gap:6, width:"100%",
             padding:collapsed?"8px 0":"6px 8px",
             justifyContent:collapsed?"center":"flex-start",
             background:"none", border:"none", cursor:"pointer",
-            fontFamily:F, fontSize:11, fontWeight:600,
-            color:"rgba(255,255,255,0.3)" }}>
-          <span style={{ fontSize:13 }}>🚪</span>
+            fontFamily:F, fontSize:11, fontWeight:400,
+            color:"rgba(255,255,255,0.25)" }}>
+          <i className="ti ti-logout" style={{ fontSize:14 }}/>
           {!collapsed && "Sign Out"}
         </button>
       </div>
@@ -893,89 +909,93 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
   );
 }
 
+
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
 function Topbar({ title, client, setPage, notifItems=[] }) {
   const now  = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"short",year:"numeric"});
   const uae  = isUAE(client);
   const [open, setOpen] = React.useState(false);
   const count = notifItems.length;
+  const initials = (client?.name||"U").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   return (
-    <header style={{ height:44, background:"#fff", borderBottom:`1px solid ${C.border}`,
+    <header style={{ height:40, background:"#fff", borderBottom:`1px solid ${C.border}`,
       display:"flex", alignItems:"center", justifyContent:"space-between",
-      padding:"0 20px", flexShrink:0, position:"relative", zIndex:50,
-      boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+      padding:"0 18px", flexShrink:0, zIndex:50,
+      boxShadow:"0 1px 2px rgba(0,0,0,0.04)" }}>
+
       {/* Breadcrumb */}
-      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-        <span style={{ fontFamily:F, fontSize:11, color:C.dim }}>Home</span>
-        <span style={{ color:C.dim, fontSize:11 }}>›</span>
-        <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text }}>{title}</span>
+      <div style={{ display:"flex", alignItems:"center", gap:5,
+        fontFamily:F, fontSize:11 }}>
+        <span style={{ color:C.muted }}>Home</span>
+        <span style={{ color:C.dim }}>›</span>
+        <span style={{ color:C.text, fontWeight:500 }}>{title}</span>
       </div>
-      {/* Right side */}
+
+      {/* Right */}
       <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-        <span style={{ fontSize:11, color:C.dim, fontFamily:F }}>{now}</span>
-        {/* Notification bell */}
+        <span style={{ fontSize:10, color:C.dim, fontFamily:F }}>{now}</span>
+
+        {/* Bell */}
         <div style={{ position:"relative" }}>
           <button onClick={()=>setOpen(o=>!o)}
-            style={{ position:"relative", background:"none", border:"none", cursor:"pointer",
-              width:28, height:28, display:"flex", alignItems:"center", justifyContent:"center",
-              borderRadius:6, transition:"background 0.1s" }}
-            onMouseEnter={e=>e.currentTarget.style.background="#F3F4F6"}
+            style={{ background:"none", border:"none", cursor:"pointer",
+              width:28, height:28, display:"flex", alignItems:"center",
+              justifyContent:"center", borderRadius:4, color:C.muted,
+              transition:"background 0.1s" }}
+            onMouseEnter={e=>e.currentTarget.style.background=C.bg3}
             onMouseLeave={e=>e.currentTarget.style.background="none"}>
-            <span style={{ fontSize:15, opacity:count>0?1:0.5 }}>🔔</span>
+            <i className="ti ti-bell" style={{ fontSize:16 }}/>
             {count>0 && (
-              <span style={{ position:"absolute", top:2, right:2, width:12, height:12,
-                background:C.red, borderRadius:"50%", fontSize:7, fontWeight:900,
-                color:"white", display:"flex", alignItems:"center", justifyContent:"center",
-                fontFamily:F, border:"1.5px solid white" }}>{count>9?"9+":count}</span>
+              <span style={{ position:"absolute", top:3, right:3, width:7, height:7,
+                background:C.red, borderRadius:"50%",
+                border:"1.5px solid white" }}/>
             )}
           </button>
-          {open && (
-            <div style={{ position:"absolute", top:34, right:0, width:280, background:"white",
-              borderRadius:8, boxShadow:"0 4px 20px rgba(0,0,0,0.12)", border:`1px solid ${C.border}`,
-              overflow:"hidden", zIndex:100 }}>
-              <div style={{ padding:"10px 14px", borderBottom:`1px solid ${C.border}`,
-                fontFamily:F, fontWeight:700, fontSize:12, color:C.text,
-                display:"flex", justifyContent:"space-between" }}>
-                <span>Notifications</span>
-                {count>0 && <span style={{ fontSize:10, color:C.muted }}>{count} unread</span>}
+          {open && count>0 && (
+            <div style={{ position:"absolute", top:34, right:0, width:260,
+              background:"white", borderRadius:6,
+              boxShadow:"0 4px 16px rgba(0,0,0,0.12)",
+              border:`1px solid ${C.border}`, overflow:"hidden", zIndex:100 }}>
+              <div style={{ padding:"8px 12px", borderBottom:`1px solid ${C.border}`,
+                fontFamily:F, fontWeight:600, fontSize:11, color:C.text }}>
+                Notifications
               </div>
-              {notifItems.length===0 ? (
-                <div style={{ padding:"16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.dim }}>All clear ✓</div>
-              ) : (
-                <div style={{ maxHeight:280, overflowY:"auto" }}>
-                  {notifItems.map((n,i) => (
-                    <div key={i} onClick={()=>{setPage&&setPage(n.page);setOpen(false);}}
-                      style={{ padding:"10px 14px", borderBottom:`1px solid ${C.border}`,
-                        cursor:"pointer", display:"flex", gap:10, alignItems:"flex-start",
-                        transition:"background 0.1s" }}
-                      onMouseEnter={e=>e.currentTarget.style.background="#F9FAFB"}
-                      onMouseLeave={e=>e.currentTarget.style.background="white"}>
-                      <span style={{ fontSize:14 }}>{n.icon||"📌"}</span>
-                      <div>
-                        <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text }}>{n.title}</div>
-                        <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:1 }}>{n.sub||n.body}</div>
-                      </div>
-                    </div>
-                  ))}
+              {notifItems.slice(0,5).map((n,i) => (
+                <div key={i} onClick={()=>{setPage&&setPage(n.page);setOpen(false);}}
+                  style={{ padding:"9px 12px", borderBottom:`1px solid ${C.border}`,
+                    cursor:"pointer", display:"flex", gap:9, alignItems:"flex-start" }}
+                  onMouseEnter={e=>e.currentTarget.style.background=C.bg3}
+                  onMouseLeave={e=>e.currentTarget.style.background="white"}>
+                  <i className="ti ti-info-circle"
+                    style={{ fontSize:14, color:C.blue, marginTop:1 }}/>
+                  <div>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:500,
+                      color:C.text }}>{n.title}</div>
+                    <div style={{ fontFamily:F, fontSize:10, color:C.muted,
+                      marginTop:1 }}>{n.sub||n.body}</div>
+                  </div>
                 </div>
-              )}
+              ))}
             </div>
           )}
         </div>
+
         {/* User chip */}
-        <div style={{ display:"flex", alignItems:"center", gap:7, padding:"4px 10px",
-          borderRadius:6, border:`1px solid ${C.border}`, cursor:"pointer",
-          background:"#F9FAFB" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:7,
+          padding:"4px 10px", borderRadius:4,
+          border:`1px solid ${C.border}`, cursor:"pointer",
+          background:C.bg3, fontFamily:F }}>
           <div style={{ width:22, height:22, borderRadius:"50%",
-            background:uae?"#00732F":C.blue, display:"flex", alignItems:"center",
-            justifyContent:"center", fontSize:10, fontWeight:900, color:"white", fontFamily:F }}>
-            {(client?.name||"U")[0]}
+            background:uae?"#00732F":C.blue,
+            display:"flex", alignItems:"center", justifyContent:"center",
+            fontSize:9, fontWeight:700, color:"white" }}>
+            {initials}
           </div>
           <div>
-            <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, lineHeight:1.2 }}>
+            <div style={{ fontSize:11, fontWeight:500, color:C.text, lineHeight:1.2 }}>
               {client?.name?.split(" ")[0]||"User"}
             </div>
-            <div style={{ fontFamily:F, fontSize:9, color:C.muted }}>
+            <div style={{ fontSize:9, color:C.muted }}>
               {uae?"UAE CFO":"CFO Client"}
             </div>
           </div>
@@ -984,6 +1004,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
     </header>
   );
 }
+
 
 // ─── DASHBOARD ────────────────────────────────────────────────────────────────
 
@@ -13431,6 +13452,8 @@ function Portal({ client, onLogout }) {
   };
 
   return (
+    <>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css"/>
     <div style={{ display:"flex", minHeight:"100vh", background:"#F0F1F3", fontFamily:F }}>
       <style>{`
         /* ── NetSuite Global Design System ── */
@@ -13626,6 +13649,7 @@ function Portal({ client, onLogout }) {
 `}</style>
       <AIChatbot client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>
     </div>
+  </>
   );
 }
 
