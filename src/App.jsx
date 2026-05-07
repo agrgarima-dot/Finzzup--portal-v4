@@ -13647,7 +13647,17 @@ function Portal({ client, onLogout }) {
  
   // Build merged KPI array — live data + prev values from report_data
   const prevK = liveReportData?.prevKpis || {};
-  const resolvedKpis = isUAE(client) ? KPIs_UAE
+  const resolvedKpis = isUAE(client)
+    ? (!isDemo && liveKpis) ? [
+      { label:"Revenue",      value:liveKpis.revenue||"—",      prev:prevK.revenue||"—",      trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"rev"       },
+      { label:"Gross Margin", value:liveKpis.gross_margin||"—", prev:prevK.gross_margin||"—", trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin"    },
+      { label:"Cash Balance", value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"cash"      },
+      { label:"Burn Rate",    value:liveKpis.burn_rate||"—",    prev:prevK.burn_rate||"—",    trend:"down", color:C.purple, bg:"#F3EFFF", icon:"burn"      },
+      { label:"Runway",       value:liveKpis.runway||"—",       prev:prevK.runway||"—",       trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"runway"    },
+      { label:"VAT Payable",  value:liveReportData?.vat?.vatPayable ? `AED ${Number(liveReportData.vat.vatPayable).toLocaleString()}` : (liveKpis.arr||"—"), prev:"—", trend:"down", color:C.amber, bg:"#FEF7E7", icon:"invoice" },
+      { label:"CT Eff. Rate", value:liveReportData?.ct?.qualifyingPct != null ? (liveReportData.ct.qualifyingPct >= 100 ? "0%" : `${(9*(100-liveReportData.ct.qualifyingPct)/100).toFixed(1)}%`) : "0%", prev:"—", trend:"up", color:C.green, bg:"#E8FAF3", icon:"chart_pie" },
+      { label:"QFZP Score",   value:liveReportData?.qfzp?.qfzpScore ? `${liveReportData.qfzp.qfzpScore}/100` : "—", prev:"—", trend:"up", color:C.blue, bg:"#EEF3FE", icon:"star" },
+    ] : KPIs_UAE
     : (!isDemo && liveKpis) ? [
     { label: client?.client_pack==="msme"?"Revenue":"Revenue",
       value:liveKpis.revenue||"—", prev:prevK.revenue||"—", trend:"up", color:C.blue, bg:"#EEF3FE", emoji:"ti-trending-up" },
@@ -15869,15 +15879,24 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>P&L Inputs</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Populates <strong>Monthly Report → P&L Summary</strong>. "Actual" = this month. "Prev" = last month.
-                    Use format like <code style={{ background:"#fff", padding:"1px 6px", borderRadius:12, fontFamily:FM }}>₹84.2L</code>
+                    Populates <strong>{isUAE(selected)?"UAE CFO Report → Dashboard":"Monthly Report → P&L Summary"}</strong>. "Actual" = this month. "Prev" = last month.
+                    Use format like <code style={{ background:"#fff", padding:"1px 6px", borderRadius:12, fontFamily:FM }}>{isUAE(selected)?"AED 1.85M":"₹84.2L"}</code>
                   </p>
                   <div style={{ display:"grid", gridTemplateColumns:"150px 1fr 1fr", gap:10, marginBottom:8, paddingLeft:4 }}>
                     <div/>
                     <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.07em" }}>This Month (Actual)</div>
                     <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.07em" }}>Prev Month</div>
                   </div>
-                  {[
+                  {(isUAE(selected) ? [
+                    { label:"Revenue",          key:"revenue",      placeholder:"e.g. AED 1.85M", bold:false },
+                    { label:"COGS",             key:"cogs",         placeholder:"e.g. AED 1.02M", bold:false },
+                    { label:"Gross Profit",     key:"grossProfit",  placeholder:"e.g. AED 832K",  bold:true  },
+                    { label:"GP Margin %",      key:"gpMargin",     placeholder:"e.g. 45.0%",     bold:false, dim:true },
+                    { label:"EBITDA",           key:"ebitda",       placeholder:"e.g. AED 407K",  bold:true  },
+                    { label:"EBITDA Margin %",  key:"ebitdaMargin", placeholder:"e.g. 22.0%",     bold:false, dim:true },
+                    { label:"Net Profit / PAT", key:"pat",          placeholder:"e.g. AED 271K",  bold:true  },
+                    { label:"Net Margin %",     key:"netMargin",    placeholder:"e.g. 14.6%",     bold:false, dim:true },
+                  ] : [
                     { label:"Revenue",          key:"revenue",      placeholder:"e.g. ₹84.2L", bold:false },
                     { label:"COGS",             key:"cogs",         placeholder:"e.g. ₹49.7L", bold:false },
                     { label:"Gross Profit",     key:"grossProfit",  placeholder:"e.g. ₹34.5L", bold:true  },
@@ -15886,7 +15905,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     { label:"EBITDA Margin %",  key:"ebitdaMargin", placeholder:"e.g. 17.5%",  bold:false, dim:true },
                     { label:"Net Profit / PAT", key:"pat",          placeholder:"e.g. ₹10.2L", bold:true  },
                     { label:"Net Margin %",     key:"netMargin",    placeholder:"e.g. 12.1%",  bold:false, dim:true },
-                  ].map(row => (
+                  ]).map(row => (
                     <div key={row.key} style={{
                       display:"grid", gridTemplateColumns:"150px 1fr 1fr", gap:10, marginBottom:6,
                       padding: row.bold ? "10px 12px 10px 4px" : "3px 4px",
