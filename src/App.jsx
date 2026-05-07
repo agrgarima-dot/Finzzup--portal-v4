@@ -64,32 +64,61 @@ import LOGO_SRC from "./logo.png";
 
 // ─── TOKENS ──────────────────────────────────────────────────────────────────
 const C = {
+  canvas:  "#FAFBFF",
   bg:      "#FFFFFF",
-  bg2:     "#F9FAFB",
-  bg3:     "#F3F4F6",
+  bg2:     "#F8F9FC",
+  bg3:     "#F1F5F9",
   card:    "#FFFFFF",
-  border:  "#E5E7EB",
-  text:    "#111827",
-  muted:   "#1F2937",
-  dim:     "#9CA3AF",
-  lime:    "#5B4FDB",
+  border:  "#E2E8F0",
+  borderStrong: "#CBD5E1",
+  text:    "#0F172A",
+  muted:   "#475569",
+  dim:     "#94A3B8",
+  accent:  "#2563EB",
+  accentHover: "#1D4ED8",
+  accentLight: "#EFF6FF",
+  grad:    "linear-gradient(90deg,#2563EB,#7C3AED)",
+  gradDiag:"linear-gradient(135deg,#2563EB,#7C3AED)",
   blue:    "#2563EB",
-  purple:  "#7C3AED",
-  pink:    "#DB2777",
+  teal:    "#2563EB",
   green:   "#059669",
   amber:   "#D97706",
-  yellow:  "#D97706",
   red:     "#EF4444",
-  teal:    "#0891B2",
-  navy:    "#111827",
-  grad1:   "linear-gradient(135deg,#2563EB,#7C3AED)",
-  grad2:   "linear-gradient(135deg,#0891B2,#2563EB)",
-  grad3:   "linear-gradient(135deg,#DB2777,#7C3AED)",
-  grad4:   "linear-gradient(135deg,#D97706,#DB2777)",
+  purple:  "#7C3AED",
+  pink:    "#7C3AED",
+  yellow:  "#D97706",
+  lime:    "#2563EB",
+  orange:  "#D97706",
+  grad1:   "linear-gradient(90deg,#2563EB,#7C3AED)",
+  grad2:   "linear-gradient(90deg,#2563EB,#7C3AED)",
+  grad3:   "linear-gradient(90deg,#7C3AED,#2563EB)",
+  grad4:   "linear-gradient(90deg,#2563EB,#7C3AED)",
+  navy:    "#0F172A",
+  navyBorder: "#1E293B",
 };
-const F  = "'Plus Jakarta Sans', sans-serif";
-const FM = "'Inter', system-ui, sans-serif"; // tabular nums via font-feature-settings
+const F  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
+const FM = "'JetBrains Mono', 'SF Mono', monospace";
 const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
+
+// ── Smart Number Formatters ────────────────────────────────────────────────
+const fmtINR = (n) => {
+  const num = Number(String(n).replace(/[^0-9.-]/g,""));
+  if (isNaN(num)||n===""||n==="—") return n||"—";
+  const abs=Math.abs(num),sign=num<0?"-":"";
+  if(abs>=10000000) return `${sign}₹ ${(abs/10000000).toFixed(2)} Cr`;
+  if(abs>=100000)   return `${sign}₹ ${(abs/100000).toFixed(1)} L`;
+  if(abs>=1000)     return `${sign}₹ ${(abs/1000).toFixed(0)}K`;
+  return `${sign}₹ ${abs.toLocaleString("en-IN")}`;
+};
+const fmtAED2 = (n) => {
+  const num = Number(String(n).replace(/[^0-9.-]/g,""));
+  if (isNaN(num)||n===""||n==="—") return n||"—";
+  const abs=Math.abs(num),sign=num<0?"-":"";
+  if(abs>=1000000) return `${sign}AED ${(abs/1000000).toFixed(2)}M`;
+  if(abs>=1000)    return `${sign}AED ${(abs/1000).toFixed(0)}K`;
+  return `${sign}AED ${abs.toLocaleString("en-AE")}`;
+};
+
 
 // ─── JURISDICTION HELPERS ─────────────────────────────────────────────────────
 const isUAE         = c => c?.jurisdiction === "UAE" || c?.jurisdiction === "Cross-Border";
@@ -370,9 +399,9 @@ const Card = ({ children, style={}, accent }) => (
   <div style={{ background:"#fff",
     border:`1px solid ${C.border}`,
     borderLeft: accent ? `3px solid ${accent}` : `1px solid ${C.border}`,
-    borderRadius:4,
-    padding:14,
-    boxShadow:"0 1px 4px rgba(0,0,0,0.04)",
+    borderRadius:20,
+    padding:24,
+    boxShadow:"0 4px 20px rgba(37,99,235,0.06)",
     ...style }}>
     {children}
   </div>
@@ -426,7 +455,7 @@ const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapse
       <FinzzupIcon size={iconSize}/>
       <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
         <div style={{
-          fontFamily:"'Plus Jakarta Sans', sans-serif",
+          fontFamily:"'Inter', -apple-system, sans-serif",
           fontWeight:900,
           fontSize: size * 0.72,
           lineHeight:1,
@@ -444,7 +473,7 @@ const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapse
         </div>
         {showTagline && (
           <div style={{
-            fontFamily:"'Plus Jakarta Sans', sans-serif",
+            fontFamily:"'Inter', -apple-system, sans-serif",
             fontSize: Math.max(8, size * 0.22),
             fontWeight:600,
             color: dark ? "rgba(255,255,255,0.4)" : (darkText ? "#9CA3AF" : "rgba(255,255,255,0.4)"),
@@ -474,7 +503,7 @@ function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck="false"
-        style={{ width:"100%", padding:"12px 14px", borderRadius:6, fontSize:16,
+        style={{ width:"100%", padding:"12px 14px", borderRadius:16, fontSize:16,
           border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
           background:C.bg, outline:"none", boxSizing:"border-box",
           transition:"border-color 0.2s", WebkitTextSizeAdjust:"100%",
@@ -612,7 +641,7 @@ function Login({ onLogin }) {
               onChange={e => { setCode(e.target.value.toUpperCase()); setError(""); }}
               onKeyDown={e => e.key === "Enter" && checkCode()}
               placeholder="e.g. NEXO2026"
-              style={{ width:"100%", padding:"13px 15px", borderRadius:6, fontSize:16,
+              style={{ width:"100%", padding:"13px 15px", borderRadius:16, fontSize:16,
                 border:`1.5px solid ${error ? C.red : C.border}`, fontFamily:FM,
                 fontWeight:600, letterSpacing:"0.1em", color:C.text, background:C.bg,
                 outline:"none", boxSizing:"border-box", textTransform:"uppercase",
@@ -625,11 +654,11 @@ function Login({ onLogin }) {
             {/* ── AI & Data Consent ── */}
             <div onClick={() => setConsent(c => !c)}
               style={{ display:"flex", alignItems:"flex-start", gap:10, marginTop:18,
-                padding:"12px 14px", borderRadius:6, cursor:"pointer",
+                padding:"12px 14px", borderRadius:16, cursor:"pointer",
                 background: consent ? `${C.blue}08` : C.bg3,
                 border:`1.5px solid ${consent ? C.blue : C.border}`,
                 transition:"all 0.2s" }}>
-              <div style={{ width:18, height:18, borderRadius:4, flexShrink:0, marginTop:1,
+              <div style={{ width:18, height:18, borderRadius:20, flexShrink:0, marginTop:1,
                 border:`2px solid ${consent ? C.blue : C.dim}`,
                 background: consent ? C.blue : "transparent",
                 display:"flex", alignItems:"center", justifyContent:"center",
@@ -644,8 +673,8 @@ function Login({ onLogin }) {
               </p>
             </div>
 
-            <button onClick={checkCode} disabled={loading || !consent} style={{ width:"100%", marginTop:14, padding:14,
-              borderRadius:6, border:"none", background: consent ? C.grad1 : C.bg3,
+            <button onClick={checkCode} disabled={loading || !consent} style={{ width:"100%", marginTop:14, padding:24,
+              borderRadius:16, border:"none", background: consent ? C.grad1 : C.bg3,
               color: consent ? "white" : C.dim,
               fontFamily:F, fontWeight:700, fontSize:15,
               cursor: consent ? "pointer" : "not-allowed",
@@ -663,7 +692,7 @@ function Login({ onLogin }) {
             </p>
 
             {/* Demo accounts */}
-            <div style={{ marginTop:20, padding:"14px 16px", borderRadius:6,
+            <div style={{ marginTop:20, padding:"14px 16px", borderRadius:16,
               background:`${C.blue}0A`, border:`1px solid ${C.blue}20` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
                 letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>Try a demo account</div>
@@ -691,26 +720,26 @@ function Login({ onLogin }) {
           {/* ── STEP 2: Register ── */}
           {step === "register" && <>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14,
-              padding:"12px 14px", borderRadius:6, background:`${C.green}0A`, border:`1px solid ${C.green}25` }}>
+              padding:"12px 14px", borderRadius:16, background:`${C.green}0A`, border:`1px solid ${C.green}25` }}>
               <span style={{ fontSize:22 }}>✓</span>
               <div>
                 <div style={{ fontSize:13, fontWeight:700, color:C.text }}>Code accepted!</div>
                 <div style={{ fontSize:12, color:C.muted }}>{client?.company}</div>
               </div>
             </div>
-            <h2 style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:20 }}>Create your account</h2>
+            <h2 style={{ fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:20 }}>Create your account</h2>
             <LoginInput label="Email"            value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
             <LoginInput label="Password"         value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Min 6 characters" />
             <LoginInput label="Confirm Password" value={form.confirm}  onChange={e => { setForm(f=>({...f,confirm:e.target.value}));  setError(""); }} type="password" placeholder="Repeat password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-            <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
-              borderRadius:6, border:"none", background:C.grad1, color:"white",
+            <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:24,
+              borderRadius:16, border:"none", background:C.grad1, color:"white",
               fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
               boxShadow:"0 6px 20px rgba(59,111,247,0.28)", touchAction:"manipulation" }}>
               {loading ? "Creating account…" : "Create Account →"}
             </button>
             <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:12, borderRadius:6, border:`1px solid ${C.border}`,
+              marginTop:10, padding:20, borderRadius:16, border:`1px solid ${C.border}`,
               background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
               ← Back
             </button>
@@ -725,14 +754,14 @@ function Login({ onLogin }) {
             <LoginInput label="Email"    value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
             <LoginInput label="Password" value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Your password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-            <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
-              borderRadius:6, border:"none", background:C.grad1, color:"white",
+            <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:24,
+              borderRadius:16, border:"none", background:C.grad1, color:"white",
               fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
               boxShadow:"0 6px 20px rgba(59,111,247,0.28)", touchAction:"manipulation" }}>
               {loading ? "Signing in…" : "Sign In →"}
             </button>
             <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:12, borderRadius:6, border:`1px solid ${C.border}`,
+              marginTop:10, padding:20, borderRadius:16, border:`1px solid ${C.border}`,
               background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
               ← New client? Enter invite code
             </button>
@@ -861,7 +890,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
                     justifyContent:collapsed?"center":"flex-start",
                     background:page===n.id?C.accentLight:"transparent",
                     border:"none", cursor:"pointer",
-                    borderLeft:page===n.id?`2px solid ${C.blue}`:"2px solid transparent",
+                    borderLeft:page===n.id?`3px solid ${C.blue}`:"3px solid transparent",
                     transition:"all 0.12s", fontFamily:F }}>
                   <i className={"ti " + n.icon}
                     style={{ fontSize:15,
@@ -877,7 +906,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
                   )}
                   {!collapsed && n.badge && (
                     <span style={{ marginLeft:"auto", background:C.red, color:"white",
-                      borderRadius:10, padding:"0 5px", fontSize:9, fontWeight:700,
+                      borderRadius:20, padding:"0 5px", fontSize:9, fontWeight:700,
                       fontFamily:F }}>{n.badge}</span>
                   )}
                 </button>
@@ -923,10 +952,10 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
   const count = notifItems.length;
   const initials = (client?.name||"U").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   return (
-    <header style={{ height:40, background:"#fff", borderBottom:`1px solid #EAECF0`,
+    <header style={{ height:52, background:"#fff", borderBottom:`1px solid #EAECF0`,
       display:"flex", alignItems:"center", justifyContent:"space-between",
       padding:"0 18px", flexShrink:0, zIndex:50,
-      boxShadow:"0 1px 2px rgba(0,0,0,0.04)" }}>
+      boxShadow:"0 4px 20px rgba(37,99,235,0.06)" }}>
 
       {/* Breadcrumb */}
       <div style={{ display:"flex", alignItems:"center", gap:5,
@@ -937,7 +966,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
       </div>
 
       {/* Right */}
-      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:20 }}>
         <span style={{ fontSize:10, color:C.dim, fontFamily:F }}>{now}</span>
 
         {/* Bell */}
@@ -945,7 +974,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
           <button onClick={()=>setOpen(o=>!o)}
             style={{ background:"none", border:"none", cursor:"pointer",
               width:28, height:28, display:"flex", alignItems:"center",
-              justifyContent:"center", borderRadius:4, color:C.muted,
+              justifyContent:"center", borderRadius:20, color:C.muted,
               transition:"background 0.1s" }}
             onMouseEnter={e=>e.currentTarget.style.background=C.bg3}
             onMouseLeave={e=>e.currentTarget.style.background="none"}>
@@ -958,7 +987,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
           </button>
           {open && count>0 && (
             <div style={{ position:"absolute", top:34, right:0, width:260,
-              background:"white", borderRadius:6,
+              background:"white", borderRadius:16,
               boxShadow:"0 4px 16px rgba(0,0,0,0.12)",
               border:`1px solid ${C.border}`, overflow:"hidden", zIndex:100 }}>
               <div style={{ padding:"8px 12px", borderBottom:`1px solid ${C.border}`,
@@ -987,7 +1016,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
 
         {/* User chip */}
         <div style={{ display:"flex", alignItems:"center", gap:7,
-          padding:"4px 10px", borderRadius:4,
+          padding:"4px 10px", borderRadius:20,
           border:`1px solid ${C.border}`, cursor:"pointer",
           background:"#fff", fontFamily:F }}>
           <div style={{ width:22, height:22, borderRadius:"50%",
@@ -1215,12 +1244,12 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
       </div>
 
-      <div style={{ padding:"16px 24px", display:"flex", flexDirection:"column", gap:14 }}>
+      <div style={{ padding:"16px 24px", display:"flex", flexDirection:"column", gap:20 }}>
 
         {/* ── Row 1: KPI tiles (NetSuite style) ── */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>
           {displayKpis.slice(0,6).map((kpi,i) => (
-            <div key={i} style={{ background:"white", borderRadius:6, padding:"12px 14px",
+            <div key={i} style={{ background:"white", borderRadius:16, padding:"12px 14px",
               border:`1px solid ${C.border}`, borderTop:`3px solid ${kpi.color||accentColor}`,
               boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
               <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
@@ -1243,10 +1272,10 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
 
         {/* ── Row 2: P&L + Health Score + Garima Note ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 200px 1fr", gap:14 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 200px 1fr", gap:20 }}>
 
           {/* P&L Summary table */}
-          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -1278,7 +1307,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
 
           {/* Health Score meter (NetSuite KPI Meter) */}
-          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex",
             flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
@@ -1303,7 +1332,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
 
           {/* Garima's Note */}
-          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
             borderLeft:`3px solid ${accentColor}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex", flexDirection:"column" }}>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:accentColor,
@@ -1323,15 +1352,15 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
 
         {/* ── Row 3: Action Items + AR Aging + Cash Flow ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
 
           {/* Action Items */}
-          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Action Items</div>
-              <span style={{ padding:"2px 8px", borderRadius:6, background:"#FEF2F2",
+              <span style={{ padding:"2px 8px", borderRadius:16, background:"#FEF2F2",
                 color:C.red, fontSize:10, fontWeight:700, fontFamily:F }}>
                 {pendingActions.length} pending
               </span>
@@ -1354,7 +1383,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                     {a.due && <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:1 }}>Due: {a.due}</div>}
                   </div>
                   <span style={{ fontFamily:F, fontSize:9, fontWeight:700, padding:"2px 6px",
-                    borderRadius:4, flexShrink:0,
+                    borderRadius:20, flexShrink:0,
                     background: a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#F0FDF4",
                     color: a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.green }}>
                     {a.priority||"Low"}
@@ -1365,7 +1394,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
 
           {/* AR Aging chart */}
-          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -1390,8 +1419,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                           {uaeClient?"AED ":"₹"}{b.val.toLocaleString()} <span style={{color:C.muted,fontWeight:400}}>({pct.toFixed(0)}%)</span>
                         </span>
                       </div>
-                      <div style={{ height:6, background:"#F3F4F6", borderRadius:3, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:3, transition:"width 0.4s" }}/>
+                      <div style={{ height:6, background:"#F3F4F6", borderRadius:20, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:20, transition:"width 0.4s" }}/>
                       </div>
                     </div>
                   );
@@ -1401,7 +1430,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
 
           {/* Cash Flow sparkline */}
-          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Cash Flow Trend</div>
@@ -1446,7 +1475,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 
         {/* ── Row 4: Key Indicators table (NetSuite style) ── */}
         {(reportData?.variance||[]).length > 0 && (
-          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Key Performance Indicators</div>
@@ -1480,7 +1509,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                         {diff===null?"—":(parseFloat(diff)>0?"+":"")+diff+"%"}
                       </td>
                       <td style={{ padding:"8px 12px", textAlign:"center" }}>
-                        <span style={{ padding:"2px 8px", borderRadius:6, fontSize:10, fontWeight:700, fontFamily:F,
+                        <span style={{ padding:"2px 8px", borderRadius:16, fontSize:10, fontWeight:700, fontFamily:F,
                           background:favourable?"#F0FDF4":"#FEF2F2",
                           color:favourable?C.green:C.red }}>
                           {favourable?"✓ Favourable":"✗ Watch"}
@@ -1697,8 +1726,8 @@ function CashFlow({ reportData, client, kpis }) {
   const Tip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:6,
-        padding:"10px 14px", fontFamily:F, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
+      <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:16,
+        padding:"10px 14px", fontFamily:F, boxShadow:"0 8px 30px rgba(37,99,235,0.10)" }}>
         <div style={{ fontSize:12, color:C.muted, marginBottom:6, fontWeight:700 }}>{label}</div>
         {payload.map((p,i) => (
           <div key={i} style={{ fontSize:13, fontWeight:700, color:p.color || p.stroke, marginBottom:2 }}>
@@ -1713,12 +1742,12 @@ function CashFlow({ reportData, client, kpis }) {
   const KpiBar = ({ items }) => (
     <div style={{ display:"grid", gridTemplateColumns:`repeat(${items.length},1fr)`, gap:12, marginBottom:20 }} className="cf-kpi">
       {items.map((k,i) => (
-        <div key={i} style={{ padding:"12px 14px", borderRadius:4, background:"#fff",
+        <div key={i} style={{ padding:"12px 14px", borderRadius:20, background:"#fff",
           border:`1px solid ${C.border}`,
           borderTop:`3px solid ${k.color||C.blue}`,
           textAlign:"center" }}>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:600, color:C.dim, marginBottom:5, textTransform:"uppercase", letterSpacing:"0.07em" }}>{k.label}</div>
-          <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:k.color }}>{k.value}</div>
+          <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:k.color }}>{k.value}</div>
           {k.sub && <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:k.trend==="down"?C.red:C.dim, marginTop:3 }}>{k.sub}</div>}
         </div>
       ))}
@@ -1744,7 +1773,7 @@ function CashFlow({ reportData, client, kpis }) {
           <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 10px" }}>{note}</p>
           <a href={WA} target="_blank" rel="noopener noreferrer"
             style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#25D366",
-              color:"white", borderRadius:8, padding:"7px 14px", fontFamily:F,
+              color:"white", borderRadius:16, padding:"7px 14px", fontFamily:F,
               fontWeight:700, fontSize:12, textDecoration:"none" }}>
             WhatsApp Garima
           </a>
@@ -1793,7 +1822,7 @@ function CashFlow({ reportData, client, kpis }) {
               setTimeout(() => w.print(), 600);
             }}
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-              borderRadius:6, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
+              borderRadius:16, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
               color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
             "Download Cash Report"
           </button>
@@ -1865,14 +1894,14 @@ function CashFlow({ reportData, client, kpis }) {
               borderBottom:i<6?`1px solid ${C.border}`:"none",
               background:r.bold?`${C.blue}04`:"transparent", margin:r.bold?"0 -4px":"0", padding:r.bold?"9px 4px":"9px 0" }}>
               <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:r.bold?700:400 }}>{r.label}</span>
-              <span style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:r.color }}>{r.value}</span>
+              <span style={{ fontFamily:FM, fontSize:18, fontWeight:600, color:r.color }}>{r.value}</span>
             </div>
           ))}
         </Card>
 
         {/* Inflow vs Outflow bar chart */}
         <Card style={{ marginBottom:20 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:4 }}>
             Monthly Cash Inflows vs Outflows
           </div>
           <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>₹ Lakhs · Actual through Feb · Forecast from Mar</div>
@@ -1901,7 +1930,7 @@ function CashFlow({ reportData, client, kpis }) {
 
         {/* Working Capital Positions */}
         <Card style={{ marginBottom:20 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>
             Working Capital Positions — {reportData?.monthLabel || "Current Month"}
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="wc-cf-s">
@@ -1910,7 +1939,7 @@ function CashFlow({ reportData, client, kpis }) {
               { label:"Creditors (AP)", value: reportData?.creditors  || "₹22.1L", days: reportData?.creditorDays || "—", color:C.purple, flag: false,                                                              note: reportData?.creditorDays ? `${reportData.creditorDays} creditor days` : "Well managed" },
               { label:"Inventory",      value: reportData?.inventory  || "—",       days: reportData?.inventoryDays|| "—", color:C.teal,   flag: false,                                                              note: "Stock on hand" },
             ].map((w,i) => (
-              <div key={i} style={{ padding:"14px 12px", borderRadius:6,
+              <div key={i} style={{ padding:"14px 12px", borderRadius:16,
                 background: w.flag ? `${C.amber}08` : C.bg,
                 border:`1px solid ${w.flag ? C.amber+"40" : C.border}`, textAlign:"center" }}>
                 <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:w.color }}>{w.value}</div>
@@ -1924,7 +1953,7 @@ function CashFlow({ reportData, client, kpis }) {
             <style>{`.wc-cf-s{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-cf-s{grid-template-columns:1fr!important}}`}</style>
           </div>
           {(reportData?.debtorDays || reportData?.creditorDays) && (
-            <div style={{ padding:"10px 14px", borderRadius:6, background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
+            <div style={{ padding:"10px 14px", borderRadius:16, background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
               <span style={{ fontFamily:F, fontSize:12, color:C.blue, fontWeight:600 }}>
                 Cash Conversion Cycle: AR {reportData?.debtorDays || "—"} − AP {reportData?.creditorDays || "—"} + Inv {reportData?.inventoryDays || "—"} = <strong>{reportData?.ccc || "—"}</strong>
                 {reportData?.ccc && parseInt(reportData.ccc) > 30 ? " — Above 30-day target" : " ✓"}
@@ -1935,7 +1964,7 @@ function CashFlow({ reportData, client, kpis }) {
 
         {/* Burn Rate Analysis */}
         <Card style={{ marginBottom:20 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>
             Burn Rate & Runway Analysis
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="wc-cf-s">
@@ -1944,7 +1973,7 @@ function CashFlow({ reportData, client, kpis }) {
               { label:"Net Burn",      value: kpis?.find(k=>k.label?.toLowerCase().includes("net"))?.value  || "₹31L/mo",  color:C.amber, note:"After revenue" },
               { label:"Runway",        value: kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value|| "4.4 mo",  color: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? C.red : C.green, note: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? "⚠️ Below 6 months" : "✅ Healthy" },
             ].map((b,i) => (
-              <div key={i} style={{ padding:"14px 12px", borderRadius:6, background:"#fff", border:`1px solid ${C.border}`, textAlign:"center" }}>
+              <div key={i} style={{ padding:"14px 12px", borderRadius:16, background:"#fff", border:`1px solid ${C.border}`, textAlign:"center" }}>
                 <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:b.color }}>{b.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{b.label}</div>
                 <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3 }}>{b.note}</div>
@@ -1960,11 +1989,11 @@ function CashFlow({ reportData, client, kpis }) {
               { label:"Net Revenue Retention",value: reportData?.nrr              || "108%",  note:"Expansion + retention. Target >100%",flag: false },
             ].map((m,i) => (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px",
-                borderRadius:6, background:m.flag?`${C.amber}08`:C.bg,
+                borderRadius:16, background:m.flag?`${C.amber}08`:C.bg,
                 border:`1px solid ${m.flag?C.amber+"25":C.border}` }}>
                 <div style={{ flex:1 }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600 }}>{m.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:m.flag?C.amber:C.green }}>{m.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:m.flag?C.amber:C.green }}>{m.value}</div>
                 </div>
                 <div style={{ fontFamily:F, fontSize:10, color:C.dim, maxWidth:120, textAlign:"right", lineHeight:1.4 }}>{m.note}</div>
               </div>
@@ -1974,15 +2003,15 @@ function CashFlow({ reportData, client, kpis }) {
 
         {/* Cash Pressure Points */}
         {(reportData?.cashPressure1 || reportData?.cashPressure2) && (
-          <Card style={{ marginBottom:14, borderLeft:`3px solid ${C.red}` }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+          <Card style={{ marginBottom:14, borderLeft:`4px solid ${C.red}` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>
               {"Upcoming Cash Pressure Points"}
             </div>
             {[reportData?.cashPressure1, reportData?.cashPressure2, reportData?.cashPressure3]
               .filter(Boolean)
               .map((p, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px",
-                  borderRadius:8, background:`${C.red}06`, border:`1px solid ${C.red}15`, marginBottom:8,
+                  borderRadius:16, background:`${C.red}06`, border:`1px solid ${C.red}15`, marginBottom:8,
                   fontFamily:F, fontSize:13, color:C.text }}>
                   <span style={{ color:C.red }}>{"•"}</span>{p}
                 </div>
@@ -1990,7 +2019,7 @@ function CashFlow({ reportData, client, kpis }) {
           </Card>
         )}
 
-        <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
+        <Card style={{ borderLeft:`4px solid ${C.amber}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
             Garima's Analysis
           </div>
@@ -2022,7 +2051,7 @@ function CashFlow({ reportData, client, kpis }) {
               setTimeout(() => w.print(), 600);
             }}
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-              borderRadius:6, background:`${C.teal}10`, border:`1.5px solid ${C.teal}25`,
+              borderRadius:16, background:`${C.teal}10`, border:`1.5px solid ${C.teal}25`,
               color:C.teal, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
             "Download Cash Report"
           </button>
@@ -2037,7 +2066,7 @@ function CashFlow({ reportData, client, kpis }) {
 
         {/* Inflow vs Outflow chart */}
         <Card style={{ marginBottom:20 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:4 }}>
             Monthly Cash Inflows vs Outflows
           </div>
           <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>₹ Lakhs · Mar onwards is forecast</div>
@@ -2061,7 +2090,7 @@ function CashFlow({ reportData, client, kpis }) {
 
         {/* Working capital positions */}
         <Card style={{ marginBottom:20 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>
             Working Capital Positions — Feb 2026
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="wc-cf">
@@ -2070,7 +2099,7 @@ function CashFlow({ reportData, client, kpis }) {
               { label:"Creditors (AP)", value:"₹22.1L", days:"31 days", color:C.purple, flag:false, note:"Well managed" },
               { label:"Inventory",      value:"₹15.8L", days:"22 days", color:C.teal,   flag:false, note:"6.2x turnover" },
             ].map((w,i) => (
-              <div key={i} style={{ padding:"14px 12px", borderRadius:6, background:w.flag?`${C.amber}08`:C.bg,
+              <div key={i} style={{ padding:"14px 12px", borderRadius:16, background:w.flag?`${C.amber}08`:C.bg,
                 border:`1px solid ${w.flag?C.amber+"40":C.border}`, textAlign:"center" }}>
                 <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:w.color }}>{w.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
@@ -2080,7 +2109,7 @@ function CashFlow({ reportData, client, kpis }) {
             ))}
             <style>{`.wc-cf{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-cf{grid-template-columns:1fr!important}}`}</style>
           </div>
-          <div style={{ padding:"10px 14px", borderRadius:6, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
+          <div style={{ padding:"10px 14px", borderRadius:16, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
               Cash Conversion Cycle: AR 46 − AP 31 + Inv 22 = <strong>37 days</strong>. Every 1-day reduction in debtor days = ~₹2.8L freed up in cash.
             </span>
@@ -2088,8 +2117,8 @@ function CashFlow({ reportData, client, kpis }) {
         </Card>
 
         {/* March cash pressure */}
-        <Card style={{ marginBottom:14, borderLeft:`3px solid ${C.red}` }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+        <Card style={{ marginBottom:14, borderLeft:`4px solid ${C.red}` }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>
             Cash Pressure Points
           </div>
           {[
@@ -2113,7 +2142,7 @@ function CashFlow({ reportData, client, kpis }) {
           ))}
         </Card>
 
-        <Card style={{ borderLeft:`3px solid ${C.teal}` }}>
+        <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
             Garima's Analysis
           </div>
@@ -2144,7 +2173,7 @@ function CashFlow({ reportData, client, kpis }) {
               setTimeout(() => w.print(), 600);
             }}
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-              borderRadius:6, background:`${C.purple}10`, border:`1.5px solid ${C.purple}25`,
+              borderRadius:16, background:`${C.purple}10`, border:`1.5px solid ${C.purple}25`,
               color:C.purple, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
             "Download Cash Report"
           </button>
@@ -2159,7 +2188,7 @@ function CashFlow({ reportData, client, kpis }) {
 
       {/* OCF / ICF / FCF chart */}
       <Card style={{ marginBottom:20 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:4 }}>
           Cash Flow by Category — 9 Month View
         </div>
         <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>
@@ -2196,7 +2225,7 @@ function CashFlow({ reportData, client, kpis }) {
 
       {/* EBITDA to Cash bridge */}
       <Card style={{ marginBottom:20 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>
           EBITDA → Free Cash Flow Bridge — Feb 2026
         </div>
         {[
@@ -2223,7 +2252,7 @@ function CashFlow({ reportData, client, kpis }) {
 
       {/* Q1 forecast table */}
       <Card style={{ marginBottom:20 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>
           Q1 FY27 Cash Forecast — Mar to May 2026
         </div>
         <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
@@ -2261,7 +2290,7 @@ function CashFlow({ reportData, client, kpis }) {
         </div>
       </Card>
 
-      <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
+      <Card style={{ borderLeft:`4px solid ${C.purple}` }}>
         <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
           Garima's Analysis
         </div>
@@ -2351,7 +2380,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
                   <tr key={a.id||i} className="striped" style={{ cursor:"pointer" }}
                     onClick={()=>toggle(a.id||i)}>
                     <td>
-                      <div style={{ width:16, height:16, borderRadius:4,
+                      <div style={{ width:16, height:16, borderRadius:20,
                         border:`2px solid ${priorityColor(a.priority)}`,
                         background:"white", cursor:"pointer", flexShrink:0 }}/>
                     </td>
@@ -2379,7 +2408,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
               {done.map((a,i) => (
                 <tr key={a.id||i} className="striped" style={{ opacity:0.6, cursor:"pointer" }}
                   onClick={()=>toggle(a.id||i)}>
-                  <td><div style={{ width:16, height:16, borderRadius:4, background:C.green,
+                  <td><div style={{ width:16, height:16, borderRadius:20, background:C.green,
                     display:"flex", alignItems:"center", justifyContent:"center",
                     fontSize:9, color:"white", fontWeight:900 }}>✓</div></td>
                   <td style={{ textDecoration:"line-through", color:"#9CA3AF" }}>{a.title||a.text||a.action}</td>
@@ -2441,8 +2470,8 @@ function StartupCFOPack({ data, client, reportData }) {
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"140px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                <div style={{ height:6, borderRadius:3, background:"#fff", flex:1 }}>
-                  <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
+                <div style={{ height:6, borderRadius:20, background:"#fff", flex:1 }}>
+                  <div style={{ height:"100%", borderRadius:20, width:`${item.score}%`,
                     background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
                     transition:"width 0.8s ease" }}/>
                 </div>
@@ -2473,7 +2502,7 @@ function StartupCFOPack({ data, client, reportData }) {
         <SectionTitle sub="Key metrics investors will ask about in your data room">Investor Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
           {(Array.isArray(reportData?.metrics) && reportData.metrics.some(m=>m.value) ? reportData.metrics : data.investorMetrics).map((m, i) => (
-            <div key={i} style={{ padding:"14px 14px", borderRadius:6,
+            <div key={i} style={{ padding:"14px 14px", borderRadius:16,
               background: m.flag ? "#FEF2F2" : C.bg,
               border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
@@ -2494,9 +2523,9 @@ function StartupCFOPack({ data, client, reportData }) {
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {(Array.isArray(reportData?.checklist) && reportData.checklist.length ? reportData.checklist : data.dueDiligence).map((d, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:6, background:d.done ? `${C.green}08` : "#FFFBEB",
+              borderRadius:16, background:d.done ? `${C.green}08` : "#FFFBEB",
               border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
-              <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
+              <div style={{ width:20, height:20, borderRadius:16, flexShrink:0,
                 background:d.done ? C.green : C.amber,
                 display:"flex", alignItems:"center", justifyContent:"center" }}>
                 <span style={{ color:"white", fontSize:10, fontWeight:900 }}>{d.done ? "✓" : "!"}</span>
@@ -2536,8 +2565,8 @@ function MSMECFOPack({ data, reportData }) {
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"160px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                <div style={{ height:6, borderRadius:3, background:"#fff" }}>
-                  <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
+                <div style={{ height:6, borderRadius:20, background:"#fff" }}>
+                  <div style={{ height:"100%", borderRadius:20, width:`${item.score}%`,
                     background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
                     transition:"width 0.8s ease" }}/>
                 </div>
@@ -2568,7 +2597,7 @@ function MSMECFOPack({ data, reportData }) {
         <SectionTitle sub="Working capital ratios vs benchmarks">Working Capital Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
           {(reportData?.metrics?.some(m=>m.value) ? reportData.metrics : data.workingCapital).map((m, i) => (
-            <div key={i} style={{ padding:"14px 14px", borderRadius:6,
+            <div key={i} style={{ padding:"14px 14px", borderRadius:16,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
               <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
@@ -2584,9 +2613,9 @@ function MSMECFOPack({ data, reportData }) {
       {/* Growth Metrics */}
       <Card style={{ marginBottom:20 }}>
         <SectionTitle sub="Growth and profitability indicators">Growth Metrics</SectionTitle>
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
           {data.growth.map((m, i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:6,
+            <div key={i} style={{ padding:"14px 16px", borderRadius:16,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
@@ -2595,7 +2624,7 @@ function MSMECFOPack({ data, reportData }) {
                   {m.flag ? "! " : "✓ "}{m.note}
                 </div>
               </div>
-              <div style={{ fontFamily:FM, fontSize:16, fontWeight:700,
+              <div style={{ fontFamily:FM, fontSize:26, fontWeight:700,
                 color: m.flag ? C.red : C.teal }}>{m.value}</div>
             </div>
           ))}
@@ -2616,7 +2645,7 @@ function MSMECFOPack({ data, reportData }) {
             { label:"Cash Conversion Cycle",   value: reportData?.ccc || "37 days",           flag: reportData?.ccc ? parseFloat(reportData.ccc)>45 : false,  note: reportData?.ccc ? (parseFloat(reportData.ccc)>45?"Target <30 days":"Target <30 days") : "Target <30 days" },
             { label:"Working Capital",         value: reportData?.workingCapital || "Rs.32.4L", flag: false, note:"Net current assets" },
           ].map((m,i) => (
-            <div key={i} style={{ padding:"12px 14px", borderRadius:6,
+            <div key={i} style={{ padding:"12px 14px", borderRadius:16,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
               <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
@@ -2645,9 +2674,9 @@ function MSMECFOPack({ data, reportData }) {
             { item:"Business continuity / succession plan",                       done:false },
           ].map((d,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:6, background:d.done ? `${C.green}08` : "#FFFBEB",
+              borderRadius:16, background:d.done ? `${C.green}08` : "#FFFBEB",
               border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
-              <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
+              <div style={{ width:20, height:20, borderRadius:16, flexShrink:0,
                 background:d.done ? C.green : C.amber,
                 display:"flex", alignItems:"center", justifyContent:"center" }}>
                 <span style={{ color:"white", fontSize:10, fontWeight:900 }}>{d.done ? "✓" : "!"}</span>
@@ -2691,8 +2720,8 @@ function CorporateCFOPack({ data, reportData }) {
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"180px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                <div style={{ height:6, borderRadius:3, background:"#fff" }}>
-                  <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
+                <div style={{ height:6, borderRadius:20, background:"#fff" }}>
+                  <div style={{ height:"100%", borderRadius:20, width:`${item.score}%`,
                     background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
                     transition:"width 0.8s ease" }}/>
                 </div>
@@ -2723,7 +2752,7 @@ function CorporateCFOPack({ data, reportData }) {
         <SectionTitle sub="Issues requiring attention before IPO or auditor review">Compliance Flags</SectionTitle>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {data.complianceFlags.map((f, i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:6,
+            <div key={i} style={{ padding:"14px 16px", borderRadius:16,
               background:sevBg[f.severity], border:`1px solid ${sevColor[f.severity]}30` }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
                 flexWrap:"wrap", gap:8, marginBottom:6 }}>
@@ -2742,7 +2771,7 @@ function CorporateCFOPack({ data, reportData }) {
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {data.indAS.map((s, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              flexWrap:"wrap", gap:10, padding:"11px 14px", borderRadius:6,
+              flexWrap:"wrap", gap:10, padding:"11px 14px", borderRadius:16,
               background: s.status==="Action Needed" ? "#FEF2F2" : C.bg,
               border:`1px solid ${s.status==="Action Needed" ? C.red+"30" : C.border}` }}>
               <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{s.standard}</span>
@@ -2792,7 +2821,7 @@ function PackPreview({ p, label }) {
     <div style={{ borderTop:`1px solid ${C.border}`, marginTop:14, paddingTop:14 }}>
       {/* Mock page header */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-        padding:"10px 14px", borderRadius:6,
+        padding:"10px 14px", borderRadius:16,
         background:"linear-gradient(135deg,#5B4FDB,#7C3AED)", marginBottom:12 }}>
         <div>
           <div style={{ fontFamily:F, fontWeight:800, fontSize:13, color:"white", letterSpacing:"-0.01em" }}>
@@ -2822,7 +2851,7 @@ function PackPreview({ p, label }) {
 
       {/* Garima note snippet */}
       <div style={{ padding:"10px 12px", borderRadius:9, background:`${C.blue}06`,
-        borderLeft:`3px solid ${C.blue}`, marginBottom:12 }}>
+        borderLeft:`4px solid ${C.blue}`, marginBottom:12 }}>
         <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.blue, marginBottom:4, letterSpacing:"0.06em" }}>
           NOTE FROM GARIMA
         </div>
@@ -2857,8 +2886,8 @@ function ArchiveRow({ p, label }) {
   return (
     <Card style={{ padding:"14px 18px" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:38, height:38, borderRadius:6, background:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?`${C.blue}12`:`${C.muted}0A`,
+        <div style={{ display:"flex", alignItems:"center", gap:20 }}>
+          <div style={{ width:38, height:38, borderRadius:16, background:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?`${C.blue}12`:`${C.muted}0A`,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}></div>
           <div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, display:"flex", alignItems:"center", gap:7 }}>
@@ -2909,7 +2938,7 @@ const StatRow = ({ label, value, pct, trend, sub }) => (
       {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{sub}</div>}
     </div>
     <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-      <span style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:C.text }}>{value}</span>
+      <span style={{ fontFamily:FM, fontSize:18, fontWeight:600, color:C.text }}>{value}</span>
       {pct && <span style={{ fontSize:11, fontWeight:700, color:trend==="up"?C.green:C.red, background:trend==="up"?"#ECFDF5":"#FEF2F2", padding:"2px 8px", borderRadius:60, fontFamily:F }}>{trend==="up"?"▲":"▼"} {pct}</span>}
     </div>
   </div>
@@ -3191,7 +3220,7 @@ function MarketWidget({ pack, client }) {
         gridTemplateColumns:`repeat(${Math.min(items.length, 4)}, 1fr)` }}
         className="mkt-grid">
         {items.map((item, i) => (
-          <div key={i} style={{ padding:"12px 14px", borderRadius:6,
+          <div key={i} style={{ padding:"12px 14px", borderRadius:16,
             background:`${item.color}08`, border:`1px solid ${item.color}18` }}>
             <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
               <i className={"ti " + (item.icon||"ti-circle")} style={{fontSize:14}}/>
@@ -3316,7 +3345,7 @@ function MarketIntel({ client }) {
             m.usd   && { label:"USD / INR",      value:m.usd,   sub:"Live rate", color:C.purple,icon:"ti-currency-dollar" },
             m.sar   && { label:"SAR / INR",       value:m.sar,   sub:"Saudi Riyal",color:C.teal, icon:"ti-map-pin" },
           ].filter(Boolean).map((item,i) => (
-            <div key={i} style={{ padding:"12px 14px", borderRadius:6,
+            <div key={i} style={{ padding:"12px 14px", borderRadius:16,
               background:`${item.color}08`, border:`1px solid ${item.color}18` }}>
               <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:4 }}>
                 <i className={"ti " + (item.icon||"ti-circle")} style={{fontSize:14}}/>
@@ -3387,7 +3416,7 @@ function MarketIntel({ client }) {
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }} className="inv-grid">
           {funding.map((item,i) => (
-            <div key={i} style={{ padding:"12px 14px", borderRadius:6,
+            <div key={i} style={{ padding:"12px 14px", borderRadius:16,
               background:"#fff", border:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600,
                 marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>
@@ -3424,7 +3453,7 @@ function MarketIntel({ client }) {
             { date:"30 Sep", item:"Director KYC (DIR-3 KYC)",               priority:"low"    },
           ].map((item,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
-              padding:"10px 14px", borderRadius:6,
+              padding:"10px 14px", borderRadius:16,
               background: item.priority==="high" ? `${C.red}06` : item.priority==="medium" ? `${C.amber}06` : C.bg2,
               border:`1px solid ${item.priority==="high"?C.red+"20":item.priority==="medium"?C.amber+"20":C.border}` }}>
               <div style={{ width:52, fontFamily:FM, fontSize:12, fontWeight:700,
@@ -4004,12 +4033,12 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
 
       {/* ── Dropdown nav — always shown ── */}
       <div style={{ padding:"8px 16px", background:"white",
-        borderBottom:"1px solid #E5E7EB", display:"flex", alignItems:"center", gap:12 }}>
+        borderBottom:"1px solid #E5E7EB", display:"flex", alignItems:"center", gap:20 }}>
         <div ref={dropRef} style={{ position:"relative", maxWidth:320 }}>
 
           {/* Trigger button */}
           <button onClick={() => setOpen(o => !o)} style={{
-            width:"100%", padding:"10px 14px", borderRadius:6,
+            width:"100%", padding:"10px 14px", borderRadius:16,
             border:`1.5px solid ${open ? accent : "#E5E7EB"}`,
             background:"white", display:"flex", alignItems:"center",
             justifyContent:"space-between", cursor:"pointer",
@@ -4038,7 +4067,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
           {/* Dropdown panel */}
           {open && (
             <div style={{ position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:200,
-              background:"white", borderRadius:8, border:`1px solid #E5E7EB`,
+              background:"white", borderRadius:16, border:`1px solid #E5E7EB`,
               boxShadow:"0 4px 20px rgba(0,0,0,0.12)", overflow:"hidden", minWidth:260 }}>
               {groups.map((g, gi) => (
                 <div key={gi}>
@@ -4232,9 +4261,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
       <div>
 
       {tab === "monthly" && (
-    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
       {(reportData?.reportNote || reportData?.packNote) && (
-        <Card style={{ borderLeft:`3px solid ${C.teal}` }}>
+        <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
           <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
             {reportData.reportNote || reportData.packNote}
@@ -4279,7 +4308,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
           <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Working Capital Analysis</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="wc-g">
             {reportData.metrics.filter(m => m.value).map((m,i) => (
-              <div key={i} style={{ padding:"14px 10px", borderRadius:6, background:C.bg, border:`1px solid ${C.border}`, textAlign:"center" }}>
+              <div key={i} style={{ padding:"14px 10px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}`, textAlign:"center" }}>
                 <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:C.teal }}>{m.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{m.label}</div>
                 {m.sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{m.sub}</div>}
@@ -4306,7 +4335,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
           {COMPLIANCE_DATES.map((c,i) => {
             const [col,bg] = c.status==="critical"?[C.red,"#FEF2F2"]:c.status==="due-soon"?[C.amber,"#FFFBEB"]:[C.blue,"#EEF3FE"];
             return (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", borderRadius:6, background:bg, border:`1px solid ${col}22` }}>
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", borderRadius:16, background:bg, border:`1px solid ${col}22` }}>
                 <div style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:col, minWidth:52, whiteSpace:"nowrap" }}>{c.due}</div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{c.item}</div>
@@ -4369,7 +4398,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
             </Card>
             {reportData?.varianceCommentary?.some(v => v.item) && (
               <Card style={{ borderLeft:`3px solid $C.teal` }}>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Commentary</div>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:12 }}>Commentary</div>
                 {reportData.varianceCommentary.filter(v => v.item).map((v,i,arr) => (
                   <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
                     <div style={{ width:8, height:8, borderRadius:60, background:v.favorable?C.green:C.red, flexShrink:0, marginTop:6 }}/>
@@ -4397,13 +4426,13 @@ function MSMEPackContent({ reportData, kpis, client }) {
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
-                borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                borderRadius:16, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
               Discuss cash health with Garima
             </a>
           </div>
           {(reportData?.cashflowNote || reportData?.packNote) && (
-            <Card style={{ borderLeft:`3px solid ${C.teal}` }}>
+            <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase",
                 letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
                 {"Garima's Cash Assessment"}
@@ -4417,10 +4446,10 @@ function MSMEPackContent({ reportData, kpis, client }) {
       )}
 
             {tab === "workingcap" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
           {/* Question this tab answers */}
-          <div style={{ padding:"16px 20px", borderRadius:8,
+          <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.teal}10,${C.blue}06)`,
             border:`1px solid ${C.teal}20` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4449,9 +4478,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 { label:"=", value:null, color:C.muted },
                 { label:"CCC", value: reportData?.ccc || "37 days", color: parseInt(reportData?.ccc||"37")<=30?C.green:C.amber, bad: parseInt(reportData?.ccc||"37")>30 },
               ].map((item, i) => item.value === null ? (
-                <div key={i} style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:item.color }}>{item.label}</div>
+                <div key={i} style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:item.color }}>{item.label}</div>
               ) : (
-                <div key={i} style={{ padding:"12px 16px", borderRadius:6, textAlign:"center",
+                <div key={i} style={{ padding:"12px 16px", borderRadius:16, textAlign:"center",
                   background: item.bad ? `${C.amber}08` : `${item.color}08`,
                   border:`1px solid ${item.bad ? C.amber+"30" : item.color+"20"}` }}>
                   <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color:item.color }}>{item.value}</div>
@@ -4459,7 +4488,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 </div>
               ))}
             </div>
-            <div style={{ padding:"10px 14px", borderRadius:6,
+            <div style={{ padding:"10px 14px", borderRadius:16,
               background: parseInt(reportData?.ccc||"37")<=30 ? `${C.green}08` : `${C.amber}08`,
               border:`1px solid ${parseInt(reportData?.ccc||"37")<=30 ? C.green+"20" : C.amber+"25"}` }}>
               <div style={{ fontFamily:F, fontSize:12, fontWeight:600,
@@ -4487,10 +4516,10 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 { band:"90+ days",    value: reportData?.ar90plus  || "₹2.9L",  pct:"8%",  color:C.red,    action:"Legal notice or write-off decision required" },
               ].map((row, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-                  borderRadius:6, background:"#fff", border:`1px solid ${C.border}` }}>
+                  borderRadius:16, background:"#fff", border:`1px solid ${C.border}` }}>
                   <div style={{ width:3, height:36, borderRadius:2, background:row.color, flexShrink:0 }}/>
                   <div style={{ width:90, fontFamily:F, fontSize:12, color:C.muted, fontWeight:600 }}>{row.band}</div>
-                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:row.color, width:70 }}>{row.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:row.color, width:70 }}>{row.value}</div>
                   <div style={{ fontFamily:F, fontSize:10, color:C.dim,
                     background:C.bg, padding:"2px 8px", borderRadius:60, marginRight:8 }}>{row.pct}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.text, flex:1, lineHeight:1.4 }}>{row.action}</div>
@@ -4498,7 +4527,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               ))}
             </div>
             {reportData?.arNote && (
-              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:6,
+              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:16,
                 background:`${C.amber}06`, border:`1px solid ${C.amber}20`,
                 fontFamily:F, fontSize:12, color:C.text, lineHeight:1.6 }}>
                 {reportData.arNote}
@@ -4514,7 +4543,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
               {"How your efficiency ratios compare to MSME sector medians"}
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
               {[
                 { label:"Current Ratio",        value: reportData?.currentRatio || "1.62x", benchmark: reportData?.benchCurrentRatio || "Sector avg: 1.5–2.0x", target:1.5, actual: parseFloat(reportData?.currentRatio||"1.62"), higher:true  },
                 { label:"Quick Ratio",           value: reportData?.quickRatio   || "1.18x", benchmark: reportData?.benchQuickRatio   || "Target: >1.0x",         target:1.0, actual: parseFloat(reportData?.quickRatio||"1.18"),   higher:true  },
@@ -4523,7 +4552,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               ].map((r, i) => {
                 const good = r.higher ? r.actual >= r.target : r.actual <= r.target;
                 return (
-                  <div key={i} style={{ padding:"14px", borderRadius:6,
+                  <div key={i} style={{ padding:"14px", borderRadius:16,
                     background: good ? `${C.green}06` : `${C.amber}06`,
                     border:`1px solid ${good ? C.green+"20" : C.amber+"25"}` }}>
                     <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700,
@@ -4542,7 +4571,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
 
           {/* Garima's working capital note */}
           {reportData?.wcNote && (
-            <Card style={{ borderLeft:`3px solid ${C.teal}` }}>
+            <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
               <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.teal,
                 textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
                 {"Garima's Working Capital Assessment"}
@@ -4556,10 +4585,10 @@ function MSMEPackContent({ reportData, kpis, client }) {
       )}
 
       {tab === "bankfin" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
           {/* Question this tab answers */}
-          <div style={{ padding:"16px 20px", borderRadius:8,
+          <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.blue}10,${C.purple}06)`,
             border:`1px solid ${C.blue}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4591,8 +4620,8 @@ function MSMEPackContent({ reportData, kpis, client }) {
               {reportData?.loanScore && <ScoreGauge score={parseInt(reportData.loanScore)} color={C.blue} size={90}/>}
             </div>
             {reportData?.loanScore && (
-              <div style={{ height:8, borderRadius:4, background:"#fff" }}>
-                <div style={{ height:"100%", borderRadius:4, width:`${reportData.loanScore}%`,
+              <div style={{ height:8, borderRadius:20, background:"#fff" }}>
+                <div style={{ height:"100%", borderRadius:20, width:`${reportData.loanScore}%`,
                   background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
               </div>
             )}
@@ -4606,14 +4635,14 @@ function MSMEPackContent({ reportData, kpis, client }) {
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>
               {"These 4 ratios determine whether your loan gets approved — and at what rate"}
             </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
               {[
                 { label:"DSCR",               value:reportData?.dscr,             benchmark:"Must be >1.25x for approval",   what:"Can operating income service the loan EMI?",    good: reportData?.dscr ? parseFloat(reportData.dscr)>=1.25 : null },
                 { label:"Interest Coverage",  value:reportData?.interestCoverage, benchmark:"Banks want >3x",                 what:"EBIT ÷ interest — can you service existing debt?", good: reportData?.interestCoverage ? parseFloat(reportData.interestCoverage)>=3 : null },
                 { label:"Current Ratio",      value:reportData?.currentRatio,     benchmark:"Minimum 1.33x for working capital",what:"Short-term assets vs liabilities",              good: reportData?.currentRatio ? parseFloat(reportData.currentRatio)>=1.33 : null },
                 { label:"Debt / EBITDA",      value:reportData?.debtEbitda,       benchmark:"Banks prefer <4x for MSMEs",     what:"How many years of earnings to repay debt",      good: reportData?.debtEbitda ? parseFloat(reportData.debtEbitda)<=4 : null },
               ].map((r, i) => (
-                <div key={i} style={{ padding:"16px", borderRadius:6,
+                <div key={i} style={{ padding:"16px", borderRadius:16,
                   background: r.good===true ? `${C.green}06` : r.good===false ? `${C.red}06` : C.bg2,
                   border:`1px solid ${r.good===true?C.green+"20":r.good===false?C.red+"20":C.border}` }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700,
@@ -4642,13 +4671,13 @@ function MSMEPackContent({ reportData, kpis, client }) {
             if (reportData?.debtEbitda && parseFloat(reportData.debtEbitda)>4) flags.push({ text:`Debt/EBITDA of ${reportData.debtEbitda} is high for an MSME. Banks may cap the loan amount or require additional collateral.`, severity:"medium" });
             if (reportData?.interestCoverage && parseFloat(reportData.interestCoverage)<3) flags.push({ text:`Interest Coverage of ${reportData.interestCoverage} is below 3x. Lenders will question repayment comfort — focus on improving EBITDA.`, severity:"medium" });
             return flags.length > 0 ? (
-              <Card style={{ borderLeft:`3px solid ${C.red}`, background:`${C.red}04` }}>
+              <Card style={{ borderLeft:`4px solid ${C.red}`, background:`${C.red}04` }}>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.red, marginBottom:12 }}>
                   {"Issues to Fix Before Applying"}
                 </div>
                 {flags.map((f, i) => (
                   <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px",
-                    borderRadius:8, background:"rgba(255,255,255,0.6)", marginBottom:8,
+                    borderRadius:16, background:"rgba(255,255,255,0.6)", marginBottom:8,
                     border:`1px solid ${f.severity==="high"?C.red+"20":C.amber+"20"}` }}>
                     <span style={{ color:f.severity==="high"?C.red:C.amber, flexShrink:0 }}>{"•"}</span>
                     <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{f.text}</span>
@@ -4656,7 +4685,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 ))}
               </Card>
             ) : reportData?.dscr ? (
-              <Card style={{ borderLeft:`3px solid ${C.green}`, background:`${C.green}04` }}>
+              <Card style={{ borderLeft:`4px solid ${C.green}`, background:`${C.green}04` }}>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.green }}>
                   {"All key ratios within bank thresholds — you're ready to apply"}
                 </div>
@@ -4675,7 +4704,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               { name:"Bank Working Capital OD",   amount:"Based on AR",   rate:"Repo + 3–4%",  note:"Overdraft against debtors — best for managing cash gaps.",              hot:false, color:C.muted  },
             ].map((s, i) => (
               <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12,
-                padding:"12px 14px", borderRadius:6, marginBottom:8,
+                padding:"12px 14px", borderRadius:16, marginBottom:8,
                 background:"#fff", border:`1px solid ${s.hot?s.color+"25":C.border}` }}>
                 <div style={{ width:8, height:8, borderRadius:"50%", background:s.color, flexShrink:0, marginTop:5 }}/>
                 <div style={{ flex:1 }}>
@@ -4699,13 +4728,13 @@ function MSMEPackContent({ reportData, kpis, client }) {
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
               <a href={WA} target="_blank" rel="noopener"
                 style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-                  borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                  borderRadius:16, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                   color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
                 {"WhatsApp Garima"}
               </a>
               <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-                  borderRadius:6, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
+                  borderRadius:16, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
                   color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
                 {"Download Finance Report"}
               </button>
@@ -4786,9 +4815,9 @@ function CorporatePackContent({ reportData, kpis, client }) {
       <div>
 
       {tab === "monthly" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
-          <div style={{ padding:"16px 20px", borderRadius:8,
+          <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4806,7 +4835,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               { label:"EBITDA Margin", value:reportData?.plInputs?.ebitdaMargin ||"17.5%", budget:"14.2%",  color:C.purple },
               { label:"PAT",           value:reportData?.plInputs?.pat          ||"₹81L",  budget:"₹56L",   color:C.green  },
             ].map((k,i) => (
-              <div key={i} style={{ padding:"14px", borderRadius:6,
+              <div key={i} style={{ padding:"14px", borderRadius:16,
                 background:`${k.color}08`, border:`1px solid ${k.color}20`, textAlign:"center" }}>
                 <div style={{ fontFamily:FM, fontSize:15, fontWeight:800, color:k.color }}>{k.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:3 }}>{k.label}</div>
@@ -4878,7 +4907,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
             </div>
           </Card>
 
-          <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
+          <Card style={{ borderLeft:`4px solid ${C.purple}` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
               {"Garima's Board Commentary"}
@@ -4898,10 +4927,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
                   .filter(Boolean)
                   .map((h, i) => (
                     <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px",
-                      borderRadius:6, background:"#fff", border:`1px solid ${C.border}`,
+                      borderRadius:16, background:"#fff", border:`1px solid ${C.border}`,
                       alignItems:"flex-start" }}>
                       <span style={{ fontFamily:FM, fontWeight:800, color:C.purple,
-                        background:`${C.purple}12`, borderRadius:6, padding:"2px 8px",
+                        background:`${C.purple}12`, borderRadius:16, padding:"2px 8px",
                         fontSize:11, flexShrink:0 }}>{i+1}</span>
                       <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6 }}>{h}</span>
                     </div>
@@ -4950,8 +4979,8 @@ function CorporatePackContent({ reportData, kpis, client }) {
               </div>
             </Card>
             {reportData?.varianceCommentary?.some(v => v.item) && (
-              <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Commentary</div>
+              <Card style={{ borderLeft:`4px solid ${C.purple}` }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:12 }}>Commentary</div>
                 {reportData.varianceCommentary.filter(v => v.item).map((v,i,arr) => (
                   <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
                     <div style={{ width:8, height:8, borderRadius:60, background:v.favorable?C.green:C.red, flexShrink:0, marginTop:6 }}/>
@@ -4974,10 +5003,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
       )}
 
             {tab === "governance" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
           {/* Question this tab answers */}
-          <div style={{ padding:"16px 20px", borderRadius:8,
+          <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4998,7 +5027,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { label:"Independent Directors",  value: reportData?.indepDirectors   || "—", note:"SEBI requires ≥1/3 of board for listed",   color:C.teal, flag: reportData?.indepDirectors === "0" },
                 { label:"Board Meetings (YTD)",   value: reportData?.boardMeetings    || "—", note:"Min 4 per year under Companies Act",        color:C.purple },
               ].map((item, i) => (
-                <div key={i} style={{ padding:"14px", borderRadius:6,
+                <div key={i} style={{ padding:"14px", borderRadius:16,
                   background: item.flag ? `${C.red}06` : C.bg2,
                   border:`1px solid ${item.flag ? C.red+"20" : C.border}`, textAlign:"center" }}>
                   <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color:item.flag?C.red:item.color }}>{item.value}</div>
@@ -5029,7 +5058,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 const isNA   = row.status === "na";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-                    borderRadius:6,
+                    borderRadius:16,
                     background: isDone ? `${C.green}06` : isNA ? C.bg2 : `${C.amber}06`,
                     border:`1px solid ${isDone?C.green+"20":isNA?C.border:C.amber+"25"}` }}>
                     <span style={{ fontSize:14, flexShrink:0 }}>
@@ -5068,7 +5097,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               ].map((item, i) => {
                 const ok = item.status === "done";
                 return (
-                  <div key={i} style={{ padding:"12px", borderRadius:6,
+                  <div key={i} style={{ padding:"12px", borderRadius:16,
                     background: ok ? `${C.green}06` : `${C.amber}06`,
                     border:`1px solid ${ok?C.green+"20":C.amber+"25"}` }}>
                     <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
@@ -5084,7 +5113,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
 
           {/* Garima's governance note */}
           {reportData?.governanceNote && (
-            <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
+            <Card style={{ borderLeft:`4px solid ${C.purple}` }}>
               <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.purple,
                 textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
                 {"Garima's Governance Assessment"}
@@ -5098,9 +5127,9 @@ function CorporatePackContent({ reportData, kpis, client }) {
       )}
 
       {tab === "ipo" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
-          <div style={{ padding:"16px 20px", borderRadius:8,
+          <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -5129,7 +5158,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 const done = item.status === "done";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10,
-                    padding:"12px 14px", borderRadius:6,
+                    padding:"12px 14px", borderRadius:16,
                     background: done ? `${C.green}06` : `${C.amber}06`,
                     border:`1px solid ${done ? C.green+"20" : C.amber+"25"}` }}>
                     <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{done ? "✓" : "○"}</span>
@@ -5163,7 +5192,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { phase:"18 → 24 months",   action:"Roadshow, book building, listing on NSE/BSE",                               color:C.green  },
               ].map((item, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
-                  padding:"10px 14px", borderRadius:6, background:"#fff",
+                  padding:"10px 14px", borderRadius:16, background:"#fff",
                   border:`1px solid ${C.border}` }}>
                   <div style={{ width:3, height:36, borderRadius:2, background:item.color, flexShrink:0 }}/>
                   <div style={{ width:110, fontFamily:F, fontSize:11, fontWeight:700, color:item.color, flexShrink:0 }}>{item.phase}</div>
@@ -5175,7 +5204,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
 
           {/* Garima's note */}
           {(reportData?.ipoNote || reportData?.packNote || data.garimaNote) && (
-            <Card style={{ borderLeft:`3px solid ${C.purple}` }}>
+            <Card style={{ borderLeft:`4px solid ${C.purple}` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
                 letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
                 {"Garima's Assessment"}
@@ -5189,7 +5218,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
-                borderRadius:6, background:`${C.purple}10`, border:`1.5px solid ${C.purple}30`,
+                borderRadius:16, background:`${C.purple}10`, border:`1.5px solid ${C.purple}30`,
                 color:C.purple, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
               {"Discuss IPO readiness with Garima"}
             </a>
@@ -5472,8 +5501,8 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
   };
 
   const StatCard = ({ label, value, sub, color, icon }) => (
-    <div style={{ padding:"14px 16px", borderRadius:6, background:"white",
-      border:`1px solid ${C.border}`, boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
+    <div style={{ padding:"14px 16px", borderRadius:16, background:"white",
+      border:`1px solid ${C.border}`, boxShadow:"0 4px 20px rgba(37,99,235,0.06)" }}>
       <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{icon} {label}</div>
       <div style={{ fontFamily:F, fontSize:16, fontWeight:800, color:color||C.text, marginBottom:2 }}>{value}</div>
       {sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{sub}</div>}
@@ -5528,7 +5557,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
           { id:"department", label:"Department",  icon:"users"   },
         ].map(v => (
           <button key={v.id} onClick={() => setView(v.id)} style={{
-            padding:"6px 14px", borderRadius:4, border:"none", cursor:"pointer",
+            padding:"6px 14px", borderRadius:20, border:"none", cursor:"pointer",
             fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
             background: view===v.id ? acc : C.bg2,
             color: view===v.id ? "white" : C.muted,
@@ -5563,7 +5592,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
         ) : (<>
           {indiaRegions.length > 0 && (<>
             <Card>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>India Regions — Revenue & Cost</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>India Regions — Revenue & Cost</div>
               <div className="bi-2col">
                 <div>
                   <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:10 }}>Revenue Contribution</div>
@@ -5576,7 +5605,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
               </div>
             </Card>
             <Card>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>India Region — Profit Contribution</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>India Region — Profit Contribution</div>
               <ProfitTable data={indiaRegions} label="Region"/>
             </Card>
             <div className="bi-2col">
@@ -5593,7 +5622,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
 
           {globalRegions.length > 0 && (<>
             <Card>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>Global Regions — Revenue & Cost</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>Global Regions — Revenue & Cost</div>
               <div className="bi-2col">
                 <div>
                   <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:10 }}>Revenue Contribution</div>
@@ -5606,7 +5635,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
               </div>
             </Card>
             <Card>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>Global Region — Profit Contribution</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>Global Region — Profit Contribution</div>
               <ProfitTable data={globalRegions} label="Region"/>
             </Card>
           </>)}
@@ -5623,7 +5652,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
           </Card>
         ) : (<>
           <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>Department — Revenue & Cost</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>Department — Revenue & Cost</div>
             <div className="bi-2col">
               <div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:10 }}>Revenue by Department</div>
@@ -5636,7 +5665,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
             </div>
           </Card>
           <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>Department — Profit Contribution & Budget</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>Department — Profit Contribution & Budget</div>
             <ProfitTable data={deptList} label="Department"/>
           </Card>
           <div className="bi-2col">
@@ -5811,7 +5840,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
 
       {/* Header */}
-      <div style={{ padding:"16px 20px", borderRadius:8,
+      <div style={{ padding:"16px 20px", borderRadius:16,
         background:`linear-gradient(135deg,${acc}12,${acc}06)`,
         border:`1px solid ${acc}20` }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -5828,7 +5857,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
           const r = calc(s);
           const isActive = activeScenario === s.id;
           return (
-            <div key={s.id} style={{ borderRadius:8, overflow:"hidden",
+            <div key={s.id} style={{ borderRadius:16, overflow:"hidden",
               border:`2px solid ${isActive ? s.color : C.border}`,
               boxShadow: isActive ? `0 4px 20px ${s.color}25` : "none",
               transition:"all 0.2s", background:"white" }}>
@@ -5880,7 +5909,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
                 })}
 
                 {/* EBITDA margin badge */}
-                <div style={{ padding:"6px 10px", borderRadius:8, background:
+                <div style={{ padding:"6px 10px", borderRadius:16, background:
                   r.ebitdaMargin >= 15 ? `${C.green}12` : r.ebitdaMargin >= 0 ? `${C.amber}12` : `${C.red}12`,
                   display:"flex", justifyContent:"space-between", alignItems:"center", marginTop:2 }}>
                   <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>EBITDA margin</span>
@@ -5892,7 +5921,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
 
                 {/* Runway if negative */}
                 {r.ebitda < 0 && cashBal > 0 && (
-                  <div style={{ padding:"6px 10px", borderRadius:8, background:`${C.red}08`,
+                  <div style={{ padding:"6px 10px", borderRadius:16, background:`${C.red}08`,
                     border:`1px solid ${C.red}20` }}>
                     <div style={{ fontFamily:F, fontSize:11, color:C.red, fontWeight:600 }}>
                       Cash runway: ~{(cashBal / Math.abs(r.ebitda)).toFixed(1)} months
@@ -5905,7 +5934,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
               <div style={{ padding:"0 16px 14px" }}>
                 <button onClick={() => generateAnalysis(s.id)}
                   disabled={loadingAI && activeScenario === s.id}
-                  style={{ width:"100%", padding:"9px", borderRadius:6, border:"none",
+                  style={{ width:"100%", padding:"9px", borderRadius:16, border:"none",
                     background: isActive ? s.color : `${s.color}15`,
                     color: isActive ? "white" : s.color,
                     fontFamily:F, fontSize:12, fontWeight:700, cursor:"pointer",
@@ -5921,7 +5950,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
 
       {/* Comparison table */}
       <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>
           Side-by-Side Comparison
         </div>
         <div style={{ overflowX:"auto" }}>
@@ -5968,13 +5997,13 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
       {aiAnalysis && (
         <Card style={{ border:`1.5px solid ${SCENARIOS.find(s=>s.id===activeScenario)?.color}30` }}>
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-            <div style={{ width:36, height:36, borderRadius:6,
+            <div style={{ width:36, height:36, borderRadius:16,
               background:`${SCENARIOS.find(s=>s.id===activeScenario)?.color}15`,
               display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
               <i className={"ti " + (SCENARIOS.find(s=>s.id===activeScenario)?.icon||"ti-circle")} style={{fontSize:16}}/>
             </div>
             <div>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>
                 CFO Insights — {SCENARIOS.find(s=>s.id===activeScenario)?.name}
               </div>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>
@@ -5983,7 +6012,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
             </div>
           </div>
           <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.85,
-            whiteSpace:"pre-wrap", background:"#fff", borderRadius:6, padding:"14px 16px" }}>
+            whiteSpace:"pre-wrap", background:"#fff", borderRadius:16, padding:"14px 16px" }}>
             {aiAnalysis}
           </div>
         </Card>
@@ -6077,7 +6106,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
   );
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
       {/* Header summary */}
       {rev > 0 && (
@@ -6088,7 +6117,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
             { label:"Spend / Revenue",   val: `${((totalSpend/rev)*100).toFixed(1)}%`,
               color: (totalSpend/rev)>0.7 ? C.red : (totalSpend/rev)>0.5 ? "#D97706" : C.green },
           ].map((s,i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:6, background:"white",
+            <div key={i} style={{ padding:"14px 16px", borderRadius:16, background:"white",
               border:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.muted,
                 textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{s.label}</div>
@@ -6100,10 +6129,10 @@ function SpendIntelligence({ reportData, accentColor, client }) {
 
       {/* Department breakdown */}
       <Card>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:16 }}>
           Department Spend vs Benchmarks
         </div>
-        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           {depts.filter(d => d.actual > 0).map((d, i) => {
             const flag     = getFlag(d);
             const pct      = rev > 0 ? ((d.actual/rev)*100).toFixed(1) : null;
@@ -6111,7 +6140,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
             const barW     = rev > 0 ? Math.min((d.actual/rev)*100 / d.benchmark * 100, 150) : 0;
 
             return (
-              <div key={i} style={{ padding:"14px 16px", borderRadius:6,
+              <div key={i} style={{ padding:"14px 16px", borderRadius:16,
                 background:"#fff", border:`1px solid ${C.border}` }}>
                 {/* Row header */}
                 <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
@@ -6141,10 +6170,10 @@ function SpendIntelligence({ reportData, accentColor, client }) {
                       benchmark {d.benchmark}%
                     </span>
                   </div>
-                  <div style={{ height:6, borderRadius:3, background:C.border, overflow:"hidden", position:"relative" }}>
+                  <div style={{ height:6, borderRadius:20, background:C.border, overflow:"hidden", position:"relative" }}>
                     <div style={{ height:"100%", width:`${Math.min(parseFloat(pct)||0, 50)}%`,
                       background: flag?.color === C.red ? C.red : flag?.color === "#D97706" ? "#D97706" : acc,
-                      borderRadius:3, transition:"width 0.4s" }}/>
+                      borderRadius:20, transition:"width 0.4s" }}/>
                     {/* Benchmark marker */}
                     <div style={{ position:"absolute", top:0, left:`${Math.min(d.benchmark,50)}%`,
                       width:2, height:"100%", background:"rgba(0,0,0,0.25)" }}/>
@@ -6172,7 +6201,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
       {/* AI Recommendations */}
       <Card>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>
             AI Spend Recommendations
           </div>
           <button onClick={generateInsight} disabled={loadingInsight}
@@ -6185,7 +6214,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
         </div>
         {aiInsight ? (
           <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8,
-            whiteSpace:"pre-wrap", background:"#fff", borderRadius:6, padding:"14px 16px" }}>
+            whiteSpace:"pre-wrap", background:"#fff", borderRadius:16, padding:"14px 16px" }}>
             {aiInsight}
           </div>
         ) : (
@@ -6233,7 +6262,7 @@ function FundUtilisation({ reportData, accentColor }) {
           Fund Utilisation Tracker
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
-          <div style={{ padding:"14px 16px", borderRadius:6, background:`${acc}10`, border:`1px solid ${acc}25` }}>
+          <div style={{ padding:"14px 16px", borderRadius:16, background:`${acc}10`, border:`1px solid ${acc}25` }}>
             <div style={{ fontSize:11, fontWeight:700, color:acc, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Total Raised</div>
             <input
               type="number"
@@ -6244,20 +6273,20 @@ function FundUtilisation({ reportData, accentColor }) {
                 color:C.text, fontFamily:FM, marginTop:4, outline:"none" }}
             />
           </div>
-          <div style={{ padding:"14px 16px", borderRadius:6, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
+          <div style={{ padding:"14px 16px", borderRadius:16, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Deployed</div>
             <div style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
               {totalDeployed > 0 ? `₹${(totalDeployed/100000).toFixed(1)}L` : "—"}
               {deployedPct > 0 && <span style={{ fontSize:12, color:C.muted, fontFamily:F, marginLeft:6 }}>{deployedPct}%</span>}
             </div>
           </div>
-          <div style={{ padding:"14px 16px", borderRadius:6, background:`${C.orange||"#F59E0B"}10`, border:`1px solid ${C.orange||"#F59E0B"}25` }}>
+          <div style={{ padding:"14px 16px", borderRadius:16, background:`${C.orange||"#F59E0B"}10`, border:`1px solid ${C.orange||"#F59E0B"}25` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.orange||"#F59E0B", textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Unallocated</div>
             <div style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
               {raised > 0 ? `₹${(unallocated/100000).toFixed(1)}L` : "—"}
             </div>
           </div>
-          <div style={{ padding:"14px 16px", borderRadius:6, background:`${C.purple}10`, border:`1px solid ${C.purple}25` }}>
+          <div style={{ padding:"14px 16px", borderRadius:16, background:`${C.purple}10`, border:`1px solid ${C.purple}25` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Est. Runway</div>
             <div style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
               {runwayMonths ? `${runwayMonths}mo` : "—"}
@@ -6290,7 +6319,7 @@ function FundUtilisation({ reportData, accentColor }) {
                       nf[i] = {...nf[i], allocated: e.target.value};
                       setFunds(nf);
                     }}
-                    style={{ width:"100%", padding:"6px 10px", borderRadius:8,
+                    style={{ width:"100%", padding:"6px 10px", borderRadius:16,
                       border:`1px solid ${C.border}`, fontFamily:F, fontSize:13, color:C.text,
                       background:"#fff", outline:"none" }}
                   />
@@ -6304,17 +6333,17 @@ function FundUtilisation({ reportData, accentColor }) {
                       nf[i] = {...nf[i], deployed: e.target.value};
                       setFunds(nf);
                     }}
-                    style={{ width:"100%", padding:"6px 10px", borderRadius:8,
+                    style={{ width:"100%", padding:"6px 10px", borderRadius:16,
                       border:`1px solid ${C.border}`, fontFamily:F, fontSize:13, color:C.text,
                       background:"#fff", outline:"none" }}
                   />
                 </div>
               </div>
               {/* Progress bar */}
-              <div style={{ height:6, borderRadius:3, background:C.border, overflow:"hidden" }}>
+              <div style={{ height:6, borderRadius:20, background:C.border, overflow:"hidden" }}>
                 <div style={{ height:"100%", width:`${Math.min(depPct,100)}%`,
                   background: depPct > 90 ? C.red : depPct > 60 ? C.orange||"#F59E0B" : acc,
-                  borderRadius:3, transition:"width 0.3s" }}/>
+                  borderRadius:20, transition:"width 0.3s" }}/>
               </div>
               <div style={{ fontSize:10, color:C.muted, fontFamily:F, marginTop:3 }}>
                 {depPct}% deployed
@@ -6374,7 +6403,7 @@ function VerticalPnL({ reportData, accentColor }) {
             placeholder="Month (e.g. Mar 2026)"
             value={month}
             onChange={e => setMonth(e.target.value)}
-            style={{ padding:"6px 12px", borderRadius:8, border:`1px solid ${C.border}`,
+            style={{ padding:"6px 12px", borderRadius:16, border:`1px solid ${C.border}`,
               fontFamily:F, fontSize:12, color:C.text, background:"#fff", outline:"none" }}
           />
         </div>
@@ -6382,19 +6411,19 @@ function VerticalPnL({ reportData, accentColor }) {
         {/* Summary cards */}
         {totalRevenue > 0 && (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:20 }}>
-            <div style={{ padding:"12px 14px", borderRadius:6, background:`${acc}10`, border:`1px solid ${acc}25` }}>
+            <div style={{ padding:"12px 14px", borderRadius:16, background:`${acc}10`, border:`1px solid ${acc}25` }}>
               <div style={{ fontSize:10, fontWeight:700, color:acc, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Total Revenue</div>
               <div style={{ fontSize:16, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
                 ₹{(totalRevenue/100000).toFixed(1)}L
               </div>
             </div>
-            <div style={{ padding:"12px 14px", borderRadius:6, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
+            <div style={{ padding:"12px 14px", borderRadius:16, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
               <div style={{ fontSize:10, fontWeight:700, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Best Performer</div>
               <div style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:F, marginTop:4 }}>
                 {bestVertical?.name}
               </div>
             </div>
-            <div style={{ padding:"12px 14px", borderRadius:6, background:`${C.red}10`, border:`1px solid ${C.red}25` }}>
+            <div style={{ padding:"12px 14px", borderRadius:16, background:`${C.red}10`, border:`1px solid ${C.red}25` }}>
               <div style={{ fontSize:10, fontWeight:700, color:C.red, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Needs Attention</div>
               <div style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:F, marginTop:4 }}>
                 {worstVertical?.name}
@@ -6412,14 +6441,14 @@ function VerticalPnL({ reportData, accentColor }) {
             ? Math.round(((parseFloat(v.revenue)||0)/totalRevenue)*100) : 0;
 
           return (
-            <div key={i} style={{ marginBottom:14, padding:"16px", borderRadius:6,
+            <div key={i} style={{ marginBottom:14, padding:"16px", borderRadius:16,
               background:"#fff", border:`1px solid ${C.border}` }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                 <input
                   type="text"
                   value={v.name}
                   onChange={e => updateVertical(i, "name", e.target.value)}
-                  style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text,
+                  style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em",
                     border:"none", background:"transparent", outline:"none", flex:1 }}
                 />
                 <div style={{ fontSize:11, color:C.muted, fontFamily:F }}>
@@ -6440,7 +6469,7 @@ function VerticalPnL({ reportData, accentColor }) {
                       placeholder="0"
                       value={v[field] || ""}
                       onChange={e => updateVertical(i, field, e.target.value)}
-                      style={{ width:"100%", padding:"6px 10px", borderRadius:8,
+                      style={{ width:"100%", padding:"6px 10px", borderRadius:16,
                         border:`1px solid ${C.border}`, fontFamily:F, fontSize:13,
                         color:C.text, background:C.bg, outline:"none" }}
                     />
@@ -6449,7 +6478,7 @@ function VerticalPnL({ reportData, accentColor }) {
               </div>
 
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:8 }}>
-                <div style={{ padding:"8px 10px", borderRadius:8,
+                <div style={{ padding:"8px 10px", borderRadius:16,
                   background: gp >= 0 ? `${C.green}10` : `${C.red}10` }}>
                   <div style={{ fontSize:10, color:C.muted, fontFamily:F }}>Gross Profit</div>
                   <div style={{ fontSize:13, fontWeight:700,
@@ -6457,7 +6486,7 @@ function VerticalPnL({ reportData, accentColor }) {
                     ₹{(gp/100000).toFixed(1)}L
                   </div>
                 </div>
-                <div style={{ padding:"8px 10px", borderRadius:8,
+                <div style={{ padding:"8px 10px", borderRadius:16,
                   background: contrib >= 0 ? `${C.green}10` : `${C.red}10` }}>
                   <div style={{ fontSize:10, color:C.muted, fontFamily:F }}>Contribution</div>
                   <div style={{ fontSize:13, fontWeight:700,
@@ -6465,7 +6494,7 @@ function VerticalPnL({ reportData, accentColor }) {
                     ₹{(contrib/100000).toFixed(1)}L
                   </div>
                 </div>
-                <div style={{ padding:"8px 10px", borderRadius:8,
+                <div style={{ padding:"8px 10px", borderRadius:16,
                   background: margin >= 0 ? `${acc}10` : `${C.red}10` }}>
                   <div style={{ fontSize:10, color:C.muted, fontFamily:F }}>Margin %</div>
                   <div style={{ fontSize:13, fontWeight:700,
@@ -6480,7 +6509,7 @@ function VerticalPnL({ reportData, accentColor }) {
         })}
 
         <button onClick={addVertical} style={{
-          width:"100%", padding:"10px", borderRadius:6,
+          width:"100%", padding:"10px", borderRadius:16,
           border:`1.5px dashed ${C.border}`, background:"transparent",
           fontFamily:F, fontSize:13, fontWeight:600, color:C.muted, cursor:"pointer" }}>
           + Add Vertical / Region
@@ -6490,7 +6519,7 @@ function VerticalPnL({ reportData, accentColor }) {
       {/* Summary table */}
       {totalRevenue > 0 && (
         <Card>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:12 }}>
             Comparative Summary
           </div>
           <div style={{ overflowX:"auto" }}>
@@ -6646,7 +6675,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               return (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.plRows || PACK_CONFIG.startup.plRows).map((r,i) => <StatRow key={i} {...r}/>);
             }())}
           </Card>
-          <Card style={{ borderLeft:`3px solid ${C.green}` }}>
+          <Card style={{ borderLeft:`4px solid ${C.green}` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items</div>
             {ACTIONS.map((a,i,arr) => (
               <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none", alignItems:"flex-start", opacity:a.done?0.5:1 }}>
@@ -6713,8 +6742,8 @@ function CFOPackContent({ reportData, client, kpis }) {
               </table>
             </div>
           </Card>
-          <Card style={{ borderLeft:`3px solid ${C.amber}` }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Variance Commentary</div>
+          <Card style={{ borderLeft:`4px solid ${C.amber}` }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:12 }}>Variance Commentary</div>
             {[
               { item:"Revenue ₹52L above budget", note:"Driven by early renewal from Client A (+₹38L) and new logo added in mid-Feb (+₹14L). March pipeline looks equally strong.", c:C.green },
               { item:"Headcount costs ₹7L under budget", note:"2 open roles not yet filled — saving budget but creating capacity risk in engineering. Hiring to resume in March.", c:C.green },
@@ -6733,10 +6762,10 @@ function CFOPackContent({ reportData, client, kpis }) {
       )}
 
       {tab === "uniteco" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
           {/* Header */}
-          <div style={{ padding:"18px 22px", borderRadius:8,
+          <div style={{ padding:"18px 22px", borderRadius:16,
             background:`linear-gradient(135deg,${C.blue}10,${C.teal}08)`,
             border:`1px solid ${C.blue}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:4 }}>
@@ -6748,7 +6777,7 @@ function CFOPackContent({ reportData, client, kpis }) {
           </div>
 
           {/* Core Metrics — 2x2 big cards */}
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
             {[
               {
                 label:"CAC",
@@ -6789,7 +6818,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 good: reportData?.cacPayback ? parseInt(reportData.cacPayback) <= 12 : null,
               },
             ].map((m, i) => (
-              <div key={i} style={{ padding:"18px", borderRadius:8,
+              <div key={i} style={{ padding:"18px", borderRadius:16,
                 background: m.good===true ? `${C.green}08` : m.good===false ? `${C.red}06` : C.bg2,
                 border:`1px solid ${m.good===true ? C.green+"25" : m.good===false ? C.red+"20" : C.border}` }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
@@ -6809,7 +6838,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 </div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginBottom:6 }}>{m.full}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.blue, fontWeight:600,
-                  background:`${C.blue}08`, padding:"4px 10px", borderRadius:8, marginBottom:6 }}>
+                  background:`${C.blue}08`, padding:"4px 10px", borderRadius:16, marginBottom:6 }}>
                   {m.benchmark}
                 </div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.dim, lineHeight:1.5 }}>{m.note}</div>
@@ -6867,7 +6896,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                   color:C.teal,
                 },
               ].map((m, i) => (
-                <div key={i} style={{ padding:"14px", borderRadius:6,
+                <div key={i} style={{ padding:"14px", borderRadius:16,
                   background: m.good===true ? `${C.green}08` : m.good===false ? `${C.amber}08` : C.bg2,
                   border:`1px solid ${m.good===true ? C.green+"20" : m.good===false ? C.amber+"25" : C.border}` }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700,
@@ -6893,7 +6922,7 @@ function CFOPackContent({ reportData, client, kpis }) {
 
           {/* Garima's UE Commentary */}
           {reportData?.ueNote && (
-            <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
+            <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
                 letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
                 {"Garima's Assessment"}
@@ -6926,13 +6955,13 @@ function CFOPackContent({ reportData, client, kpis }) {
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
-                borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                borderRadius:16, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
               Discuss your fundraise readiness with Garima
             </a>
           </div>
           {(reportData?.packNote || reportData?.reportNote) && (
-            <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
+            <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
                 letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
                 {"Garima's Fundraise Assessment"}
@@ -6946,19 +6975,19 @@ function CFOPackContent({ reportData, client, kpis }) {
       )}
 
 {tab === "loan" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
           {/* HEADER */}
-          <div style={{ padding:"20px 22px", borderRadius:8, background:`linear-gradient(135deg,${C.blue}12,${C.purple}08)`, border:`1px solid ${C.blue}20` }}>
+          <div style={{ padding:"20px 22px", borderRadius:16, background:`linear-gradient(135deg,${C.blue}12,${C.purple}08)`, border:`1px solid ${C.blue}20` }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
-              <div style={{ width:44, height:44, borderRadius:6, background:C.blue, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>{"🏦"}</div>
+              <div style={{ width:44, height:52, borderRadius:16, background:C.blue, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>{"🏦"}</div>
               <div>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{"Loan Readiness Report"}</div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{reportData?.monthLabel ? `As of ${reportData.monthLabel}` : "Current Period"}{" | Prepared by Garima Agarwal CA"}</div>
               </div>
             </div>
             {reportData?.loanNote && (
-              <div style={{ marginTop:10, padding:"12px 14px", borderRadius:6, background:"rgba(255,255,255,0.7)", border:`1px solid ${C.blue}20` }}>
+              <div style={{ marginTop:10, padding:"12px 14px", borderRadius:16, background:"rgba(255,255,255,0.7)", border:`1px solid ${C.blue}20` }}>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4 }}>{"Garima's Assessment"}</div>
                 <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.7, margin:0 }}>{reportData.loanNote}</p>
               </div>
@@ -6977,8 +7006,8 @@ function CFOPackContent({ reportData, client, kpis }) {
               </div>
               <ScoreGauge score={parseInt(reportData?.loanScore) || 64} color={C.blue} size={100}/>
             </div>
-            <div style={{ height:8, borderRadius:4, background:"#fff" }}>
-              <div style={{ height:"100%", borderRadius:4, width:`${reportData?.loanScore || 64}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
+            <div style={{ height:8, borderRadius:20, background:"#fff" }}>
+              <div style={{ height:"100%", borderRadius:20, width:`${reportData?.loanScore || 64}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
             </div>
           </Card>
 
@@ -6995,7 +7024,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 { label:"Cash Balance", value: kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—",                                      color:C.blue   },
                 { label:"Runway",       value: kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value || "—",                                    color:C.amber  },
               ].map((item, i) => (
-                <div key={i} style={{ padding:"12px 14px", borderRadius:6, background:"#fff", border:`1px solid ${C.border}`, textAlign:"center" }}>
+                <div key={i} style={{ padding:"12px 14px", borderRadius:16, background:"#fff", border:`1px solid ${C.border}`, textAlign:"center" }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{item.label}</div>
                   <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:item.value==="—"?C.dim:item.color }}>{item.value}</div>
                 </div>
@@ -7013,9 +7042,9 @@ function CFOPackContent({ reportData, client, kpis }) {
                 { label:"Loan Amount Sought",    value: reportData?.loanAmountSought || "Not provided",  flag: false },
                 { label:"Purpose of Loan",       value: reportData?.loanPurpose || "Not provided",       flag: false },
               ].map((item, i) => (
-                <div key={i} style={{ padding:"12px 14px", borderRadius:6, background:item.flag?`${C.amber}08`:C.bg2, border:`1px solid ${item.flag?C.amber+"30":C.border}` }}>
+                <div key={i} style={{ padding:"12px 14px", borderRadius:16, background:item.flag?`${C.amber}08`:C.bg2, border:`1px solid ${item.flag?C.amber+"30":C.border}` }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{item.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:item.value==="Not provided"?C.dim:item.flag?C.amber:C.text }}>{item.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:item.value==="Not provided"?C.dim:item.flag?C.amber:C.text }}>{item.value}</div>
                 </div>
               ))}
             </div>
@@ -7025,7 +7054,7 @@ function CFOPackContent({ reportData, client, kpis }) {
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Key Debt Ratios"}</div>
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>{"Assessed by Garima — set in admin"}</div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
               {[
                 {
                   label:"Current Ratio",
@@ -7057,7 +7086,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 },
               ].map((r, i) => (
                 <div key={i} style={{
-                  padding:"16px", borderRadius:8,
+                  padding:"16px", borderRadius:16,
                   background: r.good===true ? `${C.green}08` : r.good===false ? `${C.amber}08` : C.bg2,
                   border:`1px solid ${r.good===true ? C.green+"25" : r.good===false ? C.amber+"30" : C.border}`
                 }}>
@@ -7095,11 +7124,11 @@ function CFOPackContent({ reportData, client, kpis }) {
             var rkpi = kpis?.find(k=>k.label?.toLowerCase().includes("runway"));
             if (rkpi && parseFloat(rkpi.value)<6) flags.push("Runway below 6 months — banks may see this as distress. Consider raising equity first");
             return flags.length>0 ? (
-              <Card style={{ borderLeft:`3px solid ${C.amber}`, background:`${C.amber}06` }}>
+              <Card style={{ borderLeft:`4px solid ${C.amber}`, background:`${C.amber}06` }}>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.amber, marginBottom:12 }}>{"Auto-Flagged Issues"}</div>
                 <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                   {flags.map((f,i) => (
-                    <div key={i} style={{ display:"flex", gap:10, padding:"9px 12px", borderRadius:8, background:"rgba(255,255,255,0.6)", fontSize:13, color:C.text, fontFamily:F, lineHeight:1.6 }}>
+                    <div key={i} style={{ display:"flex", gap:10, padding:"9px 12px", borderRadius:16, background:"rgba(255,255,255,0.6)", fontSize:13, color:C.text, fontFamily:F, lineHeight:1.6 }}>
                       <span style={{ color:C.amber, flexShrink:0 }}>{"•"}</span>{f}
                     </div>
                   ))}
@@ -7110,12 +7139,12 @@ function CFOPackContent({ reportData, client, kpis }) {
 
           {/* IMPROVEMENTS */}
           {Array.isArray(reportData?.loanImprovements) && reportData.loanImprovements.some(x=>x) && (
-            <Card style={{ borderLeft:`3px solid ${C.blue}` }}>
+            <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.blue, marginBottom:12 }}>{"Recommended Improvements"}</div>
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 {reportData.loanImprovements.filter(x=>x).map((item,i) => (
-                  <div key={i} style={{ display:"flex", gap:12, padding:"10px 14px", borderRadius:8, background:`${C.blue}06`, border:`1px solid ${C.blue}15`, fontSize:13, color:C.text, fontFamily:F, lineHeight:1.6, alignItems:"flex-start" }}>
-                    <span style={{ fontFamily:FM, fontWeight:700, color:C.blue, background:`${C.blue}15`, borderRadius:6, padding:"2px 8px", fontSize:11, flexShrink:0, marginTop:1 }}>{i+1}</span>
+                  <div key={i} style={{ display:"flex", gap:12, padding:"10px 14px", borderRadius:16, background:`${C.blue}06`, border:`1px solid ${C.blue}15`, fontSize:13, color:C.text, fontFamily:F, lineHeight:1.6, alignItems:"flex-start" }}>
+                    <span style={{ fontFamily:FM, fontWeight:700, color:C.blue, background:`${C.blue}15`, borderRadius:16, padding:"2px 8px", fontSize:11, flexShrink:0, marginTop:1 }}>{i+1}</span>
                     {item}
                   </div>
                 ))}
@@ -7134,7 +7163,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 { name:"Mudra Tarun",            amount:"Up to Rs.10L",   rate:"10-12%",   note:"Early stage and micro enterprises.",                    color:C.amber,  hot:false },
                 { name:"NBFC / Fintech Debt",    amount:"Rs.25L-Rs.5 Cr", rate:"14-18%",  note:"Faster disbursement, lighter documentation.",           color:C.muted,  hot:false },
               ].map((s,i) => (
-                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", borderRadius:6, background:"#fff", border:`1px solid ${s.hot?s.color+"30":C.border}` }}>
+                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", borderRadius:16, background:"#fff", border:`1px solid ${s.hot?s.color+"30":C.border}` }}>
                   <div style={{ width:8, height:8, borderRadius:"50%", background:s.color, flexShrink:0, marginTop:5 }}/>
                   <div style={{ flex:1 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
@@ -7165,7 +7194,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 { doc:"Existing Loan and Liability Statement",              done:false },
                 { doc:"CIBIL Credit Report (all directors)",                done:false },
               ].map((item,i) => (
-                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", borderRadius:8, background:item.done?`${C.green}08`:C.bg2, border:`1px solid ${item.done?C.green+"20":C.border}` }}>
+                <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", borderRadius:16, background:item.done?`${C.green}08`:C.bg2, border:`1px solid ${item.done?C.green+"20":C.border}` }}>
                   <span style={{ fontSize:14 }}>{item.done ? "✓" : "⬜"}</span>
                   <span style={{ fontFamily:F, fontSize:13, color:item.done?C.text:C.muted }}>{item.doc}</span>
                   <span style={{ marginLeft:"auto", fontFamily:F, fontSize:10, fontWeight:700, color:item.done?C.green:C.amber, background:item.done?`${C.green}15`:`${C.amber}15`, padding:"2px 8px", borderRadius:60 }}>{item.done?"Ready":"Pending"}</span>
@@ -7181,12 +7210,12 @@ function CFOPackContent({ reportData, client, kpis }) {
               {"Garima can prepare your complete loan application package — projections, ratios, business plan, lender deck — and connect you with SBI Startup Branch or SIDBI."}
             </p>
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-              <a href={WA} target="_blank" rel="noopener" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`, color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>{"WhatsApp Garima"}</a>
+              <a href={WA} target="_blank" rel="noopener" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:16, background:`${C.green}10`, border:`1.5px solid ${C.green}30`, color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>{"WhatsApp Garima"}</a>
               <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w = window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:6, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`, color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:16, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`, color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
                 {"Download Full Report"}
               </button>
-              <div style={{ display:"inline-flex", alignItems:"center", padding:"11px 20px", borderRadius:6, background:`${C.purple}10`, border:`1.5px solid ${C.purple}20`, fontFamily:F, fontSize:12, fontWeight:600, color:C.purple }}>{"Loan Package from Rs.15,000"}</div>
+              <div style={{ display:"inline-flex", alignItems:"center", padding:"11px 20px", borderRadius:16, background:`${C.purple}10`, border:`1.5px solid ${C.purple}20`, fontFamily:F, fontSize:12, fontWeight:600, color:C.purple }}>{"Loan Package from Rs.15,000"}</div>
             </div>
           </Card>
 
@@ -7305,12 +7334,12 @@ function CFOPacks({ client, reportData }) {
       {/* Header */}
       <div style={{ marginBottom:20 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:4 }}>
-          <div style={{ width:40, height:40, borderRadius:6, background:data.grad,
+          <div style={{ width:40, height:52, borderRadius:16, background:data.grad,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>
             <i className={"ti " + (data.icon||"ti-circle")} style={{fontSize:20}}/>
           </div>
           <div>
-            <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0 }}>{data.label}</h2>
+            <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", margin:0 }}>{data.label}</h2>
             <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0 }}>{data.tagline}</p>
           </div>
         </div>
@@ -7350,7 +7379,7 @@ function CFOPacks({ client, reportData }) {
           <div style={{ textAlign:"center", marginTop:8 }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
-                borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                borderRadius:16, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
               Discuss this pack with Garima
             </a>
@@ -7407,8 +7436,8 @@ function Engagement({ liveData }) {
 
         {/* Progress bar */}
         <div style={{ position:"relative", marginBottom:24 }}>
-          <div style={{ height:6, borderRadius:3, background:"#fff", marginBottom:24 }}>
-            <div style={{ height:"100%", borderRadius:3, background:C.grad1,
+          <div style={{ height:6, borderRadius:20, background:"#fff", marginBottom:24 }}>
+            <div style={{ height:"100%", borderRadius:20, background:C.grad1,
               width:`${pct}%`, transition:"width 0.6s" }}/>
           </div>
           <div style={{ display:"flex", justifyContent:"space-between" }}>
@@ -7432,7 +7461,7 @@ function Engagement({ liveData }) {
           </div>
         </div>
 
-        <div style={{ padding:"10px 14px", borderRadius:6, background:`${C.blue}08`,
+        <div style={{ padding:"10px 14px", borderRadius:16, background:`${C.blue}08`,
           border:`1px solid ${C.blue}20` }}>
           <span style={{ fontFamily:F, fontSize:13, color:C.blue, fontWeight:600 }}>
             Currently: <strong>{eng.stages[eng.status]}</strong> — Garima is building the DCF model. On track for {eng.expectedDate}.
@@ -7448,9 +7477,9 @@ function Engagement({ liveData }) {
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {eng.docs.map((d,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:6, background: d.done ? `${C.green}08` : C.bg,
+              borderRadius:16, background: d.done ? `${C.green}08` : C.bg,
               border:`1px solid ${d.done ? C.green+"25" : C.border}` }}>
-              <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
+              <div style={{ width:20, height:20, borderRadius:16, flexShrink:0,
                 background: d.done ? C.green : C.bg3,
                 display:"flex", alignItems:"center", justifyContent:"center" }}>
                 {d.done && <span style={{ color:"white", fontSize:11, fontWeight:900 }}>✓</span>}
@@ -7462,7 +7491,7 @@ function Engagement({ liveData }) {
           ))}
         </div>
         {eng.docs.some(d => !d.done) && (
-          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:6,
+          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:16,
             background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
               ⚠️ Please upload pending documents to avoid delays. Send to garima@finzzup.com or WhatsApp.
@@ -7485,7 +7514,7 @@ function Calendar() {
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:20 }} className="cal-grid">
         <a href="https://calendly.com/agrgarima/30min" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
-          <Card style={{ padding:14, borderTop:`3px solid ${C.blue}`, cursor:"pointer",
+          <Card style={{ padding:24, borderTop:`3px solid ${k.color||C.blue}`, cursor:"pointer",
             transition:"box-shadow 0.2s" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(59,111,247,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
@@ -7497,7 +7526,7 @@ function Calendar() {
               Questions about your valuation report, methodology, UDIN, or Section 56(2)(viib) compliance.
             </p>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              padding:"12px 16px", borderRadius:6, background:C.blue }}>
+              padding:"12px 16px", borderRadius:16, background:C.blue }}>
               <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"white" }}>Book 30-min</span>
               <span style={{ color:"white", fontSize:16 }}>→</span>
             </div>
@@ -7509,7 +7538,7 @@ function Calendar() {
 
         <a href="https://calendly.com/agrgarima/cfo-strategy-call" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
-          <Card style={{ padding:14, borderTop:`3px solid ${C.purple}`, cursor:"pointer",
+          <Card style={{ padding:24, borderTop:`3px solid ${C.purple}`, cursor:"pointer",
             transition:"box-shadow 0.2s" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(124,92,245,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
@@ -7521,7 +7550,7 @@ function Calendar() {
               Monthly CFO review, cash flow planning, investor prep, board pack walkthrough.
             </p>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              padding:"12px 16px", borderRadius:6, background:C.purple }}>
+              padding:"12px 16px", borderRadius:16, background:C.purple }}>
               <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"white" }}>Book 60-min</span>
               <span style={{ color:"white", fontSize:16 }}>→</span>
             </div>
@@ -7533,7 +7562,7 @@ function Calendar() {
       </div>
 
       <Card style={{ marginBottom:16 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>
           What to expect
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -7541,7 +7570,7 @@ function Calendar() {
             { icon:"ti-bolt", title:"30-min Valuation", desc:"Best for: UDIN queries, valuation report review, methodology questions, Section 56 compliance." },
             { icon:"ti-brain", title:"60-min CFO Strategy", desc:"Best for: Monthly review, fundraise prep, cash flow planning, board pack walkthrough, investor narrative." },
           ].map((item, i) => (
-            <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px", borderRadius:6, background:C.bg }}>
+            <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px", borderRadius:16, background:C.bg }}>
               <i className={"ti " + (item.icon||"ti-circle")} style={{fontSize:20, color:C.blue}}/>
               <div>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:3 }}>{item.title}</div>
@@ -7552,7 +7581,7 @@ function Calendar() {
         </div>
       </Card>
 
-      <div style={{ padding:"12px 16px", borderRadius:6,
+      <div style={{ padding:"12px 16px", borderRadius:16,
         background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           Can't find a slot? WhatsApp Garima directly at{" "}
@@ -7690,7 +7719,7 @@ function NewRequest({ client, setPage }) {
         <p style={{ fontFamily:F, fontSize:14, color:C.muted, lineHeight:1.7, marginBottom:24 }}>
           Garima will review your request and send a scoped proposal within 24 hours. You'll hear from her at <strong>{form.email || client?.email}</strong>.
         </p>
-        <div style={{ padding:"12px 16px", borderRadius:6, background:`${C.green}0A`,
+        <div style={{ padding:"12px 16px", borderRadius:16, background:`${C.green}0A`,
           border:`1px solid ${C.green}25`, marginBottom:20 }}>
           <div style={{ fontFamily:F, fontSize:13, color:C.green, fontWeight:600 }}>
             ✅ {SERVICES.find(s=>s.id===selected)?.name}
@@ -7701,12 +7730,12 @@ function NewRequest({ client, setPage }) {
         </div>
         <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
           <button onClick={() => { setStep(1); setSelected(null); setSubmitted(false); setForm({ name:"", company:"", email:"", phone:"", notes:"" }); setAgreed(false); }}
-            style={{ padding:"10px 20px", borderRadius:6, border:`1.5px solid ${C.border}`,
+            style={{ padding:"10px 20px", borderRadius:16, border:`1.5px solid ${C.border}`,
               background:"none", fontFamily:F, fontWeight:600, fontSize:13, color:C.muted, cursor:"pointer" }}>
             Make another request
           </button>
           <button onClick={() => setPage("overview")}
-            style={{ padding:"10px 20px", borderRadius:6, border:"none",
+            style={{ padding:"10px 20px", borderRadius:16, border:"none",
               background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
             Back to Overview →
           </button>
@@ -7745,7 +7774,7 @@ function NewRequest({ client, setPage }) {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="nr-grid">
             {SERVICES.map(s => (
               <div key={s.id} onClick={() => setSelected(s.id)}
-                style={{ position:"relative", padding:20, borderRadius:8,
+                style={{ position:"relative", padding:20, borderRadius:16,
                   border:`2px solid ${selected===s.id ? C.blue : C.border}`,
                   background: selected===s.id ? `${C.blue}06` : C.bg2,
                   cursor:"pointer", transition:"all 0.2s",
@@ -7756,7 +7785,7 @@ function NewRequest({ client, setPage }) {
                     padding:"3px 10px", borderRadius:60, fontFamily:F }}>Most Popular</div>
                 )}
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{s.name}</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>{s.name}</div>
                   <Badge color={s.tagColor}>{s.tag}</Badge>
                 </div>
                 <div style={{ fontFamily:FM, fontWeight:700, fontSize:14, color:C.blue, marginBottom:4 }}>{s.price}</div>
@@ -7765,7 +7794,7 @@ function NewRequest({ client, setPage }) {
             ))}
           </div>
           <button onClick={() => { if (!selected) { alert("Please select a service."); return; } setStep(2); }}
-            style={{ padding:"14px 32px", borderRadius:6, border:"none",
+            style={{ padding:"14px 32px", borderRadius:16, border:"none",
               background: selected ? C.grad1 : C.bg3, color: selected ? "white" : C.muted,
               fontFamily:F, fontWeight:700, fontSize:13, cursor: selected ? "pointer" : "default",
               boxShadow: selected ? "0 6px 20px rgba(59,111,247,0.28)" : "none", transition:"all 0.2s" }}>
@@ -7795,7 +7824,7 @@ function NewRequest({ client, setPage }) {
               <input value={form[f.key] || f.val}
                 onChange={e => setForm(fv=>({...fv,[f.key]:e.target.value}))}
                 type={f.type} placeholder={f.ph}
-                style={{ width:"100%", padding:"10px 13px", borderRadius:6, fontSize:13,
+                style={{ width:"100%", padding:"10px 13px", borderRadius:16, fontSize:13,
                   border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                   background:C.bg, outline:"none", boxSizing:"border-box" }}
                 onFocus={e => e.target.style.borderColor = C.blue}
@@ -7811,19 +7840,19 @@ function NewRequest({ client, setPage }) {
             <textarea rows={3} value={form.notes}
               onChange={e => setForm(f=>({...f,notes:e.target.value}))}
               placeholder="Any specific requirements, timelines, or questions..."
-              style={{ width:"100%", padding:"10px 13px", borderRadius:6, fontSize:13,
+              style={{ width:"100%", padding:"10px 13px", borderRadius:16, fontSize:13,
                 border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                 background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
             />
           </div>
           <div style={{ display:"flex", gap:10 }}>
             <button onClick={() => setStep(1)}
-              style={{ padding:"12px 20px", borderRadius:6, border:`1px solid ${C.border}`,
+              style={{ padding:"12px 20px", borderRadius:16, border:`1px solid ${C.border}`,
                 background:"none", fontFamily:F, fontWeight:600, fontSize:14, color:C.muted, cursor:"pointer" }}>
               ← Back
             </button>
             <button onClick={() => setStep(3)}
-              style={{ flex:1, padding:"13px 0", borderRadius:6, border:"none",
+              style={{ flex:1, padding:"13px 0", borderRadius:16, border:"none",
                 background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:15,
                 cursor:"pointer", boxShadow:"0 6px 20px rgba(59,111,247,0.28)" }}>
               Review Request →
@@ -7857,7 +7886,7 @@ function NewRequest({ client, setPage }) {
           </Card>
 
           {/* Terms checkbox */}
-          <div style={{ padding:"14px 16px", borderRadius:6, background:`${C.blue}06`,
+          <div style={{ padding:"14px 16px", borderRadius:16, background:`${C.blue}06`,
             border:`1px solid ${C.blue}20`, marginBottom:16, display:"flex", gap:10, alignItems:"flex-start" }}>
             <input type="checkbox" id="terms-agree" checked={agreed}
               onChange={e => setAgreed(e.target.checked)}
@@ -7877,12 +7906,12 @@ function NewRequest({ client, setPage }) {
 
           <div style={{ display:"flex", gap:10 }}>
             <button onClick={() => setStep(2)}
-              style={{ padding:"12px 20px", borderRadius:6, border:`1px solid ${C.border}`,
+              style={{ padding:"12px 20px", borderRadius:16, border:`1px solid ${C.border}`,
                 background:"none", fontFamily:F, fontWeight:600, fontSize:14, color:C.muted, cursor:"pointer" }}>
               ← Back
             </button>
             <button onClick={handleSubmit} disabled={loading}
-              style={{ flex:1, padding:"13px 0", borderRadius:6, border:"none",
+              style={{ flex:1, padding:"13px 0", borderRadius:16, border:"none",
                 background: agreed ? C.grad1 : C.bg3, color: agreed ? "white" : C.muted,
                 fontFamily:F, fontWeight:700, fontSize:15,
                 cursor: agreed && !loading ? "pointer" : "default",
@@ -7924,13 +7953,13 @@ function Invoices({ client, liveInvoices }) {
   const InvoiceCard = ({ inv }) => {
     const isUnpaid = inv.status === "unpaid";
     return (
-      <div style={{ padding:"16px 18px", borderRadius:6,
+      <div style={{ padding:"16px 18px", borderRadius:16,
         border:`1.5px solid ${isUnpaid ? C.amber+"50" : C.border}`,
         background: isUnpaid ? `${C.amber}05` : C.bg2,
         display:"flex", alignItems:"center", justifyContent:"space-between",
         flexWrap:"wrap", gap:12, marginBottom:10 }}>
-        <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <div style={{ width:40, height:40, borderRadius:6,
+        <div style={{ display:"flex", alignItems:"center", gap:20 }}>
+          <div style={{ width:40, height:52, borderRadius:16,
             background: isUnpaid ? `${C.amber}15` : `${C.green}15`,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
             {isUnpaid ? "○" : "✓"}
@@ -7944,12 +7973,12 @@ function Invoices({ client, liveInvoices }) {
           </div>
         </div>
         <div style={{ textAlign:"right" }}>
-          <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
+          <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
             {inv.amount}
           </div>
           <div style={{ display:"flex", gap:8, marginTop:8, justifyContent:"flex-end" }}>
             <button onClick={() => { setSelected(inv); setView("detail"); }}
-              style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${C.border}`,
+              style={{ padding:"7px 14px", borderRadius:16, border:`1px solid ${C.border}`,
                 background:C.bg, fontFamily:F, fontWeight:600, fontSize:12, color:C.muted, cursor:"pointer" }}>
               View Invoice
             </button>
@@ -7960,7 +7989,7 @@ function Invoices({ client, liveInvoices }) {
   };
 
   if (view === "detail" && selected) return (
-    <div style={{ padding:14, maxWidth:620 }}>
+    <div style={{ padding:24, maxWidth:620 }}>
       <button onClick={() => setView("list")}
         style={{ fontFamily:F, fontSize:13, color:C.blue, background:"none", border:"none",
           cursor:"pointer", marginBottom:14, padding:0, fontWeight:600 }}>
@@ -7968,15 +7997,15 @@ function Invoices({ client, liveInvoices }) {
       </button>
 
       {/* Invoice header */}
-      <div style={{ padding:"28px 32px", borderRadius:8,
+      <div style={{ padding:"28px 32px", borderRadius:16,
         background:"linear-gradient(135deg,#0A1128 0%,#1a2a5e 100%)",
         color:"white", marginBottom:14, position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", right:-20, top:-20, width:120, height:120,
           borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:20 }}>
           <div>
             <div style={{ fontFamily:FM, fontSize:11, opacity:0.5, marginBottom:4, letterSpacing:"0.08em" }}>INVOICE</div>
-            <div style={{ fontFamily:FM, fontWeight:700, fontSize:16, marginBottom:6 }}>{selected.id}</div>
+            <div style={{ fontFamily:FM, fontWeight:700, fontSize:26, marginBottom:6 }}>{selected.id}</div>
             <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>Finzzup Advisory LLP</div>
             <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>garima@finzzup.com</div>
           </div>
@@ -7992,14 +8021,14 @@ function Invoices({ client, liveInvoices }) {
       </div>
 
       <Card style={{ marginBottom:16 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>Bill To</div>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>Bill To</div>
         <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{client?.name}</div>
         <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>{client?.company}</div>
         <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>{client?.email}</div>
       </Card>
 
       <Card style={{ marginBottom:16 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>Services</div>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>Services</div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr auto auto auto", gap:"10px 16px",
           fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, textTransform:"uppercase",
           letterSpacing:"0.06em", marginBottom:10 }}>
@@ -8011,7 +8040,7 @@ function Invoices({ client, liveInvoices }) {
             <span style={{ fontFamily:F, fontSize:13, color:C.text }}>{item.desc}</span>
             <span style={{ fontFamily:FM, fontSize:12, color:C.muted }}>{item.qty}</span>
             <span style={{ fontFamily:FM, fontSize:12, color:C.muted }}>{item.unit}</span>
-            <span style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:C.text }}>{item.total}</span>
+            <span style={{ fontFamily:FM, fontSize:18, fontWeight:600, color:C.text }}>{item.total}</span>
           </div>
         ))}
         <div style={{ display:"flex", justifyContent:"flex-end", padding:"14px 0 0",
@@ -8024,7 +8053,7 @@ function Invoices({ client, liveInvoices }) {
 
       {/* Contact to pay */}
       {selected.status === "unpaid" && (
-        <div style={{ padding:"14px 18px", borderRadius:6, background:`${C.amber}08`,
+        <div style={{ padding:"14px 18px", borderRadius:16, background:`${C.amber}08`,
           border:`1px solid ${C.amber}25`, marginBottom:12 }}>
           <div style={{ fontFamily:F, fontSize:13, color:C.amber, fontWeight:600, marginBottom:4 }}>
             ⏳ Payment Due: {selected.amount}
@@ -8042,7 +8071,7 @@ function Invoices({ client, liveInvoices }) {
           // Build a minimal invoice object if coming from live data
           downloadInvoicePDF(selected, client);
         }}
-        style={{ width:"100%", padding:"13px 0", borderRadius:6, border:`1.5px solid ${C.blue}`,
+        style={{ width:"100%", padding:"13px 0", borderRadius:16, border:`1.5px solid ${C.blue}`,
           background:"transparent", color:C.blue, fontFamily:F, fontWeight:700, fontSize:14,
           cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
         ⬇️ Download Invoice PDF
@@ -8063,7 +8092,7 @@ function Invoices({ client, liveInvoices }) {
         ].map((s,i) => (
           <Card key={i} style={{ padding:18, textAlign:"center" }}>
             <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
-            <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
+            <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
             <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.label}</div>
           </Card>
         ))}
@@ -8183,7 +8212,7 @@ function MyDocuments({ client }) {
       <SectionTitle sub="Documents shared by Garima, and files you've uploaded.">My Documents</SectionTitle>
 
       {isDemo && (
-        <div style={{ padding:"10px 16px", borderRadius:6, background:`${C.amber}0A`,
+        <div style={{ padding:"10px 16px", borderRadius:16, background:`${C.amber}0A`,
           border:`1px solid ${C.amber}25`, marginBottom:14,
           fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
           Demo mode — uploads disabled. Real clients can upload and download files here.
@@ -8196,13 +8225,13 @@ function MyDocuments({ client }) {
           onDragOver={e => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
           onDrop={e => { e.preventDefault(); setDragOver(false); handleUpload(e.dataTransfer.files[0]); }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:4 }}>
             Upload a Document
           </div>
           <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
             Share financial statements, agreements, or any document with Garima. Max 10MB.
           </p>
-          <label style={{ display:"block", padding:"28px 20px", borderRadius:6,
+          <label style={{ display:"block", padding:"28px 20px", borderRadius:16,
             border:`2px dashed ${dragOver ? C.blue : C.border}`,
             textAlign:"center", cursor:"pointer", background: dragOver ? `${C.blue}05` : C.bg,
             transition:"all 0.2s" }}
@@ -8232,7 +8261,7 @@ function MyDocuments({ client }) {
       {/* Document list */}
       <Card>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>
             All Documents ({displayDocs.length})
           </div>
           {!isDemo && !loading && displayDocs.length > 0 && (
@@ -8262,12 +8291,12 @@ function MyDocuments({ client }) {
             const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
             return (
               <div key={doc.id || i} style={{ display:"flex", alignItems:"center",
-                justifyContent:"space-between", padding:"12px 14px", borderRadius:6,
+                justifyContent:"space-between", padding:"12px 14px", borderRadius:16,
                 background: byGarima ? `${C.blue}10` : C.bg,
                 border:`1px solid ${byGarima ? C.blue+"40" : C.border}`,
                 flexWrap:"wrap", gap:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, flex:1, minWidth:0 }}>
-                  <div style={{ width:38, height:38, borderRadius:6,
+                  <div style={{ width:38, height:38, borderRadius:16,
                     background: byGarima ? `${C.blue}12` : `${C.muted}0A`,
                     display:"flex", alignItems:"center", justifyContent:"center",
                     fontSize:14, flexShrink:0 }}>
@@ -8297,7 +8326,7 @@ function MyDocuments({ client }) {
                       ? alert("Download not available in demo mode. Real clients can download their files here.")
                       : handleDownload(doc)
                     }
-                    style={{ padding:"7px 14px", borderRadius:8,
+                    style={{ padding:"7px 14px", borderRadius:16,
                       border:`1.5px solid ${C.blue}`, background:"transparent",
                       color:C.blue, fontFamily:F, fontWeight:700, fontSize:12,
                       cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
@@ -8307,7 +8336,7 @@ function MyDocuments({ client }) {
                   {/* Delete — only for files the client uploaded themselves */}
                   {!isDemo && !byGarima && (
                     <button onClick={() => handleDelete(doc)}
-                      style={{ padding:"7px 10px", borderRadius:8,
+                      style={{ padding:"7px 10px", borderRadius:16,
                         border:`1px solid ${C.border}`, background:"none",
                         color:C.red, cursor:"pointer", fontSize:14 }}>
                       ×
@@ -8455,7 +8484,7 @@ function Treasury({ client, reportData }) {
                     ⚠️ {p.note}
                   </div>}
                 </div>
-                <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color: p.flag ? C.amber : C.text }}>
+                <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color: p.flag ? C.amber : C.text }}>
                   {p.balance}
                 </div>
               </div>
@@ -8477,13 +8506,13 @@ function Treasury({ client, reportData }) {
                 <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{m.item}</div>
                 <div style={{ fontFamily:FM, fontSize:11, color:C.muted, marginTop:2 }}>Matures: {m.maturity}</div>
               </div>
-              <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:C.blue }}>{m.amount}</div>
+              <div style={{ display:"flex", alignItems:"center", gap:20 }}>
+                <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:C.blue }}>{m.amount}</div>
                 <Badge color={m.action==="Redeem"?C.red:C.green}>{m.action}</Badge>
               </div>
             </div>
           ))}
-          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:6, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
+          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:16, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
               ⚠️ ₹15L matures 28 Mar — time with advance tax payment to avoid overdraft facility.
             </span>
@@ -8492,7 +8521,7 @@ function Treasury({ client, reportData }) {
       )}
 
       {tab === "recommendations" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           {TREASURY_DATA.recommendations.map((r,i) => (
             <Card key={i} style={{ padding:"14px 18px" }}>
               <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
@@ -8517,7 +8546,7 @@ function Treasury({ client, reportData }) {
 // ─── UAE DISCLAIMER BANNER ────────────────────────────────────────────────────
 function UAEDisclaimer() {
   return (
-    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:6,
+    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:16,
       background:"#FFF7ED", border:"1px solid #FED7AA",
       display:"flex", gap:10, alignItems:"flex-start" }}>
       <span style={{ fontSize:16, flexShrink:0 }}>⚠️</span>
@@ -8562,9 +8591,9 @@ function VATDashboard({ client, reportData }) {
   return (
     <div className="ns-page">
       <UAEDisclaimer/>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:20 }}>
         <div>
-          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0 }}>VAT Dashboard</h2>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", margin:0 }}>VAT Dashboard</h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>UAE VAT tracking, filing reminders, and cash impact.</p>
         </div>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
@@ -8610,7 +8639,7 @@ function VATDashboard({ client, reportData }) {
               VAT Payable: <strong>{fmtAED(vatData.vatPayable)}</strong> — ensure cash is available 3–5 days before filing date.
             </div>
             <button onClick={() => window.open(WA,"_blank")} style={{ marginTop:12, padding:"9px 20px",
-              borderRadius:8, border:"none", background:"#00732F", color:"white",
+              borderRadius:16, border:"none", background:"#00732F", color:"white",
               fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
               Discuss with Garima
             </button>
@@ -8639,7 +8668,7 @@ function VATDashboard({ client, reportData }) {
                   <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{r.period}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>Due: {r.due}</div>
                 </div>
-                <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:20 }}>
                   <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text }}>{r.vatNet}</div>
                   <span style={{ padding:"3px 10px", borderRadius:60, fontSize:11, fontWeight:700, fontFamily:F,
                     background:due?"#FFFBEB":"#ECFDF5", color:due?C.amber:C.green }}>
@@ -8649,7 +8678,7 @@ function VATDashboard({ client, reportData }) {
               </div>
             );
           })}
-          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:6, background:"#FEF2F2", border:"1px solid #FCA5A5" }}>
+          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:16, background:"#FEF2F2", border:"1px solid #FCA5A5" }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:600 }}>
               ⚠️ Late filing penalty: AED 1,000 for first offence, AED 2,000 for repeat. File on time!
             </span>
@@ -8666,7 +8695,7 @@ function VATDashboard({ client, reportData }) {
               <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>
                 {m.month} 2026 {m.forecast && <span style={{ fontSize:10, color:C.muted, marginLeft:6 }}>(Forecast)</span>}
               </div>
-              <div style={{ display:"flex", gap:16 }}>
+              <div style={{ display:"flex", gap:24 }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.blue }}>In: {m.collected ? fmtAED(m.collected) : "—"}</span>
                 <span style={{ fontFamily:F, fontSize:12, color:C.red }}>Out: {m.paid ? fmtAED(m.paid) : "—"}</span>
                 <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.green }}>Net: {fmtAED(m.net || m.forecast)}</span>
@@ -8698,7 +8727,7 @@ function VATDashboard({ client, reportData }) {
             </div>
           ))}
           <button onClick={() => window.open(WA,"_blank")} style={{ marginTop:16, padding:"9px 20px",
-            borderRadius:8, border:"none", background:C.blue, color:"white",
+            borderRadius:16, border:"none", background:C.blue, color:"white",
             fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
             Get VAT Invoice Template from Garima
           </button>
@@ -8802,7 +8831,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             color:C.green, fontSize:12, fontWeight:700, fontFamily:F }}>CT Rate: {ctData.effectiveCTRate}%</span>
           <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>TRN: {ctData.trnCT}</span>
           <button onClick={() => downloadCT(tab)} style={{ display:"flex", alignItems:"center", gap:6,
-            padding:"7px 14px", borderRadius:8, border:"none", cursor:"pointer",
+            padding:"7px 14px", borderRadius:16, border:"none", cursor:"pointer",
             background:C.purple, color:"white", fontFamily:F, fontWeight:700, fontSize:12 }}>
             Download Report
           </button>
@@ -8829,7 +8858,7 @@ function CorporateTax({ client, reportData, initialTab }) {
               </Card>
             ))}
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
             <Card style={{ background:sbrEligible?"#F0FDF4":"#FEF2F2", border:`1px solid ${sbrEligible?"#86EFAC":"#FCA5A5"}` }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:sbrEligible?"#15803D":C.red }}>
                 {sbrEligible ? "SBR Eligible" : "Not Eligible"}
@@ -8852,7 +8881,7 @@ function CorporateTax({ client, reportData, initialTab }) {
       )}
 
       {tab === "sbr" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           <Card style={{ background:sbrEligible?"#F0FDF4":"#FFF7ED", border:`1px solid ${sbrEligible?"#86EFAC":"#FCD34D"}` }}>
             <div style={{ fontFamily:F, fontWeight:800, fontSize:16, color:sbrEligible?"#15803D":"#92400E", marginBottom:8 }}>
               {sbrEligible ? "✅ Small Business Relief Eligible" : "⚠️ Check SBR Eligibility"}
@@ -8865,7 +8894,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             </div>
           </Card>
           <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>SBR Rules Checklist</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:12 }}>SBR Rules Checklist</div>
             {[
               { rule:"Revenue ≤ AED 3M in current tax period",                              met:revenue <= sbrThreshold },
               { rule:"Revenue ≤ AED 3M in ALL previous periods (from 1 Jun 2023)",          met:true  },
@@ -8887,7 +8916,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                 : "Revenue has exceeded the AED 3M SBR threshold. Focus on QFZP status — ensure qualifying income stays above 95% of total revenue to maintain 0% CT on that portion. The 9% standard rate will apply on any non-qualifying income."}
             </p>
             <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
-              borderRadius:8, border:"none", background:"#00732F", color:"white",
+              borderRadius:16, border:"none", background:"#00732F", color:"white",
               fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
               Discuss SBR with Garima
             </button>
@@ -8896,8 +8925,8 @@ function CorporateTax({ client, reportData, initialTab }) {
       )}
 
       {tab === "qfzp" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
             <Card>
               <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Qualifying Income %</div>
               <div style={{ fontFamily:F, fontSize:18, fontWeight:800, color:C.green }}>{ctData.qualifyingPct}%</div>
@@ -8918,7 +8947,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             </Card>
           )}
           <Card>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Substance Requirements</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:12 }}>Substance Requirements</div>
             {ctData.substanceItems.map((s,i) => (
               <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:`1px solid ${C.border}`, alignItems:"center" }}>
                 <span style={{ color:s.done?C.green:C.red, fontWeight:700, flexShrink:0 }}>{s.done?"✓":"✗"}</span>
@@ -8931,7 +8960,7 @@ function CorporateTax({ client, reportData, initialTab }) {
       )}
 
       {tab === "recon" && (
-        <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+        <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
           <Card>
             {/* Table header */}
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -8943,7 +8972,7 @@ function CorporateTax({ client, reportData, initialTab }) {
 
             {/* Column headers */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:8,
-              padding:"8px 12px", background:"#fff", borderRadius:8, marginBottom:4 }}>
+              padding:"8px 12px", background:"#fff", borderRadius:16, marginBottom:4 }}>
               <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em" }}>Item</span>
               <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", textAlign:"right", minWidth:80 }}>Sign</span>
               <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", textAlign:"right", minWidth:110 }}>Amount (AED)</span>
@@ -8977,7 +9006,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
                   <div style={{ textAlign:"right", minWidth:110 }}>
                     <span style={{
-                      fontFamily:FM, fontSize:15, fontWeight:600,
+                      fontFamily:FM, fontSize:18, fontWeight:600,
                       color: isFirst ? C.text : isAdd ? C.red : C.green,
                     }}>
                       {isAdd && !isFirst ? "+" : isAdd ? "" : "−"} {fmtAED(Math.abs(a.amount))}
@@ -9009,7 +9038,7 @@ function CorporateTax({ client, reportData, initialTab }) {
 
             {/* CT calculation */}
             <div style={{ marginTop:12, display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              <div style={{ padding:"12px 14px", borderRadius:6, background:`${C.purple}08`, border:`1px solid ${C.purple}18` }}>
+              <div style={{ padding:"12px 14px", borderRadius:16, background:`${C.purple}08`, border:`1px solid ${C.purple}18` }}>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>CT Rate Applied</div>
                 <div style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.purple }}>
                   {ctData.effectiveCTRate}%
@@ -9018,7 +9047,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   {ctData.effectiveCTRate === 0 ? "QFZP / SBR exemption" : "Standard rate"}
                 </div>
               </div>
-              <div style={{ padding:"12px 14px", borderRadius:6,
+              <div style={{ padding:"12px 14px", borderRadius:16,
                 background: ctData.ctPayable === 0 ? "#F0FDF4" : "#FFFBEB",
                 border:`1px solid ${ctData.ctPayable===0?"#86EFAC":"#FCD34D"}` }}>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>CT Payable</div>
@@ -9033,7 +9062,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             </div>
 
             {ctData.taxableFinalIncome === 0 && (
-              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:6, background:"#F0FDF4", border:"1px solid #86EFAC" }}>
+              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:16, background:"#F0FDF4", border:"1px solid #86EFAC" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:"#15803D", fontWeight:600 }}>
                   ✅ With QFZP qualifying income exclusion and SBR election, CT payable = <strong>AED 0</strong>. Ensure QFZP documentation is audit-ready.
                 </span>
@@ -9096,9 +9125,9 @@ function CorporateTax({ client, reportData, initialTab }) {
         const riskBg    = r => r === "High" ? "#FEF2F2" : r === "Medium" ? "#FFFBEB" : "#F0FDF4";
 
         return (
-          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
             {/* Summary */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
               {[
                 { label:"Total RPT Value",       value:fmtAED(rptData.totalRPT), color:C.blue,  icon:"ti-arrows-exchange" },
                 { label:"% of Revenue",           value:`${rptData.revenueRatio}%`, color:rptData.revenueRatio>25?C.amber:C.green, icon:"ti-chart-bar" },
@@ -9139,7 +9168,7 @@ function CorporateTax({ client, reportData, initialTab }) {
               <Card key={i} style={{ borderLeft:`4px solid ${riskColor(t.risk)}`, padding:"16px 20px" }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10, flexWrap:"wrap", gap:8 }}>
                   <div>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{t.party}</div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>{t.party}</div>
                     <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{t.relation}</div>
                   </div>
                   <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
@@ -9153,7 +9182,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
                 </div>
 
-                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                   <div>
                     <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:3, textTransform:"uppercase", letterSpacing:"0.05em" }}>Transaction Type</div>
                     <div style={{ fontFamily:F, fontSize:13, color:C.text }}>{t.type}</div>
@@ -9164,7 +9193,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
                 </div>
 
-                <div style={{ marginTop:12, padding:"10px 14px", borderRadius:8,
+                <div style={{ marginTop:12, padding:"10px 14px", borderRadius:16,
                   background:riskBg(t.risk), border:`1px solid ${riskColor(t.risk)}33` }}>
                   <span style={{ fontFamily:F, fontSize:12, color:riskColor(t.risk), fontWeight:600 }}>
                     Action: {t.action}
@@ -9186,7 +9215,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                 I'll prepare the RPT schedule for your CT return — please send me the signed loan agreement with Rashidi Holdings.
               </p>
               <button onClick={() => window.open(WA,"_blank")} style={{ marginTop:12, padding:"9px 20px",
-                borderRadius:8, border:"none", background:"#D97706", color:"white",
+                borderRadius:16, border:"none", background:"#D97706", color:"white",
                 fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
                 Discuss RPT with Garima
               </button>
@@ -9251,7 +9280,7 @@ function CorporateTax({ client, reportData, initialTab }) {
         const totalRPT  = rptData.entities.reduce((s,e) => s + e.transactions.reduce((a,t)=>a+t.amount,0), 0);
 
         return (
-          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
             {/* Legal definition banner */}
             <Card style={{ background:"#EFF6FF", border:"1px solid #93C5FD", padding:"14px 18px" }}>
@@ -9281,7 +9310,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             </Card>
 
             {/* Summary */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
               {[
                 { label:"Total RPT Value",         value:fmtAED(totalRPT),                                                        color:C.blue,  icon:"ti-arrows-exchange" },
                 { label:"% of Revenue",            value:`${((totalRPT/1850000)*100).toFixed(1)}%`,                               color:C.amber, icon:"ti-chart-bar" },
@@ -9316,7 +9345,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                 </div>
 
                 {/* Transactions */}
-                <div style={{ background:`${C.border}66`, borderRadius:8, padding:"10px 14px", marginBottom:12 }}>
+                <div style={{ background:`${C.border}66`, borderRadius:16, padding:"10px 14px", marginBottom:12 }}>
                   <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8 }}>
                     Transactions
                   </div>
@@ -9349,7 +9378,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                 </div>
 
                 {/* Action */}
-                <div style={{ padding:"10px 14px", borderRadius:8, background:riskBg(e.risk), border:`1px solid ${riskColor(e.risk)}33` }}>
+                <div style={{ padding:"10px 14px", borderRadius:16, background:riskBg(e.risk), border:`1px solid ${riskColor(e.risk)}33` }}>
                   <span style={{ fontFamily:F, fontSize:12, color:riskColor(e.risk), fontWeight:600 }}>
                     {e.action}
                   </span>
@@ -9366,7 +9395,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                 The Rashidi Holdings loan agreement is also outstanding — please send me a signed copy this week.
               </p>
               <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
-                borderRadius:8, border:"none", background:"#D97706", color:"white",
+                borderRadius:16, border:"none", background:"#D97706", color:"white",
                 fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
                 Discuss Related Parties with Garima
               </button>
@@ -9450,12 +9479,12 @@ function CorporateTax({ client, reportData, initialTab }) {
         const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#F0FDF4";
 
         return (
-          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
             {/* CTP010 Official Source Banner */}
             <Card style={{ background:"#1E3A5F", border:"1px solid #2563EB", padding:"14px 18px" }}>
               <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-                <div style={{ width:36, height:36, borderRadius:8, background:"#2563EB",
+                <div style={{ width:36, height:36, borderRadius:16, background:"#2563EB",
                   display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}><i className="ti ti-user" style={{fontSize:16, color:"white"}}/></div>
                 <div>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"white", marginBottom:4 }}>
@@ -9491,7 +9520,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   { who:"Officer — C-suite with strategic decision authority",    ref:"Art. 36(2)(b)" },
                   { who:"Related Party of owner/director/officer",                ref:"Art. 36(2)(c)" },
                 ].map((r,i) => (
-                  <div key={i} style={{ padding:"8px 10px", borderRadius:8, background:"white", border:"1px solid #DDD6FE" }}>
+                  <div key={i} style={{ padding:"8px 10px", borderRadius:16, background:"white", border:"1px solid #DDD6FE" }}>
                     <div style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{r.who}</div>
                     <div style={{ fontFamily:FM, fontSize:10, color:C.purple, marginTop:2 }}>{r.ref}</div>
                   </div>
@@ -9500,7 +9529,7 @@ function CorporateTax({ client, reportData, initialTab }) {
 
               {/* Director vs Officer distinction — CTP010 */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
-                <div style={{ padding:"12px 14px", borderRadius:6, background:"white", border:"1px solid #C4B5FD" }}>
+                <div style={{ padding:"12px 14px", borderRadius:16, background:"white", border:"1px solid #C4B5FD" }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:12, color:C.purple, marginBottom:6 }}>
                     🪑 "DIRECTOR" — CTP010 Definition
                   </div>
@@ -9509,13 +9538,13 @@ function CorporateTax({ client, reportData, initialTab }) {
                     temporary, permanent, or alternate). Must be formally <strong>appointed in constitutional
                     documents</strong> (MOA, AOA, trust deed).
                   </div>
-                  <div style={{ marginTop:8, padding:"6px 10px", borderRadius:6, background:"#FEF2F2" }}>
+                  <div style={{ marginTop:8, padding:"6px 10px", borderRadius:16, background:"#FEF2F2" }}>
                     <div style={{ fontFamily:F, fontSize:11, color:C.red, fontWeight:600 }}>
                       ⚠️ Job title "Director" alone does NOT qualify — must hold actual board seat
                     </div>
                   </div>
                 </div>
-                <div style={{ padding:"12px 14px", borderRadius:6, background:"white", border:"1px solid #C4B5FD" }}>
+                <div style={{ padding:"12px 14px", borderRadius:16, background:"white", border:"1px solid #C4B5FD" }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:12, color:C.purple, marginBottom:6 }}>
                     👔 "OFFICER" — CTP010 Definition
                   </div>
@@ -9525,7 +9554,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                     on financial/operational matters, OR (c) has authority to <strong>legally bind</strong>
                     the company.
                   </div>
-                  <div style={{ marginTop:8, padding:"6px 10px", borderRadius:6, background:"#ECFDF5" }}>
+                  <div style={{ marginTop:8, padding:"6px 10px", borderRadius:16, background:"#ECFDF5" }}>
                     <div style={{ fontFamily:F, fontSize:11, color:C.green, fontWeight:600 }}>
                       ✓ Based on actual conduct, not just title — interim CEO = officer
                     </div>
@@ -9534,7 +9563,7 @@ function CorporateTax({ client, reportData, initialTab }) {
               </div>
 
               {/* Two-test rule */}
-              <div style={{ padding:"12px 14px", borderRadius:6, background:"#4C1D95" }}>
+              <div style={{ padding:"12px 14px", borderRadius:16, background:"#4C1D95" }}>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#C4B5FD",
                   textAlign:"center", marginBottom:8, letterSpacing:"0.05em" }}>
                   ART. 36(1) — TWO TESTS MUST BOTH PASS FOR DEDUCTIBILITY
@@ -9559,7 +9588,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             </Card>
 
             {/* Summary cards */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
               {[
                 { label:"Total Payments to Connected Persons", value:"AED " + cpData.totalPayments.toLocaleString(), color:C.purple, icon:"👤" },
                 { label:"Persons Identified",                  value:cpData.persons.length,                           color:C.blue,   icon:"🔍" },
@@ -9598,7 +9627,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
 
                   {/* CTP010 classification note */}
-                  <div style={{ padding:"10px 14px", borderRadius:8, background:`${C.blue}08`,
+                  <div style={{ padding:"10px 14px", borderRadius:16, background:`${C.blue}08`,
                     border:`1px solid ${C.blue}20`, marginBottom:14 }}>
                     <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
                       textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:4 }}>
@@ -9608,7 +9637,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
 
                   {/* Job title nuance */}
-                  <div style={{ padding:"8px 12px", borderRadius:8,
+                  <div style={{ padding:"8px 12px", borderRadius:16,
                     background:p.connectionType==="owner+officer"?"#ECFDF5":"#FEF2F2",
                     border:`1px solid ${p.connectionType==="owner+officer"?"#86EFAC":"#FCA5A5"}`,
                     marginBottom:14 }}>
@@ -9618,7 +9647,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
 
                   {/* Payments breakdown */}
-                  <div style={{ background:`${C.border}66`, borderRadius:8, padding:"10px 14px", marginBottom:14 }}>
+                  <div style={{ background:`${C.border}66`, borderRadius:16, padding:"10px 14px", marginBottom:14 }}>
                     <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
                       textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:8 }}>
                       Payments — AED {p.totalComp.toLocaleString()} total
@@ -9631,7 +9660,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                           <div style={{ fontFamily:F, fontSize:13, color:C.text }}>{pay.type}</div>
                           <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:1 }}>{pay.basis}</div>
                         </div>
-                        <div style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:C.text }}>
+                        <div style={{ fontFamily:FM, fontSize:18, fontWeight:600, color:C.text }}>
                           AED {pay.amount.toLocaleString()}
                         </div>
                       </div>
@@ -9647,7 +9676,7 @@ function CorporateTax({ client, reportData, initialTab }) {
 
                   {/* Two tests */}
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:14 }}>
-                    <div style={{ padding:"10px 14px", borderRadius:8,
+                    <div style={{ padding:"10px 14px", borderRadius:16,
                       background:p.armslength?"#F0FDF4":"#FEF2F2",
                       border:`1px solid ${p.armslength?"#86EFAC":"#FCA5A5"}` }}>
                       <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, marginBottom:4 }}>
@@ -9661,7 +9690,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                         Market: AED {p.marketLow.toLocaleString()} – {p.marketHigh.toLocaleString()}
                       </div>
                     </div>
-                    <div style={{ padding:"10px 14px", borderRadius:8,
+                    <div style={{ padding:"10px 14px", borderRadius:16,
                       background:p.businessPurpose===true?"#F0FDF4":p.businessPurpose===false?"#FEF2F2":"#FFFBEB",
                       border:`1px solid ${p.businessPurpose===true?"#86EFAC":p.businessPurpose===false?"#FCA5A5":"#FCD34D"}` }}>
                       <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, marginBottom:4 }}>
@@ -9692,8 +9721,8 @@ function CorporateTax({ client, reportData, initialTab }) {
                       </span>
                     </div>
                     {/* Progress bar */}
-                    <div style={{ height:6, borderRadius:6, background:C.border, marginBottom:10, overflow:"hidden" }}>
-                      <div style={{ height:"100%", width:`${docPct}%`, borderRadius:6,
+                    <div style={{ height:6, borderRadius:16, background:C.border, marginBottom:10, overflow:"hidden" }}>
+                      <div style={{ height:"100%", width:`${docPct}%`, borderRadius:16,
                         background:docPct>=80?C.green:docPct>=50?C.amber:C.red,
                         transition:"width 0.4s" }}/>
                     </div>
@@ -9714,7 +9743,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
 
                   {/* Action */}
-                  <div style={{ padding:"10px 14px", borderRadius:8,
+                  <div style={{ padding:"10px 14px", borderRadius:16,
                     background:riskBg(p.risk), border:`1px solid ${riskColor(p.risk)}33` }}>
                     <span style={{ fontFamily:F, fontSize:12, color:riskColor(p.risk), fontWeight:600 }}>
                       {p.action}
@@ -9743,7 +9772,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                 I will prepare the full disclosure schedule.
               </p>
               <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
-                borderRadius:8, border:"none", background:C.purple, color:"white",
+                borderRadius:16, border:"none", background:C.purple, color:"white",
                 fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
                 Discuss Connected Persons with Garima
               </button>
@@ -9814,10 +9843,10 @@ function CorporateTax({ client, reportData, initialTab }) {
         const pct = Math.round((alData.compliant / alData.totalTransactions) * 100);
 
         return (
-          <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
 
             {/* Score header */}
-            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
               {[
                 { label:"Transactions Tested",      value:alData.totalTransactions, color:C.blue,  icon:"ti-search" },
                 { label:"Arm's Length Compliant",   value:alData.compliant,          color:C.green, icon:"ti-circle-check" },
@@ -9834,15 +9863,15 @@ function CorporateTax({ client, reportData, initialTab }) {
             {/* Compliance bar */}
             <Card>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:10 }}>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>
                   Overall Arm's Length Compliance
                 </div>
                 <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color:pct===100?C.green:pct>=75?C.amber:C.red }}>
                   {pct}%
                 </div>
               </div>
-              <div style={{ height:10, borderRadius:6, background:C.border, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${pct}%`, borderRadius:6,
+              <div style={{ height:10, borderRadius:16, background:C.border, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${pct}%`, borderRadius:16,
                   background:pct===100?"#10B981":pct>=75?"#F59E0B":"#EF4444",
                   transition:"width 0.5s" }}/>
               </div>
@@ -9878,7 +9907,7 @@ function CorporateTax({ client, reportData, initialTab }) {
               <Card key={i} style={{ borderLeft:`4px solid ${t.compliant?C.green:C.red}` }}>
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:12, flexWrap:"wrap", gap:8 }}>
                   <div>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{t.category}</div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>{t.category}</div>
                     <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{t.transaction}</div>
                   </div>
                   <span style={{ padding:"4px 12px", borderRadius:60, fontSize:12, fontWeight:700, fontFamily:F,
@@ -9894,13 +9923,13 @@ function CorporateTax({ client, reportData, initialTab }) {
                     <span style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600 }}>Market Range</span>
                     <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>{t.marketRange}</span>
                   </div>
-                  <div style={{ position:"relative", height:10, borderRadius:6, background:C.border }}>
+                  <div style={{ position:"relative", height:10, borderRadius:16, background:C.border }}>
                     {/* Market range band */}
                     <div style={{
                       position:"absolute",
                       left:`${Math.max(0, ((t.marketLow - t.marketLow * 0.8) / (t.marketHigh * 1.2 - t.marketLow * 0.8)) * 100)}%`,
                       width:`${((t.marketHigh - t.marketLow) / (t.marketHigh * 1.2 - t.marketLow * 0.8)) * 100}%`,
-                      height:"100%", borderRadius:6,
+                      height:"100%", borderRadius:16,
                       background:"#BBF7D0",
                     }}/>
                     {/* Actual marker */}
@@ -9948,8 +9977,8 @@ function CorporateTax({ client, reportData, initialTab }) {
               </Card>
             ))}
 
-            <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:14,
-              borderRadius:6, border:"none", background:C.purple, color:"white",
+            <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:24,
+              borderRadius:16, border:"none", background:C.purple, color:"white",
               fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>
               Get Transfer Pricing Documentation from Garima
             </button>
@@ -10211,7 +10240,7 @@ function RevenueReconciliation({ client, reportData }) {
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
-        marginBottom:14, flexWrap:"wrap", gap:12 }}>
+        marginBottom:14, flexWrap:"wrap", gap:20 }}>
         <div>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.blue,
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
@@ -10225,7 +10254,7 @@ function RevenueReconciliation({ client, reportData }) {
           </p>
         </div>
         <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
-          padding:"10px 20px", borderRadius:6, border:"none", cursor:"pointer",
+          padding:"10px 20px", borderRadius:16, border:"none", cursor:"pointer",
           background:C.blue, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
           boxShadow:`0 4px 14px ${C.blue}40` }}>
           Download PDF
@@ -10233,9 +10262,9 @@ function RevenueReconciliation({ client, reportData }) {
       </div>
 
       {/* What & Why explanation */}
-      <Card style={{ marginBottom:14, background:`${C.blue}06`, borderLeft:`3px solid ${C.blue}` }}>
+      <Card style={{ marginBottom:14, background:`${C.blue}06`, borderLeft:`4px solid ${C.blue}` }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:36, height:36, borderRadius:6, background:C.blue, flexShrink:0,
+          <div style={{ width:36, height:36, borderRadius:16, background:C.blue, flexShrink:0,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>💡</div>
           <div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:6 }}>
@@ -10276,7 +10305,7 @@ function RevenueReconciliation({ client, reportData }) {
 
       {/* Demo data notice */}
       {isDemo && (
-        <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
+        <div style={{ padding:"10px 16px", borderRadius:16, background:"#FFFBEB",
           border:"1px solid #FCD34D", marginBottom:16,
           fontFamily:F, fontSize:12, color:"#92400E" }}>
           ⚠️ Showing demo data. Garima should enter actual reconciliation figures in the admin panel → UAE / Tax tab → Revenue Reconciliation.
@@ -10367,7 +10396,7 @@ function RevenueReconciliation({ client, reportData }) {
       {/* Note from Garima */}
       <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0,
+          <div style={{ width:40, height:52, borderRadius:"50%", flexShrink:0,
             background:"linear-gradient(135deg,#F59E0B,#D97706)",
             display:"flex", alignItems:"center", justifyContent:"center",
             fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
@@ -10384,14 +10413,14 @@ function RevenueReconciliation({ client, reportData }) {
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
               <a href={WA} target="_blank" rel="noopener noreferrer"
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#25D366", color:"white", borderRadius:8,
+                  background:"#25D366", color:"white", borderRadius:16,
                   padding:"8px 16px", fontFamily:F, fontWeight:700,
                   fontSize:12, textDecoration:"none" }}>
                 WhatsApp Garima
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:8,
+                  background:"#FEF3C7", color:"#92400E", borderRadius:16,
                   padding:"8px 16px", fontFamily:F, fontWeight:700,
                   fontSize:12, border:"1px solid #FDE68A", cursor:"pointer" }}>
                 Download Full Report
@@ -10402,7 +10431,7 @@ function RevenueReconciliation({ client, reportData }) {
       </Card>
 
       {/* FTA Audit note */}
-      <div style={{ marginTop:16, padding:"12px 16px", borderRadius:6,
+      <div style={{ marginTop:16, padding:"12px 16px", borderRadius:16,
         background:"#F0FDF4", border:"1px solid #86EFAC" }}>
         <div style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700, marginBottom:4 }}>
           FTA Audit Readiness
@@ -10692,7 +10721,7 @@ function WorkingCapital({ client, reportData }) {
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
-        marginBottom:14, flexWrap:"wrap", gap:12 }}>
+        marginBottom:14, flexWrap:"wrap", gap:20 }}>
         <div>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.green,
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
@@ -10706,7 +10735,7 @@ function WorkingCapital({ client, reportData }) {
           </p>
         </div>
         <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
-          padding:"10px 20px", borderRadius:6, border:"none", cursor:"pointer",
+          padding:"10px 20px", borderRadius:16, border:"none", cursor:"pointer",
           background:C.green, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
           boxShadow:`0 4px 14px ${C.green}40` }}>
           Download PDF
@@ -10714,7 +10743,7 @@ function WorkingCapital({ client, reportData }) {
       </div>
 
       {isDemo && (
-        <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
+        <div style={{ padding:"10px 16px", borderRadius:16, background:"#FFFBEB",
           border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
           ⚠️ Showing demo data. Enter actual figures in admin panel → UAE / Tax tab → Working Capital.
         </div>
@@ -10741,14 +10770,14 @@ function WorkingCapital({ client, reportData }) {
             <div key={i} style={{ fontFamily:F, fontSize:16, fontWeight:700, color:C.green }}>{item.op}</div>
           ) : (
             <div key={i} style={{ background:"white", border:`2px solid ${C.green}`,
-              borderRadius:6, padding:"14px 22px", textAlign:"center", minWidth:110 }}>
+              borderRadius:16, padding:"14px 22px", textAlign:"center", minWidth:110 }}>
               <div style={{ fontFamily:"monospace", fontSize:30, fontWeight:900, color:item.color, lineHeight:1 }}>{item.val}</div>
               <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:"#065f46",
                 textTransform:"uppercase", letterSpacing:"0.05em", marginTop:4 }}>{item.lbl}</div>
               <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:2 }}>{item.sub}</div>
             </div>
           ))}
-          <div style={{ background:C.green, borderRadius:6, padding:"14px 24px", textAlign:"center", minWidth:130 }}>
+          <div style={{ background:C.green, borderRadius:16, padding:"14px 24px", textAlign:"center", minWidth:130 }}>
             <div style={{ fontFamily:"monospace", fontSize:34, fontWeight:900, color:"white", lineHeight:1 }}>{ccc}</div>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.85)",
               textTransform:"uppercase", letterSpacing:"0.05em", marginTop:4 }}>CCC (Days)</div>
@@ -10763,7 +10792,7 @@ function WorkingCapital({ client, reportData }) {
             { title:`DIO ${dio} days`, ok:dio<=20, note:dio<=20?"✓ Excellent inventory velocity":"Monitor stock levels", bench:"Industry: 20–30 days" },
             { title:`DPO ${dpo} days`, ok:dpo>=35, note:dpo<35?"Extend to 45 days — free up cash":"✓ Good supplier terms", bench:"Industry: 30–45 days" },
           ].map((s,i) => (
-            <div key={i} style={{ background:"white", borderRadius:8, padding:"10px 14px" }}>
+            <div key={i} style={{ background:"white", borderRadius:16, padding:"10px 14px" }}>
               <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:"#065f46", marginBottom:4 }}>{s.title}</div>
               <div style={{ fontFamily:F, fontSize:11, color:s.ok?C.green:C.amber, fontWeight:600, marginBottom:2 }}>{s.note}</div>
               <div style={{ fontFamily:F, fontSize:10, color:C.dim }}>{s.bench}</div>
@@ -10850,7 +10879,7 @@ function WorkingCapital({ client, reportData }) {
         <div style={{ display:"grid",
           gridTemplateColumns:"22fr 11fr 11fr 11fr 11fr 11fr 8fr 8fr 15fr",
           padding:"11px 16px", background:"#ECFDF5",
-          borderTop:`2px solid ${C.green}`, borderLeft:`3px solid ${C.green}` }}>
+          borderTop:`2px solid ${C.green}`, borderLeft:`4px solid ${C.green}` }}>
           <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text }}>TOTAL</div>
           <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700, color:C.green, textAlign:"right" }}>{fmtAED(totalCurrent)}</div>
           <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700, color:C.amber, textAlign:"right" }}>{fmtAED(total30)}</div>
@@ -10864,7 +10893,7 @@ function WorkingCapital({ client, reportData }) {
 
       {/* 90+ alert */}
       {total90 > 0 && (
-        <div style={{ padding:"12px 16px", borderRadius:6, background:"#FEF2F2",
+        <div style={{ padding:"12px 16px", borderRadius:16, background:"#FEF2F2",
           border:"1px solid #FCA5A5", borderLeft:`4px solid ${C.red}`,
           marginBottom:14, fontFamily:F, fontSize:12, color:C.red }}>
           <strong>⚠️ IFRS 9 ECL Provision Required:</strong> AED {fmtAED(total90)} is 90+ days overdue.
@@ -10895,7 +10924,7 @@ function WorkingCapital({ client, reportData }) {
                   {r.terms} · Due: {r.due}
                 </div>
               </div>
-              <div style={{ display:"flex", alignItems:"center", gap:14 }}>
+              <div style={{ display:"flex", alignItems:"center", gap:20 }}>
                 <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:C.text }}>
                   {fmtAED(Number(r.amount||0))}
                 </div>
@@ -10918,13 +10947,13 @@ function WorkingCapital({ client, reportData }) {
 
       {/* Recommendations */}
       <Card style={{ marginBottom:20 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>
           Working Capital Recommendations
         </div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {total90 > 0 && (
-            <div style={{ padding:"11px 14px", borderRadius:8, background:"#FEF2F2",
-              border:"1px solid #FCA5A5", borderLeft:`3px solid ${C.red}` }}>
+            <div style={{ padding:"11px 14px", borderRadius:16, background:"#FEF2F2",
+              border:"1px solid #FCA5A5", borderLeft:`4px solid ${C.red}` }}>
               <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.red, marginBottom:3 }}>
                 Immediate — 90+ Day Debtors
               </div>
@@ -10935,8 +10964,8 @@ function WorkingCapital({ client, reportData }) {
             </div>
           )}
           {dpo < 35 && (
-            <div style={{ padding:"11px 14px", borderRadius:8, background:"#FFFBEB",
-              border:"1px solid #FCD34D", borderLeft:`3px solid ${C.amber}` }}>
+            <div style={{ padding:"11px 14px", borderRadius:16, background:"#FFFBEB",
+              border:"1px solid #FCD34D", borderLeft:`4px solid ${C.amber}` }}>
               <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.amber, marginBottom:3 }}>
                 Quick Win — Extend Supplier Payment Terms
               </div>
@@ -10947,8 +10976,8 @@ function WorkingCapital({ client, reportData }) {
             </div>
           )}
           {dso > 35 && (
-            <div style={{ padding:"11px 14px", borderRadius:8, background:"#EFF6FF",
-              border:"1px solid #BFDBFE", borderLeft:`3px solid ${C.blue}` }}>
+            <div style={{ padding:"11px 14px", borderRadius:16, background:"#EFF6FF",
+              border:"1px solid #BFDBFE", borderLeft:`4px solid ${C.blue}` }}>
               <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.blue, marginBottom:3 }}>
                 Target — Reduce DSO from {dso} to 32 Days
               </div>
@@ -10958,8 +10987,8 @@ function WorkingCapital({ client, reportData }) {
               </div>
             </div>
           )}
-          <div style={{ padding:"11px 14px", borderRadius:8, background:"#ECFDF5",
-            border:"1px solid #86EFAC", borderLeft:`3px solid ${C.green}` }}>
+          <div style={{ padding:"11px 14px", borderRadius:16, background:"#ECFDF5",
+            border:"1px solid #86EFAC", borderLeft:`4px solid ${C.green}` }}>
             <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.green, marginBottom:3 }}>
               Maintain — Inventory Management
             </div>
@@ -10974,7 +11003,7 @@ function WorkingCapital({ client, reportData }) {
       {/* Note from Garima */}
       <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0,
+          <div style={{ width:40, height:52, borderRadius:"50%", flexShrink:0,
             background:"linear-gradient(135deg,#F59E0B,#D97706)",
             display:"flex", alignItems:"center", justifyContent:"center",
             fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
@@ -10989,13 +11018,13 @@ function WorkingCapital({ client, reportData }) {
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
               <a href={WA} target="_blank" rel="noopener noreferrer"
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
+                  background:"#25D366", color:"white", borderRadius:16, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
                 WhatsApp Garima
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:8, padding:"8px 16px",
+                  background:"#FEF3C7", color:"#92400E", borderRadius:16, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12,
                   border:"1px solid #FDE68A", cursor:"pointer" }}>
                 Download PDF
@@ -11319,7 +11348,7 @@ function VerticalAnalysis({ client, reportData }) {
       {view === "pnl" && (
         <>
           {isDemo && (
-            <div style={{padding:"10px 16px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:8,fontFamily:F,fontSize:12,color:"#92400E"}}>
+            <div style={{padding:"10px 16px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:16,fontFamily:F,fontSize:12,color:"#92400E"}}>
               ⚠️ Showing demo data. Enter actual figures in admin panel → UAE / Tax tab → Vertical Analysis.
             </div>
           )}
@@ -11327,7 +11356,7 @@ function VerticalAnalysis({ client, reportData }) {
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
               <div style={{fontFamily:F,fontWeight:700,fontSize:15,color:C.text}}>Common-Size P&L — {period}</div>
               <button onClick={()=>{const html=generateVerticalAnalysisPDF({client,reportData});const w=window.open("","_blank");w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);}}
-                style={{padding:"7px 14px",borderRadius:8,border:"none",cursor:"pointer",background:acc,color:"white",fontFamily:F,fontWeight:700,fontSize:12}}>
+                style={{padding:"7px 14px",borderRadius:16,border:"none",cursor:"pointer",background:acc,color:"white",fontFamily:F,fontWeight:700,fontSize:12}}>
                 Download PDF
               </button>
             </div>
@@ -11532,7 +11561,7 @@ function ComplianceCalendar({ client }) {
   return (
     <div className="ns-page">
       <UAEDisclaimer/>
-      <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>Compliance Calendar</h2>
+      <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:6 }}>Compliance Calendar</h2>
       <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>All UAE deadlines — VAT, Corporate Tax, Audit, License — in one view.</p>
 
       <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
@@ -11555,7 +11584,7 @@ function ComplianceCalendar({ client }) {
         </p>
       </Card>
 
-      <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+      <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
         {filtered.map((d,i) => {
           const isPast = new Date(d.date) < new Date();
           return (
@@ -11569,7 +11598,7 @@ function ComplianceCalendar({ client }) {
                 </div>
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4, flexWrap:"wrap" }}>
-                    <span style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{d.label}</span>
+                    <span style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>{d.label}</span>
                     <span style={{ padding:"2px 8px", borderRadius:60, fontSize:10, fontWeight:700, fontFamily:F,
                       background:`${catColors[d.category]}22`, color:catColors[d.category], border:`1px solid ${catColors[d.category]}44` }}>
                       {catLabels[d.category]}
@@ -11877,7 +11906,7 @@ function QFZPModule({ client, reportData }) {
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
-        marginBottom:14, flexWrap:"wrap", gap:12 }}>
+        marginBottom:14, flexWrap:"wrap", gap:20 }}>
         <div>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.purple,
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
@@ -11891,7 +11920,7 @@ function QFZPModule({ client, reportData }) {
           </p>
         </div>
         <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
-          padding:"10px 20px", borderRadius:6, border:"none", cursor:"pointer",
+          padding:"10px 20px", borderRadius:16, border:"none", cursor:"pointer",
           background:C.purple, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
           boxShadow:`0 4px 14px ${C.purple}40` }}>
           Download PDF
@@ -11899,7 +11928,7 @@ function QFZPModule({ client, reportData }) {
       </div>
 
       {isDemo && (
-        <div style={{ padding:"10px 16px", borderRadius:8, background:"#FFFBEB",
+        <div style={{ padding:"10px 16px", borderRadius:16, background:"#FFFBEB",
           border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
           ⚠️ Showing demo data. Enter actual substance data in admin panel → UAE / Tax tab → QFZP Substance.
         </div>
@@ -11962,9 +11991,9 @@ function QFZPModule({ client, reportData }) {
       </div>
 
       {/* What is QFZP box */}
-      <Card style={{ marginBottom:14, background:`${C.purple}06`, borderLeft:`3px solid ${C.purple}` }}>
+      <Card style={{ marginBottom:14, background:`${C.purple}06`, borderLeft:`4px solid ${C.purple}` }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:36, height:36, borderRadius:6, background:C.purple, flexShrink:0,
+          <div style={{ width:36, height:36, borderRadius:16, background:C.purple, flexShrink:0,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🏙️</div>
           <div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:6 }}>
@@ -12075,7 +12104,7 @@ function QFZPModule({ client, reportData }) {
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
               padding:"14px 18px", flexWrap:"wrap", gap:8 }}>
               <div style={{ flex:1 }}>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:2 }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:2 }}>
                   {s.pillar}
                 </div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, lineHeight:1.5 }}>
@@ -12111,7 +12140,7 @@ function QFZPModule({ client, reportData }) {
 
               {/* Gap / Action */}
               {s.gap && (
-                <div style={{ padding:"10px 14px", borderRadius:8, background:"#FEF2F2",
+                <div style={{ padding:"10px 14px", borderRadius:16, background:"#FEF2F2",
                   border:`1px solid ${C.red}33` }}>
                   <div style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:600, lineHeight:1.6 }}>
                     {s.gap}
@@ -12126,7 +12155,7 @@ function QFZPModule({ client, reportData }) {
       {/* Note from Garima */}
       <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:40, height:40, borderRadius:"50%", flexShrink:0,
+          <div style={{ width:40, height:52, borderRadius:"50%", flexShrink:0,
             background:"linear-gradient(135deg,#F59E0B,#D97706)",
             display:"flex", alignItems:"center", justifyContent:"center",
             fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
@@ -12143,13 +12172,13 @@ function QFZPModule({ client, reportData }) {
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
               <a href={WA} target="_blank" rel="noopener noreferrer"
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
+                  background:"#25D366", color:"white", borderRadius:16, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
                 WhatsApp Garima
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:8, padding:"8px 16px",
+                  background:"#FEF3C7", color:"#92400E", borderRadius:16, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12,
                   border:"1px solid #FDE68A", cursor:"pointer" }}>
                 Download PDF
@@ -12194,9 +12223,9 @@ function AuditReadiness({ client, reportData }) {
   return (
     <div className="ns-page">
       <UAEDisclaimer/>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:20 }}>
         <div>
-          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0 }}>Audit Readiness</h2>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", margin:0 }}>Audit Readiness</h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
             QFZP audit pack checklist — {doneReq}/{totalReq} required docs ready
           </p>
@@ -12214,7 +12243,7 @@ function AuditReadiness({ client, reportData }) {
         return (
           <Card key={cat} style={{ marginBottom:14 }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{cat}</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>{cat}</div>
               <span style={{ padding:"2px 8px", borderRadius:60, fontSize:11, fontWeight:700, fontFamily:F,
                 background:doneCount===items.length?"#ECFDF5":"#FFFBEB",
                 color:doneCount===items.length?C.green:C.amber }}>
@@ -12240,8 +12269,8 @@ function AuditReadiness({ client, reportData }) {
           Your audit readiness score of {auditScore}/100 is encouraging, but there are 5 required documents still outstanding. The highest-priority gap is QFZP Supporting Documentation — without this, your free zone status cannot be confirmed in the audit. I'd suggest we schedule a 45-minute working session to close these items before the 30 April DMCC deadline. I can prepare the first draft of the CT computation and transfer pricing documentation if you share the relevant contracts.
         </p>
       </Card>
-      <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:14,
-        borderRadius:6, border:"none", background:C.green, color:"white",
+      <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:24,
+        borderRadius:16, border:"none", background:C.green, color:"white",
         fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>
         Get Audit Prep Support from Garima
       </button>
@@ -12253,7 +12282,7 @@ function AuditReadiness({ client, reportData }) {
 function Terms() {
   const [tab, setTab] = useState("terms");
   return (
-    <div style={{ padding:14, maxWidth:720 }}>
+    <div style={{ padding:24, maxWidth:720 }}>
       <SectionTitle sub="Legal documentation for Finzzup — Garima Agarwal, CA (M.No. 160944)">Legal & Compliance</SectionTitle>
 
       <div style={{ display:"flex", gap:0, borderBottom:`1px solid ${C.border}`, marginBottom:14 }}>
@@ -12281,7 +12310,7 @@ function Terms() {
             { h:"7. Governing Law", t:"These terms are governed by the laws of India. Any disputes shall be subject to the exclusive jurisdiction of courts in Mumbai, Maharashtra." },
           ].map((s,i) => (
             <div key={i} style={{ marginBottom:20 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>{s.h}</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:6 }}>{s.h}</div>
               <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>{s.t}</p>
             </div>
           ))}
@@ -12301,7 +12330,7 @@ function Terms() {
             { h:"7. Contact", t:"For privacy concerns, contact: Garima Agarwal, CA (M.No. 160944) · garima@finzzup.com · Finzzup, Mumbai, India." },
           ].map((s,i) => (
             <div key={i} style={{ marginBottom:20 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>{s.h}</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:6 }}>{s.h}</div>
               <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>{s.t}</p>
             </div>
           ))}
@@ -12320,7 +12349,7 @@ function Terms() {
             { h:"Third-Party Tools", t:"This portal uses Supabase, Recharts, and Google Fonts under their respective licences. Calendly is used for scheduling under its commercial licence." },
           ].map((s,i) => (
             <div key={i} style={{ marginBottom:20 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>{s.h}</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:6 }}>{s.h}</div>
               <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>{s.t}</p>
             </div>
           ))}
@@ -13032,7 +13061,7 @@ function UAECFOReport({ client, reportData, kpis }) {
               </Card>
 
               {/* Forecast KPIs — future only, styled like Related Party report */}
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
                 {[
                   { label:"Projected Cash — End of Quarter", value:reportData?.projectedCash    || reportData?.treasury?.totalCash || "AED 580K", color:C.teal,   icon:"ti-cash" },
                   { label:"VAT Reserve Required",            value:reportData?.vatReserve       || "AED 92.5K",                                   color:C.amber,  icon:"ti-receipt" },
@@ -13097,7 +13126,7 @@ function UAECFOReport({ client, reportData, kpis }) {
 
               {/* What-If Scenarios */}
               <Card>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>
                   What-If Scenarios
                 </div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -13108,7 +13137,7 @@ function UAECFOReport({ client, reportData, kpis }) {
                     { scenario:"Two new client contracts close in M+2",               impact:"Inflows increase AED 180K — closing balance AED 741K",  color:C.green, tag:"Upside" },
                   ].map((s,i) => (
                     <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12,
-                      padding:"11px 14px", borderRadius:8,
+                      padding:"11px 14px", borderRadius:16,
                       background:s.color===C.green?"#F0FDF4":s.color===C.amber?"#FFFBEB":"#EFF6FF",
                       border:`1px solid ${s.color}33` }}>
                       <span style={{ padding:"2px 8px", borderRadius:60, fontSize:10,
@@ -13127,12 +13156,12 @@ function UAECFOReport({ client, reportData, kpis }) {
               {/* Download */}
               <div style={{ display:"flex", gap:10 }}>
                 <button onClick={() => { const html = generateVATPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                  style={{ padding:"10px 20px", borderRadius:6, border:"none", cursor:"pointer",
+                  style={{ padding:"10px 20px", borderRadius:16, border:"none", cursor:"pointer",
                     background:C.teal, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
                   Download Cash Report
                 </button>
                 <a href={WA} target="_blank" rel="noopener noreferrer"
-                  style={{ padding:"10px 20px", borderRadius:6, border:`1px solid ${C.border}`,
+                  style={{ padding:"10px 20px", borderRadius:16, border:`1px solid ${C.border}`,
                     background:"white", color:C.text, fontFamily:F, fontWeight:700, fontSize:13,
                     textDecoration:"none", display:"inline-flex", alignItems:"center", gap:6 }}>
                   Ask Garima
@@ -13294,7 +13323,7 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
       {/* Preview + Print */}
       <button onClick={handlePreview}
         style={{ display:"inline-flex", alignItems:"center", gap:6,
-          padding:"8px 16px", borderRadius:6,
+          padding:"8px 16px", borderRadius:16,
           border:"1.5px solid #E5E7EB", background:"white",
           color:"#374151", fontFamily:F, fontWeight:600,
           fontSize:12, cursor:"pointer" }}>
@@ -13303,7 +13332,7 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
       {/* Board Executive Summary */}
       <button onClick={handleExecSummary}
         style={{ display:"inline-flex", alignItems:"center", gap:6,
-          padding:"8px 16px", borderRadius:6,
+          padding:"8px 16px", borderRadius:16,
           border:`1.5px solid ${C.purple}30`, background:`${C.purple}08`,
           color:C.purple, fontFamily:F, fontWeight:600,
           fontSize:12, cursor:"pointer" }}>
@@ -13312,7 +13341,7 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
       {/* Save to My Documents */}
       <button onClick={handleSave} disabled={saving}
         style={{ display:"inline-flex", alignItems:"center", gap:6,
-          padding:"8px 18px", borderRadius:6,
+          padding:"8px 18px", borderRadius:16,
           background: saving ? "#E5E7EB" : "linear-gradient(135deg,#2563EB,#7C3AED)",
           color: saving ? "#9CA3AF" : "white",
           border:"none", fontFamily:F, fontWeight:700,
@@ -13651,7 +13680,7 @@ function Portal({ client, onLogout }) {
           vertical-align: middle;
         }
         .ns-table tbody td.right { text-align: right; }
-        .ns-table tbody td.mono { font-family: 'DM Mono', monospace; font-size: 11px; }
+        .ns-table tbody td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
         .ns-table tbody td.bold { font-weight: 700; color: #111827; }
         .ns-table tbody td.muted { color: #9CA3AF; }
         .ns-table tbody tr.subtotal td { background: #F9FAFB; font-weight: 700; color: #111827; }
@@ -13869,7 +13898,7 @@ function AIChatbot({ client, reportData, kpis }) {
       {showBubble && !open && (
         <div style={{
           position:"fixed", bottom:90, right:24, zIndex:9998,
-          background:"white", borderRadius:6, padding:"10px 14px",
+          background:"white", borderRadius:16, padding:"10px 14px",
           boxShadow:"0 4px 20px rgba(0,0,0,0.12)", maxWidth:220,
           fontSize:13, color:"#374151", fontFamily:F, lineHeight:1.5,
           animation:"popIn 0.3s ease",
@@ -13930,7 +13959,7 @@ function AIChatbot({ client, reportData, kpis }) {
           </div>
 
           {/* Messages */}
-          <div style={{ flex:1, overflowY:"auto", padding:"16px 14px", display:"flex", flexDirection:"column", gap:12 }}>
+          <div style={{ flex:1, overflowY:"auto", padding:"16px 14px", display:"flex", flexDirection:"column", gap:20 }}>
             {msgs.map((m, i) => (
               <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-start",
                 flexDirection: m.role==="user" ? "row-reverse" : "row" }}>
@@ -13945,7 +13974,7 @@ function AIChatbot({ client, reportData, kpis }) {
                   </div>
                 )}
                 <div style={{
-                  maxWidth:"75%", padding:"9px 12px", borderRadius:8,
+                  maxWidth:"75%", padding:"9px 12px", borderRadius:16,
                   background: m.role==="user"
                     ? "linear-gradient(135deg,#2563EB,#7C3AED)"
                     : C.bg2,
@@ -13962,7 +13991,7 @@ function AIChatbot({ client, reportData, kpis }) {
             {loading && (
               <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
                 <Avatar size={28}/>
-                <div style={{ padding:"10px 14px", borderRadius:8, borderBottomLeftRadius:4, background:"#fff" }}>
+                <div style={{ padding:"10px 14px", borderRadius:16, borderBottomLeftRadius:4, background:"#fff" }}>
                   <div style={{ display:"flex", gap:4, alignItems:"center" }}>
                     {[0,1,2].map(i => (
                       <div key={i} style={{
@@ -14098,7 +14127,7 @@ const AdminSelect = ({ label, val, onChange, options, C, F }) => (
   </div>
 );
 const AdminSaveBtn = ({ onClick, loading, saved, label="Save Changes", F }) => (
-  <button onClick={onClick} disabled={loading} style={{ padding:"11px 24px", borderRadius:6,
+  <button onClick={onClick} disabled={loading} style={{ padding:"11px 24px", borderRadius:16,
     border:"none", background:"linear-gradient(135deg,#F59E0B,#EF4444)", color:"white",
     fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", opacity:loading?0.75:1,
     touchAction:"manipulation" }}>
@@ -14172,7 +14201,7 @@ function AdminLogin({ onLogin }) {
                 onChange={e => { setForm(f=>({...f,[key]:e.target.value})); setError(""); }}
                 onKeyDown={e => e.key==="Enter" && signIn()}
                 type={type} placeholder={placeholder}
-                style={{ width:"100%", padding:"12px 14px", borderRadius:6, fontSize:16,
+                style={{ width:"100%", padding:"12px 14px", borderRadius:16, fontSize:16,
                   border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                   background:C.bg, outline:"none", boxSizing:"border-box" }}
                 onFocus={e => e.target.style.borderColor = C.amber}
@@ -14181,8 +14210,8 @@ function AdminLogin({ onLogin }) {
             </div>
           ))}
           {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-          <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
-            borderRadius:6, border:"none", background:"linear-gradient(135deg,#F59E0B,#EF4444)",
+          <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:24,
+            borderRadius:16, border:"none", background:"linear-gradient(135deg,#F59E0B,#EF4444)",
             color:"white", fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer",
             opacity:loading?0.75:1, touchAction:"manipulation" }}>
             {loading ? "Signing in…" : "Sign In →"}
@@ -14921,7 +14950,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
             <select value={selected?.id || ""} onChange={e => {
               const c = clients.find(x => x.id===e.target.value);
               if (c) selectClient(c);
-            }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, fontSize:12,
+            }} style={{ width:"100%", padding:"8px 10px", borderRadius:16, fontSize:12,
               background:"#1a2744", border:"1px solid rgba(255,255,255,0.2)",
               color:"white", fontFamily:F, outline:"none" }}>
               <option value="" style={{ background:"#1a2744", color:"white" }}>— Select client —</option>
@@ -14976,7 +15005,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
         <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
           <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
             width:"100%", padding:"10px 12px", background:"none", border:"none",
-            cursor:"pointer", borderRadius:8, fontFamily:F, fontSize:13,
+            cursor:"pointer", borderRadius:16, fontFamily:F, fontSize:13,
             fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
             Sign Out
           </button>
@@ -14987,8 +15016,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
       <div style={{ flex:1, overflowY:"auto" }}>
         {/* Header */}
         <div style={{ height:58, background:"#fff", borderBottom:`1px solid #EAECF0`,
-          display:"flex", alignItems:"center", padding:"0 24px", gap:12 }}>
-          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0 }}>
+          display:"flex", alignItems:"center", padding:"0 24px", gap:20 }}>
+          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", margin:0 }}>
             {ADMIN_TABS.find(t=>t.id===tab)?.label}
           </h1>
           {selected && tab !== "clients" && tab !== "addclient" && (
@@ -15009,7 +15038,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>
                 {clients.length} client{clients.length!==1?"s":""} registered
               </p>
-              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
+              <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
                 {/* Filter: separate UAE and India clients visually */}
                 {[
                   { label:"UAE Clients", filter: c => isUAE(c) },
@@ -15035,7 +15064,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           onClick={() => { selectClient(c); setTab(isUAE(c)?"uae":"kpis"); }}>
                           <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:8 }}>
                             <div>
-                              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{c.name}</div>
+                              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>{c.name}</div>
                               <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{c.company}</div>
                               <div style={{ fontFamily:FM, fontSize:10, color:C.dim, marginTop:2 }}>{c.email}</div>
                             </div>
@@ -15077,7 +15106,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ fontSize:32, marginBottom:12 }}>👥</div>
                   <div style={{ fontFamily:F, fontSize:15, color:C.muted }}>No clients yet</div>
                   <button onClick={() => setTab("addclient")} style={{ marginTop:16, padding:"10px 20px",
-                    borderRadius:6, border:"none", background:C.blue, color:"white",
+                    borderRadius:16, border:"none", background:C.blue, color:"white",
                     fontFamily:F, fontWeight:700, cursor:"pointer" }}>
                     Add First Client →
                   </button>
@@ -15161,13 +15190,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   options={[{value:"yes",label:"✅ SBR Eligible (revenue ≤ AED 3M)"},{value:"no",label:"❌ Not Eligible"}]}/>
               </>)}
               <div style={{ marginTop:8 }}>
-                <button onClick={createClient} style={{ padding:"12px 24px", borderRadius:6,
+                <button onClick={createClient} style={{ padding:"12px 24px", borderRadius:16,
                   border:"none", background:C.grad1, color:"white", fontFamily:F,
                   fontWeight:700, fontSize:14, cursor:"pointer", touchAction:"manipulation" }}>
                   Create Client →
                 </button>
               </div>
-              <div style={{ marginTop:16, padding:"10px 14px", borderRadius:6,
+              <div style={{ marginTop:16, padding:"10px 14px", borderRadius:16,
                 background:`${C.blue}08`, border:`1px solid ${C.blue}20` }}>
                 <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0, lineHeight:1.7 }}>
                   💡 After creating, share the invite code with your client. They go to the portal,
@@ -15189,7 +15218,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 <>
                 {/* UAE client guidance banner */}
                 {isUAE(selected) && (
-                  <div style={{ padding:"12px 16px", borderRadius:6, background:"#E8F5EE",
+                  <div style={{ padding:"12px 16px", borderRadius:16, background:"#E8F5EE",
                     border:"1px solid #86EFAC", marginBottom:16,
                     display:"flex", alignItems:"center", gap:10 }}>
                     <span style={{ fontSize:18 }}>UAE</span>
@@ -15198,7 +15227,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       For VAT, CT, QFZP, and reconciliation data go to the <strong>UAE Profile & Tax</strong> tab.
                       For cash forecasts and Garima notes go to <strong>💰 UAE Cash & Notes</strong>.
                     </div>
-                    <button onClick={()=>setTab("uae")} style={{ padding:"6px 14px", borderRadius:8,
+                    <button onClick={()=>setTab("uae")} style={{ padding:"6px 14px", borderRadius:16,
                       border:"none", background:"#00732F", color:"white",
                       fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
                       Go to UAE Tab →
@@ -15300,12 +15329,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     val={newAction.text}
                     onChange={v=>setNewAction(a=>({...a,text:v}))}
                     placeholder="e.g. File GST returns for Q3 by 15 March"/>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                     <AdminSelect C={C} F={F} label="Priority" val={newAction.priority} onChange={v=>setNewAction(a=>({...a,priority:v}))}
                       options={[{value:"High",label:"High"},{value:"Medium",label:"Medium"},{value:"Low",label:"Low"}]}/>
                     <AdminInput C={C} F={F} FM={FM} label="Month" val={newAction.month} onChange={v=>setNewAction(a=>({...a,month:v}))} placeholder="e.g. March 2026"/>
                   </div>
-                  <button onClick={addAction} style={{ padding:"10px 20px", borderRadius:6,
+                  <button onClick={addAction} style={{ padding:"10px 20px", borderRadius:16,
                     border:"none", background:C.grad1, color:"white", fontFamily:F,
                     fontWeight:700, fontSize:13, cursor:"pointer" }}>
                     + Add Item
@@ -15321,9 +15350,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                     {actions.map(a => (
                       <div key={a.id} style={{ display:"flex", alignItems:"flex-start", gap:10,
-                        padding:"10px 14px", borderRadius:6, background:a.done?`${C.green}06`:C.bg,
+                        padding:"10px 14px", borderRadius:16, background:a.done?`${C.green}06`:C.bg,
                         border:`1px solid ${a.done?C.green+"25":C.border}` }}>
-                        <div onClick={() => toggleAction(a)} style={{ width:20, height:20, borderRadius:6,
+                        <div onClick={() => toggleAction(a)} style={{ width:20, height:20, borderRadius:16,
                           background:a.done?C.green:C.bg3, display:"flex", alignItems:"center",
                           justifyContent:"center", cursor:"pointer", flexShrink:0, marginTop:2 }}>
                           {a.done && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
@@ -15376,7 +15405,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
                       {["Docs Requested","Docs Received","Analysis","Draft Ready","Revision","Final Signed"].map((s,i) => (
                         <button key={i} onClick={() => setEngagement(e=>({...e,status:i}))}
-                          style={{ padding:"7px 12px", borderRadius:8, border:"none", cursor:"pointer",
+                          style={{ padding:"7px 12px", borderRadius:16, border:"none", cursor:"pointer",
                             fontFamily:F, fontSize:12, fontWeight:600,
                             background: engagement.status===i ? C.blue : C.bg3,
                             color: engagement.status===i ? "white" : C.muted,
@@ -15418,7 +15447,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
                     Create Invoice for {selected.name}
                   </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Invoice Number" val={newInvoice.invoice_number}
                       onChange={v=>setNewInvoice(i=>({...i,invoice_number:v}))}
                       placeholder="e.g. INV-2026-001" mono/>
@@ -15429,7 +15458,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <AdminInput C={C} F={F} FM={FM} label="Description" val={newInvoice.description}
                     onChange={v=>setNewInvoice(i=>({...i,description:v}))}
                     placeholder="e.g. CFO Retainer — March 2026"/>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Due Date" val={newInvoice.due_date}
                       onChange={v=>setNewInvoice(i=>({...i,due_date:v}))}
                       placeholder="e.g. 31 Mar 2026"/>
@@ -15450,12 +15479,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   )}
                   <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                     {invoices.map(inv => (
-                      <div key={inv.id} style={{ padding:"14px 16px", borderRadius:6,
+                      <div key={inv.id} style={{ padding:"14px 16px", borderRadius:16,
                         border:`1px solid ${inv.status==="paid" ? C.green+"30" : C.amber+"30"}`,
                         background: inv.status==="paid" ? `${C.green}04` : `${C.amber}04` }}>
                         <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
                           <div>
-                            <div style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:C.text }}>
+                            <div style={{ fontFamily:FM, fontSize:18, fontWeight:600, color:C.text }}>
                               {inv.invoice_number}
                             </div>
                             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:3 }}>
@@ -15472,14 +15501,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                             </div>
                             <div style={{ display:"flex", gap:8 }}>
                               <button onClick={() => markInvoicePaid(inv)}
-                                style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer",
+                                style={{ padding:"5px 12px", borderRadius:16, border:"none", cursor:"pointer",
                                   fontFamily:F, fontSize:11, fontWeight:700,
                                   background: inv.status==="paid" ? `${C.green}15` : `${C.amber}15`,
                                   color: inv.status==="paid" ? C.green : C.amber }}>
                                 {inv.status==="paid" ? "Paid ✓" : "Mark Paid"}
                               </button>
                               <button onClick={() => deleteInvoice(inv.id)}
-                                style={{ padding:"5px 10px", borderRadius:8, border:`1px solid ${C.border}`,
+                                style={{ padding:"5px 10px", borderRadius:16, border:`1px solid ${C.border}`,
                                   background:"none", color:C.red, cursor:"pointer", fontSize:13 }}>
                                 ×
                               </button>
@@ -15531,7 +15560,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
                     Powers the <strong>▲ ▼ trend arrows</strong> and "Prev: …" text on the client dashboard.
                   </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                     {(selected.client_pack === "msme" ? [
                       { label:"Prev Revenue",          key:"revenue",      placeholder:"e.g. ₹79L"       },
                       { label:"Prev Gross Margin",      key:"gross_margin", placeholder:"e.g. 39%"         },
@@ -15567,7 +15596,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>P&L Inputs</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Populates <strong>Monthly Report → P&L Summary</strong>. "Actual" = this month. "Prev" = last month.
-                    Use format like <code style={{ background:"#fff", padding:"1px 6px", borderRadius:4, fontFamily:FM }}>₹84.2L</code>
+                    Use format like <code style={{ background:"#fff", padding:"1px 6px", borderRadius:20, fontFamily:FM }}>₹84.2L</code>
                   </p>
                   <div style={{ display:"grid", gridTemplateColumns:"150px 1fr 1fr", gap:10, marginBottom:8, paddingLeft:4 }}>
                     <div/>
@@ -15651,7 +15680,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                               </td>
                               <td style={{ padding:"8px", textAlign:"center" }}>
                                 <button onClick={() => { const v=[...reportData.variance]; v[i]={...v[i],fav:!v[i].fav}; setReportData(r=>({...r,variance:v})); }}
-                                  style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:F, fontSize:12, fontWeight:700,
+                                  style={{ padding:"5px 12px", borderRadius:16, border:"none", cursor:"pointer", fontFamily:F, fontSize:12, fontWeight:700,
                                     background:row.fav?`${C.green}15`:`${C.red}15`, color:row.fav?C.green:C.red }}>
                                   {row.fav?"Fav":"Unfav"}
                                 </button>
@@ -15686,7 +15715,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         </div>
                         <div style={{ paddingTop:22 }}>
                           <button onClick={() => { const v=[...reportData.varianceCommentary]; v[i]={...v[i],favorable:!v[i].favorable}; setReportData(r=>({...r,varianceCommentary:v})); }}
-                            style={{ padding:"8px 10px", borderRadius:8, border:"none", cursor:"pointer", fontSize:14, fontWeight:700,
+                            style={{ padding:"8px 10px", borderRadius:16, border:"none", cursor:"pointer", fontSize:14, fontWeight:700,
                               background:row.favorable?`${C.green}15`:`${C.red}15`, color:row.favorable?C.green:C.red }}>
                             {row.favorable?"✅":"⚠️"}
                           </button>
@@ -15727,7 +15756,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       <tbody>
                         {(reportData.cashflow || []).map((row, i) => (
                           <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
-                            <td style={{ padding:"8px 10px", fontFamily:FM, fontSize:15, fontWeight:600, color:C.text, width:80 }}>{row.month}</td>
+                            <td style={{ padding:"8px 10px", fontFamily:FM, fontSize:18, fontWeight:600, color:C.text, width:80 }}>{row.month}</td>
                             <td style={{ padding:"6px 10px" }}>
                               <InlineInput value={row.actual}
                                 onCommit={v => { const cf=[...reportData.cashflow]; cf[i]={...cf[i],actual:v}; setReportData(r=>({...r,cashflow:cf})); }}
@@ -15759,7 +15788,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onChange={v => setReportData(r=>({...r,score:v}))} placeholder="e.g. 72" mono/>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10, marginTop:4 }}>Score Breakdown</div>
                   {(reportData.scoreBreakdown || []).map((item, i) => (
-                    <div key={i} style={{ marginBottom:12, padding:"12px 14px", borderRadius:6, background:C.bg, border:`1px solid ${C.border}` }}>
+                    <div key={i} style={{ marginBottom:12, padding:"12px 14px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{item.label}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10 }}>
                         <InlineInput value={item.score}
@@ -15794,7 +15823,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         val={reportData.loanScore || ""}
                         onChange={v => setReportData(r => ({...r, loanScore: v}))}
                         placeholder="e.g. 68" mono/>
-                      <div style={{ padding:"12px 14px", borderRadius:6, background:C.bg, border:`1px solid ${C.border}` }}>
+                      <div style={{ padding:"12px 14px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
                         <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.06em" }}>Score Guide</div>
                         <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.8 }}>
                           <span style={{ color:C.red }}>0–54</span> Early Stage<br/>
@@ -15819,7 +15848,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                       These ratios appear in the client's Cash Health / Board Report and are included in the downloadable PDF report.
                     </p>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                       <div>
                         <AdminInput C={C} F={F} FM={FM} label="DSCR (Debt Service Coverage)"
                           val={reportData.dscr || ""}
@@ -15938,7 +15967,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
                     {"Override the default sector benchmarks shown under each KPI card. Leave blank to use the built-in defaults."}
                   </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                     {[
                       { key:"benchRevenue",      label:"Revenue Benchmark",       placeholder:"e.g. Series A: ₹10 Cr ARR" },
                       { key:"benchMargin",       label:"Margin Benchmark",        placeholder:"e.g. Target: 45%+ gross margin" },
@@ -15964,7 +15993,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
                       {"Shown on Working Capital tab — AR aging, CCC components, ratios."}
                     </p>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                       {[
                         { key:"debtorDays",    label:"Debtor Days",        placeholder:"e.g. 46 days" },
                         { key:"creditorDays",  label:"Creditor Days",      placeholder:"e.g. 31 days" },
@@ -16031,7 +16060,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
                           <select value={reportData[f.key] || "pending"}
                             onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
-                            style={{ width:"100%", padding:"8px 10px", borderRadius:8,
+                            style={{ width:"100%", padding:"8px 10px", borderRadius:16,
                               border:`1px solid ${C.border}`, background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
                             <option value="done">Done</option>
                             <option value="pending">⏳ Pending</option>
@@ -16054,7 +16083,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
                           <select value={reportData[f.key] || "review"}
                             onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
-                            style={{ width:"100%", padding:"8px 10px", borderRadius:8,
+                            style={{ width:"100%", padding:"8px 10px", borderRadius:16,
                               border:`1px solid ${C.border}`, background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
                             <option value="done">Compliant</option>
                             <option value="review">Needs Review</option>
@@ -16103,7 +16132,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
                           <select value={reportData[f.key] || "pending"}
                             onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
-                            style={{ width:"100%", padding:"8px 10px", borderRadius:8,
+                            style={{ width:"100%", padding:"8px 10px", borderRadius:16,
                               border:`1px solid ${C.border}`, background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
                             <option value="done">Done</option>
                             <option value="pending">⭕ Pending</option>
@@ -16126,7 +16155,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </p>
                   {(reportData.metrics || []).map((m, i) => (
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr auto", gap:8,
-                      alignItems:"center", marginBottom:8, padding:"8px 12px", borderRadius:6,
+                      alignItems:"center", marginBottom:8, padding:"8px 12px", borderRadius:16,
                       background:C.bg, border:`1px solid ${C.border}` }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.muted }}>{m.label}</div>
                       <InlineInput value={m.value}
@@ -16138,7 +16167,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       <button onClick={() => {
                         const ms=[...reportData.metrics]; ms[i]={...ms[i],flag:!ms[i].flag};
                         setReportData(r=>({...r,metrics:ms}));
-                      }} style={{ padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
+                      }} style={{ padding:"7px 10px", borderRadius:16, border:"none", cursor:"pointer",
                         background:m.flag?`${C.red}15`:`${C.green}15`,
                         color:m.flag?C.red:C.green, fontSize:12, fontWeight:700, fontFamily:F, whiteSpace:"nowrap" }}>
                         {m.flag?"⚠️ Flag":"✅ OK"}
@@ -16160,10 +16189,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       const cl=[...reportData.checklist]; cl[i]={...cl[i],done:!cl[i].done};
                       setReportData(r=>({...r,checklist:cl}));
                     }} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-                      borderRadius:6, marginBottom:8, cursor:"pointer",
+                      borderRadius:16, marginBottom:8, cursor:"pointer",
                       background:item.done?`${C.green}06`:C.bg,
                       border:`1px solid ${item.done?C.green+"25":C.border}` }}>
-                      <div style={{ width:22, height:22, borderRadius:6, flexShrink:0,
+                      <div style={{ width:22, height:22, borderRadius:16, flexShrink:0,
                         background:item.done?C.green:C.bg3, border:`2px solid ${item.done?C.green:C.border}`,
                         display:"flex", alignItems:"center", justifyContent:"center" }}>
                         {item.done && <span style={{ color:"white", fontSize:11, fontWeight:900 }}>✓</span>}
@@ -16181,7 +16210,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     Shown in the market benchmarks table on the client's dashboard.
                   </p>
                   {(reportData.benchmarks || []).map((b, i) => (
-                    <div key={i} style={{ marginBottom:10, padding:"10px 14px", borderRadius:6, background:C.bg, border:`1px solid ${C.border}` }}>
+                    <div key={i} style={{ marginBottom:10, padding:"10px 14px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{b.metric}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr auto", gap:8 }}>
                         {[
@@ -16197,7 +16226,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         <button onClick={() => {
                           const bm=[...reportData.benchmarks]; bm[i]={...bm[i],ok:!bm[i].ok};
                           setReportData(r=>({...r,benchmarks:bm}));
-                        }} style={{ padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
+                        }} style={{ padding:"7px 10px", borderRadius:16, border:"none", cursor:"pointer",
                           background:b.ok?`${C.green}15`:`${C.amber}15`,
                           color:b.ok?C.green:C.amber, fontSize:11, fontWeight:700, fontFamily:F }}>
                           {b.ok?"✅ Ahead":"⚠️ Gap"}
@@ -16265,7 +16294,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           placeholder="e.g. ₹92L" mono/>
                         <select value={reportData[f.tkey] || "stable"}
                           onChange={e => setReportData(r => ({...r, [f.tkey]:e.target.value}))}
-                          style={{ padding:"8px 10px", borderRadius:8, border:`1px solid ${C.border}`,
+                          style={{ padding:"8px 10px", borderRadius:16, border:`1px solid ${C.border}`,
                             background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
                           <option value="up">▲ Improving</option>
                           <option value="stable">→ Stable</option>
@@ -16372,7 +16401,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                   </>)}
 
-                                    <div style={{ padding:"10px 14px", borderRadius:8,
+                                    <div style={{ padding:"10px 14px", borderRadius:16,
                     background:`${C.teal}08`, border:`1px solid ${C.teal}20`,
                     fontFamily:F, fontSize:12, color:C.teal }}>
                     {"Ratios auto-calculate when you click Generate Analysis below"}
@@ -16383,7 +16412,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 {reportData && <Card style={{ marginBottom:14, border:`1.5px solid ${C.purple}30`,
                   background:`linear-gradient(135deg,${C.purple}06,${C.blue}04)` }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
-                    <div style={{ width:36, height:36, borderRadius:6,
+                    <div style={{ width:36, height:36, borderRadius:16,
                       background:`linear-gradient(135deg,${C.purple},${C.blue})`,
                       display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
                       {"✦"}
@@ -16399,7 +16428,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </div>
 
                   <button onClick={generateAnalysis} disabled={aiGenerating}
-                    style={{ width:"100%", padding:"12px", borderRadius:6, border:"none",
+                    style={{ width:"100%", padding:"12px", borderRadius:16, border:"none",
                       background: aiGenerating
                         ? C.bg3
                         : `linear-gradient(135deg,${C.purple},${C.blue})`,
@@ -16414,7 +16443,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </button>
 
                   {aiError && (
-                    <div style={{ padding:"10px 14px", borderRadius:8, background:`${C.red}10`,
+                    <div style={{ padding:"10px 14px", borderRadius:16, background:`${C.red}10`,
                       border:`1px solid ${C.red}20`, fontFamily:F, fontSize:12, color:C.red }}>
                       {aiError}
                     </div>
@@ -16443,7 +16472,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         { key:"execOpportunities",  label:"Board: Opportunities",     field:"execOpportunities"  },
                         { key:"execNextSteps",       label:"Board: Next Steps",        field:"execNextSteps"       },
                       ].filter(f => aiDraft[f.key]).map((f, i) => (
-                        <div key={i} style={{ marginBottom:10, padding:"12px 14px", borderRadius:6,
+                        <div key={i} style={{ marginBottom:10, padding:"12px 14px", borderRadius:16,
                           background:C.bg, border:`1px solid ${C.border}` }}>
                           <div style={{ display:"flex", alignItems:"center",
                             justifyContent:"space-between", marginBottom:6 }}>
@@ -16468,14 +16497,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       {/* Apply All button */}
                       <div style={{ display:"flex", gap:10, marginTop:4 }}>
                         <button onClick={applyAllDraft}
-                          style={{ flex:1, padding:"11px", borderRadius:6, border:"none",
+                          style={{ flex:1, padding:"11px", borderRadius:16, border:"none",
                             background:`linear-gradient(135deg,${C.purple},${C.blue})`,
                             color:"white", fontFamily:F, fontWeight:700, fontSize:13,
                             cursor:"pointer" }}>
                           {"Apply All & Save"}
                         </button>
                         <button onClick={() => setAiDraft(null)}
-                          style={{ padding:"11px 16px", borderRadius:6,
+                          style={{ padding:"11px 16px", borderRadius:16,
                             border:`1px solid ${C.border}`, background:C.bg,
                             color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer" }}>
                           {"Discard"}
@@ -16529,7 +16558,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       {value:"RAK",   label:"RAKEZ — RAK Economic Zone"},
                       {value:"Other", label:"Other / Mainland"},
                     ]}/>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                     <AdminInput C={C} F={F} FM={FM} label="VAT TRN"
                       val={selected.trnVAT||""} placeholder="e.g. 100345678900003" mono
                       onChange={async v => {
@@ -16543,7 +16572,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         setSelected(s=>({...s,trnCT:v}));
                       }}/>
                   </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
                     <AdminSelect C={C} F={F} label="VAT Registered?"
                       val={selected.vatRegistered?"yes":"no"}
                       onChange={async v => {
@@ -16587,7 +16616,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Shown on the client's VAT Dashboard tab.
                   </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Output VAT (AED)" lakh val={reportData?.vat?.outputVAT||""}
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),outputVAT:Number(v)||v}}))} placeholder="e.g. 185000" mono/>
                     <AdminInput C={C} F={F} FM={FM} label="Input VAT (AED)" lakh val={reportData?.vat?.inputVAT||""}
@@ -16595,7 +16624,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <AdminInput C={C} F={F} FM={FM} label="VAT Payable (AED)" lakh val={reportData?.vat?.vatPayable||""}
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),vatPayable:Number(v)||v}}))} placeholder="e.g. 92500" mono/>
                   </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Filing Period" val={reportData?.vat?.filingPeriod||""}
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),filingPeriod:v}}))} placeholder="e.g. Q1 2026 (Jan–Mar)"/>
                     <AdminInput C={C} F={F} FM={FM} label="Next Deadline" val={reportData?.vat?.nextDeadline||""}
@@ -16614,7 +16643,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Shown on the client's Corporate Tax tab.
                   </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Revenue (AED)" lakh val={reportData?.ct?.revenue||""}
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),revenue:Number(v)||v}}))} placeholder="e.g. 1850000" mono/>
                     <AdminInput C={C} F={F} FM={FM} label="Accounting Profit (AED)" lakh val={reportData?.ct?.taxableIncome||""}
@@ -16702,7 +16731,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </div>
                   {[0,1,2,3].map(i => (
                     <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`,
-                      borderRadius:8, padding:10, marginBottom:8 }}>
+                      borderRadius:16, padding:20, marginBottom:8 }}>
                       <div style={{ display:"grid", gridTemplateColumns:"3fr 1fr 1fr", gap:8 }}>
                         <AdminInput C={C} F={F} FM={FM} label={`Activity ${i+1}`}
                           val={reportData?.qfzpSubstance?.cigas?.[i]?.activity||""}
@@ -16761,7 +16790,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
 
                   {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(i => (
                     <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`,
-                      borderRadius:8, padding:10, marginBottom:8 }}>
+                      borderRadius:16, padding:20, marginBottom:8 }}>
                       <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:8 }}>
                         <AdminInput C={C} F={F} FM={FM} label={`Row ${i+1} — Label`}
                           val={reportData?.verticalAnalysis?.rows?.[i]?.label||""}
@@ -16863,7 +16892,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </div>
                   {[0,1,2,3,4].map(i => (
                     <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`,
-                      borderRadius:6, padding:12, marginBottom:10 }}>
+                      borderRadius:16, padding:20, marginBottom:10 }}>
                       <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
                         marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
                         Customer {i+1}
@@ -16944,7 +16973,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </div>
                   {[0,1,2,3,4].map(i => (
                     <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`,
-                      borderRadius:6, padding:12, marginBottom:10 }}>
+                      borderRadius:16, padding:20, marginBottom:10 }}>
                       <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
                         marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
                         Supplier {i+1}
@@ -17020,7 +17049,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     placeholder="e.g. Q1 2026 (Jan–Mar)"/>
                   {[0,1,2,3,4,5].map(i => (
                     <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`,
-                      borderRadius:6, padding:12, marginBottom:10 }}>
+                      borderRadius:16, padding:20, marginBottom:10 }}>
                       <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
                         marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
                         Row {i+1}
@@ -17074,7 +17103,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     Enter each related party entity and transaction. Used to generate the RPT & Connected Persons Report for CT Return filing.
                   </p>
                   {[0,1,2].map(i => (
-                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:6, padding:14, marginBottom:12 }}>
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:16, padding:24, marginBottom:12 }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10 }}>
                         Related Party {i+1}
                       </div>
@@ -17133,7 +17162,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     Enter each individual connected person. Per CTP010: only natural persons. Director = board seat in constitutional docs. Officer = actual strategic authority.
                   </p>
                   {[0,1,2].map(i => (
-                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:6, padding:14, marginBottom:12 }}>
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:16, padding:24, marginBottom:12 }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10 }}>
                         Connected Person {i+1}
                       </div>
@@ -17204,7 +17233,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       placeholder="e.g. 3"/>
                   </div>
                   {[0,1,2,3].map(i => (
-                    <div key={i} style={{ border:`1px solid ${C.border}`, borderRadius:6, padding:14, marginBottom:12, background:"#fff" }}>
+                    <div key={i} style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:24, marginBottom:12, background:"#fff" }}>
                       <div style={{ fontFamily:F, fontWeight:700, fontSize:12, color:C.muted, marginBottom:10 }}>Transaction {i+1}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                         <AdminInput C={C} F={F} FM={FM} label="Category"
@@ -17306,7 +17335,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     These 3 figures appear as KPI cards on the Cash Flow Forecast tab. Format: AED 580K or AED 487,000.
                   </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Projected Cash — End of Quarter" mono lakh
                       val={reportData?.projectedCash||""}
                       onChange={v=>setReportData(r=>({...r,projectedCash:v}))}
@@ -17464,7 +17493,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Pre-fills the base inputs for the <strong>Scenarios tab</strong>. Client can then adjust sliders.
                   </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Base Revenue (₹)"
                       val={reportData?.scenarioBase?.revenue || ""}
                       onChange={v => setReportData(r => ({...r, scenarioBase:{...(r.scenarioBase||{}), revenue:v}}))}
@@ -17534,7 +17563,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Shown on the client's Treasury overview tab.
                   </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
                     <AdminInput C={C} F={F} FM={FM} label="Total Cash" val={reportData.treasury?.totalCash||""}
                       onChange={v=>setReportData(r=>({...r,treasury:{...(r.treasury||{}),totalCash:v}}))} placeholder="e.g. ₹50.4L" mono/>
                     <AdminInput C={C} F={F} FM={FM} label="% Invested in FDs" val={reportData.treasury?.investedPct||""}
@@ -17552,7 +17581,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </p>
                   {(reportData.treasury?.cashPositions || []).map((p,i) => (
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr auto", gap:8,
-                      marginBottom:10, padding:"10px 12px", borderRadius:6, background:C.bg, border:`1px solid ${C.border}` }}>
+                      marginBottom:10, padding:"10px 12px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
                       <InlineInput value={p.bank} placeholder="Bank / FD name"
                         onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],bank:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
                         style={{ fontFamily:F, color:C.text }}/>
@@ -17566,7 +17595,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],note:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
                         style={{ fontFamily:F, color:C.muted }}/>
                       <button onClick={()=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],flag:!cp[i].flag}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
-                        style={{ padding:"6px 10px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:F, fontSize:11, fontWeight:700,
+                        style={{ padding:"6px 10px", borderRadius:16, border:"none", cursor:"pointer", fontFamily:F, fontSize:11, fontWeight:700,
                           background:p.flag?`${C.amber}15`:`${C.green}15`, color:p.flag?C.amber:C.green }}>
                         {p.flag?"⚠️":"✅"}
                       </button>
@@ -17582,7 +17611,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </p>
                   {(reportData.treasury?.maturitySchedule || []).map((m,i) => (
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:8,
-                      marginBottom:10, padding:"10px 12px", borderRadius:6, background:C.bg, border:`1px solid ${C.border}` }}>
+                      marginBottom:10, padding:"10px 12px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
                       <InlineInput value={m.item} placeholder="FD / instrument name"
                         onCommit={v=>{ const ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],item:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
                         style={{ fontFamily:F, color:C.text }}/>
@@ -17607,7 +17636,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </p>
                   {(reportData.treasury?.recommendations || []).map((r,i) => (
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:10,
-                      marginBottom:10, padding:"10px 12px", borderRadius:6, background:C.bg, border:`1px solid ${C.border}`, alignItems:"center" }}>
+                      marginBottom:10, padding:"10px 12px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}`, alignItems:"center" }}>
                       <AdminSelect C={C} F={F} label="" val={r.priority||"Medium"}
                         onChange={v=>{ const rs=[...(reportData.treasury?.recommendations||[])]; rs[i]={...rs[i],priority:v}; setReportData(rd=>({...rd,treasury:{...(rd.treasury||{}),recommendations:rs}})); }}
                         options={[{value:"High",label:"High"},{value:"Medium",label:"Medium"},{value:"Low",label:"Low"}]}/>
@@ -17664,7 +17693,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       <option value="legal">Legal / Compliance</option>
                     </select>
                   </div>
-                  <label style={{ display:"block", padding:"28px 20px", borderRadius:6,
+                  <label style={{ display:"block", padding:"28px 20px", borderRadius:16,
                     border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
                     background:C.bg, transition:"border-color 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
@@ -17728,9 +17757,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                     {docs.map((d,i) => (
                       <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                        padding:"12px 14px", borderRadius:6, background:C.bg, border:`1px solid ${C.border}`,
+                        padding:"12px 14px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}`,
                         flexWrap:"wrap", gap:10 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+                        <div style={{ display:"flex", alignItems:"center", gap:20 }}>
                           <div style={{ width:36, height:36, borderRadius:9, background:`${C.blue}12`,
                             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}></div>
                           <div>
@@ -17750,14 +17779,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         </div>
                         <div style={{ display:"flex", gap:8 }}>
                           <a href={d.file_url} target="_blank" rel="noopener"
-                            style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${C.blue}`,
+                            style={{ padding:"7px 14px", borderRadius:16, border:`1px solid ${C.blue}`,
                               color:C.blue, fontFamily:F, fontWeight:600, fontSize:12, textDecoration:"none" }}>
                             View
                           </a>
                           <button onClick={async () => {
                             await supabase.from("documents").delete().eq("id", d.id);
                             setDocs(prev => prev.filter(x => x.id!==d.id));
-                          }} style={{ padding:"7px 12px", borderRadius:8, border:`1px solid ${C.border}`,
+                          }} style={{ padding:"7px 12px", borderRadius:16, border:`1px solid ${C.border}`,
                             background:"none", color:C.red, cursor:"pointer", fontSize:13 }}>×</button>
                         </div>
                       </div>
@@ -17793,7 +17822,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </div>
                 </Card>
               ) : (
-                <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+                <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
                   {requests.map((r, i) => (
                     <Card key={r.id || i} style={{ padding:20 }}>
                       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:10 }}>
@@ -17815,7 +17844,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           </div>
                           {r.notes && (
                             <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6,
-                              padding:"10px 14px", borderRadius:8, background:"#fff", marginTop:8 }}>
+                              padding:"10px 14px", borderRadius:16, background:"#fff", marginTop:8 }}>
                               {r.notes}
                             </div>
                           )}
@@ -17831,7 +17860,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                               await supabase.from("requests").update({ status: newStatus }).eq("id", r.id);
                               setRequests(prev => prev.map(x => x.id===r.id ? {...x, status:newStatus} : x));
                             }}
-                            style={{ padding:"7px 12px", borderRadius:8, border:`1px solid ${C.border}`,
+                            style={{ padding:"7px 12px", borderRadius:16, border:`1px solid ${C.border}`,
                               fontFamily:F, fontSize:12, color:C.text, background:C.bg, cursor:"pointer" }}>
                             <option value="new">New</option>
                             <option value="in_progress">In Progress</option>
@@ -17843,7 +17872,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                             if (!window.confirm("Delete this request?")) return;
                             await supabase.from("requests").delete().eq("id", r.id);
                             setRequests(prev => prev.filter(x => x.id !== r.id));
-                          }} style={{ padding:"7px 10px", borderRadius:8, border:`1px solid ${C.border}`,
+                          }} style={{ padding:"7px 10px", borderRadius:16, border:`1px solid ${C.border}`,
                             background:"none", color:C.red, cursor:"pointer", fontSize:14 }}>×</button>
                         </div>
                       </div>
