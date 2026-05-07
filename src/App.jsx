@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
-import Logo from "./components/Logo.jsx";
-import I from "./components/Icons.jsx";
 // ─── CHART STUBS (no recharts dependency) ─────────────────────────────────────
 const ResponsiveContainer = ({ children, width, height }) => (
   <div style={{ width: width||"100%", height: height||200, position:"relative" }}>{children}</div>
@@ -242,8 +240,7 @@ function Icon({ name, size=16, color="currentColor", style={} }) {
   return icons[name] || icons["info"];
 }
 // Generates a one-line meaningful insight for any KPI based on label, value, trend, prev
-// ── FIXED & CLEAN kpiContext (Yeh pura paste kar do) ──
-function kpiContext(k = {}) {
+function kpiContext(k) {
   const label = (k.label || "").toLowerCase();
   const up    = k.trend === "up";
   const prev  = k.prev && k.prev !== "—" ? k.prev : null;
@@ -257,51 +254,60 @@ function kpiContext(k = {}) {
     return "0% via QFZP status — maintain substance requirements";
   }
   if (label.includes("qfzp")) {
-    const num = parseFloat(val) || 0;
+    const num = parseFloat(val);
     if (num >= 85) return "Strong QFZP compliance — maintain documentation";
     if (num >= 70) return "Good — address audit readiness to improve";
     return "Action needed — review substance requirements";
   }
 
   if (label.includes("revenue")) {
-    return up 
-      ? Up from ${prev || "last month"} — growth on track 
-      : Down from ${prev || "last month"} — review pipeline;
+    if (!prev) return "Track monthly to spot growth trend";
+    return up ? `Up from ${prev} — growth on track` : `Down from ${prev} — review pipeline`;
   }
-
   if (label.includes("margin") || label.includes("gross")) {
-    const num = parseFloat(val) || 0;
+    const num = parseFloat(val);
     if (num >= 60) return "Excellent margin — strong unit economics";
     if (num >= 40) return "Healthy margin · target 45%+ before raise";
-    return prev 
-      ? (up ? Improving from ${prev} : Declined from ${prev} — review COGS) 
-      : "Monitor cost of goods sold";
+    if (num >= 20) return "Moderate · watch cost structure";
+    return prev ? (up ? `Improving from ${prev} — keep focus` : `Declined from ${prev} — review COGS`) : "Monitor cost of goods sold";
   }
-
   if (label.includes("cash") || label.includes("balance")) {
-    return up 
-      ? Up from ${prev || "last month"} — healthy position 
-      : Down from ${prev || "last month"} — monitor burn;
+    if (!prev) return "Maintain 6+ months of runway";
+    return up ? `Up from ${prev} — healthy position` : `Down from ${prev} — monitor burn`;
   }
-
   if (label.includes("burn")) {
-    return up 
-      ? Improved from ${prev || "last month"} — efficiency gaining 
-      : Up from ${prev || "last month"} — review spend;
+    return up ? `Improved from ${prev || "last month"} — efficiency gaining` : prev ? `Up from ${prev} — review spend` : "Lower is better — target <₹40L/mo";
   }
-
   if (label.includes("runway")) {
-    const num = parseFloat(val) || 0;
+    const num = parseFloat(val);
     if (num >= 12) return "Strong runway — focus on growth";
     if (num >= 6)  return "Adequate · start fundraise planning now";
+    if (num >= 3)  return "Under 6 months — act immediately";
     return "Critical — fundraise or cut costs now";
   }
-
+  if (label.includes("arr") || label.includes("mrr")) {
+    return up ? ("Growing — " + (prev ? "up from " + prev : "positive trend")) : prev ? ("Declined from " + prev + " — check churn") : "Annual recurring revenue";
+  }
+  if (label.includes("ebitda")) {
+    return up ? "Improving profitability" : prev ? `Down from ${prev} — review opex` : "Earnings before interest & tax";
+  }
+  if (label.includes("debtor") || label.includes("receivable")) {
+    const num = parseFloat(val);
+    if (num > 45) return "High — chase collections urgently";
+    if (num > 30) return "Above target · follow up overdue invoices";
+    return "Within target range";
+  }
+  if (label.includes("working capital")) {
+    return up ? `Improved from ${prev || "last period"}` : "Monitor current assets vs liabilities";
+  }
+  if (label.includes("pat") || label.includes("profit")) {
+    return up ? `Profitable · up from ${prev || "last month"}` : prev ? `Declined from ${prev}` : "Net profit after tax";
+  }
   // generic fallback
-  return prev 
-    ? (up ? Improved from ${prev} : Changed from ${prev}) 
-    : "Updated by Garima";
+  if (prev) return up ? `Improved from ${prev}` : `Changed from ${prev}`;
+  return "Updated by Garima";
 }
+
 
 const CASHFLOW = [
   { month:"Sep", value:185, forecast:null },
@@ -427,6 +433,49 @@ const Dot = ({ color=C.green, size=6 }) => (
     background:color, flexShrink:0 }}/>
 );
 
+// ── SVG Icon system — replaces all emojis ─────────────────────────────────────
+const I = ({ n, s=14, c="currentColor" }) => {
+  const p = { strokeWidth:"1.75", strokeLinecap:"round", strokeLinejoin:"round" };
+  const paths = {
+    home:       <><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" {...p}/><polyline points="9 22 9 12 15 12 15 22" {...p}/></>,
+    dashboard:  <><rect x="3" y="3" width="7" height="7" {...p}/><rect x="14" y="3" width="7" height="7" {...p}/><rect x="14" y="14" width="7" height="7" {...p}/><rect x="3" y="14" width="7" height="7" {...p}/></>,
+    cashflow:   <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" {...p}/><polyline points="16 7 22 7 22 13" {...p}/></>,
+    treasury:   <><rect x="2" y="5" width="20" height="14" rx="2" {...p}/><line x1="2" y1="10" x2="22" y2="10" {...p}/></>,
+    actions:    <><polyline points="9 11 12 14 22 4" {...p}/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" {...p}/></>,
+    report:     <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" {...p}/><polyline points="14 2 14 8 20 8" {...p}/><line x1="16" y1="13" x2="8" y2="13" {...p}/><line x1="16" y1="17" x2="8" y2="17" {...p}/></>,
+    tax:        <><path d="M12 2L2 7l10 5 10-5-10-5z" {...p}/><path d="M2 17l10 5 10-5" {...p}/><path d="M2 12l10 5 10-5" {...p}/></>,
+    compliance: <><rect x="3" y="4" width="18" height="18" rx="2" {...p}/><line x1="16" y1="2" x2="16" y2="6" {...p}/><line x1="8" y1="2" x2="8" y2="6" {...p}/><line x1="3" y1="10" x2="21" y2="10" {...p}/></>,
+    audit:      <><path d="M9 11l3 3L22 4" {...p}/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" {...p}/></>,
+    market:     <><circle cx="12" cy="12" r="10" {...p}/><line x1="2" y1="12" x2="22" y2="12" {...p}/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" {...p}/></>,
+    calendar:   <><rect x="3" y="4" width="18" height="18" rx="2" {...p}/><line x1="16" y1="2" x2="16" y2="6" {...p}/><line x1="8" y1="2" x2="8" y2="6" {...p}/><line x1="3" y1="10" x2="21" y2="10" {...p}/></>,
+    request:    <><circle cx="12" cy="12" r="10" {...p}/><line x1="12" y1="8" x2="12" y2="16" {...p}/><line x1="8" y1="12" x2="16" y2="12" {...p}/></>,
+    documents:  <><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" {...p}/></>,
+    invoices:   <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" {...p}/><polyline points="14 2 14 8 20 8" {...p}/></>,
+    engagement: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" {...p}/></>,
+    bell:       <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" {...p}/><path d="M13.73 21a2 2 0 01-3.46 0" {...p}/></>,
+    logout:     <><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" {...p}/><polyline points="16 17 21 12 16 7" {...p}/><line x1="21" y1="12" x2="9" y2="12" {...p}/></>,
+    chevronD:   <polyline points="6 9 12 15 18 9" {...p}/>,
+    chevronR:   <polyline points="9 18 15 12 9 6" {...p}/>,
+    check:      <polyline points="20 6 9 17 4 12" {...p}/>,
+    alert:      <><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" {...p}/><line x1="12" y1="9" x2="12" y2="13" {...p}/><line x1="12" y1="17" x2="12.01" y2="17" {...p}/></>,
+    info:       <><circle cx="12" cy="12" r="10" {...p}/><line x1="12" y1="16" x2="12" y2="12" {...p}/><line x1="12" y1="8" x2="12.01" y2="8" {...p}/></>,
+    download:   <><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" {...p}/><polyline points="7 10 12 15 17 10" {...p}/><line x1="12" y1="15" x2="12" y2="3" {...p}/></>,
+    search:     <><circle cx="11" cy="11" r="8" {...p}/><line x1="21" y1="21" x2="16.65" y2="16.65" {...p}/></>,
+    up:         <polyline points="18 15 12 9 6 15" {...p}/>,
+    down:       <polyline points="6 9 12 15 18 9" {...p}/>,
+    plus:       <><line x1="12" y1="5" x2="12" y2="19" {...p}/><line x1="5" y1="12" x2="19" y2="12" {...p}/></>,
+    eye:        <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" {...p}/><circle cx="12" cy="12" r="3" {...p}/></>,
+    terms:      <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" {...p}/><polyline points="14 2 14 8 20 8" {...p}/><line x1="16" y1="13" x2="8" y2="13" {...p}/></>,
+    whatsapp:   <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" {...p}/>,
+    external:   <><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" {...p}/><polyline points="15 3 21 3 21 9" {...p}/><line x1="10" y1="14" x2="21" y2="3" {...p}/></>,
+  };
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c}
+      style={{ display:"inline-block", verticalAlign:"middle", flexShrink:0 }}>
+      {paths[n] || paths.info}
+    </svg>
+  );
+};
 
 const DataTable = ({ headers=[], rows=[] }) => (
   <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
@@ -444,6 +493,61 @@ const DataTable = ({ headers=[], rows=[] }) => (
     ))}</tbody>
   </table>
 );
+const FinzzupIcon = ({ size=44, collapsed=false }) => (
+  <svg width={collapsed ? size*0.8 : size} height={collapsed ? size*0.8 : size}
+    viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="icon-grad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="#2563EB"/>
+        <stop offset="100%" stopColor="#7C3AED"/>
+      </linearGradient>
+    </defs>
+    <rect width="44" height="44" rx="11" fill="url(#icon-grad)"/>
+    <path d="M11 9h22v5.5H17.5v6.5H26v5.5h-8.5V35H11V9Z" fill="white"/>
+  </svg>
+);
+const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapsed=false }) => {
+  const iconSize = size * 1.35;
+  if (collapsed) {
+    return <FinzzupIcon size={iconSize} collapsed/>;
+  }
+  return (
+    <div style={{ display:"flex", alignItems:"center", gap: size * 0.35 }}>
+      <FinzzupIcon size={iconSize}/>
+      <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+        <div style={{
+          fontFamily:"'Inter', system-ui, sans-serif",
+          fontWeight:900,
+          fontSize: size * 0.72,
+          lineHeight:1,
+          letterSpacing:"-0.03em",
+          display:"flex",
+          alignItems:"baseline",
+        }}>
+          <span style={{ color: dark ? "white" : "#111827" }}>Finz</span>
+          <span style={{ background:"linear-gradient(90deg,#2563EB,#7C3AED)",
+            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent",
+            backgroundClip:"text" }}>zup</span>
+          <span style={{ fontSize: size * 0.35, color: dark ? "rgba(255,255,255,0.5)" : "#9CA3AF",
+            WebkitTextFillColor: dark ? "rgba(255,255,255,0.5)" : "#9CA3AF",
+            fontWeight:400, marginLeft:1, alignSelf:"flex-start", marginTop:2 }}>™</span>
+        </div>
+        {showTagline && (
+          <div style={{
+            fontFamily:"'Inter', system-ui, sans-serif",
+            fontSize: Math.max(8, size * 0.22),
+            fontWeight:600,
+            color: dark ? "rgba(255,255,255,0.4)" : (darkText ? "#9CA3AF" : "rgba(255,255,255,0.4)"),
+            letterSpacing:"0.12em",
+            textTransform:"uppercase",
+          }}>
+            Build · Value · Scale
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // ─── LOGIN INPUT— defined OUTSIDE Login so it never remounts on re-render ────
 function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
