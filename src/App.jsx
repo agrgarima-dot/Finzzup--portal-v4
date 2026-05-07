@@ -242,7 +242,7 @@ function Icon({ name, size=16, color="currentColor", style={} }) {
   return icons[name] || icons["info"];
 }
 // Generates a one-line meaningful insight for any KPI based on label, value, trend, prev
-function kpiContext(k) {
+function kpiContext(k) {} )  {
   const label = (k.label || "").toLowerCase();
   const up    = k.trend === "up";
   const prev  = k.prev && k.prev !== "—" ? k.prev : null;
