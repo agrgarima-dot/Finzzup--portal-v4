@@ -1671,10 +1671,10 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
         {displayKpis.slice(0,6).map((k,i) => (
           <div key={i} className="ns-kpi-tile" style={{  }}>
             <div className="label">{k.label}</div>
-            <div className="value">{k.value}</div>
+            <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
             {k.prev && k.prev!=="—" && (
               <div className="trend">
-                <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:800 }}>
+                <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>
                   {k.trend==="up"?"↑":"↓"}
                 </span>
                 <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
@@ -2005,7 +2005,7 @@ function CashFlow({ reportData, client, kpis }) {
               <div key={i} style={{ padding:"14px 12px", borderRadius:16,
                 background: w.flag ? `${C.amber}08` : C.bg,
                 border:`1px solid ${w.flag ? C.amber+"40" : C.border}`, textAlign:"center" }}>
-                <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:w.color }}>{w.value}</div>
+                <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:w.color }}>{w.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
                 {w.days !== "—" && <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:w.color, marginTop:2 }}>{w.days}</div>}
                 <div style={{ fontFamily:F, fontSize:10, color:w.flag?C.amber:C.green, marginTop:3 }}>
@@ -2037,7 +2037,7 @@ function CashFlow({ reportData, client, kpis }) {
               { label:"Runway",        value: kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value|| "4.4 mo",  color: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? C.red : C.green, note: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? "⚠️ Below 6 months" : "✅ Healthy" },
             ].map((b,i) => (
               <div key={i} style={{ padding:"14px 12px", borderRadius:16, background:"#fff", border:`1px solid ${C.border}`, textAlign:"center" }}>
-                <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:b.color }}>{b.value}</div>
+                <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:b.color }}>{b.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{b.label}</div>
                 <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3 }}>{b.note}</div>
               </div>
@@ -2164,7 +2164,7 @@ function CashFlow({ reportData, client, kpis }) {
             ].map((w,i) => (
               <div key={i} style={{ padding:"14px 12px", borderRadius:16, background:w.flag?`${C.amber}08`:C.bg,
                 border:`1px solid ${w.flag?C.amber+"40":C.border}`, textAlign:"center" }}>
-                <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:w.color }}>{w.value}</div>
+                <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:w.color }}>{w.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:w.color, marginTop:2 }}>{w.days}</div>
                 <div style={{ fontFamily:F, fontSize:10, color:w.flag?C.amber:C.green, marginTop:3 }}>{w.flag?"! ":"✓ "}{w.note}</div>
@@ -2308,7 +2308,7 @@ function CashFlow({ reportData, client, kpis }) {
             <span style={{ fontFamily:F, fontSize:13, color:b.base?b.color:C.text, fontWeight:b.base?700:400 }}>
               {b.label}{b.note&&<span style={{ fontSize:11, color:C.dim, marginLeft:8 }}>({b.note})</span>}
             </span>
-            <span style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:b.color }}>{b.value}</span>
+            <span style={{ fontFamily:F, fontSize:16, fontWeight:700, color:b.color }}>{b.value}</span>
           </div>
         ))}
       </Card>
@@ -2412,7 +2412,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
         ].map((s,i) => (
           <div key={i} className="ns-kpi-tile" style={{  }}>
             <div className="label">{s.label}</div>
-            <div className="value" style={{ color:s.color, fontFamily:FM, fontSize:18, fontWeight:700 }}>{s.value}</div>
+            <div className="value" style={{ color:s.color }}>{s.value}</div>
           </div>
         ))}
       </div>
@@ -2569,7 +2569,7 @@ function StartupCFOPack({ data, client, reportData }) {
               background: m.flag ? "#FEF2F2" : C.bg,
               border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
+              <div style={{ fontFamily:F, fontSize:16, fontWeight:700,
                 color: m.flag ? C.red : C.blue, marginBottom:4 }}>{m.value}</div>
               <div style={{ fontFamily:F, fontSize:11,
                 color: m.flag ? C.red : C.green, fontWeight:600 }}>
@@ -4372,7 +4372,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="wc-g">
             {reportData.metrics.filter(m => m.value).map((m,i) => (
               <div key={i} style={{ padding:"14px 10px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}`, textAlign:"center" }}>
-                <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:C.teal }}>{m.value}</div>
+                <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:C.teal }}>{m.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{m.label}</div>
                 {m.sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{m.sub}</div>}
               </div>
@@ -4546,7 +4546,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 <div key={i} style={{ padding:"12px 16px", borderRadius:16, textAlign:"center",
                   background: item.bad ? `${C.amber}08` : `${item.color}08`,
                   border:`1px solid ${item.bad ? C.amber+"30" : item.color+"20"}` }}>
-                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:item.color }}>{item.value}</div>
+                  <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:item.color }}>{item.value}</div>
                   <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3 }}>{item.label}</div>
                 </div>
               ))}
@@ -7081,7 +7081,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               ].map((item, i) => (
                 <div key={i} style={{ padding:"12px 14px", borderRadius:16, background:"#fff", border:`1px solid ${C.border}`, textAlign:"center" }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{item.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:item.value==="—"?C.dim:item.color }}>{item.value}</div>
+                  <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:item.value==="—"?C.dim:item.color }}>{item.value}</div>
                 </div>
               ))}
             </div>
@@ -8243,14 +8243,14 @@ function MyDocuments({ client }) {
   };
  
   const fileIcon = (name, docType) => {
-    if (docType === "report") return "chart";
+    if (docType === "report") return "ti-chart-bar";
     const ext = name?.split(".").pop()?.toLowerCase();
-    if (["pdf"].includes(ext))                    return "▤";
-    if (["xls","xlsx","csv"].includes(ext))       return "chart";
-    if (["doc","docx"].includes(ext))             return "doc";
-    if (["jpg","jpeg","png","gif"].includes(ext)) return "img";
-    if (["zip","rar"].includes(ext))              return "zip";
-    return "file";
+    if (["pdf"].includes(ext))                    return "ti-file-type-pdf";
+    if (["xls","xlsx","csv"].includes(ext))       return "ti-table";
+    if (["doc","docx"].includes(ext))             return "ti-file-text";
+    if (["jpg","jpeg","png","gif"].includes(ext)) return "ti-photo";
+    if (["zip","rar"].includes(ext))              return "ti-file-zip";
+    return "ti-file";
   };
  
   // DEMO placeholder docs so the page isn't empty
@@ -8346,16 +8346,16 @@ function MyDocuments({ client }) {
             const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
             return (
               <div key={doc.id || i} style={{ display:"flex", alignItems:"center",
-                justifyContent:"space-between", padding:"12px 14px", borderRadius:16,
-                background: byGarima ? `${C.blue}10` : C.bg,
-                border:`1px solid ${byGarima ? C.blue+"40" : C.border}`,
+                justifyContent:"space-between", padding:"12px 14px", borderRadius:12,
+                background: byGarima ? `${C.blue}08` : C.bg,
+                border:`1px solid ${byGarima ? C.blue+"25" : C.border}`,
                 flexWrap:"wrap", gap:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, flex:1, minWidth:0 }}>
-                  <div style={{ width:38, height:38, borderRadius:16,
+                  <div style={{ width:38, height:38, borderRadius:10,
                     background: byGarima ? `${C.blue}12` : `${C.muted}0A`,
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    fontSize:14, flexShrink:0 }}>
-                    {fileIcon(doc.name, doc.file_url?.startsWith("data:text/html") ? "report" : null)}
+                    display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <i className={"ti " + fileIcon(doc.name, doc.file_url?.startsWith("data:text/html") ? "report" : null)}
+                      style={{ fontSize:18, color: byGarima ? C.blue : C.muted }}/>
                   </div>
                   <div style={{ minWidth:0 }}>
                     <div title={doc.name} style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text,
@@ -13750,9 +13750,9 @@ function Portal({ client, onLogout }) {
           padding: 12px 14px;
           box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
-        .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:4px; }
-        .ns-kpi-tile .value { font-size:18px; font-weight:900; color:#111827; font-family:'DM Mono',monospace; line-height:1.1; }
-        .ns-kpi-tile .trend { font-size:10px; margin-top:3px; display:flex; align-items:center; gap:3px; }
+        .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
+        .ns-kpi-tile .value { font-size:16px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
+        .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
  
         /* Badges */
         .ns-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:700; }
