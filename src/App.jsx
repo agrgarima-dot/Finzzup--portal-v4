@@ -828,7 +828,7 @@ function getReportLabel(p) {
   const n = normalizePack(p);
   if (n === "corporate") return "Corporate Report";
   if (n === "msme")      return "MSME Report";
-  return "Starter Report";
+  return "CFO Report";
 }
 
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
@@ -6742,21 +6742,38 @@ function CFOPackContent({ reportData, client, kpis }) {
     {
       label: "Financial Reports",
       items: [
-        { id:"monthly",    emoji:"ti-chart-bar",     label:"Monthly Report"    },
-        { id:"variance",   emoji:"ti-trending-down", label:"Variance Analysis" },
-        { id:"verticalpnl",emoji:"ti-trending-up",   label:"Vertical P&L"     },
+        { id:"monthly",    emoji:"ti-chart-bar",      label:"Monthly Report"      },
+        { id:"variance",   emoji:"ti-trending-down",  label:"Variance Analysis"   },
+        { id:"verticalpnl",emoji:"ti-trending-up",    label:"Vertical P&L"        },
+        { id:"uniteco",    emoji:"ti-chart-bar",      label:"Unit Economics"      },
       ]
     },
     {
       label: "Cash & Working Capital",
       items: [
-        { id:"workingcap", emoji:"ti-chart-bar",     label:"Working Capital"  },
+        { id:"workingcap", emoji:"ti-chart-bar",      label:"Working Capital"     },
+      ]
+    },
+    {
+      label: "Fundraise & Finance",
+      items: [
+        { id:"fundraise",  emoji:"ti-flag",           label:"Fundraise Readiness" },
+        { id:"loan",       emoji:"ti-building-bank",  label:"Loan Readiness"      },
+        { id:"fundutil",   emoji:"ti-building-bank",  label:"Fund Utilisation"    },
+      ]
+    },
+    {
+      label: "Strategy & Planning",
+      items: [
+        { id:"scenario",   emoji:"ti-target",         label:"Scenarios"           },
+        { id:"bizintel",   emoji:"ti-world",          label:"BI Analysis"         },
+        { id:"spend",      emoji:"ti-chart-bar",      label:"Spend Intel"         },
       ]
     },
     {
       label: "Documents",
       items: [
-        { id:"boardpacks", emoji:"ti-folder",        label:"Board Packs"      },
+        { id:"boardpacks", emoji:"ti-folder",         label:"Board Packs"         },
       ]
     },
   ];
@@ -14300,7 +14317,7 @@ function AdminInput({ label, val, onChange, type="text", placeholder="", mono=fa
   const [local, setLocal] = React.useState(val ?? "");
   React.useEffect(() => { setLocal(val ?? ""); }, [val]);
  
-  const sharedStyle = { width:"100%", padding:"10px 12px", borderRadius:8, fontSize:13,
+  const sharedStyle = { width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
     border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
     background:C.bg, outline:"none", boxSizing:"border-box" };
  
@@ -14351,7 +14368,7 @@ const AdminSelect = ({ label, val, onChange, options, C, F }) => (
     <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
       letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
     <select value={val} onChange={e => onChange(e.target.value)}
-      style={{ width:"100%", padding:"10px 12px", borderRadius:8, fontSize:13,
+      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
         border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
         background:C.bg, outline:"none", boxSizing:"border-box" }}>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -15372,7 +15389,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── ADD CLIENT ── */}
           {tab === "addclient" && (
-            <Card style={{ maxWidth:520 }}>
+            <Card style={{ maxWidth:900 }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:20 }}>
                 New Client Details
               </div>
@@ -15464,7 +15481,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── UPDATE KPIs ── */}
           {tab === "kpis" && (
-            <div style={{ maxWidth:600 }}>
+            <div style={{ maxWidth:900 }}>
               {!selected ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
@@ -15570,7 +15587,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── ACTION ITEMS ── */}
           {tab === "actions" && (
-            <div style={{ maxWidth:600 }}>
+            <div style={{ maxWidth:900 }}>
               {!selected ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
@@ -15633,7 +15650,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── VALUATION ENGAGEMENT ── */}
           {tab === "engagement" && (
-            <div style={{ maxWidth:520 }}>
+            <div style={{ maxWidth:900 }}>
               {!selected ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
@@ -15781,7 +15798,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── REPORT DATA ── */}
           {tab === "reportdata" && (
-            <div style={{ maxWidth:700 }}>
+            <div style={{ maxWidth:900 }}>
               {!selected || !reportData ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
@@ -15981,6 +15998,70 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   </div>
                 </Card>
  
+                {/* ══ 5: WORKING CAPITAL & AR ══════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Working Capital & Cash Conversion</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Drives the <strong>Cash Flow → Working Capital positions</strong> bar and the <strong>Working Capital tab</strong> in the client report.
+                  </p>
+
+                  {/* Days metrics */}
+                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10, textTransform:"uppercase", letterSpacing:"0.07em" }}>Days Metrics</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Debtor Days" val={reportData.debtorDays||""} onChange={v=>setReportData(r=>({...r,debtorDays:v}))} placeholder="e.g. 46" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Creditor Days" val={reportData.creditorDays||""} onChange={v=>setReportData(r=>({...r,creditorDays:v}))} placeholder="e.g. 31" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Inventory Days" val={reportData.inventoryDays||""} onChange={v=>setReportData(r=>({...r,inventoryDays:v}))} placeholder="e.g. 22" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Cash Conversion Cycle (CCC)" val={reportData.ccc||""} onChange={v=>setReportData(r=>({...r,ccc:v}))} placeholder="e.g. 37 days" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Working Capital (total)" val={reportData.workingCapital||""} onChange={v=>setReportData(r=>({...r,workingCapital:v}))} placeholder="e.g. ₹32.4L" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Cash Freed if CCC ↓5d" val={reportData.cccCashImpact||""} onChange={v=>setReportData(r=>({...r,cccCashImpact:v}))} placeholder="e.g. ₹2.8L" mono/>
+                  </div>
+
+                  {/* Raw debtors/creditors for ratio calc */}
+                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10, textTransform:"uppercase", letterSpacing:"0.07em" }}>Balance Sheet Figures (for auto-ratio calc)</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Debtors (AR total)" val={reportData.debtors||""} onChange={v=>setReportData(r=>({...r,debtors:v}))} placeholder="e.g. ₹38.2L" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Creditors (AP total)" val={reportData.creditors||""} onChange={v=>setReportData(r=>({...r,creditors:v}))} placeholder="e.g. ₹21.4L" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Inventory" val={reportData.inventory||""} onChange={v=>setReportData(r=>({...r,inventory:v}))} placeholder="e.g. ₹18.6L" mono/>
+                  </div>
+
+                  {/* Working capital ratios */}
+                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10, textTransform:"uppercase", letterSpacing:"0.07em" }}>Working Capital Ratios (shown in WC tab)</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Current Ratio" val={reportData.currentRatio||""} onChange={v=>setReportData(r=>({...r,currentRatio:v}))} placeholder="e.g. 1.62x" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Quick Ratio" val={reportData.quickRatio||""} onChange={v=>setReportData(r=>({...r,quickRatio:v}))} placeholder="e.g. 1.18x" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Inventory Turnover" val={reportData.invTurnover||""} onChange={v=>setReportData(r=>({...r,invTurnover:v}))} placeholder="e.g. 6.2x" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Debtor Turnover" val={reportData.debtorTurn||""} onChange={v=>setReportData(r=>({...r,debtorTurn:v}))} placeholder="e.g. 7.8x" mono/>
+                  </div>
+
+                  {/* AR Aging */}
+                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10, textTransform:"uppercase", letterSpacing:"0.07em" }}>Debtors Aging Buckets</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="0–30 Days" val={reportData.ar0to30||""} onChange={v=>setReportData(r=>({...r,ar0to30:v}))} placeholder="e.g. ₹18.2L" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="31–60 Days" val={reportData.ar31to60||""} onChange={v=>setReportData(r=>({...r,ar31to60:v}))} placeholder="e.g. ₹12.4L" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="61–90 Days" val={reportData.ar61to90||""} onChange={v=>setReportData(r=>({...r,ar61to90:v}))} placeholder="e.g. ₹4.8L" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="90+ Days" val={reportData.ar90plus||""} onChange={v=>setReportData(r=>({...r,ar90plus:v}))} placeholder="e.g. ₹2.9L" mono/>
+                  </div>
+                  <AdminInput C={C} F={F} FM={FM} label="AR Note (shown under aging table)" val={reportData.arNote||""} onChange={v=>setReportData(r=>({...r,arNote:v}))} placeholder="e.g. Client B ₹4.8L crossed 90 days — chase before 15 March." multiline/>
+                  <AdminInput C={C} F={F} FM={FM} label="Garima's Working Capital Assessment (shown in WC tab)" val={reportData.wcNote||""} onChange={v=>setReportData(r=>({...r,wcNote:v}))} placeholder="Write your working capital commentary here…" multiline/>
+                </Card>
+
+                {/* ══ 6: BANK FINANCE READINESS ══════════════════════════════════ */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Bank Finance Readiness</div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Drives the <strong>Bank Finance / Loan Readiness tab</strong>. Loan score appears as a gauge (0–100).
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }}>
+                    <AdminInput C={C} F={F} FM={FM} label="Loan Readiness Score (0–100)" val={reportData.loanScore||""} onChange={v=>setReportData(r=>({...r,loanScore:v}))} placeholder="e.g. 72" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="DSCR" val={reportData.dscr||""} onChange={v=>setReportData(r=>({...r,dscr:v}))} placeholder="e.g. 2.1x" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Interest Coverage" val={reportData.interestCoverage||""} onChange={v=>setReportData(r=>({...r,interestCoverage:v}))} placeholder="e.g. 4.2x" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Existing Debt" val={reportData.existingDebt||""} onChange={v=>setReportData(r=>({...r,existingDebt:v}))} placeholder="e.g. ₹42L" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Interest Cost (monthly)" val={reportData.interestCost||""} onChange={v=>setReportData(r=>({...r,interestCost:v}))} placeholder="e.g. ₹3.5L" mono/>
+                    <AdminInput C={C} F={F} FM={FM} label="Collateral Available" val={reportData.collateral||""} onChange={v=>setReportData(r=>({...r,collateral:v}))} placeholder="e.g. ₹1.2 Cr" mono/>
+                  </div>
+                  <AdminInput C={C} F={F} FM={FM} label="Loan Eligibility Note (shown below score)" val={reportData.loanNote||""} onChange={v=>setReportData(r=>({...r,loanNote:v}))} placeholder="e.g. Eligible for CGTMSE-backed term loan up to ₹2 Cr at ~9.5% given current DSCR." multiline/>
+                </Card>
+
                 {/* ══ EXISTING: CASH FLOW DATA ══════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -16777,7 +16858,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── UAE / TAX ── */}
           {tab === "uae" && (
-            <div style={{ maxWidth:700 }}>
+            <div style={{ maxWidth:900 }}>
               {!selected ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
@@ -17533,7 +17614,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── UAE CASH & NOTES ── (new tab - synced with UAE CFO Report) */}
           {tab === "uaecashflow" && (
-            <div style={{ maxWidth:700 }}>
+            <div style={{ maxWidth:900 }}>
               {!selected ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
@@ -17646,7 +17727,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── BI & SCENARIOS ── */}
           {tab === "analytics" && (
-            <div style={{ maxWidth:700 }}>
+            <div style={{ maxWidth:900 }}>
               {!selected || !reportData ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
@@ -17806,7 +17887,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── TREASURY ── */}
           {tab === "treasury" && (
-            <div style={{ maxWidth:700 }}>
+            <div style={{ maxWidth:900 }}>
               {!selected || !reportData ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
@@ -17910,7 +17991,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
           {/* ── DOCUMENTS ── */}
           {tab === "documents" && (
-            <div style={{ maxWidth:600 }}>
+            <div style={{ maxWidth:900 }}>
               {!selected ? (
                 <Card style={{ textAlign:"center", padding:40 }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
