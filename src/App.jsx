@@ -20,7 +20,7 @@ const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
             <div key={b.key} style={{ width:"100%", height: Math.max(2,(Math.abs(d[b.key]||0)/maxVal)*(height-24)),
               background: b.fill||"#3B6FF7", borderRadius:"3px 3px 0 0", opacity: b.opacity||1 }}/>
           ))}
-          <div style={{ fontSize:9, color:"#9CA3AF", marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
+          <div style={{ fontSize:9, color:C.dim, marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
         </div>
       ))}
     </div>
@@ -42,7 +42,7 @@ const SimpleLineChart = ({ data=[], lines=[], height=180 }) => {
         })}
       </svg>
       <div style={{ display:"flex", justifyContent:"space-between", padding:"0 4px" }}>
-        {data.map((d,i) => <span key={i} style={{ fontSize:9, color:"#9CA3AF" }}>{d.month||""}</span>)}
+        {data.map((d,i) => <span key={i} style={{ fontSize:9, color:C.dim }}>{d.month||""}</span>)}
       </div>
     </div>
   );
@@ -95,6 +95,9 @@ const C = {
   grad4:   "linear-gradient(90deg,#2563EB,#7C3AED)",
   navy:    "#0F172A",
   navyBorder: "#1E293B",
+  warning:   "#92400E",
+  warningBg: "#FFF7ED",
+  warningBorder: "#FED7AA",
 };
 const F  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
 const FM = "'JetBrains Mono', 'SF Mono', monospace";
@@ -415,32 +418,20 @@ const Card = ({ children, style={}, accent, hover=true }) => {
   );
 };
  
-// StatCard — matches screenshot: icon top-left + big coloured number + grey label
-const StatCard = ({ icon, iconColor, value, label, sub, hover=true }) => {
-  const [hov, setHov] = React.useState(false);
-  return (
-    <div
-      onMouseEnter={()=>setHov(true)}
-      onMouseLeave={()=>setHov(false)}
-      style={{
-        background:"#FFFFFF", borderRadius:12, padding:24,   // DESIGN: Brex 12px radius
-        border:`1px solid ${C.border}`,
-        boxShadow: hov ? "0 4px 12px rgba(0,0,0,0.08)" : "0 1px 3px rgba(0,0,0,0.04)",  // DESIGN: subtle like Brex
-        transform: hov ? "translateY(-2px)" : "translateY(0)",
-        transition:"box-shadow 0.2s ease, transform 0.2s ease",
-        display:"flex", flexDirection:"column", gap:6 }}>
-      {icon && <i className={"ti " + icon} style={{ fontSize:22, color:iconColor||C.blue }}/>}
-      <div style={{ fontFamily:FM, fontSize:22, fontWeight:600,  // DESIGN: Brex uses 600 not 700
-        color:iconColor||C.blue, lineHeight:1.1, marginTop:4 }}>{value}</div>
-      <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{label}</div>
-      {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>{sub}</div>}
-    </div>
-  );
-};
+// StatCard — treasury-style: icon + coloured value + muted label
+const StatCard = ({ icon, iconColor, value, label, sub, hover=true }) => (
+  <Card hover={hover}>
+    {icon && <i className={"ti " + icon} style={{ fontSize:18, color:iconColor||C.blue, marginBottom:10, display:"block" }}/>}
+    <div style={{ fontFamily:F, fontSize:16, fontWeight:700,
+      color:iconColor||C.blue, lineHeight:1.2, marginBottom:4 }}>{value}</div>
+    <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{label}</div>
+    {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{sub}</div>}
+  </Card>
+);
  
 const SectionTitle = ({ children, sub }) => (
   <div style={{ marginBottom:14 }}>
-    <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#0F172A", margin:0, letterSpacing:"-0.01em" }}>{children}</h2>  // DESIGN: 700 not 800
+    <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0, letterSpacing:"-0.01em" }}>{children}</h2>
     {sub && <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>{sub}</p>}
   </div>
 );
@@ -1280,25 +1271,23 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         {/* ── Row 1: KPI tiles (NetSuite style) ── */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>
           {displayKpis.slice(0,6).map((kpi,i) => (
-            <div key={i} style={{ background:"white", borderRadius:16, padding:"12px 14px",
-              border:`1px solid ${C.border}`,
-              boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
+            <Card key={i} style={{ padding:"14px 16px" }}>
               <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-                textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4 }}>
+                textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>
                 {kpi.label}
               </div>
-              <div style={{ fontFamily:FM, fontSize:14, fontWeight:900, color:C.text, lineHeight:1.1 }}>
+              <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:kpi.color||C.text, lineHeight:1.2 }}>
                 {kpi.value}
               </div>
               {kpi.prev && kpi.prev !== "—" && (
-                <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3, display:"flex", alignItems:"center", gap:3 }}>
+                <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:4, display:"flex", alignItems:"center", gap:3 }}>
                   <span style={{ color: kpi.trend==="up"?C.green:C.red, fontWeight:700 }}>
                     {kpi.trend==="up"?"↑":"↓"}
                   </span>
                   prev: {kpi.prev}
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
  
@@ -1306,7 +1295,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div style={{ display:"grid", gridTemplateColumns:"1fr 200px 1fr", gap:20 }}>
  
           {/* P&L Summary table */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -1338,7 +1327,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
  
           {/* Health Score meter (NetSuite KPI Meter) */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex",
             flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
@@ -1363,7 +1352,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
  
           {/* Garima's Note */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             borderLeft:`3px solid ${accentColor}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex", flexDirection:"column" }}>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:accentColor,
@@ -1386,7 +1375,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
  
           {/* Action Items */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -1425,7 +1414,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
  
           {/* AR Aging chart */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -1461,7 +1450,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
  
           {/* Cash Flow sparkline */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Cash Flow Trend</div>
@@ -1506,7 +1495,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
  
         {/* ── Row 4: Key Indicators table (NetSuite style) ── */}
         {(reportData?.variance||[]).length > 0 && (
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Key Performance Indicators</div>
@@ -1793,7 +1782,7 @@ function CashFlow({ reportData, client, kpis }) {
           display:"flex", alignItems:"center", justifyContent:"center",
           fontFamily:F, fontWeight:800, fontSize:15, color:"white" }}>G</div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#92400E", marginBottom:2 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.warning, marginBottom:2 }}>
             Note from Garima — Cash Flow Forecast
           </div>
           <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:8 }}>
@@ -5529,14 +5518,6 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     );
   };
  
-  const StatCard = ({ label, value, sub, color, icon }) => (
-    <div style={{ padding:"14px 16px", borderRadius:16, background:"white",
-      border:`1px solid ${C.border}`, boxShadow:"0 4px 20px rgba(37,99,235,0.06)" }}>
-      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{icon} {label}</div>
-      <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:color||C.text, marginBottom:2 }}>{value}</div>
-      {sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{sub}</div>}
-    </div>
-  );
  
   // ── AI Analysis ───────────────────────────────────────────────────────────
   const generateAI = async () => {
@@ -6667,7 +6648,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 display:"flex", alignItems:"center", justifyContent:"center",
                 fontFamily:F, fontWeight:800, fontSize:14, color:"white" }}>G</div>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:"#92400E", fontFamily:F, marginBottom:4 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:C.warning, fontFamily:F, marginBottom:4 }}>
                   Note from Garima — Profitability Analysis
                 </div>
                 <p style={{ fontSize:13, color:"#78350F", lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
@@ -8575,11 +8556,11 @@ function Treasury({ client, reportData }) {
 // ─── UAE DISCLAIMER BANNER ────────────────────────────────────────────────────
 function UAEDisclaimer() {
   return (
-    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:16,
-      background:"#FFF7ED", border:"1px solid #FED7AA",
+    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:12,
+      background:C.warningBg, border:`1px solid ${C.warningBorder}`,
       display:"flex", gap:10, alignItems:"flex-start" }}>
       <span style={{ fontSize:16, flexShrink:0 }}>⚠️</span>
-      <p style={{ fontFamily:F, fontSize:12, color:"#92400E", lineHeight:1.6, margin:0 }}>
+      <p style={{ fontFamily:F, fontSize:12, color:C.warning, lineHeight:1.6, margin:0 }}>
         {UAE_DISCLAIMER}
       </p>
     </div>
@@ -8662,7 +8643,7 @@ function VATDashboard({ client, reportData }) {
             ))}
           </div>
           <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:6 }}>📅 Next Filing Deadline</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:6 }}>📅 Next Filing Deadline</div>
             <div style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.7 }}>
               <strong>{vatData.filingPeriod}</strong> — Due <strong>{vatData.nextDeadline}</strong><br/>
               VAT Payable: <strong>{fmtAED(vatData.vatPayable)}</strong> — ensure cash is available 3–5 days before filing date.
@@ -9233,7 +9214,7 @@ function CorporateTax({ client, reportData, initialTab }) {
  
             {/* Garima Note */}
             <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:8 }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:8 }}>
                 💬 Garima's Note on RPT Compliance
               </div>
               <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.8, margin:0 }}>
@@ -9416,7 +9397,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             ))}
  
             <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:8 }}>💬 Garima's Note</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:8 }}>💬 Garima's Note</div>
               <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.8, margin:"0 0 12px" }}>
                 Your most urgent related party issue is the <strong>Al Rashidi Brothers service fee</strong> — underpriced at AED 120K vs AED 160–200K market rate.
                 The FTA can adjust this upward during audit and disallow the deduction in Al Rashidi Brothers' return.
@@ -10336,7 +10317,7 @@ function RevenueReconciliation({ client, reportData }) {
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:16, background:"#FFFBEB",
           border:"1px solid #FCD34D", marginBottom:16,
-          fontFamily:F, fontSize:12, color:"#92400E" }}>
+          fontFamily:F, fontSize:12, color:C.warning }}>
           ⚠️ Showing demo data. Garima should enter actual reconciliation figures in the admin panel → UAE / Tax tab → Revenue Reconciliation.
         </div>
       )}
@@ -10430,7 +10411,7 @@ function RevenueReconciliation({ client, reportData }) {
             display:"flex", alignItems:"center", justifyContent:"center",
             fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:2 }}>
               Note from Garima
             </div>
             <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
@@ -10449,7 +10430,7 @@ function RevenueReconciliation({ client, reportData }) {
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:16,
+                  background:"#FEF3C7", color:C.warning, borderRadius:16,
                   padding:"8px 16px", fontFamily:F, fontWeight:700,
                   fontSize:12, border:"1px solid #FDE68A", cursor:"pointer" }}>
                 Download Full Report
@@ -10773,7 +10754,7 @@ function WorkingCapital({ client, reportData }) {
  
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:16, background:"#FFFBEB",
-          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
+          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:C.warning }}>
           ⚠️ Showing demo data. Enter actual figures in admin panel → UAE / Tax tab → Working Capital.
         </div>
       )}
@@ -11037,7 +11018,7 @@ function WorkingCapital({ client, reportData }) {
             display:"flex", alignItems:"center", justifyContent:"center",
             fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>Note from Garima</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:2 }}>Note from Garima</div>
             <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
               Garima Agarwal · CA · Working Capital Analysis
             </div>
@@ -11053,7 +11034,7 @@ function WorkingCapital({ client, reportData }) {
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:16, padding:"8px 16px",
+                  background:"#FEF3C7", color:C.warning, borderRadius:16, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12,
                   border:"1px solid #FDE68A", cursor:"pointer" }}>
                 Download PDF
@@ -11377,7 +11358,7 @@ function VerticalAnalysis({ client, reportData }) {
       {view === "pnl" && (
         <>
           {isDemo && (
-            <div style={{padding:"10px 16px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:16,fontFamily:F,fontSize:12,color:"#92400E"}}>
+            <div style={{padding:"10px 16px",background:C.warningBg,border:`1px solid ${C.warningBorder}`,borderRadius:12,fontFamily:F,fontSize:12,color:C.warning}}>
               ⚠️ Showing demo data. Enter actual figures in admin panel → UAE / Tax tab → Vertical Analysis.
             </div>
           )}
@@ -11958,7 +11939,7 @@ function QFZPModule({ client, reportData }) {
  
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:16, background:"#FFFBEB",
-          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
+          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:C.warning }}>
           ⚠️ Showing demo data. Enter actual substance data in admin panel → UAE / Tax tab → QFZP Substance.
         </div>
       )}
@@ -12189,7 +12170,7 @@ function QFZPModule({ client, reportData }) {
             display:"flex", alignItems:"center", justifyContent:"center",
             fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:2 }}>
               Note from Garima
             </div>
             <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
@@ -12207,7 +12188,7 @@ function QFZPModule({ client, reportData }) {
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:16, padding:"8px 16px",
+                  background:"#FEF3C7", color:C.warning, borderRadius:16, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12,
                   border:"1px solid #FDE68A", cursor:"pointer" }}>
                 Download PDF
@@ -13081,7 +13062,7 @@ function UAECFOReport({ client, reportData, kpis }) {
                     display:"flex", alignItems:"center", justifyContent:"center",
                     fontFamily:F, fontWeight:800, fontSize:15, color:"white" }}>G</div>
                   <div style={{ flex:1 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#92400E", marginBottom:2 }}>Note from Garima — Cash Flow</div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.warning, marginBottom:2 }}>Note from Garima — Cash Flow</div>
                     <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:8 }}>Forward-looking cash position · {period}</div>
                     <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:0 }}>
                       {reportData?.cashflowGarimaNote || "Cash flow forecast for the next 3–6 months. This section covers projected cash inflows, outflows, and ending balance only. For historical cash performance, see the Full Dashboard."}
@@ -16585,7 +16566,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               ) : !isUAE(selected) ? (
                 <Card style={{ textAlign:"center", padding:40, background:"#FFFBEB", border:"1px solid #FCD34D" }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>India</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:"#92400E", fontWeight:600 }}>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.warning, fontWeight:600 }}>
                     Selected client is an India client
                   </div>
                   <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:8 }}>
@@ -17341,7 +17322,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               ) : !isUAE(selected) ? (
                 <Card style={{ textAlign:"center", padding:40, background:"#FFFBEB", border:"1px solid #FCD34D" }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>India</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:"#92400E", fontWeight:600 }}>India client selected</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.warning, fontWeight:600 }}>India client selected</div>
                   <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:8 }}>Switch to a UAE client to edit UAE cash data.</p>
                 </Card>
               ) : !reportData ? (
