@@ -242,7 +242,8 @@ function Icon({ name, size=16, color="currentColor", style={} }) {
   return icons[name] || icons["info"];
 }
 // Generates a one-line meaningful insight for any KPI based on label, value, trend, prev
-function kpiContext(k) {} )  {
+// ── FIXED kpiContext (Yeh pura paste kar do) ──
+function kpiContext(k = {}) {
   const label = (k.label || "").toLowerCase();
   const up    = k.trend === "up";
   const prev  = k.prev && k.prev !== "—" ? k.prev : null;
@@ -256,58 +257,36 @@ function kpiContext(k) {} )  {
     return "0% via QFZP status — maintain substance requirements";
   }
   if (label.includes("qfzp")) {
-    const num = parseFloat(val);
+    const num = parseFloat(val) || 0;
     if (num >= 85) return "Strong QFZP compliance — maintain documentation";
     if (num >= 70) return "Good — address audit readiness to improve";
     return "Action needed — review substance requirements";
   }
 
   if (label.includes("revenue")) {
-    if (!prev) return "Track monthly to spot growth trend";
-    return up ? `Up from ${prev} — growth on track` : `Down from ${prev} — review pipeline`;
+    return up ? Up from ${prev || "last month"} — growth on track : Down from ${prev || "last month"} — review pipeline;
   }
   if (label.includes("margin") || label.includes("gross")) {
-    const num = parseFloat(val);
+    const num = parseFloat(val) || 0;
     if (num >= 60) return "Excellent margin — strong unit economics";
     if (num >= 40) return "Healthy margin · target 45%+ before raise";
-    if (num >= 20) return "Moderate · watch cost structure";
-    return prev ? (up ? `Improving from ${prev} — keep focus` : `Declined from ${prev} — review COGS`) : "Monitor cost of goods sold";
+    return prev ? (up ? Improving from ${prev} : Declined from ${prev} — review COGS) : "Monitor cost of goods sold";
   }
   if (label.includes("cash") || label.includes("balance")) {
-    if (!prev) return "Maintain 6+ months of runway";
-    return up ? `Up from ${prev} — healthy position` : `Down from ${prev} — monitor burn`;
+    return up ? Up from ${prev || "last month"} — healthy position : Down from ${prev || "last month"} — monitor burn;
   }
   if (label.includes("burn")) {
-    return up ? `Improved from ${prev || "last month"} — efficiency gaining` : prev ? `Up from ${prev} — review spend` : "Lower is better — target <₹40L/mo";
+    return up ? Improved from ${prev || "last month"} — efficiency gaining : Up from ${prev || "last month"} — review spend;
   }
   if (label.includes("runway")) {
-    const num = parseFloat(val);
+    const num = parseFloat(val) || 0;
     if (num >= 12) return "Strong runway — focus on growth";
     if (num >= 6)  return "Adequate · start fundraise planning now";
-    if (num >= 3)  return "Under 6 months — act immediately";
     return "Critical — fundraise or cut costs now";
   }
-  if (label.includes("arr") || label.includes("mrr")) {
-    return up ? ("Growing — " + (prev ? "up from " + prev : "positive trend")) : prev ? ("Declined from " + prev + " — check churn") : "Annual recurring revenue";
-  }
-  if (label.includes("ebitda")) {
-    return up ? "Improving profitability" : prev ? `Down from ${prev} — review opex` : "Earnings before interest & tax";
-  }
-  if (label.includes("debtor") || label.includes("receivable")) {
-    const num = parseFloat(val);
-    if (num > 45) return "High — chase collections urgently";
-    if (num > 30) return "Above target · follow up overdue invoices";
-    return "Within target range";
-  }
-  if (label.includes("working capital")) {
-    return up ? `Improved from ${prev || "last period"}` : "Monitor current assets vs liabilities";
-  }
-  if (label.includes("pat") || label.includes("profit")) {
-    return up ? `Profitable · up from ${prev || "last month"}` : prev ? `Declined from ${prev}` : "Net profit after tax";
-  }
+
   // generic fallback
-  if (prev) return up ? `Improved from ${prev}` : `Changed from ${prev}`;
-  return "Updated by Garima";
+  return prev ? (up ? Improved from ${prev} : Changed from ${prev}) : "Updated by Garima";
 }
 
 
