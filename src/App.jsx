@@ -818,8 +818,8 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
       <div style={{ padding:collapsed?"14px 0":"12px 16px", display:"flex",
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
         borderBottom:`1px solid ${C.border}`, minHeight:46, overflow:"visible" }}>
-        {!collapsed && <Logo size={24} dark showTagline={false}/>}
-        {collapsed && <Logo size={18} dark collapsed/>}
+        {!collapsed && <Logo size={24} showTagline={false}/>}
+        {collapsed && <Logo size={18} collapsed/>}
         <button onClick={()=>setCollapsed(c=>!c)} style={{ background:"none", border:"none",
           cursor:"pointer", color:C.dim, fontSize:18, lineHeight:1,
           padding:"2px 0", display:"flex", alignItems:"center" }}>
@@ -865,7 +865,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
                     transition:"all 0.12s", fontFamily:F }}>
                   <i className={"ti " + n.icon}
                     style={{ fontSize:15,
-                      color:page===n.id?C.blue:C.dim,
+                      color:page===n.id?C.blue:C.muted,
                       display:"inline-block", width:collapsed?undefined:16,
                       textAlign:"center" }}/>
                   {!collapsed && (
@@ -3991,7 +3991,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
             transition:"all 0.15s",
           }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <span style={{ fontSize:16 }}><i className={current?.emoji} style={{fontSize:14}}/></span>
+              <span style={{ fontSize:16 }}><i className={"ti " + (current?.emoji||"ti-circle")} style={{fontSize:14}}/></span>
               <div style={{ textAlign:"left" }}>
                 <div style={{ fontSize:11, fontWeight:600, color:"#9CA3AF",
                   textTransform:"uppercase", letterSpacing:"0.08em", lineHeight:1 }}>
@@ -4031,7 +4031,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
                         transition:"background 0.1s" }}
                       onMouseEnter={e => { if(tab!==t.id) e.currentTarget.style.background="#F9FAFB"; }}
                       onMouseLeave={e => { if(tab!==t.id) e.currentTarget.style.background="white"; }}>
-                      <span style={{ fontSize:15, opacity: tab===t.id ? 1 : 0.65 }}><i className={t.emoji} style={{fontSize:13}}/></span>
+                      <span style={{ fontSize:15, opacity: tab===t.id ? 1 : 0.65 }}><i className={"ti " + (t.emoji||"ti-circle")} style={{fontSize:13}}/></span>
                       <span style={{ fontSize:13, fontWeight: tab===t.id ? 700 : 500,
                         color: tab===t.id ? accent : "#374151" }}>{t.label}</span>
                       {tab===t.id && (
@@ -11184,7 +11184,7 @@ function VerticalAnalysis({ client, reportData }) {
             color:view===v.id?"white":C.muted,
             outline:`1.5px solid ${view===v.id?acc:C.border}`,
           }}>
-            <i className={v.emoji} style={{fontSize:13, marginRight:4}}/>{v.label}
+            <i className={"ti " + (v.emoji||"ti-circle")} style={{fontSize:13, marginRight:4}}/>{v.label}
           </button>
         ))}
       </div>
@@ -14837,7 +14837,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     border:"none", cursor:"pointer",
                     borderLeft:tab===t.id?"3px solid #FBBF24":"3px solid transparent",
                     fontFamily:F }}>
-                    <span style={{ fontSize:14, opacity:tab===t.id?1:0.5 }}>{t.icon}</span>
+                    <i className={"ti " + (t.icon||"ti-circle")} style={{ fontSize:14, opacity:tab===t.id?1:0.5 }}/>
                     <span style={{ fontSize:12, fontWeight:600,
                       color:tab===t.id?"#FBBF24":"rgba(255,255,255,0.5)" }}>{t.label}</span>
                   </button>
