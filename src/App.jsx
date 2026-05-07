@@ -804,10 +804,41 @@ function Login({ onLogin }) {
   );
 }
  
+// ─── PACK TIER HELPERS ────────────────────────────────────────────────────────
+// Maps new pricing names → internal names (existing clients unaffected)
+function normalizePack(p) {
+  if (p === "starter")  return "startup";
+  if (p === "growth")   return "msme";
+  if (p === "premium")  return "corporate";
+  return p || "startup";
+}
+// Returns 1 (Starter), 2 (Growth), 3 (Premium)
+function packTier(p) {
+  const n = normalizePack(p);
+  if (n === "corporate") return 3;
+  if (n === "msme")      return 2;
+  return 1;
+}
+function getPackLabel(p) {
+  const n = normalizePack(p);
+  if (n === "corporate") return "Premium Pack";
+  if (n === "msme")      return "Growth Pack";
+  if (n === "uae")       return "UAE Pack";
+  return "Starter Pack";
+}
+function getReportLabel(p) {
+  const n = normalizePack(p);
+  if (n === "corporate") return "Premium Report";
+  if (n === "msme")      return "Growth Report";
+  return "Starter Report";
+}
+
 // ─── SIDEBAR ──────────────────────────────────────────────────────────────────
 // Dynamic nav based on client pack type
 function getNav(client) {
-  const pack = client?.client_pack || client?.clientPack || "startup";
+  const rawPack = client?.client_pack || client?.clientPack || "startup";
+  const pack = normalizePack(rawPack);
+  const tier = packTier(rawPack);
   const type = client?.type || "both";
   const uae  = isUAE(client);
  
@@ -817,35 +848,36 @@ function getNav(client) {
   ];
  
   if (type === "cfo" || type === "both") {
-    base.push({ id:"cashflow", icon:"ti-trending-up", label:"Cash Flow"    });
-    if (pack === "msme" || pack === "corporate" || uae) {
+    base.push({ id:"cashflow", icon:"ti-trending-up", label:"Cash Flow" });
+    // Treasury: Growth+ or UAE
+    if (tier >= 2 || uae) {
       base.push({ id:"treasury", icon:"ti-building-bank", label:"Treasury" });
     }
-    base.push({ id:"actions",  icon:"ti-checkbox", label:"Action Items" });
+    // Action Items: Growth+
+    if (tier >= 2) {
+      base.push({ id:"actions", icon:"ti-checkbox", label:"Action Items" });
+    }
   }
- 
-  const reportLabel = pack === "msme" ? "MSME Report"
-    : pack === "corporate" ? "Board Report"
-    : "CFO Report";
-  base.push({ id:"myreport", icon:"ti-report-analytics", label:reportLabel });
- 
-  // Valuation Status — India only, not for UAE clients
-  if (!uae && (type === "valuation" || type === "both")) {
+
+  base.push({ id:"myreport", icon:"ti-report-analytics", label:getReportLabel(rawPack) });
+
+  // Valuation Status — Growth+, India only
+  if (!uae && tier >= 2 && (type === "valuation" || type === "both")) {
     base.push({ id:"engagement", icon:"ti-scale", label:"Valuation Status" });
   }
- 
-  // ── UAE-specific modules ──
+
+  // UAE-specific modules
   if (uae) {
-    base.push({ id:"corptax",    icon:"ti-receipt-tax", label:"Corporate Tax"  });
-    base.push({ id:"compliance", icon:"ti-calendar-event", label:"Compliance Cal." });
-    base.push({ id:"auditready", icon:"ti-shield-check", label:"Audit Readiness" });
+    base.push({ id:"corptax",    icon:"ti-receipt-tax",     label:"Corporate Tax"   });
+    base.push({ id:"compliance", icon:"ti-calendar-event",  label:"Compliance Cal." });
+    base.push({ id:"auditready", icon:"ti-shield-check",    label:"Audit Readiness" });
   }
- 
-  base.push({ id:"market",    icon:"ti-world", label:"Market Intel" });
-  base.push({ id:"calendar",  icon:"ti-calendar-check", label:"Book a Call"  });
+
+  base.push({ id:"market",   icon:"ti-world",          label:"Market Intel" });
+  base.push({ id:"calendar", icon:"ti-calendar-check", label:"Book a Call"  });
   if (!uae) {
     base.push({ id:"newrequest", icon:"ti-circle-plus", label:"New Request"  });
-    base.push({ id:"invoices",   icon:"ti-receipt", label:"Invoices", badge:2 });
+    base.push({ id:"invoices",   icon:"ti-receipt",     label:"Invoices", badge:2 });
   }
   base.push({ id:"documents", icon:"ti-folder", label:"My Documents" });
   return base;
@@ -1170,13 +1202,17 @@ const PACK_CONFIG = {
     ],
   },
 };
- 
+// Aliases so new pricing names resolve to the same config
+PACK_CONFIG.starter  = PACK_CONFIG.startup;
+PACK_CONFIG.growth   = PACK_CONFIG.msme;
+PACK_CONFIG.premium  = PACK_CONFIG.corporate;
+
 // FIXED: Overview now shows Financial Health Score + Story of Month + Actions only.
 // Removed: Revenue/Expenses chart, Cash Flow chart, KPI cards (all moved to Dashboard).
 // This page is the executive landing — no detailed tables or repeated metrics.
 function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[] }) {
   const displayKpis  = kpis || KPIs;
-  const ovPack       = client?.client_pack || client?.clientPack || "startup";
+  const ovPack       = normalizePack(client?.client_pack || client?.clientPack);
   const uaeClient    = isUAE(client);
   const pendingActions = actions.filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
@@ -1551,7 +1587,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
  
 function Dashboard({ client, kpis, garimaNote, reportData }) {
   const displayKpis = kpis || KPIs;
-  const pack    = client?.client_pack || client?.clientPack || "startup";
+  const pack    = normalizePack(client?.client_pack || client?.clientPack);
   const accent  = pack==="msme" ? C.blue : pack==="corporate" ? C.purple : C.blue;
   const pl      = reportData?.pl || {};
   const uae     = isUAE(client);
@@ -1740,7 +1776,7 @@ const CASHFLOW_MSME = [
 ];
  
 function CashFlow({ reportData, client, kpis }) {
-  const pack = client?.client_pack || client?.clientPack || "startup";
+  const pack = normalizePack(client?.client_pack || client?.clientPack);
  
   // ── Shared tooltip ──────────────────────────────────────────────────────────
   const Tip = ({ active, payload, label }) => {
@@ -3006,8 +3042,8 @@ const COMPLIANCE_DATES = [
 function generateExecSummaryPDF({ client, reportData, kpis }) {
   const company  = client?.company || "Your Company";
   const month    = reportData?.monthLabel || "Current Period";
-  const pack     = client?.client_pack || client?.clientPack || "startup";
-  const packLabel = pack==="msme" ? "MSME Pack" : pack==="corporate" ? "Board Pack" : "CFO Pack";
+  const pack     = normalizePack(client?.client_pack || client?.clientPack);
+  const packLabel = getPackLabel(pack);
  
   const rev  = kpis?.find(k=>k.label?.toLowerCase().includes("rev"))?.value  || reportData?.plInputs?.revenue || "—";
   const cash = kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—";
@@ -3262,7 +3298,7 @@ function MarketWidget({ pack, client }) {
  
 // ─── MARKET INTELLIGENCE PAGE ─────────────────────────────────────────────────
 function MarketIntel({ client }) {
-  const pack  = client?.client_pack || client?.clientPack || "startup";
+  const pack  = normalizePack(client?.client_pack || client?.clientPack);
   const m     = useMarketData();
   const [aiInsight, setAiInsight] = React.useState("");
   const [aiLoading, setAiLoading] = React.useState(false);
@@ -3496,12 +3532,12 @@ function MarketIntel({ client }) {
 function generateCashPDF({ client, reportData, kpis }) {
   const company  = client?.company || "Your Company";
   const month    = reportData?.monthLabel || "Current Period";
-  const pack     = client?.client_pack || client?.clientPack || "startup";
+  const pack     = normalizePack(client?.client_pack || client?.clientPack);
   const note     = reportData?.cashflowNote || reportData?.packNote || "";
   const pl       = reportData?.plInputs || {};
   const isMSME   = pack === "msme";
   const isCorp   = pack === "corporate";
-  const packLabel = isMSME ? "MSME Pack" : isCorp ? "Board Pack" : "CFO Pack";
+  const packLabel = getPackLabel(pack);
  
   // KPIs
   const cashKpi    = kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value    || pl.closingCash || "—";
@@ -4133,7 +4169,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
  
 const CFO_PACK_DATA = {
   startup: {
-    label: "Startup Pack",
+    label: "Starter Pack",
     icon: "rev",
     color: C.blue,
     bg: "#EEF3FE",
@@ -4169,7 +4205,7 @@ const CFO_PACK_DATA = {
     garimaNote: "Your NRR at 112% is the single strongest metric in your deck — it tells investors that customers are expanding, not just renewing. Lead every investor conversation with this. The burn multiple at 1.2x is excellent and has improved from 1.8x six months ago — make sure this trend is visible in your deck. The one gap to address before serious investor conversations: unit economics by cohort. Most Series A investors will ask for a 12-month LTV/CAC by acquisition channel — let's build this together. CAC payback at 8 months is already strong; we just need to show it cleanly. I'd suggest scheduling a 2-hour working session this month to finalise the deck before you start outreach in May.",
   },
   msme: {
-    label: "MSME Pack",
+    label: "Growth Pack",
     icon: "🏭",
     color: C.teal,
     bg: "#E6FAF7",
@@ -4201,7 +4237,7 @@ const CFO_PACK_DATA = {
     garimaNote: "Working capital is healthy overall but the debtor concentration is your biggest risk right now — your top 3 clients represent 64% of accounts receivable. If any one of them delays payment, it cascades into a cash crunch during advance tax weeks. I've flagged Client B's ₹4.8L (90+ days) as Priority 1 this month. On the positive side: your creditor days at 52 are very well managed — that discipline is protecting your cash flow. For Q1 focus: reduce debtor days from 38 to under 30, and the cash conversion cycle improves automatically. The SBI FD renewal on 15 March is also time-sensitive — let's lock in 7.1% before any RBI rate action.",
   },
   corporate: {
-    label: "Corporate Pack",
+    label: "Premium Pack",
     icon: "users",
     color: C.purple,
     bg: "#F3EFFF",
@@ -4371,7 +4407,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
       <div>
         <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>Previous MSME Packs</div>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
+          {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Growth Pack"/>)}
         </div>
       </div>
  
@@ -4774,7 +4810,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
             Monthly packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="MSME Pack"/>)}
+            {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Growth Pack"/>)}
           </div>
           <Card style={{ marginTop:20, background:`${C.teal}06`, borderColor:`${C.teal}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
@@ -4839,7 +4875,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-              {"Board Report"}{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
+              {"Premium Report"}{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
             </div>
             <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>
               {"Actuals vs Budget vs Prior Year · Prepared by Garima Agarwal CA"}
@@ -5257,7 +5293,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
             Monthly board packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Corporate Pack"/>)}
+            {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Premium Pack"/>)}
           </div>
           <Card style={{ marginTop:20, background:`${C.purple}06`, borderColor:`${C.purple}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
@@ -5701,7 +5737,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
 // ─── SCENARIO MODELLING ───────────────────────────────────────────────────────
 function ScenarioModelling({ reportData, accentColor, client }) {
   const acc    = accentColor || C.blue;
-  const pack   = client?.client_pack || client?.clientPack || "startup";
+  const pack   = normalizePack(client?.client_pack || client?.clientPack);
  
   // Pull base figures from admin-entered P&L data
   const parse = (v) => {
@@ -6036,7 +6072,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
 // ─── SPEND INTELLIGENCE ───────────────────────────────────────────────────────
 function SpendIntelligence({ reportData, accentColor, client }) {
   const acc = accentColor || C.blue;
-  const pack = client?.client_pack || client?.clientPack || "startup";
+  const pack = normalizePack(client?.client_pack || client?.clientPack);
  
   const defaultDepts = [
     { name:"Marketing & Sales",   benchmark:15, icon:"ti-speakerphone" },
@@ -7250,7 +7286,7 @@ function CFOPackContent({ reportData, client, kpis }) {
             </Card>
           )}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="CFO Pack"/>)}
+            {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Starter Pack"/>)}
           </div>
           <Card style={{ marginTop:20, background:`${C.blue}06`, borderColor:`${C.blue}20` }}>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, lineHeight:1.7 }}>
@@ -7269,9 +7305,9 @@ function CFOPackContent({ reportData, client, kpis }) {
 function BoardPacksTabbed() {
   const [tab, setTab] = useState("msme");
   const tabs = [
-    { id:"msme",      label:"MSME Pack",     icon:"users", color:C.blue   },
-    { id:"corporate", label:"Corporate Pack", emoji:"ti-building-bank", color:C.purple },
-    { id:"cfo",       label:"CFO Pack",       emoji:"ti-chart-bar", color:C.teal   },
+    { id:"msme",      label:"Growth Pack",   icon:"users", color:C.blue   },
+    { id:"corporate", label:"Premium Pack",  emoji:"ti-building-bank", color:C.purple },
+    { id:"cfo",       label:"Starter Pack",  emoji:"ti-chart-bar", color:C.teal   },
   ];
   const content = { msme:<MSMEPackContent/>, corporate:<CorporatePackContent/>, cfo:<CFOPackContent/> };
   return (
@@ -12745,8 +12781,8 @@ tr.less-row td { color:#059669; }
  
 // ─── PDF REPORT GENERATOR ────────────────────────────────────────────────────
 function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
-  const pack      = client?.client_pack || client?.clientPack || "startup";
-  const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
+  const pack      = normalizePack(client?.client_pack || client?.clientPack);
+  const packLabel = getPackLabel(pack);
   const coverColor = pack === "msme" ? "#065f46,#059669,#0891B2"
                    : pack === "corporate" ? "#4C1D95,#7C3AED,#DB2777"
                    : "#1a3a8f,#2563EB,#7C3AED";
@@ -12966,8 +13002,8 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
  
 // Save report as HTML file to Supabase + insert documents record
 async function saveReportAsDocument({ client, kpis, garimaNote, reportData, actions }) {
-  const pack      = client?.client_pack || client?.clientPack || "startup";
-  const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
+  const pack      = normalizePack(client?.client_pack || client?.clientPack);
+  const packLabel = getPackLabel(pack);
   const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" });
  
   const html     = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
@@ -13216,7 +13252,7 @@ function UAECFOReport({ client, reportData, kpis }) {
 // FIXED: MyReport now shows UAE-specific CFO Report for UAE clients (no India reports)
 // and India pack content for India clients. No duplication with Overview/Dashboard/CashFlow.
 function MyReport({ client, reportData, kpis }) {
-  const pack      = client?.client_pack || client?.clientPack || "startup";
+  const pack      = normalizePack(client?.client_pack || client?.clientPack);
   const uaeClient = isUAE(client);
  
   // UAE clients get a dedicated UAE CFO Report — NOT the India packs
@@ -13224,7 +13260,7 @@ function MyReport({ client, reportData, kpis }) {
     return <UAECFOReport client={client} reportData={reportData} kpis={kpis}/>;
   }
  
-  const packLabel = pack === "msme" ? "MSME Report" : pack === "corporate" ? "Board Report" : "CFO Report";
+  const packLabel = getReportLabel(pack);
   return (
     <div>
       {/* Report header with month context */}
@@ -13257,10 +13293,8 @@ function MyReport({ client, reportData, kpis }) {
 }
  
 function getPageTitle(page, client) {
-  const pack = client?.client_pack || client?.clientPack || "startup";
-  const reportLabel = pack === "msme" ? "MSME Report"
-    : pack === "corporate" ? "Board Report"
-    : "CFO Report";
+  const pack = normalizePack(client?.client_pack || client?.clientPack);
+  const reportLabel = getReportLabel(pack);
   const map = {
     overview:    "Overview",
     dashboard:   "Dashboard",
@@ -13316,8 +13350,8 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
     setSaving(false);
   };
  
-  const pack      = client?.client_pack || client?.clientPack || "startup";
-  const packLabel = pack === "msme" ? "MSME Pack" : pack === "corporate" ? "Board Pack" : "CFO Pack";
+  const pack      = normalizePack(client?.client_pack || client?.clientPack);
+  const packLabel = getPackLabel(pack);
   const month     = reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"});
  
   return (
@@ -15175,9 +15209,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               <AdminSelect C={C} F={F} label="Pack Type" val={newClient.client_pack}
                 onChange={v=>setNewClient(c=>({...c,client_pack:v}))}
                 options={[
-                  {value:"startup",   label:"Startup / CFO Pack"},
-                  {value:"msme",      label:"MSME Pack"},
-                  {value:"corporate", label:"Corporate Pack"},
+                  {value:"startup",   label:"Starter — ₹25,000/mo (P&L + Cash Flow)"},
+                  {value:"msme",      label:"Growth — ₹60,000/mo (+ Working Capital, Actions)"},
+                  {value:"corporate", label:"Premium — ₹1,25,000/mo (Full Strategic Suite)"},
+                  {value:"uae",       label:"UAE Starter — 4,000 AED/mo"},
                 ]}/>
               <AdminSelect C={C} F={F} label="Service Type" val={newClient.type}
                 onChange={v=>setNewClient(c=>({...c,type:v}))}
