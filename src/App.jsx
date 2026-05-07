@@ -14423,12 +14423,12 @@ function AdminLogin({ onLogin }) {
   };
  
   return (
-    <div style={{ minHeight:"100vh", background:"#0A1128", display:"flex", alignItems:"center",
+    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center",
       justifyContent:"center", padding:20, fontFamily:F }}>
       <div style={{ width:"100%", maxWidth:400 }}>
         <div style={{ textAlign:"center", marginBottom:32 }}>
           <div style={{ display:"flex", justifyContent:"center", marginBottom:10 }}>
-            <Logo size={32} dark={true} showTagline={false}/>
+            <Logo size={32} dark={false} showTagline={false}/>
           </div>
           <div style={{ display:"inline-block", padding:"4px 14px", borderRadius:60,
             background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.3)" }}>
@@ -15199,47 +15199,47 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
       {/* Admin Sidebar */}
-      <aside style={{ width:220, minHeight:"100vh", background:C.navy, flexShrink:0,
-        display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ padding:"22px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-          <Logo size={28} dark={true} showTagline={false}/>
+      <aside style={{ width:220, minHeight:"100vh", background:"#F3F4F6", flexShrink:0,
+        display:"flex", flexDirection:"column", borderRight:`1px solid ${C.border}` }}>
+        <div style={{ padding:"22px 20px", borderBottom:`1px solid ${C.border}` }}>
+          <Logo size={28} dark={false} showTagline={false}/>
           <div style={{ marginTop:10, padding:"4px 10px", borderRadius:60, display:"inline-block",
-            background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.3)" }}>
-            <span style={{ fontSize:10, fontWeight:700, color:"#FBBF24", letterSpacing:"0.1em" }}>ADMIN</span>
+            background:`${C.amber}15`, border:`1px solid ${C.amber}30` }}>
+            <span style={{ fontSize:10, fontWeight:700, color:C.amber, letterSpacing:"0.1em" }}>ADMIN</span>
           </div>
         </div>
-        <div style={{ padding:"12px 16px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", fontFamily:F }}>Logged in as</div>
-          <div style={{ fontSize:13, fontWeight:700, color:"white", fontFamily:F, marginTop:2 }}>{admin.name}</div>
+        <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ fontSize:11, color:C.dim, fontFamily:F }}>Logged in as</div>
+          <div style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:F, marginTop:2 }}>{admin.name}</div>
         </div>
         {/* Client selector */}
         {clients.length > 0 && (
-          <div style={{ padding:"10px 12px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-            <div style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.35)",
+          <div style={{ padding:"10px 12px", borderBottom:`1px solid ${C.border}` }}>
+            <div style={{ fontSize:10, fontWeight:700, color:C.muted,
               textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
               Active Client
             </div>
             <select value={selected?.id || ""} onChange={e => {
               const c = clients.find(x => x.id===e.target.value);
               if (c) selectClient(c);
-            }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, fontSize:12,
-              background:"#1a2744", border:"1px solid rgba(255,255,255,0.2)",
-              color:"white", fontFamily:F, outline:"none" }}>
-              <option value="" style={{ background:"#1a2744", color:"white" }}>— Select client —</option>
+            }} style={{ width:"100%", padding:"8px 10px", borderRadius:9, fontSize:12,
+              background:"#fff", border:`1.5px solid ${C.border}`,
+              color:C.text, fontFamily:F, outline:"none" }}>
+              <option value="">— Select client —</option>
               {clients.filter(c=>isUAE(c)).length > 0 && (
-                <optgroup label="UAE Clients" style={{ background:"#1a2744", color:"#86EFAC" }}>
+                <optgroup label="UAE Clients">
                   {clients.filter(c=>isUAE(c)).map(c => (
-                    <option key={c.id} value={c.id} style={{ background:"#1a2744", color:"white" }}>
-                      UAE {c.name} — {c.freezone||c.jurisdiction} ({getPackLabel(c.client_pack)})
+                    <option key={c.id} value={c.id}>
+                      UAE · {c.name} — {c.freezone||c.jurisdiction} ({getPackLabel(c.client_pack)})
                     </option>
                   ))}
                 </optgroup>
               )}
               {clients.filter(c=>!isUAE(c)).length > 0 && (
-                <optgroup label="India Clients" style={{ background:"#1a2744", color:"#FCD34D" }}>
+                <optgroup label="India Clients">
                   {clients.filter(c=>!isUAE(c)).map(c => (
-                    <option key={c.id} value={c.id} style={{ background:"#1a2744", color:"white" }}>
-                      India {c.name} — {c.company} ({getPackLabel(c.client_pack)})
+                    <option key={c.id} value={c.id}>
+                      India · {c.name} — {c.company} ({getPackLabel(c.client_pack)})
                     </option>
                   ))}
                 </optgroup>
@@ -15248,37 +15248,38 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
           </div>
         )}
         <nav style={{ flex:1, padding:"8px 0", overflowY:"auto" }}>
-          {/* Grouped admin tabs — clean sidebar navigation */}
           {["Clients","India","UAE","Shared"].map(group => {
             const groupTabs = ADMIN_TABS.filter(t => t.group === group);
             return (
               <div key={group}>
                 <div style={{ padding:"10px 16px 4px", fontFamily:F, fontSize:9,
-                  fontWeight:700, color:"rgba(255,255,255,0.3)",
+                  fontWeight:700, color:C.muted,
                   textTransform:"uppercase", letterSpacing:"0.12em" }}>
-                  {group === "India" ? "India" : group === "UAE" ? "UAE" : group}
+                  {group}
                 </div>
                 {groupTabs.map(t => (
                   <button key={t.id} onClick={() => setTab(t.id)} style={{
                     display:"flex", alignItems:"center", gap:10, width:"100%",
-                    padding:"10px 16px", background:tab===t.id?"rgba(251,191,36,0.15)":"transparent",
+                    padding:"10px 16px", background:tab===t.id?`${C.amber}12`:"transparent",
                     border:"none", cursor:"pointer",
-                    borderLeft:tab===t.id?"3px solid #FBBF24":"3px solid transparent",
+                    borderLeft:tab===t.id?`3px solid ${C.amber}`:"3px solid transparent",
                     fontFamily:F }}>
-                    <i className={"ti " + (t.icon||"ti-circle")} style={{ fontSize:14, opacity:tab===t.id?1:0.5 }}/>
+                    <i className={"ti " + (t.icon||"ti-circle")} style={{ fontSize:14,
+                      color:tab===t.id?C.amber:C.muted }}/>
                     <span style={{ fontSize:12, fontWeight:600,
-                      color:tab===t.id?"#FBBF24":"rgba(255,255,255,0.5)" }}>{t.label}</span>
+                      color:tab===t.id?C.amber:C.muted }}>{t.label}</span>
                   </button>
                 ))}
               </div>
             );
           })}
         </nav>
-        <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
+        <div style={{ padding:"10px 12px", borderTop:`1px solid ${C.border}` }}>
           <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
             width:"100%", padding:"10px 12px", background:"none", border:"none",
-            cursor:"pointer", borderRadius:16, fontFamily:F, fontSize:13,
-            fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
+            cursor:"pointer", borderRadius:9, fontFamily:F, fontSize:13,
+            fontWeight:600, color:C.muted }}>
+            <i className="ti ti-logout" style={{ fontSize:14 }}/>
             Sign Out
           </button>
         </div>
@@ -15811,7 +15812,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 {/* ══ 1: MONTH LABEL ═══════════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>📅 Month Label</div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-calendar" style={{fontSize:16,color:C.blue}}/> Month Label</div>
                     {reportData?.monthLabel && (
                       <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
                         background:`${C.blue}12`, padding:"3px 12px", borderRadius:60 }}>
@@ -15917,7 +15918,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ overflowX:"auto", marginBottom:20 }}>
                     <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F }}>
                       <thead>
-                        <tr style={{ background:"#0A1128" }}>
+                        <tr style={{ background:C.text }}>
                           {["P&L Line","Budget","Actual","Variance (auto)","Favourable?"].map((h,i) => (
                             <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"center",
                               color:"white", fontWeight:700, fontSize:11, letterSpacing:"0.05em", whiteSpace:"nowrap" }}>{h}</th>
@@ -15967,7 +15968,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   {/* Commentary */}
                   <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:16 }}>
                     <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>
-                      📝 Variance Commentary — 3 key points shown in client report
+                      <span style={{display:"flex",alignItems:"center",gap:8}}><i className="ti ti-notes" style={{fontSize:15,color:C.blue}}/>Variance Commentary — 3 key points shown in client report</span>
                     </div>
                     {(reportData.varianceCommentary || []).map((row, i) => (
                       <div key={i} style={{ display:"grid", gridTemplateColumns:"20px 1fr 2fr 38px", gap:10, marginBottom:12, alignItems:"flex-start" }}>
@@ -16065,7 +16066,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 {/* ══ EXISTING: CASH FLOW DATA ══════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    💰 Cash Flow Chart Data
+                    <span style={{display:"flex",alignItems:"center",gap:8}}><i className="ti ti-trending-up" style={{fontSize:16,color:C.blue}}/>Cash Flow Chart Data</span>
                   </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Enter values in ₹L (lakhs). Actual = past months. Forecast = future. Leave blank to skip.{" "}
@@ -16486,7 +16487,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* ══ EXISTING: KEY METRICS ═════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>📋 Key Metrics Table</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-table" style={{fontSize:15,color:C.blue}}/>Key Metrics Table</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Investor metrics / working capital ratios shown in the client's pack.
                   </p>
@@ -16589,7 +16590,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     onBlur={e=>e.target.style.borderColor=C.border}/>
                 </Card>
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>💰 Cash Flow Forecast Note (from Garima)</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-message" style={{fontSize:15,color:C.blue}}/>Cash Flow Forecast Note (from Garima)</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:10, lineHeight:1.6 }}>
                     Shown <strong>at the very top</strong> of the client's <strong>Cash Flow Forecast</strong> page — this is Garima's forward-looking insight. Write about upcoming projections, not past performance.
                   </p>
@@ -17115,7 +17116,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 {/* ── NEW: VERTICAL ANALYSIS ADMIN ── */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    📊 Vertical Analysis — P&L Lines
+                    <span style={{display:"flex",alignItems:"center",gap:8}}><i className="ti ti-chart-bar" style={{fontSize:15,color:C.blue}}/>Vertical Analysis — P&L Lines</span>
                   </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Enter P&L line items with current and prior period amounts. % of revenue and change (pp) are calculated automatically. Minimum 5 rows required to override demo data.
@@ -17435,7 +17436,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* ── RELATED PARTY TRANSACTIONS ── */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏢 Related Party Transactions (Art. 35 & 34)</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-building" style={{fontSize:15,color:C.blue}}/>Related Party Transactions (Art. 35 &amp; 34)</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Enter each related party entity and transaction. Used to generate the RPT & Connected Persons Report for CT Return filing.
                   </p>
@@ -17494,7 +17495,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* ── CONNECTED PERSONS ── */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>👤 Connected Persons (Art. 36 + CTP010)</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-users" style={{fontSize:15,color:C.blue}}/>Connected Persons (Art. 36 + CTP010)</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Enter each individual connected person. Per CTP010: only natural persons. Director = board seat in constitutional docs. Officer = actual strategic authority.
                   </p>
@@ -17942,7 +17943,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* Maturity Schedule */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>📅 FD Maturity Schedule</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-calendar-due" style={{fontSize:15,color:C.blue}}/>FD Maturity Schedule</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Shown on the Maturity Schedule tab. Enter maturing FDs and recommended action.
                   </p>
