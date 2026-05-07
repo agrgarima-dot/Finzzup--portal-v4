@@ -1666,6 +1666,30 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
 }
 
 
+const CASHFLOW_CORPORATE = [
+  { month:"Sep", operating:32, investing:-8,  financing:-5,  net:19 },
+  { month:"Oct", operating:34, investing:-6,  financing:-5,  net:23 },
+  { month:"Nov", operating:38, investing:-12, financing:-5,  net:21 },
+  { month:"Dec", operating:42, investing:-8,  financing:-10, net:24 },
+  { month:"Jan", operating:36, investing:-5,  financing:-5,  net:26 },
+  { month:"Feb", operating:45, investing:-7,  financing:-5,  net:33 },
+  { month:"Mar", operating:null, investing:null, financing:null, net:null, fOp:38, fInv:-15, fFin:-5, fNet:18 },
+  { month:"Apr", operating:null, investing:null, financing:null, net:null, fOp:44, fInv:-6,  fFin:-5, fNet:33 },
+  { month:"May", operating:null, investing:null, financing:null, net:null, fOp:47, fInv:-5,  fFin:-5, fNet:37 },
+];
+
+const CASHFLOW_MSME = [
+  { month:"Sep", inflow:76, outflow:61, net:15 },
+  { month:"Oct", inflow:79, outflow:64, net:15 },
+  { month:"Nov", inflow:82, outflow:65, net:17 },
+  { month:"Dec", inflow:88, outflow:68, net:20 },
+  { month:"Jan", inflow:81, outflow:64, net:17 },
+  { month:"Feb", inflow:84, outflow:67, net:17 },
+  { month:"Mar", inflow:null, outflow:null, net:null, fInflow:78, fOutflow:69, fNet:9  },
+  { month:"Apr", inflow:null, outflow:null, net:null, fInflow:86, fOutflow:66, fNet:20 },
+  { month:"May", inflow:null, outflow:null, net:null, fInflow:90, fOutflow:67, fNet:23 },
+];
+
 function CashFlow({ reportData, client, kpis }) {
   const pack = client?.client_pack || client?.clientPack || "startup";
 
@@ -1689,10 +1713,12 @@ function CashFlow({ reportData, client, kpis }) {
   const KpiBar = ({ items }) => (
     <div style={{ display:"grid", gridTemplateColumns:`repeat(${items.length},1fr)`, gap:12, marginBottom:20 }} className="cf-kpi">
       {items.map((k,i) => (
-        <div key={i} style={{ padding:"14px 16px", borderRadius:6, background:k.bg||C.bg,
-          border:`1px solid ${k.border||C.border}`, textAlign:"center" }}>
-          <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{k.label}</div>
-          <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:k.color }}>{k.value}</div>
+        <div key={i} style={{ padding:"12px 14px", borderRadius:4, background:"#fff",
+          border:`1px solid ${C.border}`,
+          borderTop:`3px solid ${k.color||C.blue}`,
+          textAlign:"center" }}>
+          <div style={{ fontFamily:F, fontSize:10, fontWeight:600, color:C.dim, marginBottom:5, textTransform:"uppercase", letterSpacing:"0.07em" }}>{k.label}</div>
+          <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:k.color }}>{k.value}</div>
           {k.sub && <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:k.trend==="down"?C.red:C.dim, marginTop:3 }}>{k.sub}</div>}
         </div>
       ))}
@@ -1781,7 +1807,7 @@ function CashFlow({ reportData, client, kpis }) {
         ]}/>
 
         <Card style={{ marginBottom:20 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:4 }}>
             Cash Balance — 9 Month View
           </div>
           <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>
@@ -1823,7 +1849,7 @@ function CashFlow({ reportData, client, kpis }) {
 
         {/* Monthly cash in/out breakdown */}
         <Card style={{ marginBottom:20 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:16 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>
             Monthly Cash Movement — Feb 2026
           </div>
           {[
@@ -1839,7 +1865,7 @@ function CashFlow({ reportData, client, kpis }) {
               borderBottom:i<6?`1px solid ${C.border}`:"none",
               background:r.bold?`${C.blue}04`:"transparent", margin:r.bold?"0 -4px":"0", padding:r.bold?"9px 4px":"9px 0" }}>
               <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:r.bold?700:400 }}>{r.label}</span>
-              <span style={{ fontFamily:FM, fontSize:13, fontWeight:700, color:r.color }}>{r.value}</span>
+              <span style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:r.color }}>{r.value}</span>
             </div>
           ))}
         </Card>
@@ -2569,7 +2595,7 @@ function MSMECFOPack({ data, reportData }) {
                   {m.flag ? "! " : "✓ "}{m.note}
                 </div>
               </div>
-              <div style={{ fontFamily:FM, fontSize:15, fontWeight:700,
+              <div style={{ fontFamily:FM, fontSize:16, fontWeight:700,
                 color: m.flag ? C.red : C.teal }}>{m.value}</div>
             </div>
           ))}
@@ -3168,7 +3194,7 @@ function MarketWidget({ pack, client }) {
           <div key={i} style={{ padding:"12px 14px", borderRadius:6,
             background:`${item.color}08`, border:`1px solid ${item.color}18` }}>
             <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
-              <span style={{ fontSize:14 }}>{item.icon}</span>
+              <i className={"ti " + (item.icon||"ti-circle")} style={{fontSize:14}}/>
               <span style={{ fontFamily:F, fontSize:10, color:C.muted, fontWeight:600,
                 textTransform:"uppercase", letterSpacing:"0.05em" }}>{item.label}</span>
             </div>
@@ -3263,7 +3289,7 @@ function MarketIntel({ client }) {
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
         flexWrap:"wrap", gap:12, marginBottom:24 }}>
         <div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, marginBottom:4 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:4 }}>
             {"Market Intelligence"}
           </div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>
@@ -3293,7 +3319,7 @@ function MarketIntel({ client }) {
             <div key={i} style={{ padding:"12px 14px", borderRadius:6,
               background:`${item.color}08`, border:`1px solid ${item.color}18` }}>
               <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:4 }}>
-                <span>{item.icon}</span>
+                <i className={"ti " + (item.icon||"ti-circle")} style={{fontSize:14}}/>
                 <span style={{ fontFamily:F, fontSize:10, color:C.muted, fontWeight:700,
                   textTransform:"uppercase", letterSpacing:"0.05em" }}>{item.label}</span>
               </div>
@@ -4058,6 +4084,109 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
   );
 }
 
+const CFO_PACK_DATA = {
+  startup: {
+    label: "Startup Pack",
+    icon: "rev",
+    color: C.blue,
+    bg: "#EEF3FE",
+    grad: "linear-gradient(135deg,#3B6FF7,#7C5CF5)",
+    tagline: "Fundraise-ready financials for your next round",
+    fundraiseScore: 74,
+    fundraiseBreakdown: [
+      { label:"Revenue Growth",          score:85, comment:"Strong 42% YoY — above Series A median" },
+      { label:"Gross Margin",            score:78, comment:"41% is healthy; target 45%+ before raise" },
+      { label:"Runway",                  score:55, comment:"4.4 months — tight; raise in next 60 days" },
+      { label:"Financial Documentation", score:70, comment:"3yr P&L ready; projections need refresh" },
+      { label:"Unit Economics",          score:72, comment:"CAC/LTV ratio needs improvement" },
+    ],
+    investorMetrics: [
+      { label:"ARR",          value:"₹6.2 Cr",  flag:false, note:"Good for Series A" },
+      { label:"MoM Growth",   value:"6%",        flag:false, note:"Consistent" },
+      { label:"Burn Multiple",value:"1.2x",      flag:false, note:"Improved — target <1.5x ✅" },
+      { label:"CAC Payback",  value:"8 mo",      flag:false, note:"Down from 18mo — healthy ✅" },
+      { label:"NRR",          value:"112%",      flag:false, note:"Expansion revenue positive ✅" },
+      { label:"Gross Margin", value:"41%",       flag:false, note:"On track" },
+    ],
+    dueDiligence: [
+      { item:"Audited financials (3 years)",              done:true  },
+      { item:"5-year projections with assumptions",       done:true  },
+      { item:"Cap table (fully diluted)",                 done:true  },
+      { item:"MIS pack — last 6 months",                  done:false },
+      { item:"Unit economics — cohort analysis",          done:false },
+      { item:"Board resolutions for previous fundraises", done:true  },
+      { item:"ESOP scheme document",                      done:false },
+      { item:"Shareholder agreement (all investors)",     done:true  },
+    ],
+    boardPacks: BOARD_PACKS,
+    garimaNote: "Your NRR at 112% is the single strongest metric in your deck — it tells investors that customers are expanding, not just renewing. Lead every investor conversation with this. The burn multiple at 1.2x is excellent and has improved from 1.8x six months ago — make sure this trend is visible in your deck. The one gap to address before serious investor conversations: unit economics by cohort. Most Series A investors will ask for a 12-month LTV/CAC by acquisition channel — let's build this together. CAC payback at 8 months is already strong; we just need to show it cleanly. I'd suggest scheduling a 2-hour working session this month to finalise the deck before you start outreach in May.",
+  },
+  msme: {
+    label: "MSME Pack",
+    icon: "🏭",
+    color: C.teal,
+    bg: "#E6FAF7",
+    grad: "linear-gradient(135deg,#0CB8A4,#3B6FF7)",
+    tagline: "Cash flow health and working capital intelligence",
+    cashHealth: 68,
+    cashBreakdown: [
+      { label:"Cash Conversion Cycle",  score:55, comment:"42 days — reduce debtor days to improve" },
+      { label:"Working Capital Ratio",  score:72, comment:"1.6x — adequate but watch March dip" },
+      { label:"Debtor Days",            score:58, comment:"38 days — target <30 for your sector" },
+      { label:"Creditor Days",          score:80, comment:"52 days — well managed" },
+      { label:"Inventory Turnover",     score:75, comment:"6.2x — good for FMCG segment" },
+    ],
+    workingCapital: [
+      { label:"Current Ratio",       value:"1.62x", flag:false, note:"Healthy (>1.5)" },
+      { label:"Quick Ratio",         value:"1.18x", flag:false, note:"Adequate" },
+      { label:"Debtor Days",         value:"38 days",flag:true, note:"Target <30" },
+      { label:"Creditor Days",       value:"52 days",flag:false,note:"Well managed" },
+      { label:"Inventory Days",      value:"24 days",flag:false,note:"Lean" },
+      { label:"Cash Conversion",     value:"10 days",flag:false,note:"Good" },
+    ],
+    growth: [
+      { label:"Revenue Growth YoY",   value:"22%",    flag:false, note:"Sector avg: 18%" },
+      { label:"EBITDA Margin",        value:"14.2%",  flag:false, note:"Healthy" },
+      { label:"Gross Margin Trend",   value:"▲ +2pp", flag:false, note:"Improving" },
+      { label:"Debtor Concentration", value:"High",   flag:true,  note:"Top 3 = 64% of AR" },
+    ],
+    boardPacks: BOARD_PACKS,
+    garimaNote: "Working capital is healthy overall but the debtor concentration is your biggest risk right now — your top 3 clients represent 64% of accounts receivable. If any one of them delays payment, it cascades into a cash crunch during advance tax weeks. I've flagged Client B's ₹4.8L (90+ days) as Priority 1 this month. On the positive side: your creditor days at 52 are very well managed — that discipline is protecting your cash flow. For Q1 focus: reduce debtor days from 38 to under 30, and the cash conversion cycle improves automatically. The SBI FD renewal on 15 March is also time-sensitive — let's lock in 7.1% before any RBI rate action.",
+  },
+  corporate: {
+    label: "Corporate Pack",
+    icon: "users",
+    color: C.purple,
+    bg: "#F3EFFF",
+    grad: "linear-gradient(135deg,#7C5CF5,#E8509A)",
+    tagline: "IPO readiness, compliance flags & Ind AS health check",
+    ipoScore: 58,
+    ipoBreakdown: [
+      { label:"Revenue Scale",              score:75, comment:"₹85 Cr — approaching IPO threshold" },
+      { label:"Profitability Track Record", score:60, comment:"EBITDA positive 2yr; need 3yr PAT" },
+      { label:"Governance & Board",         score:55, comment:"Independent director appointment pending" },
+      { label:"Ind AS Compliance",          score:65, comment:"Ind AS 116 and 109 need attention" },
+      { label:"Audit Quality",              score:72, comment:"Big 4 auditor — positive signal" },
+    ],
+    complianceFlags: [
+      { flag:"Ind AS 116 — Lease Accounting",      severity:"High",   detail:"Operating leases not yet restated under IFRS 16 equivalent." },
+      { flag:"Ind AS 109 — Financial Instruments", severity:"High",   detail:"ECL provisioning not computed for trade receivables." },
+      { flag:"Related Party Disclosures",           severity:"Medium", detail:"2 transactions in FY24 may require enhanced disclosure." },
+      { flag:"Independent Director",                severity:"Medium", detail:"Board needs 1 additional independent director for LODR." },
+      { flag:"CSR Compliance",                      severity:"Low",    detail:"CSR spend at 1.8% vs required 2% — minor shortfall." },
+    ],
+    indAS: [
+      { standard:"Ind AS 36 — Impairment",    status:"Compliant",    note:"Tested annually" },
+      { standard:"Ind AS 116 — Leases",        status:"Action Needed",note:"Restatement required" },
+      { standard:"Ind AS 109 — Fin Instruments",status:"Action Needed",note:"ECL model needed" },
+      { standard:"Ind AS 113 — Fair Value",    status:"Compliant",    note:"Mark-to-market current" },
+      { standard:"Ind AS 21 — Foreign Ops",    status:"Compliant",    note:"USD invoices hedged" },
+    ],
+    boardPacks: BOARD_PACKS,
+    garimaNote: "The IPO readiness score of 58 reflects real gaps — but they're all fixable within 6 months if we move now. The two Ind AS items (116 and 109) should be your immediate priority: commission a Big 4 firm to run the restatement project in parallel with your Q1 close. This typically takes 8–10 weeks. The governance gap (independent director) takes longer — start the search now, not after you've engaged bankers. On the positive side: EBITDA margin at 17.5% and ROCE at 22.4% are genuinely strong metrics that will resonate with QIBs. Revenue scale at ₹85 Cr is approaching the ₹100 Cr threshold that makes the IPO story cleaner. One more quarter like February and we're there.",
+  },
+};
+
 function MSMEPackContent({ reportData, kpis, client }) {
   const [tab, setTab] = useState("monthly");
 
@@ -4096,7 +4225,6 @@ function MSMEPackContent({ reportData, kpis, client }) {
     },
   ];
 
-  const data = CFO_PACK_DATA["msme"];
   const archiveDocs = useLiveDocs(client);
 
   return (
@@ -4104,7 +4232,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
       <div>
 
       {tab === "monthly" && (
-    <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
       {(reportData?.reportNote || reportData?.packNote) && (
         <Card style={{ borderLeft:`3px solid ${C.teal}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
@@ -4651,7 +4779,6 @@ function CorporatePackContent({ reportData, kpis, client }) {
     },
   ];
 
-  const data = CFO_PACK_DATA["corporate"];
   const archiveDocs = useLiveDocs(client);
 
   return (
@@ -5271,7 +5398,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
           return (
             <div key={i}>
               <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
-                <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{d.icon} {d.name}</span>
+                <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600, display:"flex", alignItems:"center", gap:6 }}><i className={"ti " + (d.icon||"ti-map-pin")} style={{fontSize:13, flexShrink:0}}/>{d.name}</span>
                 <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                   {margin !== null && (
                     <span style={{ fontFamily:F, fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:60,
@@ -5321,7 +5448,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
                 : null;
               return (
                 <tr key={i} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===0?"white":C.bg2 }}>
-                  <td style={{ padding:"9px 10px", fontWeight:600, color:C.text }}>{d.icon} {d.name}</td>
+                  <td style={{ padding:"9px 10px", fontWeight:600, color:C.text }}><i className={"ti " + (d.icon||"ti-map-pin")} style={{fontSize:13, marginRight:5}}/>{d.name}</td>
                   <td style={{ padding:"9px 10px", color:C.green, fontWeight:600 }}>{fmt(d.revenue||0)}</td>
                   <td style={{ padding:"9px 10px", color:C.red, fontWeight:600 }}>{fmt(d.cost||0)}</td>
                   <td style={{ padding:"9px 10px", color:gp>=0?C.green:C.red, fontWeight:700 }}>{fmt(gp)}</td>
@@ -5408,7 +5535,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
             outline:`1.5px solid ${view===v.id ? acc : C.border}`,
             display:"flex", alignItems:"center", gap:6,
           }}>
-            <Icon name={v.icon} size={14} color="currentColor"/>
+            <i className={"ti " + (v.icon||"ti-circle")} style={{fontSize:14}}/>
             {v.label}
           </button>
         ))}
@@ -5710,7 +5837,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
               <div style={{ padding:"12px 16px", background:s.bg,
                 borderBottom:`1px solid ${s.color}20` }}>
                 <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:2 }}>
-                  <span style={{ fontSize:16 }}>{s.icon}</span>
+                  <i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:16}}/>
                   <div style={{ fontFamily:F, fontWeight:800, fontSize:13, color:s.color }}>
                     {s.name}
                   </div>
@@ -5844,7 +5971,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
             <div style={{ width:36, height:36, borderRadius:6,
               background:`${SCENARIOS.find(s=>s.id===activeScenario)?.color}15`,
               display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
-              {SCENARIOS.find(s=>s.id===activeScenario)?.icon}
+              <i className={"ti " + (SCENARIOS.find(s=>s.id===activeScenario)?.icon||"ti-circle")} style={{fontSize:16}}/>
             </div>
             <div>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
@@ -5988,7 +6115,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
                 background:"#fff", border:`1px solid ${C.border}` }}>
                 {/* Row header */}
                 <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
-                  <span style={{ fontSize:18 }}>{d.icon}</span>
+                  <i className={"ti " + (d.icon||"ti-circle")} style={{fontSize:18}}/>
                   <div style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text, flex:1 }}>
                     {d.name}
                   </div>
@@ -6464,7 +6591,6 @@ function CFOPackContent({ reportData, client, kpis }) {
     },
   ];
 
-  const data = CFO_PACK_DATA["startup"];
   const archiveDocs = useLiveDocs(client);
 
   return (
@@ -6613,7 +6739,7 @@ function CFOPackContent({ reportData, client, kpis }) {
           <div style={{ padding:"18px 22px", borderRadius:8,
             background:`linear-gradient(135deg,${C.blue}10,${C.teal}08)`,
             border:`1px solid ${C.blue}18` }}>
-            <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text, marginBottom:4 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:4 }}>
               {"Unit Economics"}
             </div>
             <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
@@ -6827,7 +6953,7 @@ function CFOPackContent({ reportData, client, kpis }) {
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
               <div style={{ width:44, height:44, borderRadius:6, background:C.blue, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>{"🏦"}</div>
               <div>
-                <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text }}>{"Loan Readiness Report"}</div>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{"Loan Readiness Report"}</div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{reportData?.monthLabel ? `As of ${reportData.monthLabel}` : "Current Period"}{" | Prepared by Garima Agarwal CA"}</div>
               </div>
             </div>
@@ -6889,7 +7015,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               ].map((item, i) => (
                 <div key={i} style={{ padding:"12px 14px", borderRadius:6, background:item.flag?`${C.amber}08`:C.bg2, border:`1px solid ${item.flag?C.amber+"30":C.border}` }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{item.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:item.value==="Not provided"?C.dim:item.flag?C.amber:C.text }}>{item.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:item.value==="Not provided"?C.dim:item.flag?C.amber:C.text }}>{item.value}</div>
                 </div>
               ))}
             </div>
@@ -7117,7 +7243,7 @@ function BoardPacksTabbed() {
       <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
         {tabs.map(t => (
           <button key={t.id} onClick={() => setTab(t.id)} style={{ padding:"10px 18px", borderRadius:60, border:"none", cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s", background:tab===t.id?t.color:C.bg2, color:tab===t.id?"white":C.muted, outline:`1.5px solid ${tab===t.id?t.color:C.border}`, boxShadow:tab===t.id?`0 4px 14px ${t.color}35`:"none", touchAction:"manipulation" }}>
-            {t.icon} {t.label}
+            <><i className={"ti " + (t.icon||"ti-circle")} style={{fontSize:13, marginRight:5}}/>{t.label}</>
           </button>
         ))}
       </div>
@@ -7136,7 +7262,6 @@ function BoardPacksTabbed() {
 // ─── CFO PACKS (existing component) ──────────────────────────────────────────
 function CFOPacks({ client, reportData }) {
   const packType  = client.client_pack || client.clientPack || "startup";
-  const data      = CFO_PACK_DATA[packType];
   const [tab, setTab] = useState("pack"); // "pack" | "boardpacks"
   const [liveDocs, setLiveDocs] = useState([]);
   const isDemo = client?.isDemo === true;
@@ -7182,7 +7307,7 @@ function CFOPacks({ client, reportData }) {
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:4 }}>
           <div style={{ width:40, height:40, borderRadius:6, background:data.grad,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>
-            {data.icon}
+            <i className={"ti " + (data.icon||"ti-circle")} style={{fontSize:20}}/>
           </div>
           <div>
             <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0 }}>{data.label}</h2>
@@ -7270,7 +7395,7 @@ function Engagement({ liveData }) {
           <div>
             <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
               textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>Engagement</div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>{eng.type}</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{eng.type}</div>
             <div style={{ fontFamily:FM, fontSize:12, color:C.muted, marginTop:3 }}>Ref: {eng.ref}</div>
           </div>
           <div style={{ textAlign:"right" }}>
@@ -7365,7 +7490,7 @@ function Calendar() {
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(59,111,247,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
             <div style={{ marginBottom:14 }}><i className="ti ti-bolt" style={{fontSize:28, color:C.blue}}/></div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:8 }}>
               30-min Valuation Call
             </div>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:20 }}>
@@ -7389,7 +7514,7 @@ function Calendar() {
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(124,92,245,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
             <div style={{ marginBottom:14 }}><i className="ti ti-brain" style={{fontSize:28, color:C.purple}}/></div>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:8 }}>
               60-min CFO Strategy Call
             </div>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7, marginBottom:20 }}>
@@ -7417,7 +7542,7 @@ function Calendar() {
             { icon:"ti-brain", title:"60-min CFO Strategy", desc:"Best for: Monthly review, fundraise prep, cash flow planning, board pack walkthrough, investor narrative." },
           ].map((item, i) => (
             <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px", borderRadius:6, background:C.bg }}>
-              <span style={{ fontSize:20 }}>{item.icon}</span>
+              <i className={"ti " + (item.icon||"ti-circle")} style={{fontSize:20, color:C.blue}}/>
               <div>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:3 }}>{item.title}</div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{item.desc}</div>
@@ -7561,7 +7686,7 @@ function NewRequest({ client, setPage }) {
     <div style={{ padding:32, maxWidth:520 }}>
       <Card style={{ textAlign:"center", padding:48 }}>
         <div style={{ marginBottom:16 }}><i className="ti ti-circle-check" style={{fontSize:48, color:C.green}}/></div>
-        <h2 style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text, marginBottom:8 }}>Request Submitted!</h2>
+        <h2 style={{ fontFamily:F, fontWeight:800, fontSize:13, color:C.text, marginBottom:8 }}>Request Submitted!</h2>
         <p style={{ fontFamily:F, fontSize:14, color:C.muted, lineHeight:1.7, marginBottom:24 }}>
           Garima will review your request and send a scoped proposal within 24 hours. You'll hear from her at <strong>{form.email || client?.email}</strong>.
         </p>
@@ -7819,7 +7944,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
         </div>
         <div style={{ textAlign:"right" }}>
-          <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
+          <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
             {inv.amount}
           </div>
           <div style={{ display:"flex", gap:8, marginTop:8, justifyContent:"flex-end" }}>
@@ -7886,7 +8011,7 @@ function Invoices({ client, liveInvoices }) {
             <span style={{ fontFamily:F, fontSize:13, color:C.text }}>{item.desc}</span>
             <span style={{ fontFamily:FM, fontSize:12, color:C.muted }}>{item.qty}</span>
             <span style={{ fontFamily:FM, fontSize:12, color:C.muted }}>{item.unit}</span>
-            <span style={{ fontFamily:FM, fontSize:13, fontWeight:700, color:C.text }}>{item.total}</span>
+            <span style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:C.text }}>{item.total}</span>
           </div>
         ))}
         <div style={{ display:"flex", justifyContent:"flex-end", padding:"14px 0 0",
@@ -7932,12 +8057,12 @@ function Invoices({ client, liveInvoices }) {
       {/* Summary */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="inv-sum">
         {[
-          { label:"Total Outstanding", value:"₹50,000", color:C.amber, icon:"○" },
+          { label:"Total Outstanding", value:"₹50,000", color:C.amber, icon:"ti-clock" },
           { label:"Paid This Year",    value:"₹1,15,000",color:C.green, icon:"ti-circle-check" },
           { label:"Total Invoices",    value:"3",         color:C.blue,  icon:"▤" },
         ].map((s,i) => (
           <Card key={i} style={{ padding:18, textAlign:"center" }}>
-            <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+            <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
             <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
             <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.label}</div>
           </Card>
@@ -8278,7 +8403,7 @@ function Treasury({ client, reportData }) {
             { label:"Cash Conversion Cycle",         value:`${UAE_T.dso - UAE_T.dpo + UAE_T.dio} days`, color:C.amber, icon:"🔄" },
           ].map((s,i) => (
             <Card key={i} style={{ padding:18 }}>
-              <div style={{ fontSize:15, marginBottom:8 }}>{s.icon}</div>
+              <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
               <div style={{ fontFamily:F, fontSize:14, fontWeight:800, color:s.color }}>{s.value}</div>
             </Card>
@@ -8286,13 +8411,13 @@ function Treasury({ client, reportData }) {
         </div>
       )}
 
-      <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:0, borderBottom:`1px solid ${C.border}`, marginBottom:14 }}>
         {[["overview","Overview"],["maturity","Maturity Schedule"],["recommendations","Recommendations"]].map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:60, border:"none",
-            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
-            background: tab===id ? C.blue : C.bg2, color: tab===id ? "white" : C.muted,
-            outline:`1.5px solid ${tab===id ? C.blue : C.border}`,
-            boxShadow: tab===id ? `0 4px 14px ${C.blue}35` : "none" }}>
+          <button key={id} onClick={() => setTab(id)} style={{
+            padding:"7px 16px", background:"none", border:"none",
+            borderBottom: tab===id ? `2px solid ${C.blue}` : "2px solid transparent",
+            cursor:"pointer", fontFamily:F, fontSize:12, fontWeight:tab===id?600:400,
+            color: tab===id ? C.blue : C.muted, marginBottom:-1, transition:"all 0.1s" }}>
             {lbl}
           </button>
         ))}
@@ -8302,12 +8427,12 @@ function Treasury({ client, reportData }) {
         <>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="tr-grid">
             {[
-              { label:"Total Cash",      value:TREASURY_DATA.totalCash,              icon:"ti-cash", color:C.blue  },
+              { label:"Total Cash",      value:TREASURY_DATA.totalCash,              icon:"ti-wallet", color:C.blue  },
               { label:uae?"In Term Deposits":"Invested in FDs", value:`${TREASURY_DATA.investedPct}%`, icon:"ti-trending-up", color:C.teal  },
               { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,                icon:"ti-building-bank", color:C.green },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
-                <div style={{ fontSize:16, marginBottom:10 }}>{s.icon}</div>
+                <div style={{ marginBottom:10 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                 <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.label}</div>
               </Card>
@@ -8451,12 +8576,13 @@ function VATDashboard({ client, reportData }) {
         </div>
       </div>
 
-      <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:0, borderBottom:`1px solid ${C.border}`, marginBottom:14 }}>
         {tabs.map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:60, border:"none",
-            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
-            background:tab===id?C.blue:"#F3F4F6", color:tab===id?"white":C.muted,
-            outline:`1.5px solid ${tab===id?C.blue:C.border}` }}>
+          <button key={id} onClick={() => setTab(id)} style={{
+            padding:"7px 16px", background:"none", border:"none",
+            borderBottom: tab===id ? `2px solid ${C.green}` : "2px solid transparent",
+            cursor:"pointer", fontFamily:F, fontSize:12, fontWeight:tab===id?600:400,
+            color: tab===id ? C.green : C.muted, marginBottom:-1, transition:"all 0.1s" }}>
             {lbl}
           </button>
         ))}
@@ -8471,7 +8597,7 @@ function VATDashboard({ client, reportData }) {
               { label:"VAT Payable",             value:fmtAED(vatData.vatPayable),color:C.amber, icon:"ti-cash" },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
-                <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+                <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
                 <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
               </Card>
@@ -8668,7 +8794,7 @@ function CorporateTax({ client, reportData, initialTab }) {
       {/* Header bar */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12, padding:"4px 0" }}>
         <div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text }}>Corporate Tax (CT)</div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Corporate Tax (CT)</div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>UAE Corporate Tax — effective June 2023</div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -8697,7 +8823,7 @@ function CorporateTax({ client, reportData, initialTab }) {
               { label:"CT Return Due",     value:ctData.ctDue,                  color:C.blue, icon:"ti-calendar" },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
-                <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+                <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
                 <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
               </Card>
@@ -8851,7 +8977,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
                   <div style={{ textAlign:"right", minWidth:110 }}>
                     <span style={{
-                      fontFamily:FM, fontSize:13, fontWeight:700,
+                      fontFamily:FM, fontSize:15, fontWeight:600,
                       color: isFirst ? C.text : isAdd ? C.red : C.green,
                     }}>
                       {isAdd && !isFirst ? "+" : isAdd ? "" : "−"} {fmtAED(Math.abs(a.amount))}
@@ -8974,12 +9100,12 @@ function CorporateTax({ client, reportData, initialTab }) {
             {/* Summary */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
               {[
-                { label:"Total RPT Value",       value:fmtAED(rptData.totalRPT), color:C.blue,  icon:"ti-link" },
+                { label:"Total RPT Value",       value:fmtAED(rptData.totalRPT), color:C.blue,  icon:"ti-arrows-exchange" },
                 { label:"% of Revenue",           value:`${rptData.revenueRatio}%`, color:rptData.revenueRatio>25?C.amber:C.green, icon:"ti-chart-bar" },
                 { label:"High-Risk Transactions", value:rptData.transactions.filter(t=>t.risk==="High").length, color:C.red, icon:"ti-alert-triangle" },
               ].map((s,i) => (
                 <Card key={i} style={{ padding:18 }}>
-                  <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
                   <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
                 </Card>
@@ -9157,12 +9283,12 @@ function CorporateTax({ client, reportData, initialTab }) {
             {/* Summary */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
               {[
-                { label:"Total RPT Value",         value:fmtAED(totalRPT),                                                        color:C.blue,  icon:"ti-link" },
+                { label:"Total RPT Value",         value:fmtAED(totalRPT),                                                        color:C.blue,  icon:"ti-arrows-exchange" },
                 { label:"% of Revenue",            value:`${((totalRPT/1850000)*100).toFixed(1)}%`,                               color:C.amber, icon:"ti-chart-bar" },
                 { label:"Non-Compliant Entities",  value:rptData.entities.filter(e=>!e.compliant).length,                         color:C.red,   icon:"ti-alert-triangle" },
               ].map((s,i) => (
                 <Card key={i} style={{ padding:18 }}>
-                  <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
                   <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
                 </Card>
@@ -9440,7 +9566,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                 { label:"High Risk — Evidence Gaps",           value:cpData.persons.filter(p=>p.risk==="High").length, color:C.red,    icon:"ti-alert-triangle" },
               ].map((s,i) => (
                 <Card key={i} style={{ padding:18 }}>
-                  <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
                   <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
                 </Card>
@@ -9505,7 +9631,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                           <div style={{ fontFamily:F, fontSize:13, color:C.text }}>{pay.type}</div>
                           <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:1 }}>{pay.basis}</div>
                         </div>
-                        <div style={{ fontFamily:FM, fontSize:13, fontWeight:700, color:C.text }}>
+                        <div style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:C.text }}>
                           AED {pay.amount.toLocaleString()}
                         </div>
                       </div>
@@ -9693,12 +9819,12 @@ function CorporateTax({ client, reportData, initialTab }) {
             {/* Score header */}
             <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }}>
               {[
-                { label:"Transactions Tested",      value:alData.totalTransactions, color:C.blue,  icon:"ti-microscope" },
+                { label:"Transactions Tested",      value:alData.totalTransactions, color:C.blue,  icon:"ti-search" },
                 { label:"Arm's Length Compliant",   value:alData.compliant,          color:C.green, icon:"ti-circle-check" },
                 { label:"Require Adjustment",        value:alData.nonCompliant,       color:alData.nonCompliant>0?C.red:C.green, icon:"ti-alert-triangle" },
               ].map((s,i) => (
                 <Card key={i} style={{ padding:18 }}>
-                  <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
                   <div style={{ fontFamily:F, fontSize:16, fontWeight:800, color:s.color }}>{s.value}</div>
                 </Card>
@@ -10091,7 +10217,7 @@ function RevenueReconciliation({ client, reportData }) {
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
             NEW · UAE VAT Compliance
           </div>
-          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, margin:0 }}>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, margin:0 }}>
             Revenue Reconciliation
           </h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4, lineHeight:1.5 }}>
@@ -10107,7 +10233,7 @@ function RevenueReconciliation({ client, reportData }) {
       </div>
 
       {/* What & Why explanation */}
-      <Card style={{ marginBottom:14, background:`${C.blue}06`, borderLeft:`4px solid ${C.blue}` }}>
+      <Card style={{ marginBottom:14, background:`${C.blue}06`, borderLeft:`3px solid ${C.blue}` }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
           <div style={{ width:36, height:36, borderRadius:6, background:C.blue, flexShrink:0,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>💡</div>
@@ -10129,7 +10255,7 @@ function RevenueReconciliation({ client, reportData }) {
       {/* KPI Summary strip */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }}>
         {[
-          { label:"IFRS Revenue (Books)", value:fmtAED(totalIFRS), color:C.blue,  icon:"ti-book", sub:"Per audited accounts" },
+          { label:"IFRS Revenue (Books)", value:fmtAED(totalIFRS), color:C.blue,  icon:"ti-book-2", sub:"Per audited accounts" },
           { label:"VAT Return Revenue",   value:fmtAED(totalVAT),  color:C.teal,  icon:"ti-receipt", sub:"Declared to FTA" },
           {
             label: fullyReconciled ? "✅ Fully Reconciled" : "Net Difference",
@@ -10140,7 +10266,7 @@ function RevenueReconciliation({ client, reportData }) {
           },
         ].map((s,i) => (
           <Card key={i} style={{ padding:18 }}>
-            <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+            <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
             <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
             <div style={{ fontFamily:FM||"monospace", fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
             <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:4 }}>{s.sub}</div>
@@ -10572,7 +10698,7 @@ function WorkingCapital({ client, reportData }) {
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
             NEW · Liquidity & Collections
           </div>
-          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, margin:0 }}>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, margin:0 }}>
             Working Capital Management
           </h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
@@ -11409,7 +11535,7 @@ function ComplianceCalendar({ client }) {
       <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>Compliance Calendar</h2>
       <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>All UAE deadlines — VAT, Corporate Tax, Audit, License — in one view.</p>
 
-      <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
         {[["all","All"],["vat","VAT"],["ct","Corp Tax"],["audit","Audit"],["license","License"]].map(([id,lbl]) => (
           <button key={id} onClick={() => setFilter(id)} style={{ padding:"8px 16px", borderRadius:60, border:"none",
             cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700,
@@ -11757,7 +11883,7 @@ function QFZPModule({ client, reportData }) {
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
             NEW · QFZP Compliance · Federal Decree-Law No. 47 of 2022
           </div>
-          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, margin:0 }}>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, margin:0 }}>
             QFZP Substance Tracker
           </h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
@@ -11836,7 +11962,7 @@ function QFZPModule({ client, reportData }) {
       </div>
 
       {/* What is QFZP box */}
-      <Card style={{ marginBottom:14, background:`${C.purple}06`, borderLeft:`4px solid ${C.purple}` }}>
+      <Card style={{ marginBottom:14, background:`${C.purple}06`, borderLeft:`3px solid ${C.purple}` }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
           <div style={{ width:36, height:36, borderRadius:6, background:C.purple, flexShrink:0,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🏙️</div>
@@ -12130,12 +12256,13 @@ function Terms() {
     <div style={{ padding:14, maxWidth:720 }}>
       <SectionTitle sub="Legal documentation for Finzzup — Garima Agarwal, CA (M.No. 160944)">Legal & Compliance</SectionTitle>
 
-      <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:0, borderBottom:`1px solid ${C.border}`, marginBottom:14 }}>
         {[["terms","Terms & Conditions"],["privacy","Privacy Policy"],["copyright","© Copyright"]].map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:60, border:"none",
-            cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700,
-            background: tab===id ? C.blue : C.bg2, color: tab===id ? "white" : C.muted,
-            outline:`1.5px solid ${tab===id ? C.blue : C.border}` }}>
+          <button key={id} onClick={() => setTab(id)} style={{
+            padding:"7px 16px", background:"none", border:"none",
+            borderBottom: tab===id ? `2px solid ${C.blue}` : "2px solid transparent",
+            cursor:"pointer", fontFamily:F, fontSize:12, fontWeight:tab===id?600:400,
+            color: tab===id ? C.blue : C.muted, marginBottom:-1 }}>
             {lbl}
           </button>
         ))}
@@ -12865,7 +12992,7 @@ function UAECFOReport({ client, reportData, kpis }) {
       <div style={{ padding:"20px 24px 0", display:"flex", alignItems:"center",
         justifyContent:"space-between", flexWrap:"wrap", gap:10, marginBottom:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text }}>UAE CFO Report</div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>UAE CFO Report</div>
           <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#00732F",
             background:"#E8F5EE", padding:"4px 12px", borderRadius:60 }}>
             {freezone}
@@ -12912,7 +13039,7 @@ function UAECFOReport({ client, reportData, kpis }) {
                   { label:"Net Cash After Obligations",      value:reportData?.netCashAfterObl  || "AED 487K",                                    color:C.green,  icon:"ti-circle-check" },
                 ].map((s,i) => (
                   <Card key={i} style={{ padding:18, borderTop:`3px solid ${s.color}` }}>
-                    <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+                    <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                     <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
                     <div style={{ fontFamily:"monospace", fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
                   </Card>
@@ -13061,7 +13188,7 @@ function MyReport({ client, reportData, kpis }) {
       {/* Report header with month context */}
       <div style={{ padding:"20px 24px 0", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text }}>{packLabel}</div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{packLabel}</div>
           {reportData?.monthLabel ? (
             <span style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.blue,
               background:`${C.blue}12`, padding:"4px 14px", borderRadius:60 }}>
@@ -14962,7 +15089,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
           {/* ── ADD CLIENT ── */}
           {tab === "addclient" && (
             <Card style={{ maxWidth:520 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:20 }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:20 }}>
                 New Client Details
               </div>
               <AdminInput C={C} F={F} FM={FM} label="Client Name"    val={newClient.name}    onChange={v=>setNewClient(c=>({...c,name:v}))}    placeholder="e.g. Ravi Sharma" />
@@ -15081,7 +15208,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 <Card>
                   <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4, flexWrap:"wrap", gap:8 }}>
                     <div>
-                      <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>
+                      <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>
                         KPI Update — {selected.name}
                       </div>
                       {kpis.month && (
@@ -15229,7 +15356,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 </Card>
               ) : (
                 <Card>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:20 }}>
                     Valuation Engagement — {selected.name}
                   </div>
                   <AdminInput C={C} F={F} FM={FM} label="Engagement Type" val={engagement.type||""}
@@ -15328,7 +15455,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         background: inv.status==="paid" ? `${C.green}04` : `${C.amber}04` }}>
                         <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
                           <div>
-                            <div style={{ fontFamily:FM, fontSize:13, fontWeight:700, color:C.text }}>
+                            <div style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:C.text }}>
                               {inv.invoice_number}
                             </div>
                             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:3 }}>
@@ -15600,7 +15727,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       <tbody>
                         {(reportData.cashflow || []).map((row, i) => (
                           <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
-                            <td style={{ padding:"8px 10px", fontFamily:FM, fontSize:13, fontWeight:700, color:C.text, width:80 }}>{row.month}</td>
+                            <td style={{ padding:"8px 10px", fontFamily:FM, fontSize:15, fontWeight:600, color:C.text, width:80 }}>{row.month}</td>
                             <td style={{ padding:"6px 10px" }}>
                               <InlineInput value={row.actual}
                                 onCommit={v => { const cf=[...reportData.cashflow]; cf[i]={...cf[i],actual:v}; setReportData(r=>({...r,cashflow:cf})); }}
@@ -17644,7 +17771,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
           {/* ── REQUESTS ── */}
           {tab === "requests" && (
             <div style={{ padding:28 }}>
-              <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, marginBottom:4 }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:4 }}>
                 Client Requests
               </div>
               <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:24 }}>
