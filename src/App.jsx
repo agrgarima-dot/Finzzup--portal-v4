@@ -15213,7 +15213,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 <optgroup label="UAE Clients" style={{ background:"#1a2744", color:"#86EFAC" }}>
                   {clients.filter(c=>isUAE(c)).map(c => (
                     <option key={c.id} value={c.id} style={{ background:"#1a2744", color:"white" }}>
-                      UAE {c.name} — {c.freezone||c.jurisdiction} ({c.client_pack})
+                      UAE {c.name} — {c.freezone||c.jurisdiction} ({getPackLabel(c.client_pack)})
                     </option>
                   ))}
                 </optgroup>
@@ -15222,7 +15222,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 <optgroup label="India Clients" style={{ background:"#1a2744", color:"#FCD34D" }}>
                   {clients.filter(c=>!isUAE(c)).map(c => (
                     <option key={c.id} value={c.id} style={{ background:"#1a2744", color:"white" }}>
-                      India {c.name} — {c.company} ({c.client_pack})
+                      India {c.name} — {c.company} ({getPackLabel(c.client_pack)})
                     </option>
                   ))}
                 </optgroup>
@@ -15333,9 +15333,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                                   </span>
                                 )}
                                 <Badge color={
-                                  c.client_pack==="msme" ? C.teal :
-                                  c.client_pack==="corporate" ? C.purple : C.blue
-                                }>{c.client_pack?.toUpperCase()}</Badge>
+                                  normalizePack(c.client_pack)==="msme" ? C.teal :
+                                  normalizePack(c.client_pack)==="corporate" ? C.purple : C.blue
+                                }>{getPackLabel(c.client_pack)}</Badge>
                                 <span style={{ fontFamily:FM, fontSize:10, fontWeight:700, color:C.amber,
                                   background:`${C.amber}15`, padding:"2px 7px", borderRadius:60 }}>
                                   {c.invite_code}
@@ -17925,7 +17925,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     </div>
                     <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.amber,
                       background:`${C.amber}15`, padding:"3px 10px", borderRadius:60 }}>
-                      {selected.client_pack?.toUpperCase()} · {selected.company?.split(" ")[0]}
+                      {getPackLabel(selected.client_pack)} · {selected.company?.split(" ")[0]}
                     </span>
                   </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
@@ -18017,7 +18017,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                         flexWrap:"wrap", gap:10 }}>
                         <div style={{ display:"flex", alignItems:"center", gap:20 }}>
                           <div style={{ width:36, height:36, borderRadius:9, background:`${C.blue}12`,
-                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}></div>
+                            display:"flex", alignItems:"center", justifyContent:"center" }}>
+                            <i className={"ti " + (()=>{const ext=d.name?.split(".").pop()?.toLowerCase();if(["pdf"].includes(ext))return"ti-file-type-pdf";if(["xls","xlsx","csv"].includes(ext))return"ti-table";if(["doc","docx"].includes(ext))return"ti-file-text";return"ti-file-analytics";})()}
+                              style={{ fontSize:16, color:C.blue }}/>
+                          </div>
                           <div>
                             <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
                             <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2, display:"flex", gap:8, flexWrap:"wrap" }}>
