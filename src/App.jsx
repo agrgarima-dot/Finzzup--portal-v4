@@ -805,14 +805,12 @@ function Login({ onLogin }) {
 }
  
 // ─── PACK TIER HELPERS ────────────────────────────────────────────────────────
-// Maps new pricing names → internal names (existing clients unaffected)
 function normalizePack(p) {
-  if (p === "starter")  return "startup";
   if (p === "growth")   return "msme";
   if (p === "premium")  return "corporate";
   return p || "startup";
 }
-// Returns 1 (Starter), 2 (Growth), 3 (Premium)
+// Returns 1 (Starter/₹25k), 2 (MSME/₹60k), 3 (Corporate/₹1.25L)
 function packTier(p) {
   const n = normalizePack(p);
   if (n === "corporate") return 3;
@@ -821,8 +819,8 @@ function packTier(p) {
 }
 function getPackLabel(p) {
   const n = normalizePack(p);
-  if (n === "corporate") return "Premium Pack";
-  if (n === "msme")      return "Growth Pack";
+  if (n === "corporate") return "Corporate Pack";
+  if (n === "msme")      return "MSME Pack";
   if (n === "uae")       return "UAE Pack";
   return "Starter Pack";
 }
@@ -4319,9 +4317,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
       ]
     },
   ];
- 
+
   const archiveDocs = useLiveDocs(client);
- 
+
   return (
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.teal}>
       <div>
@@ -6744,38 +6742,21 @@ function CFOPackContent({ reportData, client, kpis }) {
     {
       label: "Financial Reports",
       items: [
-        { id:"monthly",    emoji:"ti-chart-bar",  label:"Monthly Report"      },
-        { id:"variance",   emoji:"ti-trending-down", label:"Variance Analysis"   },
-        { id:"verticalpnl",emoji:"ti-trending-up",        label:"Vertical P&L"        },
-        { id:"uniteco",    emoji:"ti-chart-bar",  label:"Unit Economics"      },
+        { id:"monthly",    emoji:"ti-chart-bar",     label:"Monthly Report"    },
+        { id:"variance",   emoji:"ti-trending-down", label:"Variance Analysis" },
+        { id:"verticalpnl",emoji:"ti-trending-up",   label:"Vertical P&L"     },
       ]
     },
     {
       label: "Cash & Working Capital",
       items: [
-        { id:"workingcap", emoji:"ti-chart-bar", label:"Working Capital"     },
-      ]
-    },
-    {
-      label: "Fundraise & Finance",
-      items: [
-        { id:"fundraise",  emoji:"ti-flag",       label:"Fundraise Readiness" },
-        { id:"loan",       emoji:"ti-building-bank",       label:"Loan Readiness"      },
-        { id:"fundutil",   emoji:"ti-building-bank",   label:"Fund Utilisation"    },
-      ]
-    },
-    {
-      label: "Strategy & Planning",
-      items: [
-        { id:"scenario",   emoji:"ti-target",   label:"Scenarios"           },
-        { id:"bizintel",   emoji:"ti-world",         label:"BI Analysis"         },
-        { id:"spend",      emoji:"ti-chart-bar",  label:"Spend Intel"         },
+        { id:"workingcap", emoji:"ti-chart-bar",     label:"Working Capital"  },
       ]
     },
     {
       label: "Documents",
       items: [
-        { id:"boardpacks", emoji:"ti-folder",  label:"Board Packs"         },
+        { id:"boardpacks", emoji:"ti-folder",        label:"Board Packs"      },
       ]
     },
   ];
@@ -15413,10 +15394,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               <AdminSelect C={C} F={F} label="Pack Type" val={newClient.client_pack}
                 onChange={v=>setNewClient(c=>({...c,client_pack:v}))}
                 options={[
-                  {value:"startup",   label:"Starter — ₹25,000/mo (P&L + Cash Flow)"},
-                  {value:"msme",      label:"Growth — ₹60,000/mo (+ Working Capital, Actions)"},
-                  {value:"corporate", label:"Premium — ₹1,25,000/mo (Full Strategic Suite)"},
-                  {value:"uae",       label:"UAE Starter — 4,000 AED/mo"},
+                  {value:"startup",   label:"Starter — ₹25,000/mo (P&L + Working Capital)"},
+                  {value:"msme",      label:"MSME — ₹60,000/mo (+ Fundraise Readiness, Finance)"},
+                  {value:"corporate", label:"Corporate — ₹1,25,000/mo (+ Full Strategic Suite)"},
+                  {value:"uae",       label:"UAE — 4,000 AED/mo"},
                 ]}/>
               <AdminSelect C={C} F={F} label="Service Type" val={newClient.type}
                 onChange={v=>setNewClient(c=>({...c,type:v}))}
