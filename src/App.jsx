@@ -16116,8 +16116,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* ══ EXISTING: PACK SCORE ══════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    🎯 {selected.client_pack==="startup"?"Fundraise":selected.client_pack==="msme"?"Cash Health":"IPO Readiness"} Score
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-target" style={{fontSize:15,color:C.blue}}/>{selected.client_pack==="startup"?"Fundraise":selected.client_pack==="msme"?"Cash Health":"IPO Readiness"} Score
                   </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Overall score (0–100) shown as the big gauge on the client's report page.
@@ -16366,7 +16366,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                 {/* ══ CORPORATE: GOVERNANCE FIELDS ═══════════════════════════════ */}
                 {selected.client_pack === "corporate" && (
                   <Card style={{ marginBottom:20 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"⚖️ Board Governance Data"}</div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-scale" style={{fontSize:15,color:C.blue}}/>Board Governance Data</div>
                     <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
                       {"Shown on Board Governance tab — compliance statuses, director counts, Ind AS health."}
                     </p>
@@ -16516,8 +16516,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* ══ EXISTING: CHECKLIST ═══════════════════════════════════════ */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    ✅ {selected.client_pack==="corporate"?"Compliance Checklist":"Due Diligence Checklist"}
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-checklist" style={{fontSize:15,color:C.blue}}/>{selected.client_pack==="corporate"?"Compliance Checklist":"Due Diligence Checklist"}
                   </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Tick items as the client completes/provides them. Shown on their report page.
@@ -16753,7 +16753,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <div style={{ width:36, height:36, borderRadius:16,
                       background:`linear-gradient(135deg,${C.purple},${C.blue})`,
                       display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
-                      {"✦"}
+                      <i className="ti ti-sparkles" style={{fontSize:18,color:"#fff"}}/>
                     </div>
                     <div>
                       <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
@@ -16950,7 +16950,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* VAT Data */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🧾 VAT Dashboard Data</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-receipt" style={{fontSize:15,color:C.blue}}/>VAT Dashboard Data</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Shown on the client's VAT Dashboard tab.
                   </p>
@@ -16977,7 +16977,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* CT Data */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏛️ Corporate Tax Data</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-building-bank" style={{fontSize:15,color:C.blue}}/>Corporate Tax Data</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Shown on the client's Corporate Tax tab.
                   </p>
@@ -17016,7 +17016,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* QFZP Score */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏙️ QFZP Compliance Score</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-building-community" style={{fontSize:15,color:C.blue}}/>QFZP Compliance Score</div>
                   <AdminInput C={C} F={F} FM={FM} label="QFZP Score (0–100)" val={reportData?.qfzp?.qfzpScore||""}
                     onChange={v=>setReportData(r=>({...r,qfzp:{...(r.qfzp||{}),qfzpScore:Number(v)||v}}))} placeholder="e.g. 82" mono/>
                   <AdminInput C={C} F={F} FM={FM} label="Audit Readiness Score (0–100)" val={reportData?.auditReadiness?.auditScore||""}
@@ -17025,8 +17025,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* ── NEW: QFZP SUBSTANCE ADMIN ── */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    🏙️ QFZP Substance Tracker
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-building-community" style={{fontSize:15,color:C.blue}}/>QFZP Substance Tracker
                   </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Track all 5 substance pillars for QFZP compliance. Used in the Substance Tracker page and downloadable PDF.
@@ -17556,7 +17556,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
  
                 {/* ── ARM'S LENGTH TESTS ── */}
                 <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>⚖️ Arm's Length Tests</div>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-scale" style={{fontSize:15,color:C.blue}}/>Arm's Length Tests</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Enter each related-party transaction tested for arm's length compliance. Shown on the client's Arm's Length tab.
                   </p>
