@@ -88,7 +88,7 @@ const C = {
   grad4:   "linear-gradient(135deg,#D97706,#DB2777)",
 };
 const F  = "'Plus Jakarta Sans', sans-serif";
-const FM = "'DM Mono', monospace";
+const FM = "'Inter', system-ui, sans-serif"; // tabular nums via font-feature-settings
 const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
 
 // ─── JURISDICTION HELPERS ─────────────────────────────────────────────────────
@@ -5417,7 +5417,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
       {!hasData && (
         <Card>
           <div style={{ textAlign:"center", padding:"24px 0" }}>
-            <div style={{ fontSize:32, marginBottom:12 }}></div>
+            <div style={{ marginBottom:12 }}><i className="ti ti-chart-bar" style={{fontSize:28, color:C.blue}}/></div>
             <div style={{ fontFamily:F, fontSize:14, color:C.muted, marginBottom:6 }}>No financial data entered yet.</div>
             <div style={{ fontFamily:F, fontSize:12, color:C.dim }}>Ask Garima to update your report data in the admin panel.</div>
           </div>
@@ -5667,7 +5667,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
   if (!hasData) return (
     <Card>
       <div style={{ textAlign:"center", padding:"32px 0" }}>
-        <div style={{ fontSize:32, marginBottom:12 }}></div>
+        <div style={{ marginBottom:12 }}><i className="ti ti-chart-bar" style={{fontSize:28, color:C.blue}}/></div>
         <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text, marginBottom:6 }}>
           No financial data available
         </div>
@@ -5938,7 +5938,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
   if (!hasData) return (
     <Card>
       <div style={{ textAlign:"center", padding:"32px 0" }}>
-        <div style={{ fontSize:32, marginBottom:12 }}></div>
+        <div style={{ marginBottom:12 }}><i className="ti ti-chart-bar" style={{fontSize:28, color:C.blue}}/></div>
         <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text, marginBottom:6 }}>
           No spend data available yet
         </div>
@@ -7080,7 +7080,7 @@ function CFOPackContent({ reportData, client, kpis }) {
           </div>
           {archiveDocs.length === 0 && !isDemo && (
             <Card style={{ textAlign:"center", padding:"32px 0", marginBottom:16 }}>
-              <div style={{ fontSize:32, marginBottom:8 }}></div>
+              <div style={{ marginBottom:8 }}><i className="ti ti-chart-bar" style={{fontSize:28, color:C.blue}}/></div>
               <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>No packs uploaded yet. Garima will upload your monthly pack here.</div>
             </Card>
           )}
@@ -7364,7 +7364,7 @@ function Calendar() {
             transition:"box-shadow 0.2s" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(59,111,247,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
-            <div style={{ fontSize:32, marginBottom:14 }}></div>
+            <div style={{ marginBottom:14 }}><i className="ti ti-bolt" style={{fontSize:28, color:C.blue}}/></div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
               30-min Valuation Call
             </div>
@@ -7388,7 +7388,7 @@ function Calendar() {
             transition:"box-shadow 0.2s" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(124,92,245,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
-            <div style={{ fontSize:32, marginBottom:14 }}></div>
+            <div style={{ marginBottom:14 }}><i className="ti ti-brain" style={{fontSize:28, color:C.purple}}/></div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
               60-min CFO Strategy Call
             </div>
@@ -7560,7 +7560,7 @@ function NewRequest({ client, setPage }) {
   if (submitted) return (
     <div style={{ padding:32, maxWidth:520 }}>
       <Card style={{ textAlign:"center", padding:48 }}>
-        <div style={{ fontSize:56, marginBottom:16 }}></div>
+        <div style={{ marginBottom:16 }}><i className="ti ti-circle-check" style={{fontSize:48, color:C.green}}/></div>
         <h2 style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text, marginBottom:8 }}>Request Submitted!</h2>
         <p style={{ fontFamily:F, fontSize:14, color:C.muted, lineHeight:1.7, marginBottom:24 }}>
           Garima will review your request and send a scoped proposal within 24 hours. You'll hear from her at <strong>{form.email || client?.email}</strong>.
@@ -8125,7 +8125,7 @@ function MyDocuments({ client }) {
 
         {!loading && displayDocs.length === 0 && (
           <div style={{ textAlign:"center", padding:"32px 0" }}>
-            <div style={{ fontSize:32, marginBottom:8 }}></div>
+            <div style={{ marginBottom:8 }}><i className="ti ti-chart-bar" style={{fontSize:28, color:C.blue}}/></div>
             <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
               No documents yet. Garima will upload your reports here.
             </div>
