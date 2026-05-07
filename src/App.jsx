@@ -900,7 +900,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
         borderBottom:"1px solid #2d2d4e", minHeight:48 }}>
         {!collapsed && <Logo size={24} dark={true} showTagline={false}/>}
         {collapsed && <Logo size={20} dark={true} collapsed={true}/>}
-        <button onClick={()=>setCollapsed(c=>!c)} style={{ background:"none", border:"none",
+        <button onClick={()=>setCollapsed(prev=>!prev)} style={{ background:"none", border:"none",
           cursor:"pointer", color:"rgba(255,255,255,0.3)", fontSize:16, padding:2, lineHeight:1 }}>
           {collapsed?"›":"‹"}
         </button>
@@ -1002,7 +1002,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
         <span style={{ fontSize:11, color:C.dim, fontFamily:F }}>{now}</span>
         {/* Notification bell */}
         <div style={{ position:"relative" }}>
-          <button onClick={()=>setOpen(o=>!o)}
+          <button onClick={()=>setOpen(prev=>!prev)}
             style={{ position:"relative", background:"none", border:"none", cursor:"pointer",
               width:28, height:28, display:"flex", alignItems:"center", justifyContent:"center",
               borderRadius:6, transition:"background 0.1s" }}
@@ -13678,7 +13678,7 @@ function Portal({ client, onLogout }) {
               reportData={resolvedReportData}
               actions={resolvedActions}
               F={F}
-              onSaved={() => setReportSaveKey(k => k + 1)}
+              onSaved={() => setReportSaveKey(prev => prev + 1)}
             />
           )}
           {pages[page]}
@@ -13720,7 +13720,7 @@ function AIChatbot({ client, reportData, kpis }) {
     const text = input.trim();
     if (!text || loading) return;
     setInput("");
-    setMsgs(m => [...m, { role:"user", text }]);
+    setMsgs(msgs => [...m, { role:"user", text }]);
     setLoading(true);
 
     // Build context from client data
@@ -13747,13 +13747,13 @@ function AIChatbot({ client, reportData, kpis }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        setMsgs(m => [...m, { role:"assistant", text:`Error ${res.status}: ${data?.error || "Unknown error"}. Check that api/chat.js is deployed to your Vercel project.` }]);
+        setMsgs(msgs => [...m, { role:"assistant", text:`Error ${res.status}: ${data?.error || "Unknown error"}. Check that api/chat.js is deployed to your Vercel project.` }]);
       } else {
         const reply = data?.content?.[0]?.text || "I couldn't process that. Please try again.";
-        setMsgs(m => [...m, { role:"assistant", text: reply }]);
+        setMsgs(msgs => [...m, { role:"assistant", text: reply }]);
       }
     } catch(err) {
-      setMsgs(m => [...m, { role:"assistant", text:`Connection error: ${err.message}. Make sure api/chat.js exists in your GitHub repo root.` }]);
+      setMsgs(msgs => [...m, { role:"assistant", text:`Connection error: ${err.message}. Make sure api/chat.js exists in your GitHub repo root.` }]);
     }
     setLoading(false);
   };
