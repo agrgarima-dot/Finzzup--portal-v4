@@ -133,7 +133,7 @@ const fmtAED        = (v, showSym=true) => {
   const n = Number(v);
   const s = showSym ? "AED " : "";
   if (Math.abs(n) >= 1000000) return `${s}${(n/1000000).toFixed(2)}M`;
-  if (Math.abs(n) >= 1000)    return `${s}${(n/1000).toFixed(1)}K`;
+  if (Math.abs(n) >= 1000)    return `${s}${(n/1000).toFixed(0)}K`;
   return `${s}${n.toLocaleString()}`;
 };
 const AED_TO_INR  = 22.8;
@@ -13654,8 +13654,8 @@ function Portal({ client, onLogout }) {
       { label:"Cash Balance", value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"cash"      },
       { label:"Burn Rate",    value:liveKpis.burn_rate||"—",    prev:prevK.burn_rate||"—",    trend:"down", color:C.purple, bg:"#F3EFFF", icon:"burn"      },
       { label:"Runway",       value:liveKpis.runway||"—",       prev:prevK.runway||"—",       trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"runway"    },
-      { label:"VAT Payable",  value:liveReportData?.vat?.vatPayable ? `AED ${Number(liveReportData.vat.vatPayable).toLocaleString()}` : (liveKpis.arr||"—"), prev:"—", trend:"down", color:C.amber, bg:"#FEF7E7", icon:"invoice" },
-      { label:"CT Eff. Rate", value:liveReportData?.ct?.qualifyingPct != null ? (liveReportData.ct.qualifyingPct >= 100 ? "0%" : `${(9*(100-liveReportData.ct.qualifyingPct)/100).toFixed(1)}%`) : "0%", prev:"—", trend:"up", color:C.green, bg:"#E8FAF3", icon:"chart_pie" },
+      { label:"VAT Payable",  value:liveReportData?.vat?.vatPayable ? fmtAED2(liveReportData.vat.vatPayable) : (liveKpis.arr||"—"), prev:"—", trend:"down", color:C.amber, bg:"#FEF7E7", icon:"invoice" },
+      { label:"CT Eff. Rate", value:liveReportData?.ct?.qualifyingPct != null ? (liveReportData.ct.qualifyingPct >= 100 ? "0%" : `${(9*(100-liveReportData.ct.qualifyingPct)/100).toFixed(0)}%`) : "0%", prev:"—", trend:"up", color:C.green, bg:"#E8FAF3", icon:"chart_pie" },
       { label:"QFZP Score",   value:liveReportData?.qfzp?.qfzpScore ? `${liveReportData.qfzp.qfzpScore}/100` : "—", prev:"—", trend:"up", color:C.blue, bg:"#EEF3FE", icon:"star" },
     ] : KPIs_UAE
     : (!isDemo && liveKpis) ? [
@@ -17058,11 +17058,11 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     Shown on the client's VAT Dashboard tab.
                   </p>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Output VAT (AED)" lakh val={reportData?.vat?.outputVAT||""}
+                    <AdminInput C={C} F={F} FM={FM} label="Output VAT (AED)" val={reportData?.vat?.outputVAT||""}
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),outputVAT:Number(v)||v}}))} placeholder="e.g. 185000" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Input VAT (AED)" lakh val={reportData?.vat?.inputVAT||""}
+                    <AdminInput C={C} F={F} FM={FM} label="Input VAT (AED)" val={reportData?.vat?.inputVAT||""}
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),inputVAT:Number(v)||v}}))} placeholder="e.g. 92500" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="VAT Payable (AED)" lakh val={reportData?.vat?.vatPayable||""}
+                    <AdminInput C={C} F={F} FM={FM} label="VAT Payable (AED)" val={reportData?.vat?.vatPayable||""}
                       onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),vatPayable:Number(v)||v}}))} placeholder="e.g. 92500" mono/>
                   </div>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
@@ -17157,9 +17157,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     Shown on the client's Corporate Tax tab.
                   </p>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Revenue (AED)" lakh val={reportData?.ct?.revenue||""}
+                    <AdminInput C={C} F={F} FM={FM} label="Revenue (AED)" val={reportData?.ct?.revenue||""}
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),revenue:Number(v)||v}}))} placeholder="e.g. 1850000" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Accounting Profit (AED)" lakh val={reportData?.ct?.taxableIncome||""}
+                    <AdminInput C={C} F={F} FM={FM} label="Accounting Profit (AED)" val={reportData?.ct?.taxableIncome||""}
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),taxableIncome:Number(v)||v}}))} placeholder="e.g. 271000" mono/>
                     <AdminInput C={C} F={F} FM={FM} label="Qualifying Income %" val={reportData?.ct?.qualifyingPct||""}
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),qualifyingPct:Number(v)||v}}))} placeholder="e.g. 92" mono/>
@@ -17256,7 +17256,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                       val={reportData?.qfzpSubstance?.employeeCount||""}
                       onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),employeeCount:v}}))}
                       placeholder="e.g. 5"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Annual OpEx (AED)" mono lakh
+                    <AdminInput C={C} F={F} FM={FM} label="Annual OpEx (AED)" mono
                       val={reportData?.qfzpSubstance?.opexAED||""}
                       onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),opexAED:v}}))}
                       placeholder="e.g. 412000"/>
@@ -17458,7 +17458,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                           placeholder="e.g. On schedule / Send reminder / Demand letter"/>
                       </div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="Current 0–30d (AED)" mono lakh
+                        <AdminInput C={C} F={F} FM={FM} label="Current 0–30d (AED)" mono
                           val={reportData?.workingCapital?.arAging?.[i]?.current||""}
                           onChange={v=>setReportData(r=>{
                             const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
@@ -17466,7 +17466,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                             return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
                           })}
                           placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="31–60 days (AED)" mono lakh
+                        <AdminInput C={C} F={F} FM={FM} label="31–60 days (AED)" mono
                           val={reportData?.workingCapital?.arAging?.[i]?.d30||""}
                           onChange={v=>setReportData(r=>{
                             const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
@@ -17474,7 +17474,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                             return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
                           })}
                           placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="61–90 days (AED)" mono lakh
+                        <AdminInput C={C} F={F} FM={FM} label="61–90 days (AED)" mono
                           val={reportData?.workingCapital?.arAging?.[i]?.d60||""}
                           onChange={v=>setReportData(r=>{
                             const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
@@ -17482,7 +17482,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                             return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
                           })}
                           placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="90+ days (AED)" mono lakh
+                        <AdminInput C={C} F={F} FM={FM} label="90+ days (AED)" mono
                           val={reportData?.workingCapital?.arAging?.[i]?.d90||""}
                           onChange={v=>setReportData(r=>{
                             const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
@@ -17966,15 +17966,15 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     These 3 figures appear as KPI cards on the Cash Flow Forecast tab. Format: AED 580K or AED 487,000.
                   </p>
                   <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Projected Cash — End of Quarter" mono lakh
+                    <AdminInput C={C} F={F} FM={FM} label="Projected Cash — End of Quarter" mono
                       val={reportData?.projectedCash||""}
                       onChange={v=>setReportData(r=>({...r,projectedCash:v}))}
                       placeholder="e.g. AED 580K"/>
-                    <AdminInput C={C} F={F} FM={FM} label="VAT Reserve Required" mono lakh
+                    <AdminInput C={C} F={F} FM={FM} label="VAT Reserve Required" mono
                       val={reportData?.vatReserve||""}
                       onChange={v=>setReportData(r=>({...r,vatReserve:v}))}
                       placeholder="e.g. AED 92.5K"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Net Cash After Obligations" mono lakh
+                    <AdminInput C={C} F={F} FM={FM} label="Net Cash After Obligations" mono
                       val={reportData?.netCashAfterObl||""}
                       onChange={v=>setReportData(r=>({...r,netCashAfterObl:v}))}
                       placeholder="e.g. AED 487K"/>
