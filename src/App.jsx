@@ -15158,6 +15158,90 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
     }
   };
  
+  const generateUAEAnalysis = async () => {
+    if (!selected) return;
+    setAiGen(true);
+    setAiError("");
+    setAiDraft(null);
+
+    const company  = selected.company || selected.name || "the client";
+    const month    = reportData?.monthLabel || "current period";
+    const freezone = selected.freezone || "DMCC";
+
+    const vatSummary = reportData?.vat ? [
+      `Output VAT: AED ${Number(reportData.vat.outputVAT||0).toLocaleString()}`,
+      `Input VAT: AED ${Number(reportData.vat.inputVAT||0).toLocaleString()}`,
+      `VAT Payable: AED ${Number(reportData.vat.vatPayable||0).toLocaleString()}`,
+      `Filing Period: ${reportData.vat.filingPeriod||"—"}`,
+      `Next Deadline: ${reportData.vat.nextDeadline||"—"}`,
+    ].join(", ") : "";
+
+    const ctSummary = reportData?.ct ? [
+      `Revenue: AED ${Number(reportData.ct.revenue||0).toLocaleString()}`,
+      `Accounting Profit: AED ${Number(reportData.ct.taxableIncome||0).toLocaleString()}`,
+      `Qualifying Income: ${reportData.ct.qualifyingPct||"—"}%`,
+      `Non-Qualifying Income: ${reportData.ct.nonQualifyingPct||"—"}%`,
+    ].join(", ") : "";
+
+    const qfzpSummary = reportData?.qfzpSubstance ? [
+      `QFZP Score: ${reportData.qfzpSubstance.overallScore || reportData?.qfzp?.qfzpScore || "—"}/100`,
+      `Employees: ${reportData.qfzpSubstance.employeeCount||"—"}`,
+      `OpEx: AED ${reportData.qfzpSubstance.opexAED||"—"}`,
+      `Office: ${reportData.qfzpSubstance.officeSqft||"—"} sq ft`,
+    ].join(", ") : "";
+
+    const cashSummary = [
+      reportData?.projectedCash   && `Projected Cash: ${reportData.projectedCash}`,
+      reportData?.vatReserve      && `VAT Reserve Required: ${reportData.vatReserve}`,
+      reportData?.netCashAfterObl && `Net Cash After Obligations: ${reportData.netCashAfterObl}`,
+    ].filter(Boolean).join(", ");
+
+    const kpiSummary = [
+      kpis.revenue      && `Revenue: ${kpis.revenue}`,
+      kpis.gross_margin && `Gross Margin: ${kpis.gross_margin}`,
+      kpis.cash_balance && `Cash Balance: ${kpis.cash_balance}`,
+      kpis.runway       && `Runway: ${kpis.runway}`,
+    ].filter(Boolean).join(", ");
+
+    const prompt = `You are Garima Agarwal, a Chartered Accountant and UAE CFO advisor writing monthly financial analysis for your UAE client ${company} based in ${freezone} for ${month}.
+
+Financial & Tax Data:
+${kpiSummary  ? "KPIs: " + kpiSummary : ""}
+${vatSummary  ? "VAT: " + vatSummary : ""}
+${ctSummary   ? "Corporate Tax: " + ctSummary : ""}
+${qfzpSummary ? "QFZP Substance: " + qfzpSummary : ""}
+${cashSummary ? "Cash Position: " + cashSummary : ""}
+
+Write in Garima's voice — direct, specific, actionable. Reference actual AED figures. Focus on UAE concerns: VAT filing compliance, QFZP substance maintenance, CT effective rate, and cash management.
+
+Respond ONLY with a valid JSON object (no markdown, no backticks):
+{
+  "uaeGarimaNote": "2-3 sentence overall note for this period — performance, top 1-2 priority actions for the client",
+  "cashflowGarimaNote": "2-3 sentences on cash position, VAT reserve adequacy, and forward cash outlook",
+  "vatGarimaNote": "2-3 sentences on VAT position, next filing deadline, and any compliance actions",
+  "ctGarimaNote": "2-3 sentences on CT effective rate, QFZP qualifying income split, and any CT return actions",
+  "qfzpNote": "2-3 sentences on QFZP substance score, any pillars at risk, recommended actions to protect 0% CT status"
+}`;
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model:"claude-haiku-4-5-20251001", max_tokens:2000, messages:[{ role:"user", content:prompt }] }),
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err?.error?.message || `API error ${res.status}`); }
+      const data  = await res.json();
+      const raw   = data?.content?.[0]?.text || "";
+      const clean = raw.replace(/```json|```/g,"").trim();
+      setAiDraft(JSON.parse(clean));
+    } catch(e) {
+      setAiError("Generation failed — fill in UAE data above and try again.");
+      console.error(e);
+    } finally {
+      setAiGen(false);
+    }
+  };
+
   // Convert AI string response for varianceCommentary into the array format the UI expects
   const normalizeAiDraft = (draft) => {
     if (!draft) return draft;
@@ -16993,7 +17077,79 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     placeholder="e.g. Your Q1 VAT return of AED 92.5K is due 28 April. Ensure funds are ring-fenced now."
                     multiline/>
                 </Card>
- 
+
+                {/* VAT Filing History */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-calendar-due" style={{fontSize:15,color:C.blue}}/>VAT Filing History
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Populates the <strong>Returns</strong> tab on the client's VAT Dashboard. Enter up to 4 recent quarters.
+                  </p>
+                  {[0,1,2,3].map(i => {
+                    const row = reportData?.vat?.pendingReturns?.[i] || {};
+                    const upd = (key,val) => setReportData(r => {
+                      const arr = [...(r.vat?.pendingReturns || [{},{},{},{}])];
+                      while(arr.length <= i) arr.push({});
+                      arr[i] = {...arr[i], [key]:val};
+                      return {...r, vat:{...(r.vat||{}), pendingReturns:arr}};
+                    });
+                    return (
+                      <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:10, marginBottom:8,
+                        padding:"10px 12px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
+                        <AdminInput C={C} F={F} FM={FM} label={`Period ${i+1}`} val={row.period||""}
+                          onChange={v=>upd("period",v)} placeholder="e.g. Q1 2026 (Jan–Mar)"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Due Date" val={row.due||""}
+                          onChange={v=>upd("due",v)} placeholder="e.g. 28 Apr 2026"/>
+                        <AdminSelect C={C} F={F} label="Status" val={row.status||"Filed"}
+                          onChange={v=>upd("status",v)}
+                          options={[{value:"Filed",label:"Filed"},{value:"Due",label:"Due"},{value:"Overdue",label:"Overdue"}]}/>
+                        <AdminInput C={C} F={F} FM={FM} label="VAT Net (AED)" val={row.vatNet||""}
+                          onChange={v=>upd("vatNet",v)} placeholder="e.g. AED 92,500" mono/>
+                      </div>
+                    );
+                  })}
+                </Card>
+
+                {/* VAT Cash Impact */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-chart-bar" style={{fontSize:15,color:C.blue}}/>VAT Cash Impact (Monthly)
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Populates the <strong>Cash Impact</strong> chart on the client's VAT Dashboard. Leave Collected/Paid blank for future months and enter Forecast instead.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"80px 1fr 1fr 1fr 1fr", gap:8, marginBottom:6 }}>
+                    {["Month","Collected (AED)","Paid (AED)","Net (AED)","Forecast (AED)"].map(h => (
+                      <div key={h} style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
+                    ))}
+                  </div>
+                  {[0,1,2,3,4,5,6].map(i => {
+                    const row = reportData?.vat?.cashImpact?.[i] || {};
+                    const upd = (key,val) => setReportData(r => {
+                      const arr = [...(r.vat?.cashImpact || [{},{},{},{},{},{},{}])];
+                      while(arr.length <= i) arr.push({});
+                      arr[i] = {...arr[i], [key]: val === "" ? null : Number(val)||null};
+                      return {...r, vat:{...(r.vat||{}), cashImpact:arr}};
+                    });
+                    const updMonth = val => setReportData(r => {
+                      const arr = [...(r.vat?.cashImpact || [{},{},{},{},{},{},{}])];
+                      while(arr.length <= i) arr.push({});
+                      arr[i] = {...arr[i], month:val};
+                      return {...r, vat:{...(r.vat||{}), cashImpact:arr}};
+                    });
+                    return (
+                      <div key={i} style={{ display:"grid", gridTemplateColumns:"80px 1fr 1fr 1fr 1fr", gap:8, marginBottom:6 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="" val={row.month||""} onChange={updMonth} placeholder="Jan"/>
+                        <AdminInput C={C} F={F} FM={FM} label="" val={row.collected != null ? row.collected : ""} onChange={v=>upd("collected",v)} placeholder="62000" mono/>
+                        <AdminInput C={C} F={F} FM={FM} label="" val={row.paid != null ? row.paid : ""} onChange={v=>upd("paid",v)} placeholder="28000" mono/>
+                        <AdminInput C={C} F={F} FM={FM} label="" val={row.net != null ? row.net : ""} onChange={v=>upd("net",v)} placeholder="34000" mono/>
+                        <AdminInput C={C} F={F} FM={FM} label="" val={row.forecast != null ? row.forecast : ""} onChange={v=>upd("forecast",v)} placeholder="future only" mono/>
+                      </div>
+                    );
+                  })}
+                </Card>
+
                 {/* CT Data */}
                 <Card style={{ marginBottom:20 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}><i className="ti ti-building-bank" style={{fontSize:15,color:C.blue}}/>Corporate Tax Data</div>
@@ -17010,6 +17166,35 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     <AdminInput C={C} F={F} FM={FM} label="Non-Qualifying Income %" val={reportData?.ct?.nonQualifyingPct||""}
                       onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),nonQualifyingPct:Number(v)||v}}))} placeholder="e.g. 8" mono/>
                   </div>
+                  {/* CT Tax Reconciliation Adjustments */}
+                  <div style={{ marginTop:20, marginBottom:8, fontFamily:F, fontWeight:700, fontSize:12, color:C.text }}>
+                    CT Tax Reconciliation Adjustments <span style={{ fontWeight:400, color:C.muted }}>(shown on Tax Recon tab)</span>
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:10, lineHeight:1.5 }}>
+                    Each line: description, amount (AED), sign. Use + for add-backs, − for deductions.
+                  </p>
+                  {[0,1,2,3,4].map(i => {
+                    const adj = reportData?.ct?.adjustments?.[i] || {};
+                    const updAdj = (key,val) => setReportData(r => {
+                      const arr = [...(r.ct?.adjustments || [{},{},{},{},{}])];
+                      while(arr.length <= i) arr.push({});
+                      arr[i] = {...arr[i], [key]:val};
+                      return {...r, ct:{...(r.ct||{}), adjustments:arr}};
+                    });
+                    return (
+                      <div key={i} style={{ display:"grid", gridTemplateColumns:"3fr 1fr 80px", gap:8, marginBottom:6,
+                        padding:"8px 10px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
+                        <AdminInput C={C} F={F} FM={FM} label={`Line ${i+1} — Description`} val={adj.item||""}
+                          onChange={v=>updAdj("item",v)}
+                          placeholder={i===0?"e.g. Accounting Profit (per audited FS)":i===1?"e.g. Add: Non-deductible entertainment expenses":i===2?"e.g. Less: Exempt dividend income":i===3?"e.g. Less: QFZP qualifying income":"e.g. Other adjustment"}/>
+                        <AdminInput C={C} F={F} FM={FM} label="Amount (AED)" val={adj.amount != null ? adj.amount : ""} mono
+                          onChange={v=>updAdj("amount",Number(v)||0)} placeholder="e.g. 12400"/>
+                        <AdminSelect C={C} F={F} label="Sign" val={String(adj.sign ?? 1)}
+                          onChange={v=>updAdj("sign",Number(v))}
+                          options={[{value:"1",label:"+ Add"},{value:"-1",label:"− Less"}]}/>
+                      </div>
+                    );
+                  })}
                   <div style={{ marginTop:16, marginBottom:4, fontFamily:"system-ui", fontWeight:700, fontSize:12, color:"#6B7280" }}>CT Substance Checklist (shown on CT Overview)</div>
                   {[
                     { key:"employees",   label:"Adequate employees in free zone" },
@@ -17626,6 +17811,94 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   ))}
                 </Card>
  
+                {/* UAE AI ANALYSIS GENERATOR */}
+                {reportData && <Card style={{ marginBottom:14, border:`1.5px solid #00732F30`,
+                  background:`linear-gradient(135deg,#00732F06,#00B45408)` }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
+                    <div style={{ width:36, height:36, borderRadius:16,
+                      background:`linear-gradient(135deg,#00732F,#00B454)`,
+                      display:"flex", alignItems:"center", justifyContent:"center" }}>
+                      <i className="ti ti-sparkles" style={{fontSize:18,color:"#fff"}}/>
+                    </div>
+                    <div>
+                      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>Generate UAE Analysis with AI</div>
+                      <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>Reads VAT, CT, QFZP and cash data above — drafts Garima's UAE commentary for you to review</div>
+                    </div>
+                  </div>
+
+                  <button onClick={generateUAEAnalysis} disabled={aiGenerating}
+                    style={{ width:"100%", padding:"12px", borderRadius:16, border:"none",
+                      background: aiGenerating ? C.bg3 : `linear-gradient(135deg,#00732F,#00B454)`,
+                      color: aiGenerating ? C.muted : "white",
+                      fontFamily:F, fontWeight:700, fontSize:14, cursor: aiGenerating ? "not-allowed" : "pointer",
+                      display:"flex", alignItems:"center", justifyContent:"center", gap:10,
+                      marginBottom: (aiDraft || aiError) ? 16 : 0 }}>
+                    {aiGenerating ? <><span>⟳</span>{" Analysing UAE data..."}</> : "Generate UAE Analysis Draft"}
+                  </button>
+
+                  {aiError && (
+                    <div style={{ padding:"10px 14px", borderRadius:16, background:`${C.red}10`,
+                      border:`1px solid ${C.red}20`, fontFamily:F, fontSize:12, color:C.red }}>
+                      {aiError}
+                    </div>
+                  )}
+
+                  {aiDraft && (
+                    <div>
+                      <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:12 }}>Draft ready — review and apply</div>
+                      {[
+                        { key:"uaeGarimaNote",     label:"Overall UAE Note",      field:"uaeGarimaNote"     },
+                        { key:"cashflowGarimaNote", label:"Cash Flow Note",        field:"cashflowGarimaNote" },
+                        { key:"vatGarimaNote",      label:"VAT Note",              field:"vatGarimaNote"      },
+                        { key:"ctGarimaNote",       label:"Corporate Tax Note",    field:"ctGarimaNote"       },
+                        { key:"qfzpNote",           label:"QFZP Substance Note",   field:"qfzpSubstance.garimaNote" },
+                      ].filter(f => aiDraft[f.key]).map((f, i) => (
+                        <div key={i} style={{ marginBottom:10, padding:"12px 14px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
+                          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:6 }}>
+                            <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#00732F", textTransform:"uppercase", letterSpacing:"0.06em" }}>{f.label}</span>
+                            <button onClick={() => {
+                              if (f.field.includes(".")) {
+                                const [obj, key] = f.field.split(".");
+                                setReportData(r => ({...r, [obj]:{...(r[obj]||{}), [key]:aiDraft[f.key]}}));
+                              } else {
+                                setReportData(r => ({...r, [f.field]:aiDraft[f.key]}));
+                              }
+                            }} style={{ padding:"3px 12px", borderRadius:60, border:"none",
+                              background:"#00732F15", color:"#00732F",
+                              fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>Apply</button>
+                          </div>
+                          <div style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.7, whiteSpace:"pre-wrap" }}>
+                            {aiDraft[f.key]}
+                          </div>
+                        </div>
+                      ))}
+                      <div style={{ display:"flex", gap:10, marginTop:4 }}>
+                        <button onClick={() => {
+                          const d = aiDraft;
+                          setReportData(r => ({...r,
+                            uaeGarimaNote:     d.uaeGarimaNote     || r.uaeGarimaNote,
+                            cashflowGarimaNote:d.cashflowGarimaNote|| r.cashflowGarimaNote,
+                            vatGarimaNote:     d.vatGarimaNote     || r.vatGarimaNote,
+                            ctGarimaNote:      d.ctGarimaNote      || r.ctGarimaNote,
+                            qfzpSubstance:     d.qfzpNote ? {...(r.qfzpSubstance||{}), garimaNote:d.qfzpNote} : r.qfzpSubstance,
+                          }));
+                          setAiDraft(null);
+                          saveReportData();
+                        }} style={{ flex:1, padding:"11px", borderRadius:16, border:"none",
+                          background:`linear-gradient(135deg,#00732F,#00B454)`,
+                          color:"white", fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                          Apply All & Save
+                        </button>
+                        <button onClick={() => setAiDraft(null)}
+                          style={{ padding:"11px 16px", borderRadius:16, border:`1px solid ${C.border}`,
+                            background:C.bg, color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer" }}>
+                          Discard
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </Card>}
+
                 <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData}
                   label="Save UAE Data →"/>
               </>)}
