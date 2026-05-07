@@ -395,53 +395,119 @@ const ENGAGEMENT = {
 };
 
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
-const Card = ({ children, style={}, accent, hover=true }) => {
-  const [hov, setHov] = React.useState(false);
+const Card = ({ children, style = {}, accent = null, hover = true }) => {
+  const [isHovered, setIsHovered] = React.useState(false);
+
   return (
     <div
-      onMouseEnter={hover ? ()=>setHov(true) : undefined}
-      onMouseLeave={hover ? ()=>setHov(false) : undefined}
+      onMouseEnter={() => hover && setIsHovered(true)}
+      onMouseLeave={() => hover && setIsHovered(false)}
       style={{
-        background:"#FFFFFF",
-        border:`1px solid ${C.border}`,
-        borderRadius:20,
-        padding:24,
-        boxShadow: hov ? "0 8px 32px rgba(0,0,0,0.10)" : "0 2px 12px rgba(0,0,0,0.06)",
-        transform: hov ? "translateY(-2px)" : "translateY(0)",
-        transition:"box-shadow 0.2s ease, transform 0.2s ease",
-        ...style }}>
+        background: "#FFFFFF",
+        border: accent ? `1px solid ${accent}` : "1px solid #E2E8F0",
+        borderRadius: "20px",
+        padding: "28px",
+        boxShadow: isHovered 
+          ? "0 20px 40px rgba(0,0,0,0.08)" 
+          : "0 10px 30px rgba(0,0,0,0.06)",
+        transition: "all 0.25s ease",
+        transform: isHovered ? "translateY(-3px)" : "translateY(0)",
+        ...style
+      }}
+    >
       {children}
     </div>
   );
 };
 
-// StatCard — matches screenshot: icon top-left + big coloured number + grey label
-const StatCard = ({ icon, iconColor, value, label, sub, hover=true }) => {
+// StatCard — Premium version (matches Treasury screenshot)
+const StatCard = ({ icon, iconColor, value, label, sub, hover = true }) => {
   const [hov, setHov] = React.useState(false);
+
   return (
     <div
-      onMouseEnter={()=>setHov(true)}
-      onMouseLeave={()=>setHov(false)}
+      onMouseEnter={() => hover && setHov(true)}
+      onMouseLeave={() => hover && setHov(false)}
       style={{
-        background:"#FFFFFF", borderRadius:20, padding:24,
-        border:`1px solid ${C.border}`,
-        boxShadow: hov ? "0 8px 32px rgba(0,0,0,0.10)" : "0 2px 12px rgba(0,0,0,0.06)",
-        transform: hov ? "translateY(-2px)" : "translateY(0)",
-        transition:"box-shadow 0.2s ease, transform 0.2s ease",
-        display:"flex", flexDirection:"column", gap:6 }}>
-      {icon && <i className={"ti " + icon} style={{ fontSize:22, color:iconColor||C.blue }}/>}
-      <div style={{ fontFamily:FM, fontSize:22, fontWeight:700,
-        color:iconColor||C.blue, lineHeight:1.1, marginTop:4 }}>{value}</div>
-      <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{label}</div>
-      {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>{sub}</div>}
+        background: "#FFFFFF",
+        borderRadius: "20px",
+        padding: "28px 24px",
+        border: `1px solid ${C.border || "#E2E8F0"}`,
+        boxShadow: hov 
+          ? "0 20px 40px rgba(0,0,0,0.08)" 
+          : "0 10px 30px rgba(0,0,0,0.06)",
+        transform: hov ? "translateY(-4px)" : "translateY(0)",
+        transition: "all 0.25s cubic-bezier(0.4, 0, 0.2, 1)",
+        display: "flex",
+        flexDirection: "column",
+        gap: 8,
+        height: "100%"   // Important for consistent card height
+      }}
+    >
+      {/* Icon */}
+      {icon && (
+        <div style={{ marginBottom: 8 }}>
+          <i 
+            className={"ti " + icon} 
+            style={{ 
+              fontSize: 26, 
+              color: iconColor || C.blue,
+              opacity: 0.9 
+            }} 
+          />
+        </div>
+      )}
+
+      {/* Big Value */}
+      <div style={{ 
+        fontFamily: FM, 
+        fontSize: 32, 
+        fontWeight: 700, 
+        lineHeight: 1.05,
+        color: iconColor || C.blue,
+        marginBottom: 4
+      }}>
+        {value}
+      </div>
+
+      {/* Label */}
+      <div style={{ 
+        fontFamily: F, 
+        fontSize: 14, 
+        fontWeight: 500,
+        color: "#334155" 
+      }}>
+        {label}
+      </div>
+
+      {/* Sub text (optional) */}
+      {sub && (
+        <div style={{ 
+          fontFamily: F, 
+          fontSize: 12.5, 
+          color: C.dim || "#64748B",
+          marginTop: 2 
+        }}>
+          {sub}
+        </div>
+      )}
     </div>
   );
 };
 
 const SectionTitle = ({ children, sub }) => (
-  <div style={{ marginBottom:14 }}>
-    <h2 style={{ fontFamily:F, fontWeight:800, fontSize:14, color:"#1a1a2e", margin:0, letterSpacing:"-0.01em" }}>{children}</h2>
-    {sub && <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>{sub}</p>}
+  <div style={{ marginBottom: 20 }}>
+    <h2 style={{ 
+      fontFamily: F, 
+      fontWeight: 700, 
+      fontSize: 18, 
+      color: "#1E2937", 
+      margin: 0,
+      letterSpacing: "-0.02em"
+    }}>
+      {children}
+    </h2>
+    {sub && <p style={{ fontSize: 14, color: C.muted, marginTop: 6 }}>{sub}</p>}
   </div>
 );
 
