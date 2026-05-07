@@ -1796,16 +1796,25 @@ function CashFlow({ reportData, client, kpis }) {
  
   // ── Shared summary KPI bar ──────────────────────────────────────────────────
   const KpiBar = ({ items }) => (
-    <div style={{ display:"grid", gridTemplateColumns:`repeat(${items.length},1fr)`, gap:12, marginBottom:20 }} className="cf-kpi">
+    <div style={{ display:"grid", gap:12, marginBottom:20 }} className="cf-kpi">
       {items.map((k,i) => (
-        <div key={i} style={{ padding:24, borderRadius:12, background:"#FFFFFF",
-          border:`1px solid ${C.border}`, textAlign:"left" }}>
-          <div style={{ fontFamily:F, fontSize:11, fontWeight:400, color:C.muted, marginBottom:8 }}>{k.label}</div>
-          <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:k.color }}>{k.value}</div>
-          {k.sub && <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:k.trend==="down"?C.red:C.dim, marginTop:3 }}>{k.sub}</div>}
-        </div>
+        <Card key={i} style={{ padding:"14px 16px" }}>
+          <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
+            textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{k.label}</div>
+          <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:k.color||C.text, lineHeight:1.2 }}>{k.value}</div>
+          {k.sub && (
+            <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:4, display:"flex", alignItems:"center", gap:3 }}>
+              {k.trend && (
+                <span style={{ color:k.trend==="up"?C.green:k.trend==="down"?C.red:C.muted, fontWeight:700 }}>
+                  {k.trend==="up"?"↑":k.trend==="down"?"↓":""}
+                </span>
+              )}
+              {k.sub}
+            </div>
+          )}
+        </Card>
       ))}
-      <style>{`.cf-kpi{grid-template-columns:repeat(${items.length},1fr)!important}@media(max-width:500px){.cf-kpi{grid-template-columns:1fr 1fr!important}}`}</style>
+      <style>{`.cf-kpi{grid-template-columns:repeat(4,1fr)!important}@media(max-width:500px){.cf-kpi{grid-template-columns:1fr 1fr!important}}`}</style>
     </div>
   );
  
