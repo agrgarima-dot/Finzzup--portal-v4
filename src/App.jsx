@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
+import Logo from "./components/Logo.jsx";
+import I from "./components/Icons.jsx";
 // ─── CHART STUBS (no recharts dependency) ─────────────────────────────────────
 const ResponsiveContainer = ({ children, width, height }) => (
   <div style={{ width: width||"100%", height: height||200, position:"relative" }}>{children}</div>
@@ -433,37 +435,6 @@ const Dot = ({ color=C.green, size=6 }) => (
     background:color, flexShrink:0 }}/>
 );
 
-// ── SVG Icon system — replaces all emojis ─────────────────────────────────────
-// ── FIXED I COMPONENT (Replace your current I function with this) ──
-const I = ({ n, s = 14, c = "currentColor" }) => {
-  const p = {
-    strokeWidth: "1.75",
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    stroke: c,
-    fill: "none"
-  };
-
-  const paths = {
-    home:       <><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" {...p}/><polyline points="9 22 9 12 15 12 15 22" {...p}/></>,
-    dashboard:  <><rect x="3" y="3" width="7" height="7" {...p}/><rect x="14" y="3" width="7" height="7" {...p}/><rect x="14" y="14" width="7" height="7" {...p}/><rect x="3" y="14" width="7" height="7" {...p}/></>,
-    cashflow:   <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" {...p}/><polyline points="16 7 22 7 22 13" {...p}/></>,
-    treasury:   <><rect x="2" y="5" width="20" height="14" rx="2" {...p}/><line x1="2" y1="10" x2="22" y2="10" {...p}/></>,
-    actions:    <><polyline points="9 11 12 14 22 4" {...p}/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" {...p}/></>,
-    report:     <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" {...p}/><polyline points="14 2 14 8 20 8" {...p}/><line x1="16" y1="13" x2="8" y2="13" {...p}/><line x1="16" y1="17" x2="8" y2="17" {...p}/></>,
-    tax:        <><path d="M12 2L2 7l10 5 10-5-10-5z" {...p}/><path d="M2 17l10 5 10-5" {...p}/><path d="M2 12l10 5 10-5" {...p}/></>,
-    compliance: <><rect x="3" y="4" width="18" height="18" rx="2" {...p}/><line x1="16" y1="2" x2="16" y2="6" {...p}/><line x1="8" y1="2" x2="8" y2="6" {...p}/><line x1="3" y1="10" x2="21" y2="10" {...p}/></>,
-    audit:      <><path d="M9 11l3 3L22 4" {...p}/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" {...p}/></>,
-    market:     <><circle cx="12" cy="12" r="10" {...p}/><line x1="2" y1="12" x2="22" y2="12" {...p}/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" {...p}/></>,
-    calendar:   <><rect x="3" y="4" width="18" height="18" rx="2" {...p}/><line x1="16" y1="2" x2="16" y2="6" {...p}/><line x1="8" y1="2" x2="8" y2="6" {...p}/><line x1="3" y1="10" x2="21" y2="10" {...p}/></>,
-    request:    <><circle cx="12" cy="12" r="10" {...p}/><line x1="12" y1="8" x2="12" y2="16" {...p}/><line x1="8" y1="12" x2="16" y2="12" {...p}/></>,
-    documents:  <><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" {...p}/></>,
-    invoice:    <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" {...p}/><polyline points="14 2 14 8 20 8" {...p}/></>,
-    logout:     <><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" {...p}/><polyline points="16 17 21 12 16 7" {...p}/><line x1="21" y1="12" x2="9" y2="12" {...p}/></>,
-    bell:       <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" {...p}/><path d="M13.73 21a2 2 0 01-3.46 0" {...p}/></>,
-    // Add any missing icon here if needed (most used ones are covered)
-  };
-
   return (
     <svg 
       width={s} 
@@ -493,73 +464,6 @@ const DataTable = ({ headers=[], rows=[] }) => (
     ))}</tbody>
   </table>
 );
-// ── FIXED LOGO COMPONENT (Yeh pura paste kar do) ──
-const Logo = ({ size = 32, darkText = false, showTagline = false, dark = false, collapsed = false }) => {
-  const iconSize = size * 1.35;
-
-  if (collapsed) {
-    return (
-      <div style={{
-        fontFamily: "'Inter', system-ui, sans-serif",
-        fontWeight: 900,
-        fontSize: size * 0.72,
-        lineHeight: 1,
-        letterSpacing: "-0.03em",
-        color: dark ? "white" : "#111827"
-      }}>
-        Finz<span style={{ background: "linear-gradient(90deg,#2563EB,#7C3AED)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>zup</span>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: size * 0.35 }}>
-      {/* Icon */}
-      <div style={{
-        width: iconSize,
-        height: iconSize,
-        background: "linear-gradient(135deg, #2563EB, #7C3AED)",
-        borderRadius: "8px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        color: "white",
-        fontSize: iconSize * 0.55,
-        fontWeight: 900
-      }}>
-        F
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-        <div style={{
-          fontFamily: "'Inter', system-ui, sans-serif",
-          fontWeight: 900,
-          fontSize: size * 0.72,
-          lineHeight: 1,
-          letterSpacing: "-0.03em",
-          display: "flex",
-          alignItems: "baseline"
-        }}>
-          <span style={{ color: dark ? "white" : "#111827" }}>Finz</span>
-          <span style={{ background: "linear-gradient(90deg,#2563EB,#7C3AED)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>zup</span>
-          <span style={{ fontSize: size * 0.35, color: dark ? "rgba(255,255,255,0.5)" : "#9CA3AF", marginLeft: 1 }}>™</span>
-        </div>
-
-        {showTagline && (
-          <div style={{
-            fontSize: Math.max(8, size * 0.22),
-            fontWeight: 600,
-            color: dark ? "rgba(255,255,255,0.4)" : "#9CA3AF",
-            letterSpacing: "0.12em",
-            textTransform: "uppercase"
-          }}>
-            Build · Value · Scale
-          </div>
-        )}
-      </div>
-    </div>
-  );
-};
 
 // ─── LOGIN INPUT— defined OUTSIDE Login so it never remounts on re-render ────
 function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
