@@ -435,19 +435,7 @@ const Dot = ({ color=C.green, size=6 }) => (
     background:color, flexShrink:0 }}/>
 );
 
-  return (
-    <svg 
-      width={s} 
-      height={s} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke={c}
-      style={{ display: "inline-block", verticalAlign: "middle", flexShrink: 0 }}
-    >
-      {paths[n] || paths.home}
-    </svg>
-  );
-};
+
 const DataTable = ({ headers=[], rows=[] }) => (
   <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
     <thead><tr style={{ background:C.bg3 }}>
