@@ -20,7 +20,7 @@ const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
             <div key={b.key} style={{ width:"100%", height: Math.max(2,(Math.abs(d[b.key]||0)/maxVal)*(height-24)),
               background: b.fill||"#3B6FF7", borderRadius:"3px 3px 0 0", opacity: b.opacity||1 }}/>
           ))}
-          <div style={{ fontSize:9, color:"#9CA3AF", marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
+          <div style={{ fontSize:9, color:C.dim, marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
         </div>
       ))}
     </div>
@@ -42,7 +42,7 @@ const SimpleLineChart = ({ data=[], lines=[], height=180 }) => {
         })}
       </svg>
       <div style={{ display:"flex", justifyContent:"space-between", padding:"0 4px" }}>
-        {data.map((d,i) => <span key={i} style={{ fontSize:9, color:"#9CA3AF" }}>{d.month||""}</span>)}
+        {data.map((d,i) => <span key={i} style={{ fontSize:9, color:C.dim }}>{d.month||""}</span>)}
       </div>
     </div>
   );
@@ -95,6 +95,9 @@ const C = {
   grad4:   "linear-gradient(90deg,#2563EB,#7C3AED)",
   navy:    "#0F172A",
   navyBorder: "#1E293B",
+  warning:   "#92400E",
+  warningBg: "#FFF7ED",
+  warningBorder: "#FED7AA",
 };
 const F  = "'Inter', -apple-system, BlinkMacSystemFont, sans-serif";
 const FM = "'JetBrains Mono', 'SF Mono', monospace";
@@ -415,32 +418,20 @@ const Card = ({ children, style={}, accent, hover=true }) => {
   );
 };
  
-// StatCard — matches screenshot: icon top-left + big coloured number + grey label
-const StatCard = ({ icon, iconColor, value, label, sub, hover=true }) => {
-  const [hov, setHov] = React.useState(false);
-  return (
-    <div
-      onMouseEnter={()=>setHov(true)}
-      onMouseLeave={()=>setHov(false)}
-      style={{
-        background:"#FFFFFF", borderRadius:12, padding:24,   // DESIGN: Brex 12px radius
-        border:`1px solid ${C.border}`,
-        boxShadow: hov ? "0 4px 12px rgba(0,0,0,0.08)" : "0 1px 3px rgba(0,0,0,0.04)",  // DESIGN: subtle like Brex
-        transform: hov ? "translateY(-2px)" : "translateY(0)",
-        transition:"box-shadow 0.2s ease, transform 0.2s ease",
-        display:"flex", flexDirection:"column", gap:6 }}>
-      {icon && <i className={"ti " + icon} style={{ fontSize:22, color:iconColor||C.blue }}/>}
-      <div style={{ fontFamily:FM, fontSize:22, fontWeight:600,  // DESIGN: Brex uses 600 not 700
-        color:iconColor||C.blue, lineHeight:1.1, marginTop:4 }}>{value}</div>
-      <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{label}</div>
-      {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>{sub}</div>}
-    </div>
-  );
-};
+// StatCard — treasury-style: icon + coloured value + muted label
+const StatCard = ({ icon, iconColor, value, label, sub, hover=true }) => (
+  <Card hover={hover}>
+    {icon && <i className={"ti " + icon} style={{ fontSize:18, color:iconColor||C.blue, marginBottom:10, display:"block" }}/>}
+    <div style={{ fontFamily:F, fontSize:16, fontWeight:700,
+      color:iconColor||C.blue, lineHeight:1.2, marginBottom:4 }}>{value}</div>
+    <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{label}</div>
+    {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{sub}</div>}
+  </Card>
+);
  
 const SectionTitle = ({ children, sub }) => (
   <div style={{ marginBottom:14 }}>
-    <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#0F172A", margin:0, letterSpacing:"-0.01em" }}>{children}</h2>  // DESIGN: 700 not 800
+    <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0, letterSpacing:"-0.01em" }}>{children}</h2>
     {sub && <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>{sub}</p>}
   </div>
 );
@@ -986,7 +977,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
     <header style={{ height:52, background:"#fff", borderBottom:`1px solid #EAECF0`,
       display:"flex", alignItems:"center", justifyContent:"space-between",
       padding:"0 18px", flexShrink:0, zIndex:50,
-      boxShadow:"0 4px 20px rgba(37,99,235,0.06)" }}>
+      boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
  
       {/* Breadcrumb */}
       <div style={{ display:"flex", alignItems:"center", gap:5,
@@ -1208,10 +1199,10 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   // ── AR aging (from invoices or reportData) ────────────────────────────────
   const wc = reportData?.workingCapital || {};
   const arBuckets = [
-    { label:"Current",  val: Number(wc.ar0_30  || 0), color: C.green  },
-    { label:"31–60d",   val: Number(wc.ar31_60 || 0), color: C.amber  },
-    { label:"61–90d",   val: Number(wc.ar61_90 || 0), color: C.orange || "#F97316" },
-    { label:"90d+",     val: Number(wc.ar90plus|| 0), color: C.red    },
+    { label:"Current",  val: Number(wc.ar0_30   || reportData?.ar0to30   || 0), color: C.green  },
+    { label:"31–60d",   val: Number(wc.ar31_60  || reportData?.ar31to60  || 0), color: C.amber  },
+    { label:"61–90d",   val: Number(wc.ar61_90  || reportData?.ar61to90  || 0), color: C.orange || "#F97316" },
+    { label:"90d+",     val: Number(wc.ar90plus || reportData?.ar90plus  || 0), color: C.red    },
   ];
   const arTotal = arBuckets.reduce((s,b) => s+b.val, 0);
   const hasAR   = arTotal > 0;
@@ -1280,25 +1271,23 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         {/* ── Row 1: KPI tiles (NetSuite style) ── */}
         <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>
           {displayKpis.slice(0,6).map((kpi,i) => (
-            <div key={i} style={{ background:"white", borderRadius:16, padding:"12px 14px",
-              border:`1px solid ${C.border}`,
-              boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
+            <Card key={i} style={{ padding:"14px 16px" }}>
               <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-                textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4 }}>
+                textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>
                 {kpi.label}
               </div>
-              <div style={{ fontFamily:FM, fontSize:14, fontWeight:900, color:C.text, lineHeight:1.1 }}>
+              <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:kpi.color||C.text, lineHeight:1.2 }}>
                 {kpi.value}
               </div>
               {kpi.prev && kpi.prev !== "—" && (
-                <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3, display:"flex", alignItems:"center", gap:3 }}>
+                <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:4, display:"flex", alignItems:"center", gap:3 }}>
                   <span style={{ color: kpi.trend==="up"?C.green:C.red, fontWeight:700 }}>
                     {kpi.trend==="up"?"↑":"↓"}
                   </span>
                   prev: {kpi.prev}
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
  
@@ -1306,7 +1295,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div style={{ display:"grid", gridTemplateColumns:"1fr 200px 1fr", gap:20 }}>
  
           {/* P&L Summary table */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -1338,7 +1327,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
  
           {/* Health Score meter (NetSuite KPI Meter) */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex",
             flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
@@ -1363,7 +1352,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
  
           {/* Garima's Note */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             borderLeft:`3px solid ${accentColor}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex", flexDirection:"column" }}>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:accentColor,
@@ -1386,7 +1375,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
  
           {/* Action Items */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -1425,7 +1414,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
  
           {/* AR Aging chart */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
@@ -1461,7 +1450,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
  
           {/* Cash Flow sparkline */}
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Cash Flow Trend</div>
@@ -1506,7 +1495,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
  
         {/* ── Row 4: Key Indicators table (NetSuite style) ── */}
         {(reportData?.variance||[]).length > 0 && (
-          <div style={{ background:"white", borderRadius:16, border:`1px solid ${C.border}`,
+          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
             <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Key Performance Indicators</div>
@@ -1793,7 +1782,7 @@ function CashFlow({ reportData, client, kpis }) {
           display:"flex", alignItems:"center", justifyContent:"center",
           fontFamily:F, fontWeight:800, fontSize:15, color:"white" }}>G</div>
         <div style={{ flex:1 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#92400E", marginBottom:2 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.warning, marginBottom:2 }}>
             Note from Garima — Cash Flow Forecast
           </div>
           <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:8 }}>
@@ -1853,7 +1842,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
               borderRadius:16, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
               color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            "Download Cash Report"
+            <i className="ti ti-download" style={{fontSize:13}}/> Download Cash Report
           </button>
         </div>
  
@@ -2082,7 +2071,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
               borderRadius:16, background:`${C.teal}10`, border:`1.5px solid ${C.teal}25`,
               color:C.teal, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            "Download Cash Report"
+            <i className="ti ti-download" style={{fontSize:13}}/> Download Cash Report
           </button>
         </div>
  
@@ -2204,7 +2193,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
               borderRadius:16, background:`${C.purple}10`, border:`1.5px solid ${C.purple}25`,
               color:C.purple, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            "Download Cash Report"
+            <i className="ti ti-download" style={{fontSize:13}}/> Download Cash Report
           </button>
         </div>
  
@@ -2531,7 +2520,7 @@ function StartupCFOPack({ data, client, reportData }) {
         <SectionTitle sub="Key metrics investors will ask about in your data room">Investor Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
           {(Array.isArray(reportData?.metrics) && reportData.metrics.some(m=>m.value) ? reportData.metrics : data.investorMetrics).map((m, i) => (
-            <div key={i} style={{ padding:"14px 14px", borderRadius:16,
+            <div key={i} style={{ padding:"14px 14px", borderRadius:12,
               background: m.flag ? "#FEF2F2" : C.bg,
               border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
@@ -2552,7 +2541,7 @@ function StartupCFOPack({ data, client, reportData }) {
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {(Array.isArray(reportData?.checklist) && reportData.checklist.length ? reportData.checklist : data.dueDiligence).map((d, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:16, background:d.done ? `${C.green}08` : "#FFFBEB",
+              borderRadius:12, background:d.done ? `${C.green}08` : "#FFFBEB",
               border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
               <div style={{ width:20, height:20, borderRadius:16, flexShrink:0,
                 background:d.done ? C.green : C.amber,
@@ -2626,7 +2615,7 @@ function MSMECFOPack({ data, reportData }) {
         <SectionTitle sub="Working capital ratios vs benchmarks">Working Capital Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
           {(reportData?.metrics?.some(m=>m.value) ? reportData.metrics : data.workingCapital).map((m, i) => (
-            <div key={i} style={{ padding:"14px 14px", borderRadius:16,
+            <div key={i} style={{ padding:"14px 14px", borderRadius:12,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
               <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
@@ -2644,7 +2633,7 @@ function MSMECFOPack({ data, reportData }) {
         <SectionTitle sub="Growth and profitability indicators">Growth Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
           {data.growth.map((m, i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:16,
+            <div key={i} style={{ padding:"14px 16px", borderRadius:12,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
@@ -2674,7 +2663,7 @@ function MSMECFOPack({ data, reportData }) {
             { label:"Cash Conversion Cycle",   value: reportData?.ccc || "37 days",           flag: reportData?.ccc ? parseFloat(reportData.ccc)>45 : false,  note: reportData?.ccc ? (parseFloat(reportData.ccc)>45?"Target <30 days":"Target <30 days") : "Target <30 days" },
             { label:"Working Capital",         value: reportData?.workingCapital || "Rs.32.4L", flag: false, note:"Net current assets" },
           ].map((m,i) => (
-            <div key={i} style={{ padding:"12px 14px", borderRadius:16,
+            <div key={i} style={{ padding:"12px 14px", borderRadius:12,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
               <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
@@ -2703,7 +2692,7 @@ function MSMECFOPack({ data, reportData }) {
             { item:"Business continuity / succession plan",                       done:false },
           ].map((d,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:16, background:d.done ? `${C.green}08` : "#FFFBEB",
+              borderRadius:12, background:d.done ? `${C.green}08` : "#FFFBEB",
               border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
               <div style={{ width:20, height:20, borderRadius:16, flexShrink:0,
                 background:d.done ? C.green : C.amber,
@@ -2781,7 +2770,7 @@ function CorporateCFOPack({ data, reportData }) {
         <SectionTitle sub="Issues requiring attention before IPO or auditor review">Compliance Flags</SectionTitle>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {data.complianceFlags.map((f, i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:16,
+            <div key={i} style={{ padding:"14px 16px", borderRadius:12,
               background:sevBg[f.severity], border:`1px solid ${sevColor[f.severity]}30` }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
                 flexWrap:"wrap", gap:8, marginBottom:6 }}>
@@ -2800,7 +2789,7 @@ function CorporateCFOPack({ data, reportData }) {
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {data.indAS.map((s, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              flexWrap:"wrap", gap:10, padding:"11px 14px", borderRadius:16,
+              flexWrap:"wrap", gap:10, padding:"11px 14px", borderRadius:12,
               background: s.status==="Action Needed" ? "#FEF2F2" : C.bg,
               border:`1px solid ${s.status==="Action Needed" ? C.red+"30" : C.border}` }}>
               <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{s.standard}</span>
@@ -4036,7 +4025,7 @@ function useLiveDocs(client) {
         file_url: d.file_url,
         new: d.created_at ? (new Date() - new Date(d.created_at)) < 35 * 24 * 60 * 60 * 1000 : false,
       }))
-    : ARCHIVE;
+    : isDemo ? ARCHIVE : [];
  
   return archiveDocs;
 }
@@ -4077,11 +4066,11 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
               <span style={{ fontSize:16 }}><i className={"ti " + (current?.emoji||"ti-circle")} style={{fontSize:14}}/></span>
               <div style={{ textAlign:"left" }}>
-                <div style={{ fontSize:11, fontWeight:600, color:"#9CA3AF",
+                <div style={{ fontSize:11, fontWeight:600, color:C.dim,
                   textTransform:"uppercase", letterSpacing:"0.08em", lineHeight:1 }}>
                   {groups.find(g => g.items.some(t => t.id === tab))?.label}
                 </div>
-                <div style={{ fontSize:13, fontWeight:700, color:"#111827", marginTop:2 }}>
+                <div style={{ fontSize:13, fontWeight:700, color:C.text, marginTop:2 }}>
                   {current?.label}
                 </div>
               </div>
@@ -4101,7 +4090,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
               {groups.map((g, gi) => (
                 <div key={gi}>
                   <div style={{ padding:"9px 14px 5px", fontSize:10, fontWeight:700,
-                    color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.1em",
+                    color:C.dim, textTransform:"uppercase", letterSpacing:"0.1em",
                     background:"#fff", borderBottom:"1px solid #F3F4F6" }}>
                     {g.label}
                   </div>
@@ -4426,7 +4415,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               </div>
             </Card>
             {reportData?.varianceCommentary?.some(v => v.item) && (
-              <Card style={{ borderLeft:`3px solid $C.teal` }}>
+              <Card style={{ borderLeft:`3px solid ${C.teal}` }}>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:12 }}>Commentary</div>
                 {reportData.varianceCommentary.filter(v => v.item).map((v,i,arr) => (
                   <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
@@ -5529,14 +5518,6 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     );
   };
  
-  const StatCard = ({ label, value, sub, color, icon }) => (
-    <div style={{ padding:"14px 16px", borderRadius:16, background:"white",
-      border:`1px solid ${C.border}`, boxShadow:"0 4px 20px rgba(37,99,235,0.06)" }}>
-      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{icon} {label}</div>
-      <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:color||C.text, marginBottom:2 }}>{value}</div>
-      {sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{sub}</div>}
-    </div>
-  );
  
   // ── AI Analysis ───────────────────────────────────────────────────────────
   const generateAI = async () => {
@@ -6667,10 +6648,10 @@ function CFOPackContent({ reportData, client, kpis }) {
                 display:"flex", alignItems:"center", justifyContent:"center",
                 fontFamily:F, fontWeight:800, fontSize:14, color:"white" }}>G</div>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:"#92400E", fontFamily:F, marginBottom:4 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:C.warning, fontFamily:F, marginBottom:4 }}>
                   Note from Garima — Profitability Analysis
                 </div>
-                <p style={{ fontSize:13, color:"#78350F", lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
+                <p style={{ fontSize:13, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
                   {reportData?.reportNote || reportData?.packNote || (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote}
                 </p>
               </div>
@@ -7346,7 +7327,7 @@ function CFOPacks({ client, reportData }) {
  
   useEffect(() => { fetchLiveDocs(); }, [fetchLiveDocs]);
  
-  // Map live docs to ARCHIVE format, fall back to static ARCHIVE for demo
+  // Map live docs to ARCHIVE format; demo clients see sample packs, real clients see [] when empty
   const archiveDocs = liveDocs.length > 0
     ? liveDocs.map(d => ({
         name: d.name,
@@ -7356,7 +7337,7 @@ function CFOPacks({ client, reportData }) {
         file_url: d.file_url,
         new: d.created_at ? (new Date() - new Date(d.created_at)) < 35 * 24 * 60 * 60 * 1000 : false,
       }))
-    : ARCHIVE;
+    : isDemo ? ARCHIVE : [];
  
   return (
     <div className="ns-page">
@@ -7915,7 +7896,7 @@ function NewRequest({ client, setPage }) {
           </Card>
  
           {/* Terms checkbox */}
-          <div style={{ padding:"14px 16px", borderRadius:16, background:`${C.blue}06`,
+          <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.blue}06`,
             border:`1px solid ${C.blue}20`, marginBottom:16, display:"flex", gap:10, alignItems:"flex-start" }}>
             <input type="checkbox" id="terms-agree" checked={agreed}
               onChange={e => setAgreed(e.target.checked)}
@@ -7982,7 +7963,7 @@ function Invoices({ client, liveInvoices }) {
   const InvoiceCard = ({ inv }) => {
     const isUnpaid = inv.status === "unpaid";
     return (
-      <div style={{ padding:"16px 18px", borderRadius:16,
+      <div style={{ padding:"16px 18px", borderRadius:12,
         border:`1.5px solid ${isUnpaid ? C.amber+"50" : C.border}`,
         background: isUnpaid ? `${C.amber}05` : C.bg2,
         display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -8026,7 +8007,7 @@ function Invoices({ client, liveInvoices }) {
       </button>
  
       {/* Invoice header */}
-      <div style={{ padding:"28px 32px", borderRadius:16,
+      <div style={{ padding:"28px 32px", borderRadius:12,
         background:"linear-gradient(135deg,#0A1128 0%,#1a2a5e 100%)",
         color:"white", marginBottom:14, position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", right:-20, top:-20, width:120, height:120,
@@ -8082,7 +8063,7 @@ function Invoices({ client, liveInvoices }) {
  
       {/* Contact to pay */}
       {selected.status === "unpaid" && (
-        <div style={{ padding:"14px 18px", borderRadius:16, background:`${C.amber}08`,
+        <div style={{ padding:"14px 18px", borderRadius:12, background:`${C.amber}08`,
           border:`1px solid ${C.amber}25`, marginBottom:12 }}>
           <div style={{ fontFamily:F, fontSize:13, color:C.amber, fontWeight:600, marginBottom:4 }}>
             ⏳ Payment Due: {selected.amount}
@@ -8241,7 +8222,7 @@ function MyDocuments({ client }) {
       <SectionTitle sub="Documents shared by Garima, and files you've uploaded.">My Documents</SectionTitle>
  
       {isDemo && (
-        <div style={{ padding:"10px 16px", borderRadius:16, background:`${C.amber}0A`,
+        <div style={{ padding:"10px 16px", borderRadius:12, background:`${C.amber}0A`,
           border:`1px solid ${C.amber}25`, marginBottom:14,
           fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
           Demo mode — uploads disabled. Real clients can upload and download files here.
@@ -8260,7 +8241,7 @@ function MyDocuments({ client }) {
           <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
             Share financial statements, agreements, or any document with Garima. Max 10MB.
           </p>
-          <label style={{ display:"block", padding:"28px 20px", borderRadius:16,
+          <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
             border:`2px dashed ${dragOver ? C.blue : C.border}`,
             textAlign:"center", cursor:"pointer", background: dragOver ? `${C.blue}05` : C.bg,
             transition:"all 0.2s" }}
@@ -8575,11 +8556,11 @@ function Treasury({ client, reportData }) {
 // ─── UAE DISCLAIMER BANNER ────────────────────────────────────────────────────
 function UAEDisclaimer() {
   return (
-    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:16,
-      background:"#FFF7ED", border:"1px solid #FED7AA",
+    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:12,
+      background:C.warningBg, border:`1px solid ${C.warningBorder}`,
       display:"flex", gap:10, alignItems:"flex-start" }}>
       <span style={{ fontSize:16, flexShrink:0 }}>⚠️</span>
-      <p style={{ fontFamily:F, fontSize:12, color:"#92400E", lineHeight:1.6, margin:0 }}>
+      <p style={{ fontFamily:F, fontSize:12, color:C.warning, lineHeight:1.6, margin:0 }}>
         {UAE_DISCLAIMER}
       </p>
     </div>
@@ -8662,7 +8643,7 @@ function VATDashboard({ client, reportData }) {
             ))}
           </div>
           <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:6 }}>📅 Next Filing Deadline</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:6 }}>📅 Next Filing Deadline</div>
             <div style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.7 }}>
               <strong>{vatData.filingPeriod}</strong> — Due <strong>{vatData.nextDeadline}</strong><br/>
               VAT Payable: <strong>{fmtAED(vatData.vatPayable)}</strong> — ensure cash is available 3–5 days before filing date.
@@ -9233,7 +9214,7 @@ function CorporateTax({ client, reportData, initialTab }) {
  
             {/* Garima Note */}
             <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:8 }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:8 }}>
                 💬 Garima's Note on RPT Compliance
               </div>
               <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.8, margin:0 }}>
@@ -9416,7 +9397,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             ))}
  
             <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:8 }}>💬 Garima's Note</div>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:8 }}>💬 Garima's Note</div>
               <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.8, margin:"0 0 12px" }}>
                 Your most urgent related party issue is the <strong>Al Rashidi Brothers service fee</strong> — underpriced at AED 120K vs AED 160–200K market rate.
                 The FTA can adjust this upward during audit and disallow the deduction in Al Rashidi Brothers' return.
@@ -10336,7 +10317,7 @@ function RevenueReconciliation({ client, reportData }) {
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:16, background:"#FFFBEB",
           border:"1px solid #FCD34D", marginBottom:16,
-          fontFamily:F, fontSize:12, color:"#92400E" }}>
+          fontFamily:F, fontSize:12, color:C.warning }}>
           ⚠️ Showing demo data. Garima should enter actual reconciliation figures in the admin panel → UAE / Tax tab → Revenue Reconciliation.
         </div>
       )}
@@ -10430,7 +10411,7 @@ function RevenueReconciliation({ client, reportData }) {
             display:"flex", alignItems:"center", justifyContent:"center",
             fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:2 }}>
               Note from Garima
             </div>
             <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
@@ -10449,7 +10430,7 @@ function RevenueReconciliation({ client, reportData }) {
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:16,
+                  background:"#FEF3C7", color:C.warning, borderRadius:16,
                   padding:"8px 16px", fontFamily:F, fontWeight:700,
                   fontSize:12, border:"1px solid #FDE68A", cursor:"pointer" }}>
                 Download Full Report
@@ -10773,7 +10754,7 @@ function WorkingCapital({ client, reportData }) {
  
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:16, background:"#FFFBEB",
-          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
+          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:C.warning }}>
           ⚠️ Showing demo data. Enter actual figures in admin panel → UAE / Tax tab → Working Capital.
         </div>
       )}
@@ -11037,7 +11018,7 @@ function WorkingCapital({ client, reportData }) {
             display:"flex", alignItems:"center", justifyContent:"center",
             fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>Note from Garima</div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:2 }}>Note from Garima</div>
             <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
               Garima Agarwal · CA · Working Capital Analysis
             </div>
@@ -11053,7 +11034,7 @@ function WorkingCapital({ client, reportData }) {
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:16, padding:"8px 16px",
+                  background:"#FEF3C7", color:C.warning, borderRadius:16, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12,
                   border:"1px solid #FDE68A", cursor:"pointer" }}>
                 Download PDF
@@ -11377,7 +11358,7 @@ function VerticalAnalysis({ client, reportData }) {
       {view === "pnl" && (
         <>
           {isDemo && (
-            <div style={{padding:"10px 16px",background:"#FFFBEB",border:"1px solid #FDE68A",borderRadius:16,fontFamily:F,fontSize:12,color:"#92400E"}}>
+            <div style={{padding:"10px 16px",background:C.warningBg,border:`1px solid ${C.warningBorder}`,borderRadius:12,fontFamily:F,fontSize:12,color:C.warning}}>
               ⚠️ Showing demo data. Enter actual figures in admin panel → UAE / Tax tab → Vertical Analysis.
             </div>
           )}
@@ -11958,7 +11939,7 @@ function QFZPModule({ client, reportData }) {
  
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:16, background:"#FFFBEB",
-          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:"#92400E" }}>
+          border:"1px solid #FCD34D", marginBottom:16, fontFamily:F, fontSize:12, color:C.warning }}>
           ⚠️ Showing demo data. Enter actual substance data in admin panel → UAE / Tax tab → QFZP Substance.
         </div>
       )}
@@ -12189,7 +12170,7 @@ function QFZPModule({ client, reportData }) {
             display:"flex", alignItems:"center", justifyContent:"center",
             fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
           <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E", marginBottom:2 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:2 }}>
               Note from Garima
             </div>
             <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
@@ -12207,7 +12188,7 @@ function QFZPModule({ client, reportData }) {
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:"#92400E", borderRadius:16, padding:"8px 16px",
+                  background:"#FEF3C7", color:C.warning, borderRadius:16, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12,
                   border:"1px solid #FDE68A", cursor:"pointer" }}>
                 Download PDF
@@ -13081,7 +13062,7 @@ function UAECFOReport({ client, reportData, kpis }) {
                     display:"flex", alignItems:"center", justifyContent:"center",
                     fontFamily:F, fontWeight:800, fontSize:15, color:"white" }}>G</div>
                   <div style={{ flex:1 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#92400E", marginBottom:2 }}>Note from Garima — Cash Flow</div>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.warning, marginBottom:2 }}>Note from Garima — Cash Flow</div>
                     <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:8 }}>Forward-looking cash position · {period}</div>
                     <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:0 }}>
                       {reportData?.cashflowGarimaNote || "Cash flow forecast for the next 3–6 months. This section covers projected cash inflows, outflows, and ending balance only. For historical cash performance, see the Full Dashboard."}
@@ -14100,7 +14081,7 @@ function AdminInput({ label, val, onChange, type="text", placeholder="", mono=fa
   const [local, setLocal] = React.useState(val ?? "");
   React.useEffect(() => { setLocal(val ?? ""); }, [val]);
  
-  const sharedStyle = { width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+  const sharedStyle = { width:"100%", padding:"10px 12px", borderRadius:8, fontSize:13,
     border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
     background:C.bg, outline:"none", boxSizing:"border-box" };
  
@@ -14151,7 +14132,7 @@ const AdminSelect = ({ label, val, onChange, options, C, F }) => (
     <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
       letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
     <select value={val} onChange={e => onChange(e.target.value)}
-      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+      style={{ width:"100%", padding:"10px 12px", borderRadius:8, fontSize:13,
         border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
         background:C.bg, outline:"none", boxSizing:"border-box" }}>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -14159,10 +14140,10 @@ const AdminSelect = ({ label, val, onChange, options, C, F }) => (
   </div>
 );
 const AdminSaveBtn = ({ onClick, loading, saved, label="Save Changes", F }) => (
-  <button onClick={onClick} disabled={loading} style={{ padding:"11px 24px", borderRadius:16,
-    border:"none", background:"linear-gradient(135deg,#F59E0B,#EF4444)", color:"white",
-    fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", opacity:loading?0.75:1,
-    touchAction:"manipulation" }}>
+  <button onClick={onClick} disabled={loading} style={{ padding:"10px 22px", borderRadius:12,
+    border:"none", background:C.gradDiag, color:"white",
+    fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer", opacity:loading?0.75:1,
+    touchAction:"manipulation", letterSpacing:"-0.01em" }}>
     {loading ? "Saving…" : saved ? "Saved ✓" : label}
   </button>
 );
@@ -14177,10 +14158,10 @@ function InlineInput({ value, onCommit, placeholder="", style={} }) {
       onChange={e => setLocal(e.target.value)}
       onBlur={() => onCommit(local)}
       placeholder={placeholder}
-      style={{ padding:"6px 8px", borderRadius:7, fontSize:12, border:"1.5px solid #E5E7EB",
-        fontFamily:"'DM Mono',monospace", color:"#111827", background:"#fff",
+      style={{ padding:"6px 8px", borderRadius:8, fontSize:12, border:`1.5px solid ${C.border}`,
+        fontFamily:FM, color:C.text, background:C.bg,
         outline:"none", width:"100%", boxSizing:"border-box", ...style }}
-      onFocus={e => e.target.style.borderColor="#D97706"}
+      onFocus={e => e.target.style.borderColor=C.amber}
     />
   );
 }
@@ -14242,9 +14223,9 @@ function AdminLogin({ onLogin }) {
             </div>
           ))}
           {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-          <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:24,
-            borderRadius:16, border:"none", background:"linear-gradient(135deg,#F59E0B,#EF4444)",
-            color:"white", fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer",
+          <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:"14px 24px",
+            borderRadius:12, border:"none", background:C.gradDiag,
+            color:"white", fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer",
             opacity:loading?0.75:1, touchAction:"manipulation" }}>
             {loading ? "Signing in…" : "Sign In →"}
           </button>
@@ -15005,7 +14986,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
             <select value={selected?.id || ""} onChange={e => {
               const c = clients.find(x => x.id===e.target.value);
               if (c) selectClient(c);
-            }} style={{ width:"100%", padding:"8px 10px", borderRadius:16, fontSize:12,
+            }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, fontSize:12,
               background:"#1a2744", border:"1px solid rgba(255,255,255,0.2)",
               color:"white", fontFamily:F, outline:"none" }}>
               <option value="" style={{ background:"#1a2744", color:"white" }}>— Select client —</option>
@@ -16585,7 +16566,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               ) : !isUAE(selected) ? (
                 <Card style={{ textAlign:"center", padding:40, background:"#FFFBEB", border:"1px solid #FCD34D" }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>India</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:"#92400E", fontWeight:600 }}>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.warning, fontWeight:600 }}>
                     Selected client is an India client
                   </div>
                   <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:8 }}>
@@ -17341,7 +17322,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
               ) : !isUAE(selected) ? (
                 <Card style={{ textAlign:"center", padding:40, background:"#FFFBEB", border:"1px solid #FCD34D" }}>
                   <div style={{ fontSize:32, marginBottom:12 }}>India</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:"#92400E", fontWeight:600 }}>India client selected</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.warning, fontWeight:600 }}>India client selected</div>
                   <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:8 }}>Switch to a UAE client to edit UAE cash data.</p>
                 </Card>
               ) : !reportData ? (
@@ -17748,7 +17729,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       <option value="legal">Legal / Compliance</option>
                     </select>
                   </div>
-                  <label style={{ display:"block", padding:"28px 20px", borderRadius:16,
+                  <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
                     border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
                     background:C.bg, transition:"border-color 0.2s" }}
                     onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
