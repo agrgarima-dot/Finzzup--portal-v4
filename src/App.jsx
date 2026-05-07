@@ -1842,7 +1842,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
               borderRadius:16, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
               color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            "Download Cash Report"
+            <i className="ti ti-download" style={{fontSize:13}}/> Download Cash Report
           </button>
         </div>
  
@@ -2071,7 +2071,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
               borderRadius:16, background:`${C.teal}10`, border:`1.5px solid ${C.teal}25`,
               color:C.teal, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            "Download Cash Report"
+            <i className="ti ti-download" style={{fontSize:13}}/> Download Cash Report
           </button>
         </div>
  
@@ -2193,7 +2193,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
               borderRadius:16, background:`${C.purple}10`, border:`1.5px solid ${C.purple}25`,
               color:C.purple, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            "Download Cash Report"
+            <i className="ti ti-download" style={{fontSize:13}}/> Download Cash Report
           </button>
         </div>
  
