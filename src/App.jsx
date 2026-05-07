@@ -493,40 +493,65 @@ const DataTable = ({ headers=[], rows=[] }) => (
     ))}</tbody>
   </table>
 );
-const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapsed=false }) => {
+// ── FIXED LOGO COMPONENT (Yeh pura paste kar do) ──
+const Logo = ({ size = 32, darkText = false, showTagline = false, dark = false, collapsed = false }) => {
   const iconSize = size * 1.35;
+
   if (collapsed) {
-    return <FinzzupIcon size={iconSize} collapsed/>;
+    return (
+      <div style={{
+        fontFamily: "'Inter', system-ui, sans-serif",
+        fontWeight: 900,
+        fontSize: size * 0.72,
+        lineHeight: 1,
+        letterSpacing: "-0.03em",
+        color: dark ? "white" : "#111827"
+      }}>
+        Finz<span style={{ background: "linear-gradient(90deg,#2563EB,#7C3AED)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>zup</span>
+      </div>
+    );
   }
+
   return (
-    <div style={{ display:"flex", alignItems:"center", gap: size * 0.35 }}>
-      <FinzzupIcon size={iconSize}/>
-      <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: size * 0.35 }}>
+      {/* Icon */}
+      <div style={{
+        width: iconSize,
+        height: iconSize,
+        background: "linear-gradient(135deg, #2563EB, #7C3AED)",
+        borderRadius: "8px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "white",
+        fontSize: iconSize * 0.55,
+        fontWeight: 900
+      }}>
+        F
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
         <div style={{
-          fontFamily:"'Inter', system-ui, sans-serif",
-          fontWeight:900,
+          fontFamily: "'Inter', system-ui, sans-serif",
+          fontWeight: 900,
           fontSize: size * 0.72,
-          lineHeight:1,
-          letterSpacing:"-0.03em",
-          display:"flex",
-          alignItems:"baseline",
+          lineHeight: 1,
+          letterSpacing: "-0.03em",
+          display: "flex",
+          alignItems: "baseline"
         }}>
           <span style={{ color: dark ? "white" : "#111827" }}>Finz</span>
-          <span style={{ background:"linear-gradient(90deg,#2563EB,#7C3AED)",
-            WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent",
-            backgroundClip:"text" }}>zup</span>
-          <span style={{ fontSize: size * 0.35, color: dark ? "rgba(255,255,255,0.5)" : "#9CA3AF",
-            WebkitTextFillColor: dark ? "rgba(255,255,255,0.5)" : "#9CA3AF",
-            fontWeight:400, marginLeft:1, alignSelf:"flex-start", marginTop:2 }}>™</span>
+          <span style={{ background: "linear-gradient(90deg,#2563EB,#7C3AED)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>zup</span>
+          <span style={{ fontSize: size * 0.35, color: dark ? "rgba(255,255,255,0.5)" : "#9CA3AF", marginLeft: 1 }}>™</span>
         </div>
+
         {showTagline && (
           <div style={{
-            fontFamily:"'Inter', system-ui, sans-serif",
             fontSize: Math.max(8, size * 0.22),
-            fontWeight:600,
-            color: dark ? "rgba(255,255,255,0.4)" : (darkText ? "#9CA3AF" : "rgba(255,255,255,0.4)"),
-            letterSpacing:"0.12em",
-            textTransform:"uppercase",
+            fontWeight: 600,
+            color: dark ? "rgba(255,255,255,0.4)" : "#9CA3AF",
+            letterSpacing: "0.12em",
+            textTransform: "uppercase"
           }}>
             Build · Value · Scale
           </div>
