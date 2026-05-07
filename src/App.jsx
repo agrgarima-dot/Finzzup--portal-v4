@@ -395,17 +395,25 @@ const ENGAGEMENT = {
 };
 
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
-const Card = ({ children, style={}, accent }) => (
-  <div style={{ background:"#fff",
-    border:`1px solid ${C.border}`,
-    borderLeft: accent ? `3px solid ${accent}` : `1px solid ${C.border}`,
-    borderRadius:20,
-    padding:24,
-    boxShadow:"0 4px 20px rgba(37,99,235,0.06)",
-    ...style }}>
-    {children}
-  </div>
-);
+const Card = ({ children, style={}, accent, hover=true }) => {
+  const [hov, setHov] = React.useState(false);
+  return (
+    <div
+      onMouseEnter={hover ? ()=>setHov(true) : undefined}
+      onMouseLeave={hover ? ()=>setHov(false) : undefined}
+      style={{ background:"#FFFFFF",
+        border:`1px solid ${C.border}`,
+        borderLeft: accent ? `4px solid ${accent}` : `1px solid ${C.border}`,
+        borderRadius:20,
+        padding:24,
+        boxShadow: hov ? "0 12px 40px rgba(37,99,235,0.14)" : "0 4px 20px rgba(37,99,235,0.06)",
+        transform: hov ? "translateY(-2px)" : "translateY(0)",
+        transition:"box-shadow 0.2s ease, transform 0.2s ease",
+        ...style }}>
+      {children}
+    </div>
+  );
+};
 
 const SectionTitle = ({ children, sub }) => (
   <div style={{ marginBottom:14 }}>
@@ -1747,7 +1755,7 @@ function CashFlow({ reportData, client, kpis }) {
           borderTop:`3px solid ${k.color||C.blue}`,
           textAlign:"center" }}>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:600, color:C.dim, marginBottom:5, textTransform:"uppercase", letterSpacing:"0.07em" }}>{k.label}</div>
-          <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:k.color }}>{k.value}</div>
+          <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:k.color }}>{k.value}</div>
           {k.sub && <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:k.trend==="down"?C.red:C.dim, marginTop:3 }}>{k.sub}</div>}
         </div>
       ))}
@@ -1993,7 +2001,7 @@ function CashFlow({ reportData, client, kpis }) {
                 border:`1px solid ${m.flag?C.amber+"25":C.border}` }}>
                 <div style={{ flex:1 }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600 }}>{m.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:m.flag?C.amber:C.green }}>{m.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:m.flag?C.amber:C.green }}>{m.value}</div>
                 </div>
                 <div style={{ fontFamily:F, fontSize:10, color:C.dim, maxWidth:120, textAlign:"right", lineHeight:1.4 }}>{m.note}</div>
               </div>
@@ -2349,7 +2357,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
         ].map((s,i) => (
           <div key={i} className="ns-kpi-tile" style={{ borderTop:`3px solid ${s.color}` }}>
             <div className="label">{s.label}</div>
-            <div className="value" style={{ color:s.color, fontSize:28 }}>{s.value}</div>
+            <div className="value" style={{ color:s.color, fontFamily:FM, fontSize:18, fontWeight:700 }}>{s.value}</div>
           </div>
         ))}
       </div>
@@ -2624,7 +2632,7 @@ function MSMECFOPack({ data, reportData }) {
                   {m.flag ? "! " : "✓ "}{m.note}
                 </div>
               </div>
-              <div style={{ fontFamily:FM, fontSize:26, fontWeight:700,
+              <div style={{ fontFamily:FM, fontSize:18, fontWeight:700,
                 color: m.flag ? C.red : C.teal }}>{m.value}</div>
             </div>
           ))}
@@ -3227,7 +3235,7 @@ function MarketWidget({ pack, client }) {
               <span style={{ fontFamily:F, fontSize:10, color:C.muted, fontWeight:600,
                 textTransform:"uppercase", letterSpacing:"0.05em" }}>{item.label}</span>
             </div>
-            <div style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:item.color }}>
+            <div style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:item.color }}>
               {item.value}
             </div>
             <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:3 }}>
@@ -3422,7 +3430,7 @@ function MarketIntel({ client }) {
                 marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>
                 {item.label}
               </div>
-              <div style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.blue }}>
+              <div style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:C.blue }}>
                 {item.value}
               </div>
               <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:3 }}>
@@ -4478,7 +4486,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 { label:"=", value:null, color:C.muted },
                 { label:"CCC", value: reportData?.ccc || "37 days", color: parseInt(reportData?.ccc||"37")<=30?C.green:C.amber, bad: parseInt(reportData?.ccc||"37")>30 },
               ].map((item, i) => item.value === null ? (
-                <div key={i} style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:item.color }}>{item.label}</div>
+                <div key={i} style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:item.color }}>{item.label}</div>
               ) : (
                 <div key={i} style={{ padding:"12px 16px", borderRadius:16, textAlign:"center",
                   background: item.bad ? `${C.amber}08` : `${item.color}08`,
@@ -4519,7 +4527,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                   borderRadius:16, background:"#fff", border:`1px solid ${C.border}` }}>
                   <div style={{ width:3, height:36, borderRadius:2, background:row.color, flexShrink:0 }}/>
                   <div style={{ width:90, fontFamily:F, fontSize:12, color:C.muted, fontWeight:600 }}>{row.band}</div>
-                  <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:row.color, width:70 }}>{row.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:row.color, width:70 }}>{row.value}</div>
                   <div style={{ fontFamily:F, fontSize:10, color:C.dim,
                     background:C.bg, padding:"2px 8px", borderRadius:60, marginRight:8 }}>{row.pct}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.text, flex:1, lineHeight:1.4 }}>{row.action}</div>
@@ -4606,7 +4614,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               <div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
                   textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{"Bank Finance Readiness Score"}</div>
-                <div style={{ fontFamily:FM, fontWeight:800, fontSize:40, color:C.blue, lineHeight:1 }}>
+                <div style={{ fontFamily:FM, fontWeight:700, fontSize:22, color:C.blue, lineHeight:1 }}>
                   {reportData?.loanScore || "—"}
                   <span style={{ fontSize:14, color:C.muted, fontWeight:500 }}>{"/100"}</span>
                 </div>
@@ -6833,7 +6841,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                     </span>
                   )}
                 </div>
-                <div style={{ fontFamily:FM, fontWeight:800, fontSize:28, color:m.value==="—"?C.dim:m.color, marginBottom:4 }}>
+                <div style={{ fontFamily:FM, fontWeight:700, fontSize:18, color:m.value==="—"?C.dim:m.color, marginBottom:4 }}>
                   {m.value}
                 </div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginBottom:6 }}>{m.full}</div>
@@ -6999,7 +7007,7 @@ function CFOPackContent({ reportData, client, kpis }) {
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16, marginBottom:16 }}>
               <div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{"Loan Eligibility Score"}</div>
-                <div style={{ fontFamily:F, fontWeight:800, fontSize:40, color:C.blue, lineHeight:1 }}>{reportData?.loanScore || 64}<span style={{ fontSize:14, color:C.muted, fontWeight:500 }}>{"/100"}</span></div>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:22, color:C.blue, lineHeight:1 }}>{reportData?.loanScore || 64}<span style={{ fontSize:14, color:C.muted, fontWeight:500 }}>{"/100"}</span></div>
                 <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
                   {(reportData?.loanScore || 64) >= 75 ? "Strong Profile — Eligible for Most Schemes" : (reportData?.loanScore || 64) >= 55 ? "Moderate Profile — Eligible with Preparation" : "Early Stage — Build Track Record First"}
                 </div>
@@ -7044,7 +7052,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               ].map((item, i) => (
                 <div key={i} style={{ padding:"12px 14px", borderRadius:16, background:item.flag?`${C.amber}08`:C.bg2, border:`1px solid ${item.flag?C.amber+"30":C.border}` }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{item.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:item.value==="Not provided"?C.dim:item.flag?C.amber:C.text }}>{item.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:item.value==="Not provided"?C.dim:item.flag?C.amber:C.text }}>{item.value}</div>
                 </div>
               ))}
             </div>
@@ -7973,7 +7981,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
         </div>
         <div style={{ textAlign:"right" }}>
-          <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
+          <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
             {inv.amount}
           </div>
           <div style={{ display:"flex", gap:8, marginTop:8, justifyContent:"flex-end" }}>
@@ -8005,7 +8013,7 @@ function Invoices({ client, liveInvoices }) {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:20 }}>
           <div>
             <div style={{ fontFamily:FM, fontSize:11, opacity:0.5, marginBottom:4, letterSpacing:"0.08em" }}>INVOICE</div>
-            <div style={{ fontFamily:FM, fontWeight:700, fontSize:26, marginBottom:6 }}>{selected.id}</div>
+            <div style={{ fontFamily:FM, fontWeight:700, fontSize:18, marginBottom:6 }}>{selected.id}</div>
             <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>Finzzup Advisory LLP</div>
             <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>garima@finzzup.com</div>
           </div>
@@ -8092,7 +8100,7 @@ function Invoices({ client, liveInvoices }) {
         ].map((s,i) => (
           <Card key={i} style={{ padding:18, textAlign:"center" }}>
             <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
-            <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
+            <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
             <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.label}</div>
           </Card>
         ))}
@@ -8484,7 +8492,7 @@ function Treasury({ client, reportData }) {
                     ⚠️ {p.note}
                   </div>}
                 </div>
-                <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color: p.flag ? C.amber : C.text }}>
+                <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color: p.flag ? C.amber : C.text }}>
                   {p.balance}
                 </div>
               </div>
@@ -8507,7 +8515,7 @@ function Treasury({ client, reportData }) {
                 <div style={{ fontFamily:FM, fontSize:11, color:C.muted, marginTop:2 }}>Matures: {m.maturity}</div>
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:20 }}>
-                <div style={{ fontFamily:FM, fontSize:26, fontWeight:700, color:C.blue }}>{m.amount}</div>
+                <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:C.blue }}>{m.amount}</div>
                 <Badge color={m.action==="Redeem"?C.red:C.green}>{m.action}</Badge>
               </div>
             </div>
@@ -9040,7 +9048,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             <div style={{ marginTop:12, display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
               <div style={{ padding:"12px 14px", borderRadius:16, background:`${C.purple}08`, border:`1px solid ${C.purple}18` }}>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>CT Rate Applied</div>
-                <div style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.purple }}>
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:C.purple }}>
                   {ctData.effectiveCTRate}%
                 </div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>
@@ -9051,7 +9059,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                 background: ctData.ctPayable === 0 ? "#F0FDF4" : "#FFFBEB",
                 border:`1px solid ${ctData.ctPayable===0?"#86EFAC":"#FCD34D"}` }}>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>CT Payable</div>
-                <div style={{ fontFamily:FM, fontSize:14, fontWeight:800,
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:600,
                   color: ctData.ctPayable === 0 ? C.green : C.amber }}>
                   {fmtAED(ctData.ctPayable || 0)}
                 </div>
@@ -9172,7 +9180,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                     <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{t.relation}</div>
                   </div>
                   <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
-                    <span style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.text }}>{fmtAED(t.amount)}</span>
+                    <span style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:C.text }}>{fmtAED(t.amount)}</span>
                     <span style={{ padding:"3px 10px", borderRadius:60, fontSize:11, fontWeight:700, fontFamily:F,
                       background:riskBg(t.risk), color:riskColor(t.risk) }}>{t.risk} Risk</span>
                     <span style={{ padding:"3px 10px", borderRadius:60, fontSize:11, fontWeight:700, fontFamily:F,
@@ -9355,7 +9363,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                         <div style={{ fontFamily:F, fontSize:13, color:C.text }}>{t.desc}</div>
                         <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>{t.type}</div>
                       </div>
-                      <div style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.text }}>{fmtAED(t.amount)}</div>
+                      <div style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:C.text }}>{fmtAED(t.amount)}</div>
                     </div>
                   ))}
                   <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:8 }}>TP Method: {e.tpMethod}</div>
@@ -9668,7 +9676,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                     <div style={{ display:"flex", justifyContent:"space-between", paddingTop:8,
                       marginTop:4, borderTop:`1px solid ${C.text}` }}>
                       <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text }}>Total</span>
-                      <span style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.purple }}>
+                      <span style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:C.purple }}>
                         AED {p.totalComp.toLocaleString()}
                       </span>
                     </div>
@@ -10336,15 +10344,15 @@ function RevenueReconciliation({ client, reportData }) {
               <div style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.4, paddingRight:8 }}>
                 {r.desc || "—"}
               </div>
-              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:600, color:C.text,
+              <div style={{ fontFamily:FM, fontSize:12, fontWeight:600, color:C.text,
                 textAlign:"right" }}>
                 {r.ifrs !== undefined ? fmtAED(Number(r.ifrs)) : "—"}
               </div>
-              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:600, color:C.text,
+              <div style={{ fontFamily:FM, fontSize:12, fontWeight:600, color:C.text,
                 textAlign:"right" }}>
                 {r.vat !== undefined ? fmtAED(Number(r.vat)) : "—"}
               </div>
-              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:700,
+              <div style={{ fontFamily:FM, fontSize:12, fontWeight:700,
                 color:diffColor(r.ifrs, r.vat), textAlign:"right" }}>
                 {diffLabel(r.ifrs, r.vat)}
               </div>
@@ -10360,13 +10368,13 @@ function RevenueReconciliation({ client, reportData }) {
           gap:0, padding:"13px 16px", background:"#F0FDF4",
           borderTop:`2px solid ${C.green}` }}>
           <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text }}>TOTAL</div>
-          <div style={{ fontFamily:"monospace", fontSize:13, fontWeight:800, color:C.text, textAlign:"right" }}>
+          <div style={{ fontFamily:FM, fontSize:13, fontWeight:600, color:C.text, textAlign:"right" }}>
             {fmtAED(totalIFRS)}
           </div>
-          <div style={{ fontFamily:"monospace", fontSize:13, fontWeight:800, color:C.text, textAlign:"right" }}>
+          <div style={{ fontFamily:FM, fontSize:13, fontWeight:600, color:C.text, textAlign:"right" }}>
             {fmtAED(totalVAT)}
           </div>
-          <div style={{ fontFamily:"monospace", fontSize:13, fontWeight:800,
+          <div style={{ fontFamily:FM, fontSize:13, fontWeight:600,
             color:fullyReconciled?C.green:C.amber, textAlign:"right" }}>
             {fullyReconciled ? "Nil" : fmtAED(Math.abs(totalDiff))}
           </div>
@@ -10771,14 +10779,14 @@ function WorkingCapital({ client, reportData }) {
           ) : (
             <div key={i} style={{ background:"white", border:`2px solid ${C.green}`,
               borderRadius:16, padding:"14px 22px", textAlign:"center", minWidth:110 }}>
-              <div style={{ fontFamily:"monospace", fontSize:30, fontWeight:900, color:item.color, lineHeight:1 }}>{item.val}</div>
+              <div style={{ fontFamily:FM, fontSize:30, fontWeight:900, color:item.color, lineHeight:1 }}>{item.val}</div>
               <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:"#065f46",
                 textTransform:"uppercase", letterSpacing:"0.05em", marginTop:4 }}>{item.lbl}</div>
               <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:2 }}>{item.sub}</div>
             </div>
           ))}
           <div style={{ background:C.green, borderRadius:16, padding:"14px 24px", textAlign:"center", minWidth:130 }}>
-            <div style={{ fontFamily:"monospace", fontSize:34, fontWeight:900, color:"white", lineHeight:1 }}>{ccc}</div>
+            <div style={{ fontFamily:FM, fontSize:34, fontWeight:900, color:"white", lineHeight:1 }}>{ccc}</div>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.85)",
               textTransform:"uppercase", letterSpacing:"0.05em", marginTop:4 }}>CCC (Days)</div>
             <div style={{ fontFamily:F, fontSize:10, color:"rgba(255,255,255,0.7)", marginTop:2 }}>Lower = better</div>
@@ -10811,7 +10819,7 @@ function WorkingCapital({ client, reportData }) {
         ].map((s,i) => (
           <Card key={i} style={{ padding:16 }}>
             <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.lbl}</div>
-            <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:s.color }}>{s.val}</div>
+            <div style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:s.color }}>{s.val}</div>
             <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:3 }}>{s.sub}</div>
           </Card>
         ))}
@@ -10851,16 +10859,16 @@ function WorkingCapital({ client, reportData }) {
               borderBottom:`1px solid ${C.border}`,
               borderLeft:`3px solid ${borderCol}` }}>
               <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text }}>{r.customer}</div>
-              <div style={{ fontFamily:"monospace", fontSize:11, color:Number(r.current||0)>0?C.green:C.dim, textAlign:"right" }}>
+              <div style={{ fontFamily:FM, fontSize:11, color:Number(r.current||0)>0?C.green:C.dim, textAlign:"right" }}>
                 {Number(r.current||0)>0?fmtAED(Number(r.current)):"—"}</div>
-              <div style={{ fontFamily:"monospace", fontSize:11, color:Number(r.d30||0)>0?C.amber:C.dim, textAlign:"right" }}>
+              <div style={{ fontFamily:FM, fontSize:11, color:Number(r.d30||0)>0?C.amber:C.dim, textAlign:"right" }}>
                 {Number(r.d30||0)>0?fmtAED(Number(r.d30)):"—"}</div>
-              <div style={{ fontFamily:"monospace", fontSize:11, color:Number(r.d60||0)>0?C.red:C.dim, textAlign:"right" }}>
+              <div style={{ fontFamily:FM, fontSize:11, color:Number(r.d60||0)>0?C.red:C.dim, textAlign:"right" }}>
                 {Number(r.d60||0)>0?fmtAED(Number(r.d60)):"—"}</div>
-              <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700,
+              <div style={{ fontFamily:FM, fontSize:11, fontWeight:700,
                 color:Number(r.d90||0)>0?"#991B1B":C.dim, textAlign:"right" }}>
                 {Number(r.d90||0)>0?fmtAED(Number(r.d90)):"—"}</div>
-              <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:700, color:C.text, textAlign:"right" }}>
+              <div style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:C.text, textAlign:"right" }}>
                 {fmtAED(total)}</div>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, textAlign:"right" }}>{pct}%</div>
               <div style={{ textAlign:"right" }}>
@@ -10881,11 +10889,11 @@ function WorkingCapital({ client, reportData }) {
           padding:"11px 16px", background:"#ECFDF5",
           borderTop:`2px solid ${C.green}`, borderLeft:`4px solid ${C.green}` }}>
           <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text }}>TOTAL</div>
-          <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700, color:C.green, textAlign:"right" }}>{fmtAED(totalCurrent)}</div>
-          <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700, color:C.amber, textAlign:"right" }}>{fmtAED(total30)}</div>
-          <div style={{ fontFamily:"monospace", fontSize:11, fontWeight:700, color:C.red, textAlign:"right" }}>{fmtAED(total60)}</div>
-          <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:800, color:"#991B1B", textAlign:"right" }}>{fmtAED(total90)}</div>
-          <div style={{ fontFamily:"monospace", fontSize:12, fontWeight:800, color:C.text, textAlign:"right" }}>{fmtAED(totalAR)}</div>
+          <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.green, textAlign:"right" }}>{fmtAED(totalCurrent)}</div>
+          <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.amber, textAlign:"right" }}>{fmtAED(total30)}</div>
+          <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.red, textAlign:"right" }}>{fmtAED(total60)}</div>
+          <div style={{ fontFamily:FM, fontSize:12, fontWeight:600, color:"#991B1B", textAlign:"right" }}>{fmtAED(total90)}</div>
+          <div style={{ fontFamily:FM, fontSize:12, fontWeight:600, color:C.text, textAlign:"right" }}>{fmtAED(totalAR)}</div>
           <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.green, textAlign:"right" }}>100%</div>
           <div/><div/>
         </div>
@@ -10925,7 +10933,7 @@ function WorkingCapital({ client, reportData }) {
                 </div>
               </div>
               <div style={{ display:"flex", alignItems:"center", gap:20 }}>
-                <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:C.text }}>
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:C.text }}>
                   {fmtAED(Number(r.amount||0))}
                 </div>
                 <span style={{ padding:"3px 10px", borderRadius:60, fontSize:11,
@@ -10939,7 +10947,7 @@ function WorkingCapital({ client, reportData }) {
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
           padding:"12px 18px", background:"#ECFDF5", borderTop:`2px solid ${C.green}` }}>
           <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text }}>TOTAL PAYABLES</div>
-          <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:C.green }}>
+          <div style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:C.green }}>
             {fmtAED(totalAP)}
           </div>
         </div>
@@ -11938,7 +11946,7 @@ function QFZPModule({ client, reportData }) {
       <Card style={{ marginBottom:14, background:"#F5F3FF", border:`2px solid ${C.purple}` }}>
         <div style={{ display:"flex", gap:24, alignItems:"center", flexWrap:"wrap" }}>
           <div style={{ textAlign:"center", minWidth:120 }}>
-            <div style={{ fontFamily:"monospace", fontSize:56, fontWeight:900,
+            <div style={{ fontFamily:FM, fontSize:56, fontWeight:900,
               color:score>=80?C.green:score>=65?C.amber:C.red, lineHeight:1 }}>{score}</div>
             <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.purple, marginTop:4 }}>
               /100 · QFZP Score
@@ -11984,7 +11992,7 @@ function QFZPModule({ client, reportData }) {
         ].map((s,i) => (
           <Card key={i} style={{ padding:16 }}>
             <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-            <div style={{ fontFamily:"monospace", fontSize:16, fontWeight:800, color:s.color }}>{s.val}</div>
+            <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color:s.color }}>{s.val}</div>
             <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:4 }}>{s.sub}</div>
           </Card>
         ))}
@@ -12044,7 +12052,7 @@ function QFZPModule({ client, reportData }) {
                 {c.qualified?"✓ Qualifying":"✗ Non-Qual."}
               </span>
             </div>
-            <div style={{ fontFamily:"monospace", fontSize:13, fontWeight:700,
+            <div style={{ fontFamily:FM, fontSize:13, fontWeight:700,
               color:c.qualified?C.green:C.red, textAlign:"right" }}>{c.pct}%</div>
             <div style={{ fontFamily:F, fontSize:11, color:c.qualified?C.muted:C.amber, paddingLeft:8, lineHeight:1.5 }}>
               {c.note}
@@ -12061,7 +12069,7 @@ function QFZPModule({ client, reportData }) {
           padding:"12px 18px", background:"#F0FDF4", borderTop:`2px solid ${C.green}` }}>
           <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text }}>Total Qualifying</div>
           <div/>
-          <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:C.green, textAlign:"right" }}>{qualPct}%</div>
+          <div style={{ fontFamily:FM, fontSize:14, fontWeight:600, color:C.green, textAlign:"right" }}>{qualPct}%</div>
           <div/>
           <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.green, textAlign:"right" }}>0%</div>
         </div>
@@ -12073,7 +12081,7 @@ function QFZPModule({ client, reportData }) {
               Non-Qualifying {nonQualPct>=5?"⚠ ABOVE DE-MINIMIS":""}
             </div>
             <div/>
-            <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800,
+            <div style={{ fontFamily:FM, fontSize:14, fontWeight:600,
               color:nonQualPct>=5?C.red:C.amber, textAlign:"right" }}>{nonQualPct}%</div>
             <div style={{ fontFamily:F, fontSize:11, color:nonQualPct>=5?C.red:C.amber, paddingLeft:8 }}>
               {nonQualPct>=5?"⚠ De-minimis breach — restructure contracts immediately":"✓ Within de-minimis threshold"}
@@ -12231,7 +12239,7 @@ function AuditReadiness({ client, reportData }) {
           </p>
         </div>
         <div style={{ textAlign:"right" }}>
-          <div style={{ fontFamily:F, fontSize:28, fontWeight:900,
+          <div style={{ fontFamily:F, fontSize:20, fontWeight:700,
             color:auditScore>=80?C.green:auditScore>=60?C.amber:C.red }}>{auditScore}/100</div>
           <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>Audit Readiness Score</div>
         </div>
@@ -12993,7 +13001,8 @@ function UAECFOReport({ client, reportData, kpis }) {
     {
       label: "Cash & Liquidity",
       items: [
-        { id:"workingcap",  emoji:"ti-droplet", label:"Working Capital & AR"     },
+        { id:"cashflow",    emoji:"ti-trending-up",  label:"Cash Flow Forecast"      },
+        { id:"workingcap",  emoji:"ti-chart-area",   label:"Working Capital & AR"    },
       ]
     },
     {
@@ -13001,7 +13010,7 @@ function UAECFOReport({ client, reportData, kpis }) {
       items: [
         { id:"vatreport",   emoji:"ti-receipt", label:"VAT Compliance Report"    },
         { id:"revrecon",    emoji:"ti-scale", label:"Revenue Reconciliation"  },
-        { id:"qfzp",        emoji:"ti-city", label:"QFZP Tracker"           },
+        { id:"qfzp",        emoji:"ti-building-skyscraper", label:"QFZP Tracker" },
       ]
     },
     {
@@ -13070,7 +13079,7 @@ function UAECFOReport({ client, reportData, kpis }) {
                   <Card key={i} style={{ padding:18, borderTop:`3px solid ${s.color}` }}>
                     <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
                     <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-                    <div style={{ fontFamily:"monospace", fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
+                    <div style={{ fontFamily:FM, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
                   </Card>
                 ))}
               </div>
@@ -13113,7 +13122,7 @@ function UAECFOReport({ client, reportData, kpis }) {
                       {r.label}
                     </div>
                     {r.values.map((v,j) => (
-                      <div key={j} style={{ fontFamily:"monospace", fontSize:11,
+                      <div key={j} style={{ fontFamily:FM, fontSize:11,
                         fontWeight:r.type==="total"?800:600,
                         color:r.type==="total"?C.green:r.type==="out"?C.red:r.type==="in"?C.green:C.text,
                         textAlign:"right" }}>
@@ -13171,6 +13180,8 @@ function UAECFOReport({ client, reportData, kpis }) {
           )}
 
           {/* ── WORKING CAPITAL (redirect to dedicated page) ── */}
+          {tab === "cashflow" && <CashFlow client={client} reportData={reportData} liveInvoices={[]}/>}
+
           {tab === "workingcap" && <WorkingCapital client={client} reportData={reportData}/>}
 
           {/* ── AR MANAGEMENT ── */}
@@ -14414,7 +14425,30 @@ function AdminPanel({ admin, onLogout }) {
 
   const fetchClients = async () => {
     const { data } = await supabase.from("clients").select("*").order("created_at", { ascending:false });
-    setClients(data || []);
+    const DEMO_CLIENTS = [
+      { id:"DEMO-STARTUP", name:"Riya Kapoor", company:"BrightAI Technologies", type:"both",
+        client_pack:"startup", email:"demo-startup@finzzup.com", jurisdiction:"India",
+        invite_code:"DEMO-STARTUP", active:true },
+      { id:"DEMO-MSME", name:"Suresh Gupta", company:"Gupta Exports Pvt Ltd", type:"both",
+        client_pack:"msme", email:"demo-msme@finzzup.com", jurisdiction:"India",
+        invite_code:"DEMO-MSME", active:true },
+      { id:"DEMO-CORP", name:"Anita Desai", company:"Horizon Manufacturing Ltd", type:"both",
+        client_pack:"corporate", email:"demo-corp@finzzup.com", jurisdiction:"India",
+        invite_code:"DEMO-CORP", active:true },
+      { id:"DEMO-UAE", name:"Ahmed Al Rashidi", company:"Rashidi Trading LLC (DMCC)", type:"both",
+        client_pack:"startup", email:"demo-uae@finzzup.com", jurisdiction:"UAE",
+        freezone:"DMCC", trnVAT:"100345678900003", trnCT:"900012345678901",
+        vatRegistered:true, qfzpStatus:true, sbrEligible:true,
+        financialYearEnd:"31 Dec", invite_code:"DEMO-UAE", active:true },
+      { id:"DEMO-XBORDER", name:"Priya Shah", company:"Shah Industries (India + UAE)", type:"both",
+        client_pack:"msme", email:"demo-xborder@finzzup.com", jurisdiction:"Cross-Border",
+        freezone:"JAFZA", trnVAT:"100987654300001", vatRegistered:true,
+        qfzpStatus:false, sbrEligible:true, financialYearEnd:"31 Mar",
+        invite_code:"DEMO-XBORDER", active:true },
+    ];
+    const live = data || [];
+    const liveIds = new Set(live.map(c => c.invite_code));
+    setClients([...live, ...DEMO_CLIENTS.filter(d => !liveIds.has(d.invite_code))]);
     // Pre-load all requests so the Requests tab works without selecting a client
     const { data: allReqs } = await supabase.from("requests").select("*").order("created_at", { ascending:false });
     if (allReqs) setRequests(allReqs);
