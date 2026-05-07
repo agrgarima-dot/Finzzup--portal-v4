@@ -154,7 +154,7 @@ const INVITE_CODES = {
 
 // ─── DEMO DATA ────────────────────────────────────────────────────────────────
 const KPIs = [
-  { label:"Revenue",      value:"₹8.4 Cr",  prev:"₹7.9 Cr",  trend:"up",   color:C.blue,   bg:"#EEF3FE", emoji:"📈"    },
+  { label:"Revenue",      value:"₹8.4 Cr",  prev:"₹7.9 Cr",  trend:"up",   color:C.blue,   bg:"#EEF3FE", emoji:"ti-trending-up"    },
   { label:"Gross Margin", value:"41%",       prev:"38%",       trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin" },
   { label:"Cash Balance", value:"₹2.1 Cr",  prev:"₹2.6 Cr",  trend:"down", color:C.amber,  bg:"#FEF7E7", icon:"cash"   },
   { label:"Burn Rate",    value:"₹48L/mo",  prev:"₹52L/mo",  trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"burn"   },
@@ -240,9 +240,9 @@ function kpiContext(k) {
   }
   if (label.includes("qfzp")) {
     const num = parseFloat(val);
-    if (num >= 85) return "✅ Strong QFZP compliance — maintain documentation";
+    if (num >= 85) return "Strong QFZP compliance — maintain documentation";
     if (num >= 70) return "Good — address audit readiness to improve";
-    return "⚠️ Action needed — review substance requirements";
+    return "Action needed — review substance requirements";
   }
 
   if (label.includes("revenue")) {
@@ -267,8 +267,8 @@ function kpiContext(k) {
     const num = parseFloat(val);
     if (num >= 12) return "Strong runway — focus on growth";
     if (num >= 6)  return "Adequate · start fundraise planning now";
-    if (num >= 3)  return "⚠️ Under 6 months — act immediately";
-    return "🔴 Critical — fundraise or cut costs now";
+    if (num >= 3)  return "Under 6 months — act immediately";
+    return "Critical — fundraise or cut costs now";
   }
   if (label.includes("arr") || label.includes("mrr")) {
     return up ? ("Growing — " + (prev ? "up from " + prev : "positive trend")) : prev ? ("Declined from " + prev + " — check churn") : "Annual recurring revenue";
@@ -278,9 +278,9 @@ function kpiContext(k) {
   }
   if (label.includes("debtor") || label.includes("receivable")) {
     const num = parseFloat(val);
-    if (num > 45) return "⚠️ High — chase collections urgently";
+    if (num > 45) return "High — chase collections urgently";
     if (num > 30) return "Above target · follow up overdue invoices";
-    return "✅ Within target range";
+    return "Within target range";
   }
   if (label.includes("working capital")) {
     return up ? `Improved from ${prev || "last period"}` : "Monitor current assets vs liabilities";
@@ -366,9 +366,14 @@ const ENGAGEMENT = {
 };
 
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
-const Card = ({ children, style={} }) => (
-  <div style={{ background:"white", border:`1px solid ${C.border}`, borderRadius:6,
-    padding:14, boxShadow:"0 1px 2px rgba(0,0,0,0.04)", ...style }}>
+const Card = ({ children, style={}, accent }) => (
+  <div style={{ background:"#fff",
+    border:`1px solid ${C.border}`,
+    borderLeft: accent ? `3px solid ${accent}` : `1px solid ${C.border}`,
+    borderRadius:4,
+    padding:14,
+    boxShadow:"0 1px 4px rgba(0,0,0,0.04)",
+    ...style }}>
     {children}
   </div>
 );
@@ -661,14 +666,14 @@ function Login({ onLogin }) {
             <div style={{ marginTop:20, padding:"14px 16px", borderRadius:6,
               background:`${C.blue}0A`, border:`1px solid ${C.blue}20` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>🔍 Try a demo account</div>
+                letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>Try a demo account</div>
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 {[
-                  { code:"DEMO-STARTUP",  label:"Startup / CFO Client",    icon:"🚀", color:C.blue   },
-                  { code:"DEMO-MSME",     label:"MSME Client",              icon:"🏢", color:C.teal   },
-                  { code:"DEMO-CORP",     label:"Corporate Client",          icon:"🏦", color:C.purple },
-                  { code:"DEMO-UAE",      label:"UAE / Dubai Client",        icon:"🇦🇪", color:"#00732F"},
-                  { code:"DEMO-XBORDER", label:"Cross-Border India + UAE",  icon:"🌐", color:C.amber  },
+                  { code:"DEMO-STARTUP",  label:"Startup / CFO Client",    icon:"ti-rocket", color:C.blue   },
+                  { code:"DEMO-MSME",     label:"MSME Client",              icon:"ti-building", color:C.teal   },
+                  { code:"DEMO-CORP",     label:"Corporate Client",          icon:"ti-building-bank", color:C.purple },
+                  { code:"DEMO-UAE",      label:"UAE / Dubai Client",        icon:"ti-flag", color:"#00732F"},
+                  { code:"DEMO-XBORDER", label:"Cross-Border India + UAE",  icon:"ti-world", color:C.amber  },
                 ].map(d => (
                   <button key={d.code} onClick={() => setCode(d.code)}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -687,7 +692,7 @@ function Login({ onLogin }) {
           {step === "register" && <>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14,
               padding:"12px 14px", borderRadius:6, background:`${C.green}0A`, border:`1px solid ${C.green}25` }}>
-              <span style={{ fontSize:22 }}>✅</span>
+              <span style={{ fontSize:22 }}>✓</span>
               <div>
                 <div style={{ fontSize:13, fontWeight:700, color:C.text }}>Code accepted!</div>
                 <div style={{ fontSize:12, color:C.muted }}>{client?.company}</div>
@@ -805,18 +810,18 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
     { label:"Account",      ids:["calendar","newrequest","documents","invoices","engagement"] },
   ];
   return (
-    <aside style={{ width:collapsed?52:210, minHeight:"100vh", background:C.navy,
+    <aside style={{ width:collapsed?52:210, minHeight:"100vh", background:"#fff",
       flexShrink:0, display:"flex", flexDirection:"column", transition:"width 0.2s",
-      overflow:"hidden", borderRight:"1px solid #1E2D44" }}>
+      overflow:"hidden", borderRight:`1px solid ${C.border}` }}>
 
       {/* Logo */}
       <div style={{ padding:collapsed?"14px 0":"12px 16px", display:"flex",
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
-        borderBottom:"1px solid #1E2D44", minHeight:46 }}>
+        borderBottom:`1px solid ${C.border}`, minHeight:46 }}>
         {!collapsed && <Logo size={22} dark showTagline={false}/>}
         {collapsed && <Logo size={18} dark collapsed/>}
         <button onClick={()=>setCollapsed(c=>!c)} style={{ background:"none", border:"none",
-          cursor:"pointer", color:"rgba(255,255,255,0.25)", fontSize:18, lineHeight:1,
+          cursor:"pointer", color:C.dim, fontSize:18, lineHeight:1,
           padding:"2px 0", display:"flex", alignItems:"center" }}>
           {collapsed ? "›" : "‹"}
         </button>
@@ -824,13 +829,13 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
 
       {/* Client chip */}
       {!collapsed && (
-        <div style={{ padding:"10px 16px", borderBottom:"1px solid #1E2D44",
-          background:"rgba(0,0,0,0.15)" }}>
-          <div style={{ fontSize:9, color:"rgba(255,255,255,0.25)", fontFamily:F,
+        <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
+          background:"#fff" }}>
+          <div style={{ fontSize:9, color:C.dim, fontFamily:F,
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2 }}>Client</div>
-          <div style={{ fontSize:12, fontWeight:600, color:"rgba(255,255,255,0.9)",
+          <div style={{ fontSize:12, fontWeight:600, color:C.text,
             fontFamily:F, lineHeight:1.3 }}>{client?.name}</div>
-          <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontFamily:F,
+          <div style={{ fontSize:10, color:C.muted, fontFamily:F,
             marginTop:1 }}>{client?.company}</div>
         </div>
       )}
@@ -844,7 +849,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
             <div key={gi} style={{ marginBottom:6 }}>
               {!collapsed && (
                 <div style={{ padding:"6px 16px 3px", fontSize:9, fontWeight:600,
-                  color:"rgba(255,255,255,0.2)", textTransform:"uppercase",
+                  color:C.dim, textTransform:"uppercase",
                   letterSpacing:"0.12em", fontFamily:F }}>{g.label}</div>
               )}
               {items.map(n => (
@@ -854,18 +859,18 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
                     gap:collapsed?0:9, width:"100%",
                     padding:collapsed?"9px 0":"6px 16px",
                     justifyContent:collapsed?"center":"flex-start",
-                    background:page===n.id?"rgba(255,255,255,0.08)":"transparent",
+                    background:page===n.id?C.accentLight:"transparent",
                     border:"none", cursor:"pointer",
                     borderLeft:page===n.id?`2px solid ${C.blue}`:"2px solid transparent",
                     transition:"all 0.12s", fontFamily:F }}>
                   <i className={"ti " + n.icon}
                     style={{ fontSize:15,
-                      color:page===n.id?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.35)",
+                      color:page===n.id?C.blue:C.dim,
                       display:"inline-block", width:collapsed?undefined:16,
                       textAlign:"center" }}/>
                   {!collapsed && (
                     <span style={{ fontSize:12, fontWeight:page===n.id?500:400,
-                      color:page===n.id?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.4)",
+                      color:page===n.id?C.blue:C.muted,
                       whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
                       {n.label}
                     </span>
@@ -883,12 +888,12 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
       </nav>
 
       {/* Footer */}
-      <div style={{ borderTop:"1px solid #1E2D44", padding:collapsed?"8px 0":"8px 12px" }}>
+      <div style={{ borderTop:`1px solid ${C.border}`, padding:collapsed?"8px 0":"8px 12px" }}>
         {!collapsed && (
           <button onClick={()=>setPage("terms")}
             style={{ width:"100%", padding:"5px 8px", background:"none", border:"none",
               cursor:"pointer", fontFamily:F, fontSize:10,
-              color:"rgba(255,255,255,0.18)", textAlign:"left",
+              color:C.dim, textAlign:"left",
               display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
             <i className="ti ti-license" style={{ fontSize:13 }}/>
             Terms & Privacy
@@ -900,7 +905,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
             justifyContent:collapsed?"center":"flex-start",
             background:"none", border:"none", cursor:"pointer",
             fontFamily:F, fontSize:11, fontWeight:400,
-            color:"rgba(255,255,255,0.25)" }}>
+            color:C.muted }}>
           <i className="ti ti-logout" style={{ fontSize:14 }}/>
           {!collapsed && "Sign Out"}
         </button>
@@ -918,7 +923,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
   const count = notifItems.length;
   const initials = (client?.name||"U").split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();
   return (
-    <header style={{ height:40, background:"#fff", borderBottom:`1px solid ${C.border}`,
+    <header style={{ height:40, background:"#fff", borderBottom:`1px solid #EAECF0`,
       display:"flex", alignItems:"center", justifyContent:"space-between",
       padding:"0 18px", flexShrink:0, zIndex:50,
       boxShadow:"0 1px 2px rgba(0,0,0,0.04)" }}>
@@ -984,7 +989,7 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
         <div style={{ display:"flex", alignItems:"center", gap:7,
           padding:"4px 10px", borderRadius:4,
           border:`1px solid ${C.border}`, cursor:"pointer",
-          background:C.bg3, fontFamily:F }}>
+          background:"#fff", fontFamily:F }}>
           <div style={{ width:22, height:22, borderRadius:"50%",
             background:uae?"#00732F":C.blue,
             display:"flex", alignItems:"center", justifyContent:"center",
@@ -1058,13 +1063,13 @@ const PACK_CONFIG = {
       { label:"EBITDA",       value:"₹14.7L", pct:"17.5%", trend:"up",   sub:"Best EBITDA margin this year" },
       { label:"Net Profit",   value:"₹10.2L", pct:"12.1%", trend:"up",   sub:"First double-digit net margin in FY26" },
       { label:"Burn Rate",    value:"₹48L/mo",pct:"−7.7%", trend:"up",   sub:"Improved from ₹52L — 2 months in a row" },
-      { label:"Runway",       value:"4.4 mo", pct:"−12%",  trend:"down", sub:"⚠️ Fundraise conversations must start now" },
+      { label:"Runway",       value:"4.4 mo", pct:"−12%",  trend:"down", sub:"Fundraise conversations must start now" },
     ],
   },
   msme: {
     overviewKpis: [
-      { label:"Monthly Revenue",    value:"₹84L",  prev:"₹79L",  pct:"+6.1%",  up:true,  color:C.blue,   bg:"#EEF3FE", emoji:"📈" },
-      { label:"Working Capital",    value:"₹32.4L",prev:"₹30.1L",pct:"+₹2.3L", up:true,  color:C.teal,   bg:"#E6FAF7", emoji:"🏦" },
+      { label:"Monthly Revenue",    value:"₹84L",  prev:"₹79L",  pct:"+6.1%",  up:true,  color:C.blue,   bg:"#EEF3FE", emoji:"ti-trending-up" },
+      { label:"Working Capital",    value:"₹32.4L",prev:"₹30.1L",pct:"+₹2.3L", up:true,  color:C.teal,   bg:"#E6FAF7", emoji:"ti-building-bank" },
       { label:"Debtor Days",        value:"46 days",prev:"51 days",pct:"−5 days",up:true,  color:C.green,  bg:"#ECFDF5", icon:"calendar" },
     ],
     benchmarkTitle: "Working Capital Benchmarks — MSME / Export Sector",
@@ -1089,9 +1094,9 @@ const PACK_CONFIG = {
   },
   corporate: {
     overviewKpis: [
-      { label:"Revenue (Feb)",   value:"₹842L", prev:"₹810L", pct:"+4.0%",   up:true,  color:C.blue,   bg:"#EEF3FE", emoji:"📈" },
+      { label:"Revenue (Feb)",   value:"₹842L", prev:"₹810L", pct:"+4.0%",   up:true,  color:C.blue,   bg:"#EEF3FE", emoji:"ti-trending-up" },
       { label:"EBITDA",          value:"₹147L", prev:"₹115L", pct:"+27.8%",  up:true,  color:C.purple, bg:"#F3EFFF", icon:"margin" },
-      { label:"PAT",             value:"₹81L",  prev:"₹56L",  pct:"+44.6%",  up:true,  color:C.green,  bg:"#ECFDF5", emoji:"🏦" },
+      { label:"PAT",             value:"₹81L",  prev:"₹56L",  pct:"+44.6%",  up:true,  color:C.green,  bg:"#ECFDF5", emoji:"ti-building-bank" },
     ],
     benchmarkTitle: "Market Benchmarks — Mid-Cap / Pre-IPO Sector",
     benchmarkCols: ["Metric","Your Value","Sector Median","IPO Threshold","Status"],
@@ -1189,7 +1194,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         padding:"10px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div>
           <div style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text }}>
-            {greeting}, {client?.name?.split(" ")[0] || "there"} 👋
+            {greeting}, {client?.name?.split(" ")[0] || "there"}
           </div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:1 }}>
             {client?.company} · {uaeClient ? "UAE CFO Dashboard" : `${ovPack.toUpperCase()} Pack`} · {reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}
@@ -1200,7 +1205,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
             <div style={{ padding:"5px 12px", borderRadius:20, background:"#FEF2F2",
               border:"1px solid #FCA5A5", fontFamily:F, fontSize:12, fontWeight:700, color:C.red,
               display:"flex", alignItems:"center", gap:5 }}>
-              🔴 {highPriority.length} High Priority Action{highPriority.length>1?"s":""}
+              {highPriority.length} High Priority Action{highPriority.length>1?"s":""}
             </div>
           )}
           <div style={{ padding:"5px 12px", borderRadius:20, background:`${accentColor}12`,
@@ -1254,7 +1259,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
             </div>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
               <thead>
-                <tr style={{ background:"#F9FAFB" }}>
+                <tr style={{ background:"#fff" }}>
                   <th style={{ padding:"7px 16px", textAlign:"left", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Line</th>
                   <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Current</th>
                   <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Prior</th>
@@ -1299,11 +1304,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 
           {/* Garima's Note */}
           <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
-            borderLeft:`4px solid ${accentColor}`,
+            borderLeft:`3px solid ${accentColor}`,
             boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex", flexDirection:"column" }}>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:accentColor,
               textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
-              💬 Garima's CFO Note
+              Garima's CFO Note
             </div>
             <p style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.8, margin:0, flex:1 }}>
               {displayNote}
@@ -1448,7 +1453,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
             </div>
             <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
               <thead>
-                <tr style={{ background:"#F9FAFB" }}>
+                <tr style={{ background:"#fff" }}>
                   <th style={{ padding:"7px 16px", textAlign:"left", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Indicator</th>
                   <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Budget</th>
                   <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Actual</th>
@@ -1715,7 +1720,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#25D366",
               color:"white", borderRadius:8, padding:"7px 14px", fontFamily:F,
               fontWeight:700, fontSize:12, textDecoration:"none" }}>
-            📱 WhatsApp Garima
+            WhatsApp Garima
           </a>
         </div>
       </div>
@@ -1764,14 +1769,14 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
               borderRadius:6, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
               color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            {"📄 Download Cash Report"}
+            "Download Cash Report"
           </button>
         </div>
 
         <KpiBar items={[
           { label:"Current Cash",  value:"₹2.1 Cr", color:C.blue,   bg:"#EEF3FE", sub:"▼ vs ₹2.6 Cr last month", trend:"down" },
           { label:"Monthly Burn",  value:"₹48L/mo", color:C.purple, bg:"#F3EFFF", sub:"▲ Improved from ₹52L", trend:"up" },
-          { label:"Runway",        value:"4.4 mo",  color:C.red,    bg:"#FEF2F2", border:`${C.red}30`, sub:"⚠️ Below 6 months", trend:"down" },
+          { label:"Runway",        value:"4.4 mo",  color:C.red,    bg:"#FEF2F2", border:`${C.red}30`, sub:" Below 6 months", trend:"down" },
           { label:"Mar Forecast",  value: nextForecast ? `₹${nextForecast.forecast}L` : "₹175L", color:C.muted, bg:C.bg, sub:"Next month cash" },
         ]}/>
 
@@ -1886,7 +1891,7 @@ function CashFlow({ reportData, client, kpis }) {
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
                 {w.days !== "—" && <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:w.color, marginTop:2 }}>{w.days}</div>}
                 <div style={{ fontFamily:F, fontSize:10, color:w.flag?C.amber:C.green, marginTop:3 }}>
-                  {w.flag ? "⚠️ " : "✅ "}{w.note}
+                  {w.flag ? "! " : "✓ "}{w.note}
                 </div>
               </div>
             ))}
@@ -1993,7 +1998,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
               borderRadius:6, background:`${C.teal}10`, border:`1.5px solid ${C.teal}25`,
               color:C.teal, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            {"📄 Download Cash Report"}
+            "Download Cash Report"
           </button>
         </div>
 
@@ -2001,7 +2006,7 @@ function CashFlow({ reportData, client, kpis }) {
           { label:"Cash Inflows (Feb)",   value:"₹84L",    color:C.green,  bg:"#ECFDF5", sub:"▲ +6.1% vs Jan", trend:"up" },
           { label:"Cash Outflows (Feb)",  value:"₹67L",    color:C.red,    bg:"#FEF2F2", sub:"▼ −4.3% vs Jan", trend:"up" },
           { label:"Net Cash Flow",        value:"+₹17L",   color:C.blue,   bg:"#EEF3FE", sub:"Feb closing" },
-          { label:"Cash Conv. Cycle",     value:"37 days", color:C.amber,  bg:"#FFFBEB", border:`${C.amber}30`, sub:"⚠️ Target <30 days", trend:"down" },
+          { label:"Cash Conv. Cycle",     value:"37 days", color:C.amber,  bg:"#FFFBEB", border:`${C.amber}30`, sub:" Target <30 days", trend:"down" },
         ]}/>
 
         {/* Inflow vs Outflow chart */}
@@ -2044,7 +2049,7 @@ function CashFlow({ reportData, client, kpis }) {
                 <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:w.color }}>{w.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:w.color, marginTop:2 }}>{w.days}</div>
-                <div style={{ fontFamily:F, fontSize:10, color:w.flag?C.amber:C.green, marginTop:3 }}>{w.flag?"⚠️ ":"✅ "}{w.note}</div>
+                <div style={{ fontFamily:F, fontSize:10, color:w.flag?C.amber:C.green, marginTop:3 }}>{w.flag?"! ":"✓ "}{w.note}</div>
               </div>
             ))}
             <style>{`.wc-cf{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-cf{grid-template-columns:1fr!important}}`}</style>
@@ -2115,7 +2120,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
               borderRadius:6, background:`${C.purple}10`, border:`1.5px solid ${C.purple}25`,
               color:C.purple, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            {"📄 Download Cash Report"}
+            "Download Cash Report"
           </button>
         </div>
 
@@ -2400,7 +2405,7 @@ function StartupCFOPack({ data, client, reportData }) {
               Overall: {reportData?.score || data.fundraiseScore}/100
             </h3>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
-              {(parseInt(reportData?.score)||data.fundraiseScore) >= 75 ? "✅ Series A ready" : (parseInt(reportData?.score)||data.fundraiseScore) >= 55 ? "⚠️ Almost there — a few gaps to close" : "🔴 Significant prep needed"}
+              {(parseInt(reportData?.score)||data.fundraiseScore) >= 75 ? "Series A ready" : (parseInt(reportData?.score)||data.fundraiseScore) >= 55 ? "⚠️ Almost there — a few gaps to close" : "🔴 Significant prep needed"}
             </p>
           </div>
           <ScoreGauge score={parseInt(reportData?.score)||data.fundraiseScore} color={C.blue} size={100}/>
@@ -2410,7 +2415,7 @@ function StartupCFOPack({ data, client, reportData }) {
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"140px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                <div style={{ height:6, borderRadius:3, background:"#F0F1F3", flex:1 }}>
+                <div style={{ height:6, borderRadius:3, background:"#fff", flex:1 }}>
                   <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
                     background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
                     transition:"width 0.8s ease" }}/>
@@ -2450,7 +2455,7 @@ function StartupCFOPack({ data, client, reportData }) {
                 color: m.flag ? C.red : C.blue, marginBottom:4 }}>{m.value}</div>
               <div style={{ fontFamily:F, fontSize:11,
                 color: m.flag ? C.red : C.green, fontWeight:600 }}>
-                {m.flag ? "⚠️ " : "✅ "}{m.note}
+                {m.flag ? "! " : "✓ "}{m.note}
               </div>
             </div>
           ))}
@@ -2495,7 +2500,7 @@ function MSMECFOPack({ data, reportData }) {
               Overall: {reportData?.score || data.cashHealth}/100
             </h3>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
-              {(parseInt(reportData?.score)||data.cashHealth) >= 75 ? "✅ Strong working capital position" : "⚠️ A few areas to tighten up"}
+              {(parseInt(reportData?.score)||data.cashHealth) >= 75 ? "Strong working capital position" : "⚠️ A few areas to tighten up"}
             </p>
           </div>
           <ScoreGauge score={parseInt(reportData?.score)||data.cashHealth} color={C.teal} size={100}/>
@@ -2505,7 +2510,7 @@ function MSMECFOPack({ data, reportData }) {
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"160px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                <div style={{ height:6, borderRadius:3, background:"#F0F1F3" }}>
+                <div style={{ height:6, borderRadius:3, background:"#fff" }}>
                   <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
                     background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
                     transition:"width 0.8s ease" }}/>
@@ -2543,7 +2548,7 @@ function MSMECFOPack({ data, reportData }) {
               <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
                 color: m.flag ? C.red : C.teal, marginBottom:4 }}>{m.value}</div>
               <div style={{ fontFamily:F, fontSize:11, color:m.flag ? C.red : C.green, fontWeight:600 }}>
-                {m.flag ? "⚠️ " : "✅ "}{m.note}
+                {m.flag ? "! " : "✓ "}{m.note}
               </div>
             </div>
           ))}
@@ -2561,7 +2566,7 @@ function MSMECFOPack({ data, reportData }) {
               <div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:m.flag ? C.red : C.green, fontWeight:600 }}>
-                  {m.flag ? "⚠️ " : "✅ "}{m.note}
+                  {m.flag ? "! " : "✓ "}{m.note}
                 </div>
               </div>
               <div style={{ fontFamily:FM, fontSize:15, fontWeight:700,
@@ -2591,7 +2596,7 @@ function MSMECFOPack({ data, reportData }) {
               <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
                 color: m.flag ? C.red : C.teal, marginBottom:4 }}>{m.value}</div>
               <div style={{ fontFamily:F, fontSize:11, color:m.flag ? C.red : C.green, fontWeight:600 }}>
-                {m.flag ? "⚠️ " : "✅ "}{m.note}
+                {m.flag ? "! " : "✓ "}{m.note}
               </div>
             </div>
           ))}
@@ -2660,7 +2665,7 @@ function CorporateCFOPack({ data, reportData }) {
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"180px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                <div style={{ height:6, borderRadius:3, background:"#F0F1F3" }}>
+                <div style={{ height:6, borderRadius:3, background:"#fff" }}>
                   <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
                     background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
                     transition:"width 0.8s ease" }}/>
@@ -2843,7 +2848,7 @@ function ArchiveRow({ p, label }) {
               background: showPreview ? C.bg3 : "transparent",
               color: showPreview ? C.text : C.muted,
               fontFamily:F, fontWeight:600, fontSize:12, cursor:"pointer", touchAction:"manipulation" }}>
-            {showPreview ? "▲ Hide" : "👁 Preview"}
+            {showPreview ? "▲ Hide" : "Preview"}
           </button>
           {p.file_url ? (
             <button onClick={() => {
@@ -2855,7 +2860,7 @@ function ArchiveRow({ p, label }) {
                 background:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?C.blue:"transparent", color:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?"white":C.blue,
                 fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer",
                 touchAction:"manipulation" }}>
-              {p.file_url.startsWith("data:text/html") ? "👁 View Report" : "↓ Download"}
+              {p.file_url.startsWith("data:text/html") ? "View Report" : "↓ Download"}
             </button>
           ) : (
             <button disabled style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.border}`,
@@ -2890,7 +2895,7 @@ const AgeingTable = ({ title, rows, color }) => (
     <div style={{ overflowX:"auto" }}>
       <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
         <thead>
-          <tr style={{ background:"#F0F1F3" }}>
+          <tr style={{ background:"#fff" }}>
             {["Party","0–30 days","31–60 days","61–90 days","90+ days","Total","% of total"].map(h => (
               <th key={h} style={{ padding:"8px 10px", textAlign:h==="Party"?"left":"right", color:C.muted, fontWeight:700, fontSize:11, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}` }}>{h}</th>
             ))}
@@ -3029,7 +3034,7 @@ function generateExecSummaryPDF({ client, reportData, kpis }) {
   </div>
 
   <div class="section next">
-    <div class="section-header"><span class="section-icon">✅</span><h2>Next Steps</h2></div>
+    <div class="section-header"><span class="section-icon">✓</span><h2>Next Steps</h2></div>
     <div class="section-body">${nextSteps}</div>
   </div>
 
@@ -3127,11 +3132,11 @@ function MarketWidget({ pack, client }) {
 
   const items = [
     m.repo     && { label:"RBI Repo Rate",  value:m.repo,     color:C.blue,
-                    note:"SBI lending = Repo + 2–3%",          emoji:"🏦" },
+                    note:"SBI lending = Repo + 2–3%",          emoji:"ti-building-bank" },
     m.nifty    && { label:"Nifty 50",       value:m.nifty,
                     color: m.niftyChg >= 0 ? C.green : C.red,
                     note: m.niftyChg ? `${m.niftyChg >= 0 ? "▲" : "▼"} ${Math.abs(m.niftyChg)}% today` : "Today",
-                    emoji:"📈" },
+                    emoji:"ti-trending-up" },
     (isCrossBorder || true) && m.usd && { label:"USD / INR", value:m.usd, color:C.purple,
                     note:"Live rate",                           icon:"💱" },
     (isCrossBorder) && m.sar && { label:"SAR / INR", value:m.sar, color:C.teal,
@@ -3278,10 +3283,10 @@ function MarketIntel({ client }) {
           marginBottom:24 }} className="mkt-live">
           {[
             m.repo  && { label:"RBI Repo Rate", value:m.repo,
-              sub:`SBI lending ~${(parseFloat(m.repo)+2.5).toFixed(2)}%`, color:C.blue,  emoji:"🏦" },
+              sub:`SBI lending ~${(parseFloat(m.repo)+2.5).toFixed(2)}%`, color:C.blue,  emoji:"ti-building-bank" },
             m.nifty && { label:"Nifty 50",      value:m.nifty,
               sub: m.niftyChg ? `${parseFloat(m.niftyChg)>=0?"▲":"▼"} ${Math.abs(m.niftyChg)}% today` : "Live",
-              color:parseFloat(m.niftyChg)>=0?C.green:C.red, emoji:"📈" },
+              color:parseFloat(m.niftyChg)>=0?C.green:C.red, emoji:"ti-trending-up" },
             m.usd   && { label:"USD / INR",      value:m.usd,   sub:"Live rate", color:C.purple,icon:"💱" },
             m.sar   && { label:"SAR / INR",       value:m.sar,   sub:"Saudi Riyal",color:C.teal, icon:"🇸🇦" },
           ].filter(Boolean).map((item,i) => (
@@ -3986,7 +3991,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
             transition:"all 0.15s",
           }}>
             <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <span style={{ fontSize:16 }}>{current?.emoji}</span>
+              <span style={{ fontSize:16 }}><i className={current?.emoji} style={{fontSize:14}}/></span>
               <div style={{ textAlign:"left" }}>
                 <div style={{ fontSize:11, fontWeight:600, color:"#9CA3AF",
                   textTransform:"uppercase", letterSpacing:"0.08em", lineHeight:1 }}>
@@ -4013,7 +4018,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
                 <div key={gi}>
                   <div style={{ padding:"9px 14px 5px", fontSize:10, fontWeight:700,
                     color:"#9CA3AF", textTransform:"uppercase", letterSpacing:"0.1em",
-                    background:"#F9FAFB", borderBottom:"1px solid #F3F4F6" }}>
+                    background:"#fff", borderBottom:"1px solid #F3F4F6" }}>
                     {g.label}
                   </div>
                   {g.items.map(t => (
@@ -4026,7 +4031,7 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
                         transition:"background 0.1s" }}
                       onMouseEnter={e => { if(tab!==t.id) e.currentTarget.style.background="#F9FAFB"; }}
                       onMouseLeave={e => { if(tab!==t.id) e.currentTarget.style.background="white"; }}>
-                      <span style={{ fontSize:15, opacity: tab===t.id ? 1 : 0.65 }}>{t.emoji}</span>
+                      <span style={{ fontSize:15, opacity: tab===t.id ? 1 : 0.65 }}><i className={t.emoji} style={{fontSize:13}}/></span>
                       <span style={{ fontSize:13, fontWeight: tab===t.id ? 700 : 500,
                         color: tab===t.id ? accent : "#374151" }}>{t.label}</span>
                       {tab===t.id && (
@@ -4061,32 +4066,32 @@ function MSMEPackContent({ reportData, kpis, client }) {
     {
       label: "Financial Reports",
       items: [
-        { id:"monthly",    emoji:"📊",  label:"Monthly Report"    },
-        { id:"variance",   emoji:"📉", label:"Variance Analysis" },
-        { id:"verticalpnl",emoji:"📈",        label:"Vertical P&L"      },
+        { id:"monthly",    emoji:"ti-chart-bar",  label:"Monthly Report"    },
+        { id:"variance",   emoji:"ti-trending-down", label:"Variance Analysis" },
+        { id:"verticalpnl",emoji:"ti-trending-up",        label:"Vertical P&L"      },
       ]
     },
     {
       label: "Cash & Working Capital",
       items: [
-        { id:"cash",       emoji:"💵",   label:"Cash Health"       },
-        { id:"workingcap", emoji:"📊",  label:"Working Capital"   },
-        { id:"fundutil",   emoji:"🏛️",   label:"Fund Utilisation"  },
+        { id:"cash",       emoji:"ti-currency-rupee",   label:"Cash Health"       },
+        { id:"workingcap", emoji:"ti-chart-bar",  label:"Working Capital"   },
+        { id:"fundutil",   emoji:"ti-building-bank",   label:"Fund Utilisation"  },
       ]
     },
     {
       label: "Strategy & Planning",
       items: [
-        { id:"scenario",   emoji:"🎯",   label:"Scenarios"         },
-        { id:"bizintel",   emoji:"🌏",         label:"BI Analysis"       },
-        { id:"spend",      emoji:"📊",  label:"Spend Intel"       },
-        { id:"bankfin",    emoji:"🏦",       label:"Bank Finance"      },
+        { id:"scenario",   emoji:"ti-target",   label:"Scenarios"         },
+        { id:"bizintel",   emoji:"ti-world",         label:"BI Analysis"       },
+        { id:"spend",      emoji:"ti-chart-bar",  label:"Spend Intel"       },
+        { id:"bankfin",    emoji:"ti-building-bank",       label:"Bank Finance"      },
       ]
     },
     {
       label: "Documents",
       items: [
-        { id:"packs",      emoji:"📁",  label:"Previous Packs"    },
+        { id:"packs",      emoji:"ti-folder",  label:"Previous Packs"    },
       ]
     },
   ];
@@ -4458,7 +4463,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               {reportData?.loanScore && <ScoreGauge score={parseInt(reportData.loanScore)} color={C.blue} size={90}/>}
             </div>
             {reportData?.loanScore && (
-              <div style={{ height:8, borderRadius:4, background:"#F0F1F3" }}>
+              <div style={{ height:8, borderRadius:4, background:"#fff" }}>
                 <div style={{ height:"100%", borderRadius:4, width:`${reportData.loanScore}%`,
                   background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
               </div>
@@ -4617,31 +4622,31 @@ function CorporatePackContent({ reportData, kpis, client }) {
     {
       label: "Financial Reports",
       items: [
-        { id:"monthly",    emoji:"📊",  label:"Monthly Report"    },
-        { id:"variance",   emoji:"📉", label:"Variance Analysis" },
-        { id:"verticalpnl",emoji:"📈",        label:"Vertical P&L"      },
+        { id:"monthly",    emoji:"ti-chart-bar",  label:"Monthly Report"    },
+        { id:"variance",   emoji:"ti-trending-down", label:"Variance Analysis" },
+        { id:"verticalpnl",emoji:"ti-trending-up",        label:"Vertical P&L"      },
       ]
     },
     {
       label: "Governance & Growth",
       items: [
-        { id:"governance", emoji:"⚖️",  label:"Board Governance"  },
-        { id:"ipo",        emoji:"🏦",       label:"IPO Readiness"     },
-        { id:"fundutil",   emoji:"🏛️",   label:"Fund Utilisation"  },
+        { id:"governance", emoji:"ti-scale",  label:"Board Governance"  },
+        { id:"ipo",        emoji:"ti-building-bank",       label:"IPO Readiness"     },
+        { id:"fundutil",   emoji:"ti-building-bank",   label:"Fund Utilisation"  },
       ]
     },
     {
       label: "Strategy & Planning",
       items: [
-        { id:"scenario",   emoji:"🎯",   label:"Scenarios"         },
-        { id:"bizintel",   emoji:"🌏",         label:"BI Analysis"       },
-        { id:"spend",      emoji:"📊",  label:"Spend Intel"       },
+        { id:"scenario",   emoji:"ti-target",   label:"Scenarios"         },
+        { id:"bizintel",   emoji:"ti-world",         label:"BI Analysis"       },
+        { id:"spend",      emoji:"ti-chart-bar",  label:"Spend Intel"       },
       ]
     },
     {
       label: "Documents",
       items: [
-        { id:"packs",      emoji:"📁",  label:"Previous Packs"    },
+        { id:"packs",      emoji:"ti-folder",  label:"Previous Packs"    },
       ]
     },
   ];
@@ -5178,7 +5183,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     { name:"Technology",  icon:"💻", color:"#059669"  },
     { name:"Operations",  icon:"settings", color:"#D97706"  },
     { name:"HR & Admin",  icon:"👥", color:"#EF4444"  },
-    { name:"Finance",     emoji:"📊", color:"#0891B2"  },
+    { name:"Finance",     emoji:"ti-chart-bar", color:"#0891B2"  },
   ].map(d => ({...d,
     revenue: parse(reportData?.depts?.[d.name]?.revenue),
     cost:    parse(reportData?.depts?.[d.name]?.cost),
@@ -5192,7 +5197,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
   if (revGrowth !== null && parseFloat(revGrowth) > 15)
     flags.push({ type:"success", icon:"🚀", text:`Strong revenue growth of ${revGrowth}% MoM` });
   if (parseFloat(gpMargin) < 30)
-    flags.push({ type:"warning", emoji:"📉", text:`Gross margin at ${gpMargin}% — below healthy threshold of 30%` });
+    flags.push({ type:"warning", emoji:"ti-trending-down", text:`Gross margin at ${gpMargin}% — below healthy threshold of 30%` });
   if (parseFloat(ebitdaMargin) < 0)
     flags.push({ type:"danger",  icon:"🔴", text:`EBITDA negative at ${ebitdaMargin}% — business burning cash at operating level` });
   if (ebitdaGrowth !== null && parseFloat(ebitdaGrowth) > 20)
@@ -5205,13 +5210,13 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     const diff = ((actual - budget) / Math.abs(budget) * 100).toFixed(1);
     const unfav = v.fav ? actual < budget : actual > budget;
     if (unfav && Math.abs(diff) > 10)
-      flags.push({ type:"warning", emoji:"📊", text:`${v.metric}: ${Math.abs(diff)}% ${unfav ? "below" : "above"} budget` });
+      flags.push({ type:"warning", emoji:"ti-chart-bar", text:`${v.metric}: ${Math.abs(diff)}% ${unfav ? "below" : "above"} budget` });
   });
 
   // Dept flags
   deptList.forEach(d => {
     if (d.budget > 0 && d.cost > d.budget * 1.15)
-      flags.push({ type:"warning", emoji:"💵", text:`${d.name} overspending budget by ${(((d.cost-d.budget)/d.budget)*100).toFixed(0)}%` });
+      flags.push({ type:"warning", emoji:"ti-currency-rupee", text:`${d.name} overspending budget by ${(((d.cost-d.budget)/d.budget)*100).toFixed(0)}%` });
   });
 
   // ── Reusable chart components ─────────────────────────────────────────────
@@ -5392,7 +5397,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
       {/* View toggle */}
       <div style={{ display:"flex", gap:8 }}>
         {[
-          { id:"geography",  label:"Geography",  emoji:"🌏"      },
+          { id:"geography",  label:"Geography",  emoji:"ti-world"      },
           { id:"department", label:"Department",  icon:"users"   },
         ].map(v => (
           <button key={v.id} onClick={() => setView(v.id)} style={{
@@ -6429,32 +6434,32 @@ function CFOPackContent({ reportData, client, kpis }) {
     {
       label: "Financial Reports",
       items: [
-        { id:"monthly",    emoji:"📊",  label:"Monthly Report"      },
-        { id:"variance",   emoji:"📉", label:"Variance Analysis"   },
-        { id:"verticalpnl",emoji:"📈",        label:"Vertical P&L"        },
-        { id:"uniteco",    emoji:"📊",  label:"Unit Economics"      },
+        { id:"monthly",    emoji:"ti-chart-bar",  label:"Monthly Report"      },
+        { id:"variance",   emoji:"ti-trending-down", label:"Variance Analysis"   },
+        { id:"verticalpnl",emoji:"ti-trending-up",        label:"Vertical P&L"        },
+        { id:"uniteco",    emoji:"ti-chart-bar",  label:"Unit Economics"      },
       ]
     },
     {
       label: "Fundraise & Finance",
       items: [
-        { id:"fundraise",  emoji:"🚩",       label:"Fundraise Readiness" },
-        { id:"loan",       emoji:"🏦",       label:"Loan Readiness"      },
-        { id:"fundutil",   emoji:"🏛️",   label:"Fund Utilisation"    },
+        { id:"fundraise",  emoji:"ti-flag",       label:"Fundraise Readiness" },
+        { id:"loan",       emoji:"ti-building-bank",       label:"Loan Readiness"      },
+        { id:"fundutil",   emoji:"ti-building-bank",   label:"Fund Utilisation"    },
       ]
     },
     {
       label: "Strategy & Planning",
       items: [
-        { id:"scenario",   emoji:"🎯",   label:"Scenarios"           },
-        { id:"bizintel",   emoji:"🌏",         label:"BI Analysis"         },
-        { id:"spend",      emoji:"📊",  label:"Spend Intel"         },
+        { id:"scenario",   emoji:"ti-target",   label:"Scenarios"           },
+        { id:"bizintel",   emoji:"ti-world",         label:"BI Analysis"         },
+        { id:"spend",      emoji:"ti-chart-bar",  label:"Spend Intel"         },
       ]
     },
     {
       label: "Documents",
       items: [
-        { id:"boardpacks", emoji:"📁",  label:"Board Packs"         },
+        { id:"boardpacks", emoji:"ti-folder",  label:"Board Packs"         },
       ]
     },
   ];
@@ -6846,7 +6851,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               </div>
               <ScoreGauge score={parseInt(reportData?.loanScore) || 64} color={C.blue} size={100}/>
             </div>
-            <div style={{ height:8, borderRadius:4, background:"#F0F1F3" }}>
+            <div style={{ height:8, borderRadius:4, background:"#fff" }}>
               <div style={{ height:"100%", borderRadius:4, width:`${reportData?.loanScore || 64}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
             </div>
           </Card>
@@ -7100,8 +7105,8 @@ function BoardPacksTabbed() {
   const [tab, setTab] = useState("msme");
   const tabs = [
     { id:"msme",      label:"MSME Pack",     icon:"users", color:C.blue   },
-    { id:"corporate", label:"Corporate Pack", emoji:"🏦", color:C.purple },
-    { id:"cfo",       label:"CFO Pack",       emoji:"📊", color:C.teal   },
+    { id:"corporate", label:"Corporate Pack", emoji:"ti-building-bank", color:C.purple },
+    { id:"cfo",       label:"CFO Pack",       emoji:"ti-chart-bar", color:C.teal   },
   ];
   const content = { msme:<MSMEPackContent/>, corporate:<CorporatePackContent/>, cfo:<CFOPackContent/> };
   return (
@@ -7277,7 +7282,7 @@ function Engagement({ liveData }) {
 
         {/* Progress bar */}
         <div style={{ position:"relative", marginBottom:24 }}>
-          <div style={{ height:6, borderRadius:3, background:"#F0F1F3", marginBottom:24 }}>
+          <div style={{ height:6, borderRadius:3, background:"#fff", marginBottom:24 }}>
             <div style={{ height:"100%", borderRadius:3, background:C.grad1,
               width:`${pct}%`, transition:"width 0.6s" }}/>
           </div>
@@ -7929,7 +7934,7 @@ function Invoices({ client, liveInvoices }) {
         {[
           { label:"Total Outstanding", value:"₹50,000", color:C.amber, icon:"⏳" },
           { label:"Paid This Year",    value:"₹1,15,000",color:C.green, icon:"✅" },
-          { label:"Total Invoices",    value:"3",         color:C.blue,  icon:"📄" },
+          { label:"Total Invoices",    value:"3",         color:C.blue,  icon:"▤" },
         ].map((s,i) => (
           <Card key={i} style={{ padding:18, textAlign:"center" }}>
             <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
@@ -8031,7 +8036,7 @@ function MyDocuments({ client }) {
   const fileIcon = (name, docType) => {
     if (docType === "report") return "📊";
     const ext = name?.split(".").pop()?.toLowerCase();
-    if (["pdf"].includes(ext))                    return "📄";
+    if (["pdf"].includes(ext))                    return "▤";
     if (["xls","xlsx","csv"].includes(ext))       return "📊";
     if (["doc","docx"].includes(ext))             return "📝";
     if (["jpg","jpeg","png","gif"].includes(ext)) return "🖼️";
@@ -8171,7 +8176,7 @@ function MyDocuments({ client }) {
                       border:`1.5px solid ${C.blue}`, background:"transparent",
                       color:C.blue, fontFamily:F, fontWeight:700, fontSize:12,
                       cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
-                    {doc.file_url?.startsWith("data:text/html") ? "👁 View Report" : "⬇ Download"}
+                    {doc.file_url?.startsWith("data:text/html") ? "View Report" : "⬇ Download"}
                   </button>
 
                   {/* Delete — only for files the client uploaded themselves */}
@@ -8625,17 +8630,17 @@ function CorporateTax({ client, reportData, initialTab }) {
 
   const ctGroups = [
     { label:"Corporate Tax", items:[
-      { id:"overview",   emoji:"🏛️", label:"CT Overview"         },
-      { id:"sbr",        emoji:"💡", label:"SBR Eligibility"      },
-      { id:"recon",      emoji:"📊", label:"Tax Reconciliation"   },
+      { id:"overview",   emoji:"ti-building-bank", label:"CT Overview"         },
+      { id:"sbr",        emoji:"ti-bulb", label:"SBR Eligibility"      },
+      { id:"recon",      emoji:"ti-chart-bar", label:"Tax Reconciliation"   },
     ]},
     { label:"QFZP & Substance", items:[
-      { id:"qfzp",       emoji:"🏙️", label:"QFZP Tracker"        },
+      { id:"qfzp",       emoji:"ti-city", label:"QFZP Tracker"        },
     ]},
     { label:"Related Party & Transfer Pricing", items:[
-      { id:"rpt",        emoji:"🏢", label:"Related Party Report" },
-      { id:"connected",  emoji:"👤", label:"Connected Persons"    },
-      { id:"armslength", emoji:"⚖️", label:"Arm's Length Tests"   },
+      { id:"rpt",        emoji:"ti-building", label:"Related Party Report" },
+      { id:"connected",  emoji:"ti-user", label:"Connected Persons"    },
+      { id:"armslength", emoji:"ti-scale", label:"Arm's Length Tests"   },
     ]},
   ];
 
@@ -10256,7 +10261,7 @@ function RevenueReconciliation({ client, reportData }) {
                   background:"#25D366", color:"white", borderRadius:8,
                   padding:"8px 16px", fontFamily:F, fontWeight:700,
                   fontSize:12, textDecoration:"none" }}>
-                📱 WhatsApp Garima
+                WhatsApp Garima
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
@@ -10671,7 +10676,7 @@ function WorkingCapital({ client, reportData }) {
         {/* Column headers */}
         <div style={{ display:"grid",
           gridTemplateColumns:"22fr 11fr 11fr 11fr 11fr 11fr 8fr 8fr 15fr",
-          background:"#F9FAFB", padding:"8px 16px",
+          background:"#fff", padding:"8px 16px",
           borderBottom:`1px solid ${C.border}` }}>
           {["Customer","Current","31–60d","61–90d","90+d","Total","% AR","Risk","Action"].map((h,i) => (
             <div key={i} style={{ fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
@@ -10860,7 +10865,7 @@ function WorkingCapital({ client, reportData }) {
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
                   background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                📱 WhatsApp Garima
+                WhatsApp Garima
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
@@ -11168,9 +11173,9 @@ function VerticalAnalysis({ client, reportData }) {
       {/* View toggle */}
       <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
         {[
-          {id:"pnl",        label:"P&L Analysis",    emoji:"📊"},
-          {id:"geography",  label:"Geography",        emoji:"🌍"},
-          {id:"department", label:"By Department",    emoji:"🏢"},
+          {id:"pnl",        label:"P&L Analysis",    emoji:"ti-chart-bar"},
+          {id:"geography",  label:"Geography",        emoji:"ti-world"},
+          {id:"department", label:"By Department",    emoji:"ti-building"},
         ].map(v=>(
           <button key={v.id} onClick={()=>setView(v.id)} style={{
             padding:"8px 18px",borderRadius:20,border:"none",cursor:"pointer",
@@ -11179,7 +11184,7 @@ function VerticalAnalysis({ client, reportData }) {
             color:view===v.id?"white":C.muted,
             outline:`1.5px solid ${view===v.id?acc:C.border}`,
           }}>
-            {v.emoji} {v.label}
+            <i className={v.emoji} style={{fontSize:13, marginRight:4}}/>{v.label}
           </button>
         ))}
       </div>
@@ -11203,7 +11208,7 @@ function VerticalAnalysis({ client, reportData }) {
             <div style={{overflowX:"auto"}}>
               <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:F}}>
                 <thead>
-                  <tr style={{background:"#F9FAFB"}}>
+                  <tr style={{background:"#fff"}}>
                     <th style={{padding:"9px 12px",textAlign:"left",fontWeight:700,color:C.muted,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`2px solid ${C.border}`}}>Line Item</th>
                     <th style={{padding:"9px 12px",textAlign:"right",fontWeight:700,color:C.muted,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`2px solid ${C.border}`}}>Current (AED)</th>
                     <th style={{padding:"9px 12px",textAlign:"right",fontWeight:700,color:C.muted,fontSize:10,textTransform:"uppercase",letterSpacing:"0.06em",borderBottom:`2px solid ${C.border}`}}>% of Rev</th>
@@ -11262,7 +11267,7 @@ function VerticalAnalysis({ client, reportData }) {
                     <DonutChart data={globalRegions} valueKey="revenue" size={140}/>
                     <div style={{flex:1,minWidth:200}}>
                       <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:F}}>
-                        <thead><tr style={{background:"#F9FAFB"}}>
+                        <thead><tr style={{background:"#fff"}}>
                           <th style={{padding:"7px 10px",textAlign:"left",color:C.muted,fontSize:10,fontWeight:700}}>Region</th>
                           <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Revenue</th>
                           <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Cost</th>
@@ -11294,7 +11299,7 @@ function VerticalAnalysis({ client, reportData }) {
                     <DonutChart data={indiaRegions} valueKey="revenue" size={140}/>
                     <div style={{flex:1,minWidth:200}}>
                       <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:F}}>
-                        <thead><tr style={{background:"#F9FAFB"}}>
+                        <thead><tr style={{background:"#fff"}}>
                           <th style={{padding:"7px 10px",textAlign:"left",color:C.muted,fontSize:10,fontWeight:700}}>Region</th>
                           <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Revenue</th>
                           <th style={{padding:"7px 10px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Cost</th>
@@ -11337,7 +11342,7 @@ function VerticalAnalysis({ client, reportData }) {
                 <div style={{fontFamily:F,fontWeight:700,fontSize:14,color:C.text,marginBottom:16}}>🏢 Revenue & Margin by Department</div>
                 <DonutChart data={deptList} valueKey="revenue" size={140}/>
                 <table style={{width:"100%",borderCollapse:"collapse",fontSize:12,fontFamily:F,marginTop:16}}>
-                  <thead><tr style={{background:"#F9FAFB"}}>
+                  <thead><tr style={{background:"#fff"}}>
                     <th style={{padding:"8px 12px",textAlign:"left",color:C.muted,fontSize:10,fontWeight:700}}>Department</th>
                     <th style={{padding:"8px 12px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Revenue</th>
                     <th style={{padding:"8px 12px",textAlign:"right",color:C.muted,fontSize:10,fontWeight:700}}>Cost</th>
@@ -12014,7 +12019,7 @@ function QFZPModule({ client, reportData }) {
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
                   background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                📱 WhatsApp Garima
+                WhatsApp Garima
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
@@ -12832,21 +12837,21 @@ function UAECFOReport({ client, reportData, kpis }) {
     {
       label: "Cash & Liquidity",
       items: [
-        { id:"workingcap",  emoji:"💧", label:"Working Capital & AR"     },
+        { id:"workingcap",  emoji:"ti-droplet", label:"Working Capital & AR"     },
       ]
     },
     {
       label: "UAE Tax & Compliance",
       items: [
-        { id:"vatreport",   emoji:"🧾", label:"VAT Compliance Report"    },
-        { id:"revrecon",    emoji:"⚖️", label:"Revenue Reconciliation"  },
-        { id:"qfzp",        emoji:"🏙️", label:"QFZP Tracker"           },
+        { id:"vatreport",   emoji:"ti-receipt", label:"VAT Compliance Report"    },
+        { id:"revrecon",    emoji:"ti-scale", label:"Revenue Reconciliation"  },
+        { id:"qfzp",        emoji:"ti-city", label:"QFZP Tracker"           },
       ]
     },
     {
       label: "Profitability",
       items: [
-        { id:"vertical",    emoji:"📊", label:"Vertical Analysis"        },
+        { id:"vertical",    emoji:"ti-chart-bar", label:"Vertical Analysis"        },
       ]
     },
   ];
@@ -13064,7 +13069,7 @@ function MyReport({ client, reportData, kpis }) {
             </span>
           ) : (
             <span style={{ fontFamily:F, fontSize:11, color:C.dim,
-              background:"#F0F1F3", padding:"4px 12px", borderRadius:60 }}>
+              background:"#fff", padding:"4px 12px", borderRadius:60 }}>
               Month not set
             </span>
           )}
@@ -13240,11 +13245,11 @@ function Portal({ client, onLogout }) {
   const resolvedKpis = isUAE(client) ? KPIs_UAE
     : (!isDemo && liveKpis) ? [
     { label: client?.client_pack==="msme"?"Revenue":"Revenue",
-      value:liveKpis.revenue||"—", prev:prevK.revenue||"—", trend:"up", color:C.blue, bg:"#EEF3FE", emoji:"📈" },
+      value:liveKpis.revenue||"—", prev:prevK.revenue||"—", trend:"up", color:C.blue, bg:"#EEF3FE", emoji:"ti-trending-up" },
     { label: client?.client_pack==="msme"?"Working Capital":client?.client_pack==="corporate"?"Gross Margin":"Gross Margin",
       value:liveKpis.gross_margin||"—", prev:prevK.gross_margin||"—", trend:"up", color:C.teal, bg:"#E6FAF7", icon:"margin" },
     { label: client?.client_pack==="corporate"?"EBITDA":"Cash Balance",
-      value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"down", color:C.amber, bg:"#FEF7E7", emoji:"🏦" },
+      value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"down", color:C.amber, bg:"#FEF7E7", emoji:"ti-building-bank" },
     { label: client?.client_pack==="msme"?"Debtor Days":client?.client_pack==="corporate"?"PAT":"Burn Rate",
       value:liveKpis.burn_rate||"—", prev:prevK.burn_rate||"—", trend:"up", color:C.purple, bg:"#F3EFFF", icon: client?.client_pack==="msme"?"📅":"🔥" },
     { label: client?.client_pack==="corporate"?"Debt/Equity":"Runway",
@@ -13454,7 +13459,7 @@ function Portal({ client, onLogout }) {
   return (
     <>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css"/>
-    <div style={{ display:"flex", minHeight:"100vh", background:"#F0F1F3", fontFamily:F }}>
+    <div style={{ display:"flex", minHeight:"100vh", background:"#fff", fontFamily:F }}>
       <style>{`
         /* ── NetSuite Global Design System ── */
         *, *::before, *::after { box-sizing: border-box; }
@@ -13607,7 +13612,7 @@ function Portal({ client, onLogout }) {
       )}
       <Sidebar page={page} setPage={setPage} client={client}
         onLogout={onLogout} collapsed={collapsed} setCollapsed={setCollapsed}/>
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden", background:"#F0F1F3" }}>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden", background:"#fff" }}>
         <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
           notifItems={[
             ...((isDemo ? null : liveInvoices) || [])
@@ -13985,7 +13990,7 @@ function InlineInput({ value, onCommit, placeholder="", style={} }) {
       onBlur={() => onCommit(local)}
       placeholder={placeholder}
       style={{ padding:"6px 8px", borderRadius:7, fontSize:12, border:"1.5px solid #E5E7EB",
-        fontFamily:"'DM Mono',monospace", color:"#111827", background:"#F9FAFB",
+        fontFamily:"'DM Mono',monospace", color:"#111827", background:"#fff",
         outline:"none", width:"100%", boxSizing:"border-box", ...style }}
       onFocus={e => e.target.style.borderColor="#D97706"}
     />
@@ -14854,7 +14859,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
       {/* Main content */}
       <div style={{ flex:1, overflowY:"auto" }}>
         {/* Header */}
-        <div style={{ height:58, background:"#fff", borderBottom:`1px solid ${C.border}`,
+        <div style={{ height:58, background:"#fff", borderBottom:`1px solid #EAECF0`,
           display:"flex", alignItems:"center", padding:"0 24px", gap:12 }}>
           <h1 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0 }}>
             {ADMIN_TABS.find(t=>t.id===tab)?.label}
@@ -14970,7 +14975,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     placeholder="e.g. SHAR2026" mono={true} />
                 </div>
                 <button onClick={genCode} style={{ padding:"10px 14px", borderRadius:9, marginBottom:12,
-                  border:`1px solid ${C.border}`, background:"#F0F1F3", fontFamily:F, fontSize:12,
+                  border:`1px solid ${C.border}`, background:"#fff", fontFamily:F, fontSize:12,
                   color:C.muted, cursor:"pointer", whiteSpace:"nowrap" }}>
                   Auto-generate
                 </button>
@@ -15435,7 +15440,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>P&L Inputs</div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Populates <strong>Monthly Report → P&L Summary</strong>. "Actual" = this month. "Prev" = last month.
-                    Use format like <code style={{ background:"#F0F1F3", padding:"1px 6px", borderRadius:4, fontFamily:FM }}>₹84.2L</code>
+                    Use format like <code style={{ background:"#fff", padding:"1px 6px", borderRadius:4, fontFamily:FM }}>₹84.2L</code>
                   </p>
                   <div style={{ display:"grid", gridTemplateColumns:"150px 1fr 1fr", gap:10, marginBottom:8, paddingLeft:4 }}>
                     <div/>
@@ -17072,7 +17077,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                       placeholder="e.g. 3"/>
                   </div>
                   {[0,1,2,3].map(i => (
-                    <div key={i} style={{ border:`1px solid ${C.border}`, borderRadius:6, padding:14, marginBottom:12, background:"#FAFAFA" }}>
+                    <div key={i} style={{ border:`1px solid ${C.border}`, borderRadius:6, padding:14, marginBottom:12, background:"#fff" }}>
                       <div style={{ fontFamily:F, fontWeight:700, fontSize:12, color:C.muted, marginBottom:10 }}>Transaction {i+1}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
                         <AdminInput C={C} F={F} FM={FM} label="Category"
@@ -17309,7 +17314,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                     { name:"Technology",  icon:"💻" },
                     { name:"Operations",  icon:"settings" },
                     { name:"HR & Admin",  icon:"👥" },
-                    { name:"Finance",     emoji:"📊" },
+                    { name:"Finance",     emoji:"ti-chart-bar" },
                   ].map(d => (
                     <div key={d.name} style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr 1fr", gap:8, marginBottom:8 }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, display:"flex", alignItems:"center" }}>{d.icon} {d.name}</div>
@@ -17683,7 +17688,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks) with these exa
                           </div>
                           {r.notes && (
                             <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6,
-                              padding:"10px 14px", borderRadius:8, background:"#F0F1F3", marginTop:8 }}>
+                              padding:"10px 14px", borderRadius:8, background:"#fff", marginTop:8 }}>
                               {r.notes}
                             </div>
                           )}
