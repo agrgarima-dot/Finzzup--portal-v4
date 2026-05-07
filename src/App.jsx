@@ -64,31 +64,46 @@ import LOGO_SRC from "./logo.png";
 
 // ─── TOKENS ──────────────────────────────────────────────────────────────────
 const C = {
+  // Canvas
+  canvas:  "#F4F5F7",
   bg:      "#FFFFFF",
-  bg2:     "#F9FAFB",
-  bg3:     "#F3F4F6",
+  bg2:     "#F8F9FA",
+  bg3:     "#F4F5F7",
   card:    "#FFFFFF",
-  border:  "#E5E7EB",
-  text:    "#111827",
-  muted:   "#1F2937",
-  dim:     "#9CA3AF",
-  lime:    "#5B4FDB",
+  border:  "#E2E4E9",
+  borderStrong: "#C8CCD6",
+  // Text
+  text:    "#0F1117",
+  muted:   "#52566B",
+  dim:     "#9499B0",
+  // Brand accent
+  accent:  "#2563EB",
+  accentHover: "#1D4ED8",
+  accentLight: "#EEF2FA",
+  // Full colour palette — used for KPI tiles, charts, section accents
   blue:    "#2563EB",
-  purple:  "#7C3AED",
-  pink:    "#DB2777",
+  teal:    "#0891B2",
   green:   "#059669",
   amber:   "#D97706",
-  yellow:  "#D97706",
   red:     "#EF4444",
-  teal:    "#0891B2",
-  navy:    "#111827",
+  purple:  "#7C3AED",
+  pink:    "#DB2777",
+  yellow:  "#D97706",
+  lime:    "#5B4FDB",
+  orange:  "#EA580C",
+  // Gradients — used in KPI tiles, section headers, report covers
   grad1:   "linear-gradient(135deg,#2563EB,#7C3AED)",
   grad2:   "linear-gradient(135deg,#0891B2,#2563EB)",
   grad3:   "linear-gradient(135deg,#DB2777,#7C3AED)",
   grad4:   "linear-gradient(135deg,#D97706,#DB2777)",
+  grad5:   "linear-gradient(135deg,#059669,#0891B2)",
+  grad6:   "linear-gradient(135deg,#7C3AED,#DB2777)",
+  // Sidebar
+  navy:    "#0D1B2E",
+  navyBorder: "#1E2D44",
 };
-const F  = "'Plus Jakarta Sans', sans-serif";
-const FM = "'DM Mono', monospace";
+const F  = "'Inter', 'system-ui', sans-serif";
+const FM = "'JetBrains Mono', 'Fira Code', monospace";
 const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
 
 // ─── JURISDICTION HELPERS ─────────────────────────────────────────────────────
@@ -240,9 +255,9 @@ function kpiContext(k) {
   }
   if (label.includes("qfzp")) {
     const num = parseFloat(val);
-    if (num >= 85) return "✅ Strong QFZP compliance — maintain documentation";
+    if (num >= 85) return "Strong QFZP compliance — maintain documentation";
     if (num >= 70) return "Good — address audit readiness to improve";
-    return "⚠️ Action needed — review substance requirements";
+    return "Action needed — review substance requirements";
   }
 
   if (label.includes("revenue")) {
@@ -267,8 +282,8 @@ function kpiContext(k) {
     const num = parseFloat(val);
     if (num >= 12) return "Strong runway — focus on growth";
     if (num >= 6)  return "Adequate · start fundraise planning now";
-    if (num >= 3)  return "⚠️ Under 6 months — act immediately";
-    return "🔴 Critical — fundraise or cut costs now";
+    if (num >= 3)  return "Under 6 months — act immediately";
+    return "Critical — fundraise or cut costs now";
   }
   if (label.includes("arr") || label.includes("mrr")) {
     return up ? ("Growing — " + (prev ? "up from " + prev : "positive trend")) : prev ? ("Declined from " + prev + " — check churn") : "Annual recurring revenue";
@@ -278,9 +293,9 @@ function kpiContext(k) {
   }
   if (label.includes("debtor") || label.includes("receivable")) {
     const num = parseFloat(val);
-    if (num > 45) return "⚠️ High — chase collections urgently";
+    if (num > 45) return "High — chase collections urgently";
     if (num > 30) return "Above target · follow up overdue invoices";
-    return "✅ Within target range";
+    return "Within target range";
   }
   if (label.includes("working capital")) {
     return up ? `Improved from ${prev || "last period"}` : "Monitor current assets vs liabilities";
@@ -366,51 +381,118 @@ const ENGAGEMENT = {
 };
 
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
+// ── Enterprise Design Primitives ─────────────────────────────────────────────
+
 const Card = ({ children, style={} }) => (
-  <div style={{ background:C.bg2, border:`1px solid ${C.border}`, borderRadius:16,
-    padding:24, boxShadow:"0 1px 4px rgba(15,26,56,0.06)", ...style }}>
+  <div style={{ background:C.bg, border:`1px solid ${C.border}`, borderRadius:3,
+    boxShadow:"0 1px 3px rgba(0,0,0,0.06)", overflow:"hidden", ...style }}>
     {children}
   </div>
 );
 
-const SectionTitle = ({ children, sub }) => (
-  <div style={{ marginBottom:20 }}>
-    <h2 style={{ fontFamily:F, fontWeight:700, fontSize:17, color:C.text, margin:0 }}>{children}</h2>
-    {sub && <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>{sub}</p>}
+const PH = ({ title, right, sub }) => (
+  <div style={{ padding:"8px 14px", background:C.bg3, borderBottom:`1px solid ${C.border}`,
+    display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+    <div>
+      <div style={{ fontFamily:F, fontWeight:600, fontSize:10, color:C.muted,
+        textTransform:"uppercase", letterSpacing:"0.09em" }}>{title}</div>
+      {sub && <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:1 }}>{sub}</div>}
+    </div>
+    {right && <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>{right}</div>}
+  </div>
+);
+const PanelHeader = PH;
+
+const Stat = ({ label, value, change, up, mono=true }) => (
+  <div style={{ padding:"12px 16px", borderRight:`1px solid ${C.border}` }}>
+    <div style={{ fontFamily:F, fontSize:9, color:C.dim, fontWeight:600,
+      textTransform:"uppercase", letterSpacing:"0.09em", marginBottom:4 }}>{label}</div>
+    <div style={{ fontFamily:mono?FM:F, fontSize:17, fontWeight:700, color:C.text, lineHeight:1 }}>{value}</div>
+    {change && <div style={{ fontFamily:F, fontSize:10, marginTop:3,
+      color:up?C.green:C.red, fontWeight:600 }}>{up?"▲":"▼"} {change}</div>}
   </div>
 );
 
-const Badge = ({ children, color=C.blue, bg }) => (
-  <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:100,
-    background:bg||`${color}18`, fontSize:11, fontWeight:700, color,
-    fontFamily:F, letterSpacing:"0.05em" }}>
+const Badge = ({ children, color=C.blue, bg, size=10 }) => (
+  <span style={{ display:"inline-flex", alignItems:"center", padding:"2px 6px",
+    borderRadius:2, background:bg||`${color}12`, fontSize:size, fontWeight:600,
+    color, fontFamily:F, border:`1px solid ${color}22` }}>
     {children}
   </span>
 );
 
-const PriBadge = ({ p }) => {
-  const map = { High:[C.red,"#FEF2F2"], Medium:[C.amber,"#FFFBEB"], Low:[C.green,"#ECFDF5"] };
-  const [c,bg] = map[p]||map.Low;
-  return <Badge color={c} bg={bg}>{p}</Badge>;
-};
-
-// ─── LOGO ─────────────────────────────────────────────────────────────────────
-
-// ─── SVG LOGO COMPONENT ───────────────────────────────────────────────────────
-const FinzzupIcon = ({ size=44, collapsed=false }) => (
-  <svg width={collapsed ? size*0.8 : size} height={collapsed ? size*0.8 : size}
-    viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <linearGradient id="icon-grad" x1="0" y1="0" x2="1" y2="1">
-        <stop offset="0%" stopColor="#2563EB"/>
-        <stop offset="100%" stopColor="#7C3AED"/>
-      </linearGradient>
-    </defs>
-    <rect width="44" height="44" rx="11" fill="url(#icon-grad)"/>
-    <path d="M11 9h22v5.5H17.5v6.5H26v5.5h-8.5V35H11V9Z" fill="white"/>
-  </svg>
+const SectionTitle = ({ children, sub }) => (
+  <div style={{ marginBottom:10 }}>
+    <div style={{ fontFamily:F, fontWeight:600, fontSize:12, color:C.text }}>{children}</div>
+    {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{sub}</div>}
+  </div>
 );
 
+const Dot = ({ color=C.green, size=6 }) => (
+  <span style={{ display:"inline-block", width:size, height:size, borderRadius:"50%",
+    background:color, flexShrink:0 }}/>
+);
+
+// ── SVG Icon system — replaces all emojis ─────────────────────────────────────
+const I = ({ n, s=14, c="currentColor" }) => {
+  const p = { strokeWidth:"1.75", strokeLinecap:"round", strokeLinejoin:"round" };
+  const paths = {
+    home:       <><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z" {...p}/><polyline points="9 22 9 12 15 12 15 22" {...p}/></>,
+    dashboard:  <><rect x="3" y="3" width="7" height="7" {...p}/><rect x="14" y="3" width="7" height="7" {...p}/><rect x="14" y="14" width="7" height="7" {...p}/><rect x="3" y="14" width="7" height="7" {...p}/></>,
+    cashflow:   <><polyline points="22 7 13.5 15.5 8.5 10.5 2 17" {...p}/><polyline points="16 7 22 7 22 13" {...p}/></>,
+    treasury:   <><rect x="2" y="5" width="20" height="14" rx="2" {...p}/><line x1="2" y1="10" x2="22" y2="10" {...p}/></>,
+    actions:    <><polyline points="9 11 12 14 22 4" {...p}/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" {...p}/></>,
+    report:     <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" {...p}/><polyline points="14 2 14 8 20 8" {...p}/><line x1="16" y1="13" x2="8" y2="13" {...p}/><line x1="16" y1="17" x2="8" y2="17" {...p}/></>,
+    tax:        <><path d="M12 2L2 7l10 5 10-5-10-5z" {...p}/><path d="M2 17l10 5 10-5" {...p}/><path d="M2 12l10 5 10-5" {...p}/></>,
+    compliance: <><rect x="3" y="4" width="18" height="18" rx="2" {...p}/><line x1="16" y1="2" x2="16" y2="6" {...p}/><line x1="8" y1="2" x2="8" y2="6" {...p}/><line x1="3" y1="10" x2="21" y2="10" {...p}/></>,
+    audit:      <><path d="M9 11l3 3L22 4" {...p}/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11" {...p}/></>,
+    market:     <><circle cx="12" cy="12" r="10" {...p}/><line x1="2" y1="12" x2="22" y2="12" {...p}/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" {...p}/></>,
+    calendar:   <><rect x="3" y="4" width="18" height="18" rx="2" {...p}/><line x1="16" y1="2" x2="16" y2="6" {...p}/><line x1="8" y1="2" x2="8" y2="6" {...p}/><line x1="3" y1="10" x2="21" y2="10" {...p}/></>,
+    request:    <><circle cx="12" cy="12" r="10" {...p}/><line x1="12" y1="8" x2="12" y2="16" {...p}/><line x1="8" y1="12" x2="16" y2="12" {...p}/></>,
+    documents:  <><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z" {...p}/></>,
+    invoices:   <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" {...p}/><polyline points="14 2 14 8 20 8" {...p}/></>,
+    engagement: <><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" {...p}/></>,
+    bell:       <><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9" {...p}/><path d="M13.73 21a2 2 0 01-3.46 0" {...p}/></>,
+    logout:     <><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" {...p}/><polyline points="16 17 21 12 16 7" {...p}/><line x1="21" y1="12" x2="9" y2="12" {...p}/></>,
+    chevronD:   <polyline points="6 9 12 15 18 9" {...p}/>,
+    chevronR:   <polyline points="9 18 15 12 9 6" {...p}/>,
+    check:      <polyline points="20 6 9 17 4 12" {...p}/>,
+    alert:      <><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" {...p}/><line x1="12" y1="9" x2="12" y2="13" {...p}/><line x1="12" y1="17" x2="12.01" y2="17" {...p}/></>,
+    info:       <><circle cx="12" cy="12" r="10" {...p}/><line x1="12" y1="16" x2="12" y2="12" {...p}/><line x1="12" y1="8" x2="12.01" y2="8" {...p}/></>,
+    download:   <><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" {...p}/><polyline points="7 10 12 15 17 10" {...p}/><line x1="12" y1="15" x2="12" y2="3" {...p}/></>,
+    search:     <><circle cx="11" cy="11" r="8" {...p}/><line x1="21" y1="21" x2="16.65" y2="16.65" {...p}/></>,
+    up:         <polyline points="18 15 12 9 6 15" {...p}/>,
+    down:       <polyline points="6 9 12 15 18 9" {...p}/>,
+    plus:       <><line x1="12" y1="5" x2="12" y2="19" {...p}/><line x1="5" y1="12" x2="19" y2="12" {...p}/></>,
+    eye:        <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" {...p}/><circle cx="12" cy="12" r="3" {...p}/></>,
+    terms:      <><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" {...p}/><polyline points="14 2 14 8 20 8" {...p}/><line x1="16" y1="13" x2="8" y2="13" {...p}/></>,
+    whatsapp:   <path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" {...p}/>,
+    external:   <><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" {...p}/><polyline points="15 3 21 3 21 9" {...p}/><line x1="10" y1="14" x2="21" y2="3" {...p}/></>,
+  };
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke={c}
+      style={{ display:"inline-block", verticalAlign:"middle", flexShrink:0 }}>
+      {paths[n] || paths.info}
+    </svg>
+  );
+};
+
+const DataTable = ({ headers=[], rows=[] }) => (
+  <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
+    <thead><tr style={{ background:C.bg3 }}>
+      {headers.map((h,i) => <th key={i} style={{ padding:"6px 12px", textAlign:h.right?"right":"left",
+        fontWeight:600, color:C.muted, fontSize:10, textTransform:"uppercase",
+        letterSpacing:"0.07em", borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{h.label}</th>)}
+    </tr></thead>
+    <tbody>{rows.map((row,i) => (
+      <tr key={i} style={{ borderBottom:`1px solid ${C.border}`, background:i%2===1?"#FAFBFC":C.bg }}>
+        {row.map((cell,j) => <td key={j} style={{ padding:"7px 12px", color:cell.color||C.text,
+          textAlign:headers[j]?.right?"right":"left", fontFamily:cell.mono?FM:F,
+          fontWeight:cell.bold?600:400, fontSize:12 }}>{cell.value}</td>)}
+      </tr>
+    ))}</tbody>
+  </table>
+);
 const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapsed=false }) => {
   const iconSize = size * 1.35;
   if (collapsed) {
@@ -421,7 +503,7 @@ const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapse
       <FinzzupIcon size={iconSize}/>
       <div style={{ display:"flex", flexDirection:"column", gap:2 }}>
         <div style={{
-          fontFamily:"'Plus Jakarta Sans', sans-serif",
+          fontFamily:"'Inter', system-ui, sans-serif",
           fontWeight:900,
           fontSize: size * 0.72,
           lineHeight:1,
@@ -439,7 +521,7 @@ const Logo = ({ size=32, darkText=false, showTagline=false, dark=false, collapse
         </div>
         {showTagline && (
           <div style={{
-            fontFamily:"'Plus Jakarta Sans', sans-serif",
+            fontFamily:"'Inter', system-ui, sans-serif",
             fontSize: Math.max(8, size * 0.22),
             fontWeight:600,
             color: dark ? "rgba(255,255,255,0.4)" : (darkText ? "#9CA3AF" : "rgba(255,255,255,0.4)"),
@@ -469,7 +551,7 @@ function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
         autoCorrect="off"
         autoCapitalize="off"
         spellCheck="false"
-        style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:16,
+        style={{ width:"100%", padding:"12px 14px", borderRadius:6, fontSize:16,
           border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
           background:C.bg, outline:"none", boxSizing:"border-box",
           transition:"border-color 0.2s", WebkitTextSizeAdjust:"100%",
@@ -587,10 +669,10 @@ function Login({ onLogin }) {
 
           {/* ── STEP 1: Enter invite code ── */}
           {step === "code" && <>
-            <h2 style={{ fontWeight:700, fontSize:20, color:C.text, marginBottom:6, textAlign:"center" }}>
+            <h2 style={{ fontWeight:700, fontSize:15, color:C.text, marginBottom:6, textAlign:"center" }}>
               Welcome
             </h2>
-            <p style={{ fontSize:13, color:C.muted, textAlign:"center", marginBottom:24, lineHeight:1.6 }}>
+            <p style={{ fontSize:13, color:C.muted, textAlign:"center", marginBottom:14, lineHeight:1.6 }}>
               New client? Enter your invite code to register.<br/>
               Already have an account?{" "}
               <button onClick={() => setStep("signin")}
@@ -607,7 +689,7 @@ function Login({ onLogin }) {
               onChange={e => { setCode(e.target.value.toUpperCase()); setError(""); }}
               onKeyDown={e => e.key === "Enter" && checkCode()}
               placeholder="e.g. NEXO2026"
-              style={{ width:"100%", padding:"13px 15px", borderRadius:10, fontSize:16,
+              style={{ width:"100%", padding:"13px 15px", borderRadius:6, fontSize:16,
                 border:`1.5px solid ${error ? C.red : C.border}`, fontFamily:FM,
                 fontWeight:600, letterSpacing:"0.1em", color:C.text, background:C.bg,
                 outline:"none", boxSizing:"border-box", textTransform:"uppercase",
@@ -620,7 +702,7 @@ function Login({ onLogin }) {
             {/* ── AI & Data Consent ── */}
             <div onClick={() => setConsent(c => !c)}
               style={{ display:"flex", alignItems:"flex-start", gap:10, marginTop:18,
-                padding:"12px 14px", borderRadius:10, cursor:"pointer",
+                padding:"12px 14px", borderRadius:6, cursor:"pointer",
                 background: consent ? `${C.blue}08` : C.bg3,
                 border:`1.5px solid ${consent ? C.blue : C.border}`,
                 transition:"all 0.2s" }}>
@@ -640,7 +722,7 @@ function Login({ onLogin }) {
             </div>
 
             <button onClick={checkCode} disabled={loading || !consent} style={{ width:"100%", marginTop:14, padding:14,
-              borderRadius:12, border:"none", background: consent ? C.grad1 : C.bg3,
+              borderRadius:6, border:"none", background: consent ? C.grad1 : C.bg3,
               color: consent ? "white" : C.dim,
               fontFamily:F, fontWeight:700, fontSize:15,
               cursor: consent ? "pointer" : "not-allowed",
@@ -658,17 +740,17 @@ function Login({ onLogin }) {
             </p>
 
             {/* Demo accounts */}
-            <div style={{ marginTop:20, padding:"14px 16px", borderRadius:12,
+            <div style={{ marginTop:20, padding:"14px 16px", borderRadius:6,
               background:`${C.blue}0A`, border:`1px solid ${C.blue}20` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>🔍 Try a demo account</div>
+                letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>Try a demo account</div>
               <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
                 {[
-                  { code:"DEMO-STARTUP",  label:"Startup / CFO Client",    icon:"🚀", color:C.blue   },
-                  { code:"DEMO-MSME",     label:"MSME Client",              icon:"🏢", color:C.teal   },
-                  { code:"DEMO-CORP",     label:"Corporate Client",          icon:"🏦", color:C.purple },
-                  { code:"DEMO-UAE",      label:"UAE / Dubai Client",        icon:"🇦🇪", color:"#00732F"},
-                  { code:"DEMO-XBORDER", label:"Cross-Border India + UAE",  icon:"🌐", color:C.amber  },
+                  { code:"DEMO-STARTUP",  label:"Startup / CFO Client",    icon:"startup", color:C.blue   },
+                  { code:"DEMO-MSME",     label:"MSME Client",              icon:"dashboard", color:C.teal   },
+                  { code:"DEMO-CORP",     label:"Corporate Client",          icon:"treasury", color:C.purple },
+                  { code:"DEMO-UAE",      label:"UAE / Dubai Client",        icon:"market", color:"#00732F"},
+                  { code:"DEMO-XBORDER", label:"Cross-Border India + UAE",  icon:"market", color:C.amber  },
                 ].map(d => (
                   <button key={d.code} onClick={() => setCode(d.code)}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -685,27 +767,27 @@ function Login({ onLogin }) {
 
           {/* ── STEP 2: Register ── */}
           {step === "register" && <>
-            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:24,
-              padding:"12px 14px", borderRadius:12, background:`${C.green}0A`, border:`1px solid ${C.green}25` }}>
-              <span style={{ fontSize:22 }}>✅</span>
+            <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:14,
+              padding:"12px 14px", borderRadius:6, background:`${C.green}0A`, border:`1px solid ${C.green}25` }}>
+              <I n="check" s={20} c={C.green}/>
               <div>
                 <div style={{ fontSize:13, fontWeight:700, color:C.text }}>Code accepted!</div>
                 <div style={{ fontSize:12, color:C.muted }}>{client?.company}</div>
               </div>
             </div>
-            <h2 style={{ fontWeight:700, fontSize:18, color:C.text, marginBottom:20 }}>Create your account</h2>
+            <h2 style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:20 }}>Create your account</h2>
             <LoginInput label="Email"            value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
             <LoginInput label="Password"         value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Min 6 characters" />
             <LoginInput label="Confirm Password" value={form.confirm}  onChange={e => { setForm(f=>({...f,confirm:e.target.value}));  setError(""); }} type="password" placeholder="Repeat password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
             <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
-              borderRadius:12, border:"none", background:C.grad1, color:"white",
+              borderRadius:6, border:"none", background:C.grad1, color:"white",
               fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
               boxShadow:"0 6px 20px rgba(59,111,247,0.28)", touchAction:"manipulation" }}>
               {loading ? "Creating account…" : "Create Account →"}
             </button>
             <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:12, borderRadius:12, border:`1px solid ${C.border}`,
+              marginTop:10, padding:12, borderRadius:6, border:`1px solid ${C.border}`,
               background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
               ← Back
             </button>
@@ -713,21 +795,21 @@ function Login({ onLogin }) {
 
           {/* ── STEP 3: Sign in (returning client) ── */}
           {step === "signin" && <>
-            <h2 style={{ fontWeight:700, fontSize:20, color:C.text, marginBottom:6 }}>Welcome back</h2>
-            <p style={{ fontSize:13, color:C.muted, marginBottom:24, lineHeight:1.6 }}>
+            <h2 style={{ fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>Welcome back</h2>
+            <p style={{ fontSize:13, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
               Sign in to your Finzzup portal.
             </p>
             <LoginInput label="Email"    value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
             <LoginInput label="Password" value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Your password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
             <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
-              borderRadius:12, border:"none", background:C.grad1, color:"white",
+              borderRadius:6, border:"none", background:C.grad1, color:"white",
               fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
               boxShadow:"0 6px 20px rgba(59,111,247,0.28)", touchAction:"manipulation" }}>
               {loading ? "Signing in…" : "Sign In →"}
             </button>
             <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:12, borderRadius:12, border:`1px solid ${C.border}`,
+              marginTop:10, padding:12, borderRadius:6, border:`1px solid ${C.border}`,
               background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
               ← New client? Enter invite code
             </button>
@@ -756,112 +838,136 @@ function getNav(client) {
   const uae  = isUAE(client);
 
   const base = [
-    { id:"overview",  icon:"🏠", label:"Overview"  },
-    { id:"dashboard", icon:"📊", label:"Dashboard" },
+    { id:"overview",  icon:"home",       label:"Overview"  },
+    { id:"dashboard", icon:"dashboard",  label:"Dashboard" },
   ];
 
   if (type === "cfo" || type === "both") {
-    base.push({ id:"cashflow", icon:"💵", label:"Cash Flow"    });
+    base.push({ id:"cashflow", icon:"cashflow",   label:"Cash Flow"    });
     if (pack === "msme" || pack === "corporate" || uae) {
-      base.push({ id:"treasury", icon:"🏛️", label:"Treasury" });
+      base.push({ id:"treasury", icon:"treasury",   label:"Treasury" });
     }
-    base.push({ id:"actions",  icon:"✅", label:"Action Items" });
+    base.push({ id:"actions",  icon:"actions",    label:"Action Items" });
   }
 
   const reportLabel = pack === "msme" ? "MSME Report"
     : pack === "corporate" ? "Board Report"
     : "CFO Report";
-  base.push({ id:"myreport", icon:"📋", label:reportLabel });
+  base.push({ id:"myreport", icon:"report", label:reportLabel });
 
-  if (type === "valuation" || type === "both") {
-    base.push({ id:"engagement", icon:"⚖️", label:"Valuation Status" });
+  // Valuation Status — India only, not for UAE clients
+  if (!uae && (type === "valuation" || type === "both")) {
+    base.push({ id:"engagement", icon:"engagement", label:"Valuation Status" });
   }
 
   // ── UAE-specific modules ──
   if (uae) {
-    base.push({ id:"corptax",    icon:"🏛️", label:"Corporate Tax"  });
-    base.push({ id:"compliance", icon:"📅", label:"Compliance Cal." });
-    base.push({ id:"auditready", icon:"✅", label:"Audit Readiness" });
+    base.push({ id:"corptax",    icon:"tax",        label:"Corporate Tax"  });
+    base.push({ id:"compliance", icon:"compliance", label:"Compliance Cal." });
+    base.push({ id:"auditready", icon:"audit",      label:"Audit Readiness" });
   }
 
-  base.push({ id:"market",     icon:"🌐", label:"Market Intel"  });
-  base.push({ id:"calendar",   icon:"📅", label:"Book a Call"   });
-  base.push({ id:"newrequest", icon:"➕", label:"New Request"   });
-  base.push({ id:"documents",  icon:"📁", label:"My Documents"  });
-  base.push({ id:"invoices",   icon:"🧾", label:"Invoices", badge:2 });
+  base.push({ id:"market",    icon:"market",     label:"Market Intel" });
+  base.push({ id:"calendar",  icon:"calendar",   label:"Book a Call"  });
+  if (!uae) {
+    base.push({ id:"newrequest", icon:"request",    label:"New Request"  });
+    base.push({ id:"invoices",   icon:"invoices",   label:"Invoices", badge:2 });
+  }
+  base.push({ id:"documents", icon:"documents",  label:"My Documents" });
   return base;
 }
 
-function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {  return (
-    <aside style={{ width:collapsed?64:220, minHeight:"100vh", background:C.navy, flexShrink:0,
-      display:"flex", flexDirection:"column", transition:"width 0.25s", overflow:"hidden",
-      borderRight:`1px solid rgba(255,255,255,0.06)` }}>
-
-      {/* Logo */}
-      <div style={{ padding: collapsed ? "20px 0" : "22px 20px", display:"flex",
+function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
+  const nav = getNav(client);
+  const groups = [
+    { label:"Home",         ids:["overview","dashboard"] },
+    { label:"Financial",    ids:["cashflow","treasury","myreport","corptax"] },
+    { label:"Operations",   ids:["actions","compliance","auditready"] },
+    { label:"Intelligence", ids:["market"] },
+    { label:"Account",      ids:["calendar","newrequest","documents","invoices","engagement"] },
+  ];
+  return (
+    <aside style={{ width:collapsed?52:200, minHeight:"100vh", background:"#1a1a2e",
+      flexShrink:0, display:"flex", flexDirection:"column", transition:"width 0.2s",
+      overflow:"hidden", borderRight:"1px solid #2d2d4e" }}>
+      <div style={{ padding:collapsed?"14px 0":"12px 14px", display:"flex",
         alignItems:"center", justifyContent:collapsed?"center":"space-between",
-        borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-        {!collapsed && <Logo size={28} dark={true} showTagline={false}/>}
-        {collapsed && <Logo size={24} dark={true} collapsed={true}/>}
-        <button onClick={() => setCollapsed(c=>!c)} style={{ background:"none", border:"none",
-          cursor:"pointer", color:"rgba(255,255,255,0.4)", fontSize:16, padding:4, lineHeight:1 }}>
-          {collapsed ? "→" : "←"}
+        borderBottom:"1px solid #2d2d4e", minHeight:48 }}>
+        {!collapsed && <Logo size={24} dark={true} showTagline={false}/>}
+        {collapsed && <Logo size={20} dark={true} collapsed={true}/>}
+        <button onClick={()=>setCollapsed(c=>!c)} style={{ background:"none", border:"none",
+          cursor:"pointer", color:"rgba(255,255,255,0.3)", fontSize:16, padding:2, lineHeight:1 }}>
+          {collapsed?"›":"‹"}
         </button>
       </div>
-
-      {/* Client info */}
       {!collapsed && (
-        <div style={{ padding:"14px 16px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ fontSize:12, color:"rgba(255,255,255,0.35)", marginBottom:2, fontFamily:F }}>Logged in as</div>
-          <div style={{ fontSize:13, fontWeight:700, color:"white", fontFamily:F }}>{client.name}</div>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.4)", fontFamily:F }}>{client.company}</div>
+        <div style={{ padding:"10px 14px", borderBottom:"1px solid #2d2d4e", background:"#141428" }}>
+          <div style={{ fontSize:9, color:"rgba(255,255,255,0.3)", fontFamily:F,
+            textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:2 }}>Client</div>
+          <div style={{ fontSize:12, fontWeight:700, color:"white", fontFamily:F, lineHeight:1.3 }}>
+            {client?.name}
+          </div>
+          <div style={{ fontSize:10, color:"rgba(255,255,255,0.35)", fontFamily:F, marginTop:1 }}>
+            {client?.company}
+          </div>
         </div>
       )}
-
-      {/* Nav */}
-      <nav style={{ flex:1, padding:"10px 0", overflowY:"auto" }}>
-        {getNav(client).map(n => (
-          <button key={n.id} onClick={() => setPage(n.id)}
-            title={collapsed ? n.label : undefined}
-            style={{
-            display:"flex", alignItems:"center", gap:10,
-            width:"100%", padding: collapsed ? "12px 0" : "11px 16px",
-            justifyContent: collapsed ? "center" : "flex-start",
-            background: page===n.id ? "rgba(59,111,247,0.18)" : "transparent",
-            border:"none", cursor:"pointer", borderLeft: page===n.id ? `3px solid ${C.blue}` : "3px solid transparent",
-            transition:"all 0.15s", fontFamily:F,
-          }}>
-            <span style={{ fontSize:16, opacity: page===n.id ? 1 : 0.55 }}>{n.icon}</span>
-            {!collapsed && <span style={{ fontSize:13, fontWeight:600, flex:1, textAlign:"left",
-              color: page===n.id ? "white" : "rgba(255,255,255,0.5)" }}>
-              {n.label}
-            </span>}
-            {!collapsed && n.badge && (
-              <span style={{ background:C.amber, color:C.navy, borderRadius:"50%",
-                width:18, height:18, fontSize:10, fontWeight:900, display:"flex",
-                alignItems:"center", justifyContent:"center", fontFamily:F }}>
-                {n.badge}
-              </span>
-            )}
-          </button>
-        ))}
+      <nav style={{ flex:1, overflowY:"auto", padding:"6px 0" }}>
+        {groups.map((g,gi) => {
+          const items = nav.filter(n=>g.ids.includes(n.id));
+          if (!items.length) return null;
+          return (
+            <div key={gi} style={{ marginBottom:4 }}>
+              {!collapsed && (
+                <div style={{ padding:"7px 14px 2px", fontSize:9, fontWeight:700,
+                  color:"rgba(255,255,255,0.2)", textTransform:"uppercase",
+                  letterSpacing:"0.12em", fontFamily:F }}>{g.label}</div>
+              )}
+              {items.map(n => (
+                <button key={n.id} onClick={()=>setPage(n.id)} title={collapsed?n.label:undefined}
+                  style={{ display:"flex", alignItems:"center", gap:9, width:"100%",
+                    padding:collapsed?"10px 0":"6px 14px",
+                    justifyContent:collapsed?"center":"flex-start",
+                    background:page===n.id?"rgba(37,99,235,0.22)":"transparent",
+                    border:"none", cursor:"pointer",
+                    borderLeft:page===n.id?`3px solid ${C.blue}`:"3px solid transparent",
+                    transition:"all 0.12s", fontFamily:F }}>
+                  <I n={n.icon} s={14} c={page===n.id?"#60A5FA":"rgba(255,255,255,0.38)"}/>
+                  {!collapsed && (
+                    <span style={{ fontSize:12, fontWeight:page===n.id?700:500, flex:1,
+                      textAlign:"left",
+                      color:page===n.id?"white":"rgba(255,255,255,0.45)",
+                      whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                      {n.label}
+                    </span>
+                  )}
+                  {!collapsed && n.badge && (
+                    <span style={{ background:C.red, color:"white", borderRadius:6,
+                      padding:"0 5px", fontSize:9, fontWeight:900, fontFamily:F,
+                      minWidth:16, textAlign:"center" }}>{n.badge}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          );
+        })}
       </nav>
-
-      {/* Logout */}
-      <div style={{ padding: collapsed?"10px 0":"10px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ borderTop:"1px solid #2d2d4e", padding:collapsed?"8px 0":"8px 10px" }}>
         {!collapsed && (
-          <button onClick={() => setPage("terms")} style={{ display:"flex", alignItems:"center", gap:8,
-            width:"100%", padding:"8px 12px", justifyContent:"flex-start",
-            background:"none", border:"none", cursor:"pointer", borderRadius:8,
-            fontFamily:F, fontSize:11, fontWeight:600, color:"rgba(255,255,255,0.25)", marginBottom:4 }}>
-            <span>📜</span> Terms & Privacy
+          <button onClick={()=>setPage("terms")}
+            style={{ width:"100%", padding:"5px 8px", background:"none", border:"none",
+              cursor:"pointer", fontFamily:F, fontSize:10, color:"rgba(255,255,255,0.2)",
+              textAlign:"left", marginBottom:2 }}><I n="terms" s={12} c="rgba(255,255,255,0.25)"/> <span style={{marginLeft:4}}>Terms & Privacy</span>
           </button>
         )}
-        <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
-          width:"100%", padding: collapsed?"10px 0":"10px 12px", justifyContent:collapsed?"center":"flex-start",
-          background:"none", border:"none", cursor:"pointer", borderRadius:8,
-          fontFamily:F, fontSize:13, fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
-          <span style={{ fontSize:16 }}>🚪</span>
+        <button onClick={onLogout}
+          style={{ display:"flex", alignItems:"center", gap:7, width:"100%",
+            padding:collapsed?"8px 0":"6px 8px",
+            justifyContent:collapsed?"center":"flex-start",
+            background:"none", border:"none", cursor:"pointer",
+            fontFamily:F, fontSize:11, fontWeight:600,
+            color:"rgba(255,255,255,0.3)" }}>
+          <I n="logout" s={13} c="rgba(255,255,255,0.3)"/>
           {!collapsed && "Sign Out"}
         </button>
       </div>
@@ -871,76 +977,90 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
 
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
 function Topbar({ title, client, setPage, notifItems=[] }) {
-  const now = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
+  const now  = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"short",year:"numeric"});
+  const uae  = isUAE(client);
   const [open, setOpen] = React.useState(false);
   const count = notifItems.length;
   return (
-    <header style={{ height:58, background:C.bg2, borderBottom:`1px solid ${C.border}`,
+    <header style={{ height:44, background:"#fff", borderBottom:`1px solid ${C.border}`,
       display:"flex", alignItems:"center", justifyContent:"space-between",
-      padding:"0 24px", flexShrink:0, position:"relative", zIndex:50 }}>
-      <h1 style={{ fontFamily:F, fontWeight:700, fontSize:17, color:C.text, margin:0 }}>{title}</h1>
-      <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-        <span style={{ fontSize:12, color:C.dim, fontFamily:F }}>{now}</span>
+      padding:"0 20px", flexShrink:0, position:"relative", zIndex:50,
+      boxShadow:"0 1px 3px rgba(0,0,0,0.05)" }}>
+      {/* Breadcrumb */}
+      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+        <span style={{ fontFamily:F, fontSize:11, color:C.dim }}>Home</span>
+        <span style={{ color:C.dim, fontSize:11 }}>›</span>
+        <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text }}>{title}</span>
+      </div>
+      {/* Right side */}
+      <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+        <span style={{ fontSize:11, color:C.dim, fontFamily:F }}>{now}</span>
         {/* Notification bell */}
         <div style={{ position:"relative" }}>
-          <button onClick={() => setOpen(o => !o)}
+          <button onClick={()=>setOpen(o=>!o)}
             style={{ position:"relative", background:"none", border:"none", cursor:"pointer",
-              width:32, height:32, display:"flex", alignItems:"center", justifyContent:"center" }}>
-            <span style={{ fontSize:18, opacity: count>0?1:0.6 }}>🔔</span>
-            {count > 0 && (
-              <span style={{ position:"absolute", top:0, right:0, width:14, height:14,
-                background:C.red, borderRadius:"50%", fontSize:8, fontWeight:900,
+              width:28, height:28, display:"flex", alignItems:"center", justifyContent:"center",
+              borderRadius:6, transition:"background 0.1s" }}
+            onMouseEnter={e=>e.currentTarget.style.background="#F3F4F6"}
+            onMouseLeave={e=>e.currentTarget.style.background="none"}>
+            <I n="bell" s={15} c={count>0?C.text:C.dim}/>
+            {count>0 && (
+              <span style={{ position:"absolute", top:2, right:2, width:12, height:12,
+                background:C.red, borderRadius:"50%", fontSize:7, fontWeight:900,
                 color:"white", display:"flex", alignItems:"center", justifyContent:"center",
-                fontFamily:F, border:"1.5px solid white" }}>{count > 9 ? "9+" : count}</span>
+                fontFamily:F, border:"1.5px solid white" }}>{count>9?"9+":count}</span>
             )}
           </button>
           {open && (
-            <div style={{ position:"absolute", top:38, right:0, width:300, background:C.bg2,
-              borderRadius:14, boxShadow:"0 8px 32px rgba(0,0,0,0.12)", border:`1px solid ${C.border}`,
+            <div style={{ position:"absolute", top:34, right:0, width:280, background:"white",
+              borderRadius:8, boxShadow:"0 4px 20px rgba(0,0,0,0.12)", border:`1px solid ${C.border}`,
               overflow:"hidden", zIndex:100 }}>
-              <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.border}`,
-                fontFamily:F, fontWeight:700, fontSize:13, color:C.text, display:"flex",
-                justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ padding:"10px 14px", borderBottom:`1px solid ${C.border}`,
+                fontFamily:F, fontWeight:700, fontSize:12, color:C.text,
+                display:"flex", justifyContent:"space-between" }}>
                 <span>Notifications</span>
-                {count > 0 && <span style={{ fontSize:11, color:C.muted }}>{count} unread</span>}
+                {count>0 && <span style={{ fontSize:10, color:C.muted }}>{count} unread</span>}
               </div>
-              {notifItems.length === 0 ? (
-                <div style={{ padding:"20px 16px", textAlign:"center", fontFamily:F,
-                  fontSize:13, color:C.dim }}>All clear</div>
+              {notifItems.length===0 ? (
+                <div style={{ padding:"16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.dim }}>All clear ✓</div>
               ) : (
-                <div style={{ maxHeight:320, overflowY:"auto" }}>
+                <div style={{ maxHeight:280, overflowY:"auto" }}>
                   {notifItems.map((n,i) => (
-                    <div key={i} onClick={() => { setPage && setPage(n.page); setOpen(false); }}
-                      style={{ padding:"12px 16px", borderBottom:`1px solid ${C.border}`,
-                        cursor:"pointer", display:"flex", gap:12, alignItems:"flex-start",
-                        background:"transparent", transition:"background 0.1s" }}
-                      onMouseEnter={e => e.currentTarget.style.background = C.bg}
-                      onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
-                      <Icon name={n.icon||"info"} size={16} color={C.muted} style={{flexShrink:0,marginTop:2}}/>
+                    <div key={i} onClick={()=>{setPage&&setPage(n.page);setOpen(false);}}
+                      style={{ padding:"10px 14px", borderBottom:`1px solid ${C.border}`,
+                        cursor:"pointer", display:"flex", gap:10, alignItems:"flex-start",
+                        transition:"background 0.1s" }}
+                      onMouseEnter={e=>e.currentTarget.style.background="#F9FAFB"}
+                      onMouseLeave={e=>e.currentTarget.style.background="white"}>
+                      <span style={{ fontSize:14 }}>{n.icon||"📌"}</span>
                       <div>
-                        <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text,
-                          marginBottom:2 }}>{n.title}</div>
-                        <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{n.sub}</div>
+                        <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text }}>{n.title}</div>
+                        <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:1 }}>{n.sub||n.body}</div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-              <div style={{ padding:"10px 16px", borderTop:`1px solid ${C.border}` }}>
-                <button onClick={() => { setPage && setPage("invoices"); setOpen(false); }}
-                  style={{ width:"100%", padding:"8px 0", borderRadius:8, border:"none",
-                    background:C.bg, fontFamily:F, fontSize:12, fontWeight:600,
-                    color:C.blue, cursor:"pointer" }}>
-                  View all invoices →
-                </button>
-              </div>
             </div>
           )}
         </div>
-        <div style={{ width:32, height:32, borderRadius:"50%", background:C.grad1,
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontSize:13, fontWeight:700, color:"white", fontFamily:F }}>
-          {client.name[0]}
+        {/* User chip */}
+        <div style={{ display:"flex", alignItems:"center", gap:7, padding:"4px 10px",
+          borderRadius:6, border:`1px solid ${C.border}`, cursor:"pointer",
+          background:"#F9FAFB" }}>
+          <div style={{ width:22, height:22, borderRadius:"50%",
+            background:uae?"#00732F":C.blue, display:"flex", alignItems:"center",
+            justifyContent:"center", fontSize:10, fontWeight:900, color:"white", fontFamily:F }}>
+            {(client?.name||"U")[0]}
+          </div>
+          <div>
+            <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, lineHeight:1.2 }}>
+              {client?.name?.split(" ")[0]||"User"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:9, color:C.muted }}>
+              {uae?"UAE CFO":"CFO Client"}
+            </div>
+          </div>
         </div>
       </div>
     </header>
@@ -1059,495 +1179,367 @@ const PACK_CONFIG = {
 // FIXED: Overview now shows Financial Health Score + Story of Month + Actions only.
 // Removed: Revenue/Expenses chart, Cash Flow chart, KPI cards (all moved to Dashboard).
 // This page is the executive landing — no detailed tables or repeated metrics.
-function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null }) {
-  const displayKpis = kpis || KPIs;
-  const ovPack    = client?.client_pack || client?.clientPack || "startup";
-  const uaeClient = isUAE(client);
-  const pendingActions  = actions.filter(a => !a.done);
-  const highPriority    = pendingActions.filter(a => a.priority === "High");
-  const medPriority     = pendingActions.filter(a => a.priority === "Medium");
-  const indiaNote = garimaNote || (PACK_CONFIG[ovPack]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
-  const uaeNote   = reportData?.uaeGarimaNote || "Q1 2026 closed strongly — revenue at AED 1.85M, up 32% YoY, with gross margin at 45% (best quarter since inception). Four things need your attention this week: (1) VAT return for Q1 is due 28 April — AED 92.5K payable to FTA. Confirm this is sitting in your Emirates NBD current account. (2) DMCC audited financial statements must be submitted by 30 April to maintain QFZP status — your audit firm needs your signed management accounts by 22 April. (3) Your mainland UAE sales are at 8% of revenue — above the 5% de-minimis threshold. Review the two mainland contracts due for renewal in Q2. (4) SBR election must be made in your CT return by 30 September.";
-  const displayNote = uaeClient ? uaeNote : indiaNote;
+function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[] }) {
+  const displayKpis  = kpis || KPIs;
+  const ovPack       = client?.client_pack || client?.clientPack || "startup";
+  const uaeClient    = isUAE(client);
+  const pendingActions = actions.filter(a => !a.done);
+  const highPriority   = pendingActions.filter(a => a.priority === "High");
+  const displayNote  = uaeClient
+    ? (reportData?.uaeGarimaNote || "Q1 2026 closed strongly. Review priorities in your CFO Report.")
+    : (garimaNote || PACK_CONFIG[ovPack]?.garimaNote || PACK_CONFIG.startup.garimaNote);
 
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
-  const engType  = client?.type || "both";
-  const engagementBadge = engType === "cfo" ? "Active CFO Engagement"
-    : engType === "valuation" ? "Active Valuation Engagement"
-    : "Active · CFO + Valuation";
 
-  // FIXED: Financial Health Score — computed from KPIs, unique to Overview
-  const computeHealthScore = () => {
-    let score = 60; // base
-    const rev   = displayKpis.find(k => k.label?.toLowerCase().includes("rev"));
-    const cash  = displayKpis.find(k => k.label?.toLowerCase().includes("cash"));
-    const run   = displayKpis.find(k => k.label?.toLowerCase().includes("runway"));
-    const mar   = displayKpis.find(k => k.label?.toLowerCase().includes("margin"));
-    const vat   = displayKpis.find(k => k.label?.toLowerCase().includes("vat"));
-    const qfzp  = displayKpis.find(k => k.label?.toLowerCase().includes("qfzp"));
-    if (rev?.trend  === "up") score += 10;
-    if (cash?.trend === "up") score += 10;
-    if (run && parseFloat(run.value) >= 6) score += 10;
-    if (mar?.trend  === "up") score += 5;
-    if (uaeClient && vat) score += 5;        // VAT registered = +5
-    if (uaeClient && qfzp && parseFloat(qfzp.value) >= 75) score += 5; // QFZP healthy
-    if (highPriority.length === 0) score += 5;
-    if (highPriority.length > 3)  score -= 10;
-    return Math.min(100, Math.max(0, score));
-  };
-
-  const healthScore = reportData?.healthScore || computeHealthScore();
+  const healthScore = reportData?.healthScore || 72;
   const healthColor = healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
   const healthLabel = healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
 
-  // FIXED: Story of the Month — plain-English bullets, unique to Overview
-  const storyBullets = (() => {
-    const bullets = [];
-    const rev  = displayKpis.find(k => k.label?.toLowerCase().includes("rev"));
-    const mar  = displayKpis.find(k => k.label?.toLowerCase().includes("margin"));
-    const cash = displayKpis.find(k => k.label?.toLowerCase().includes("cash"));
-    const run  = displayKpis.find(k => k.label?.toLowerCase().includes("runway"));
-    const vat  = displayKpis.find(k => k.label?.toLowerCase().includes("vat"));
-    const qfzp = displayKpis.find(k => k.label?.toLowerCase().includes("qfzp"));
+  // ── KPI 1 (primary — revenue or AED revenue) ──────────────────────────────
+  const primaryKpi  = displayKpis[0] || {};
+  const secondaryKpi = displayKpis[1] || {};
+  const tertiaryKpi  = displayKpis[2] || {};
 
-    if (rev)  bullets.push({ text:"Revenue at " + rev.value + (rev.prev && rev.prev!=="—" ? " (vs " + rev.prev + " prior)" : ""), up:rev.trend==="up" });
-    if (mar)  bullets.push({ text:`Gross margin at ${mar.value} — ${mar.trend==="up"?"improving, cost discipline working":"watch COGS trends"}`, up:mar.trend==="up" });
-    if (uaeClient && vat) bullets.push({ text:`VAT payable: ${vat.value} — due 28th of month following quarter end`, up:false, warn:true });
-    else if (cash) bullets.push({ text:`Cash balance ${cash.value} — ${cash.trend==="up"?"healthy position":"monitor burn carefully"}`, up:cash.trend==="up" });
-    if (uaeClient && qfzp) bullets.push({ text:`QFZP score ${qfzp.value} — maintain substance requirements`, up:parseFloat(qfzp.value)>=75 });
-    else if (run) bullets.push({ text:`Runway: ${run.value} — ${parseFloat(run.value)<6?"start fundraise conversations now":"comfortable, focus on growth"}`, up:parseFloat(run.value)>=6 });
-    if (highPriority.length > 0) bullets.push({ text:`${highPriority.length} high-priority action${highPriority.length>1?"s":""} pending this month`, up:false, warn:true });
-    return bullets.slice(0, 5);
-  })();
+  // ── AR aging (from invoices or reportData) ────────────────────────────────
+  const wc = reportData?.workingCapital || {};
+  const arBuckets = [
+    { label:"Current",  val: Number(wc.ar0_30  || 0), color: C.green  },
+    { label:"31–60d",   val: Number(wc.ar31_60 || 0), color: C.amber  },
+    { label:"61–90d",   val: Number(wc.ar61_90 || 0), color: C.orange || "#F97316" },
+    { label:"90d+",     val: Number(wc.ar90plus|| 0), color: C.red    },
+  ];
+  const arTotal = arBuckets.reduce((s,b) => s+b.val, 0);
+  const hasAR   = arTotal > 0;
 
-  return (
-    <div style={{ padding:24 }}>
-      {uaeClient && <UAEDisclaimer/>}
+  // ── Recent invoices ───────────────────────────────────────────────────────
+  const recentInv = (invoices || []).slice(0, 5);
 
-      {/* Hero Banner */}
-      <div style={{ marginBottom:20, padding:"22px 28px", borderRadius:18,
-        background: uaeClient            ? "linear-gradient(135deg,#003A1F 0%,#00732F 60%,#1a5276 100%)"
-                  : ovPack==="msme"      ? "linear-gradient(135deg,#1B3A6B 0%,#2563EB 60%,#7C3AED 100%)"
-                  : ovPack==="corporate" ? "linear-gradient(135deg,#4C1D95 0%,#7C3AED 60%,#DB2777 100%)"
-                  : "linear-gradient(135deg,#1a3a8f 0%,#2563EB 60%,#7C3AED 100%)",
-        color:"white", position:"relative", overflow:"hidden" }}>
-        <div style={{ position:"absolute", right:-30, top:-30, width:180, height:180, borderRadius:"50%", background:"rgba(255,255,255,0.05)" }}/>
-        <div style={{ position:"absolute", right:60, bottom:-40, width:120, height:120, borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
-        <div style={{ position:"relative" }}>
-          <div style={{ fontFamily:F, fontSize:11, fontWeight:700, opacity:0.7, letterSpacing:"0.1em", marginBottom:6 }}>
-            {greeting.toUpperCase()}
-          </div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:26, marginBottom:6 }}>{client?.name || "Client"}</div>
-          <div style={{ fontFamily:F, fontSize:13, opacity:0.8, marginBottom:12 }}>
-            {client?.company || "Company"}{reportData?.monthLabel ? ` · ${reportData.monthLabel}` : ""}
-          </div>
-          <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-            <span style={{ display:"inline-block", background:"rgba(255,255,255,0.18)", borderRadius:100,
-              padding:"4px 14px", fontSize:12, fontWeight:700, fontFamily:F,
-              backdropFilter:"blur(4px)", border:"1px solid rgba(255,255,255,0.25)" }}>
-              ● {engagementBadge}
-            </span>
-            {uaeClient && (
-              <span style={{ display:"inline-block", background:"rgba(255,255,255,0.15)", borderRadius:100,
-                padding:"4px 14px", fontSize:12, fontWeight:700, fontFamily:F,
-                backdropFilter:"blur(4px)", border:"1px solid rgba(255,255,255,0.2)" }}>
-                🇦🇪 {client?.jurisdiction === "Cross-Border" ? "India + UAE" : "UAE · " + (client?.freezone || "Free Zone")}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
+  // ── Cashflow sparkline data ───────────────────────────────────────────────
+  const cfData = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+  const cfVals = cfData.map(m => {
+    const s = String(m.actual || m.forecast || "0").replace(/[^0-9.-]/g,"");
+    return parseFloat(s) || 0;
+  });
+  const cfMax  = Math.max(...cfVals, 1);
+  const cfMin  = Math.min(...cfVals, 0);
+  const cfRange = cfMax - cfMin || 1;
+  const sparkH = 40, sparkW = 140;
 
-      {/* FIXED: Financial Health Score + Story of Month — two-column layout */}
-      <div style={{ display:"grid", gridTemplateColumns:"200px 1fr", gap:16, marginBottom:20 }} className="ov-health">
-        {/* Health Score — unique to Overview, not shown anywhere else */}
-        <Card style={{ padding:20, textAlign:"center", borderTop:`3px solid ${healthColor}` }}>
-          <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-            textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>
-            Financial Health
-          </div>
-          <div style={{ fontFamily:"monospace", fontSize:52, fontWeight:900,
-            color:healthColor, lineHeight:1, marginBottom:6 }}>{healthScore}</div>
-          <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:healthColor, marginBottom:10 }}>
-            /100 · {healthLabel}
-          </div>
-          <div style={{ height:8, borderRadius:8, background:C.border, overflow:"hidden" }}>
-            <div style={{ height:"100%", width:`${healthScore}%`, borderRadius:8,
-              background:healthColor, transition:"width 0.5s" }}/>
-          </div>
-          <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:10, lineHeight:1.5 }}>
-            {highPriority.length === 0 ? "No high-priority actions pending" : `${highPriority.length} action${highPriority.length>1?"s":""} need attention`}
-          </div>
-        </Card>
+  // ── P&L summary rows ─────────────────────────────────────────────────────
+  const pl = reportData?.pl || {};
+  const plRows = uaeClient ? [
+    { label:"Revenue",       curr: pl.revenue?.actual    || "—", prev: pl.revenue?.prev    || "—" },
+    { label:"Gross Profit",  curr: pl.grossProfit?.actual || "—", prev: pl.grossProfit?.prev || "—" },
+    { label:"EBITDA",        curr: pl.ebitda?.actual      || "—", prev: pl.ebitda?.prev      || "—" },
+    { label:"Net Profit",    curr: pl.pat?.actual         || "—", prev: pl.pat?.prev         || "—" },
+  ] : [
+    { label:"Revenue",       curr: pl.revenue?.actual    || "—", prev: pl.revenue?.prev    || "—" },
+    { label:"Gross Profit",  curr: pl.grossProfit?.actual || "—", prev: pl.grossProfit?.prev || "—" },
+    { label:"EBITDA",        curr: pl.ebitda?.actual      || "—", prev: pl.ebitda?.prev      || "—" },
+    { label:"PAT",           curr: pl.pat?.actual         || "—", prev: pl.pat?.prev         || "—" },
+  ];
 
-        {/* Story of the Month — plain English bullets, unique to Overview */}
-        <Card style={{ borderLeft:`4px solid ${uaeClient?"#00732F":C.blue}`,
-          background:uaeClient?"#F0FDF4":`${C.blue}06` }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
-            📋 Story of the Month — {reportData?.monthLabel || "This Period"}
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:7 }}>
-            {storyBullets.map((b,i) => (
-              <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                <span style={{ fontSize:13, flexShrink:0, marginTop:1,
-                  color:b.warn?C.amber:b.up?C.green:C.red }}>
-                  {b.warn?"⚠️":b.up?"▲":"▼"}
-                </span>
-                <span style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.5 }}>{b.text}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ marginTop:12, display:"flex", gap:8, flexWrap:"wrap" }}>
-            <button onClick={()=>setPage("dashboard")} style={{ fontFamily:F, fontSize:11,
-              color:C.blue, background:"none", border:`1px solid ${C.blue}30`,
-              borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:600 }}>
-              📊 Full Dashboard →
-            </button>
-            <button onClick={()=>setPage("cashflow")} style={{ fontFamily:F, fontSize:11,
-              color:C.teal, background:"none", border:`1px solid ${C.teal}30`,
-              borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:600 }}>
-              💰 Cash Forecast →
-            </button>
-            <button onClick={()=>setPage("myreport")} style={{ fontFamily:F, fontSize:11,
-              color:C.purple, background:"none", border:`1px solid ${C.purple}30`,
-              borderRadius:6, padding:"5px 12px", cursor:"pointer", fontWeight:600 }}>
-              📋 Profitability →
-            </button>
-          </div>
-        </Card>
-      </div>
-
-      {/* Note from Garima — prominent at top, unique insight not repeated elsewhere */}
-      <Card style={{ marginBottom:20, background:"#FFFBF0", border:"1px solid #FDE68A" }}>
-        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ flexShrink:0 }}>
-            <div style={{ width:42, height:42, borderRadius:"50%",
-              background:"linear-gradient(135deg,#F59E0B,#D97706)",
-              display:"flex", alignItems:"center", justifyContent:"center",
-              fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
-          </div>
-          <div style={{ flex:1 }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:8 }}>
-              <div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"#92400E" }}>Note from Garima</div>
-                <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginTop:1 }}>Garima Agarwal · CA · Your CFO Partner</div>
-              </div>
-              {reportData?.monthLabel && (
-                <span style={{ fontFamily:F, fontSize:11, color:"#B45309", background:"#FEF3C7",
-                  padding:"3px 10px", borderRadius:100, fontWeight:600 }}>{reportData.monthLabel}</span>
-              )}
-            </div>
-            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.9, margin:"0 0 14px" }}>{displayNote}</p>
-            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-              <a href={WA} target="_blank" rel="noopener noreferrer"
-                style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#25D366",
-                  color:"white", borderRadius:8, padding:"8px 16px", fontFamily:F,
-                  fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                📱 WhatsApp Garima
-              </a>
-              <button onClick={() => setPage("actions")}
-                style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#FEF3C7",
-                  color:"#92400E", borderRadius:8, padding:"8px 16px", fontFamily:F,
-                  fontWeight:700, fontSize:12, border:"1px solid #FDE68A", cursor:"pointer" }}>
-                {"✅ View Action Items ("}{pendingActions.length}{")"}
-              </button>
-            </div>
-          </div>
-        </div>
-      </Card>
-
-      {/* 3-Month Forward View — only if admin has set forecast data */}
-      {(reportData?.forecast1Label || reportData?.forecastNote) && (
-        <Card style={{ marginBottom:20, borderLeft:`3px solid ${C.purple}` }}>
-          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-            <div style={{ width:36, height:36, borderRadius:10, background:`${C.purple}15`,
-              display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🔭</div>
-            <div>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>{"3-Month Forward View"}</div>
-              <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{"Garima's outlook — updated each month"}</div>
-            </div>
-          </div>
-          {reportData?.forecastNote && (
-            <div style={{ padding:"12px 14px", borderRadius:10, background:`${C.purple}08`,
-              border:`1px solid ${C.purple}15`, marginBottom:14 }}>
-              <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8, margin:0 }}>{reportData.forecastNote}</p>
-            </div>
-          )}
-          {reportData?.forecast1Label && (
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }} className="inv-grid">
-              {[
-                { label:reportData.forecast1Label, value:reportData.forecast1Value, trend:reportData.forecast1Trend },
-                { label:reportData.forecast2Label, value:reportData.forecast2Value, trend:reportData.forecast2Trend },
-                { label:reportData.forecast3Label, value:reportData.forecast3Value, trend:reportData.forecast3Trend },
-              ].filter(f=>f.value).map((f,i) => (
-                <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:C.bg2,
-                  border:`1px solid ${C.border}`, textAlign:"center" }}>
-                  <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:20, fontWeight:800,
-                    color:f.trend==="up"?C.green:f.trend==="down"?C.red:C.purple }}>{f.value}</div>
-                  {f.trend && (
-                    <div style={{ fontFamily:F, fontSize:10, marginTop:3,
-                      color:f.trend==="up"?C.green:f.trend==="down"?C.red:C.muted }}>
-                      {f.trend==="up"?"▲ Improving":f.trend==="down"?"▼ Watch":"→ Stable"}
-                    </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
-
-      {/* FIXED: Action Items — this IS unique to Overview (prioritised list, not in Dashboard or CashFlow) */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="ov-bottom">
-        <Card>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Top Priorities This Month</div>
-            <button onClick={()=>setPage("actions")} style={{ fontFamily:F, fontSize:11, color:C.blue,
-              background:"none", border:"none", cursor:"pointer", fontWeight:600 }}>View all →</button>
-          </div>
-          {highPriority.length === 0 ? (
-            <div style={{ fontFamily:F, fontSize:13, color:C.green, padding:"12px 0" }}>✅ No high-priority items — you're on track!</div>
-          ) : (
-            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-              {highPriority.slice(0,3).map((a,i) => (
-                <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:8,
-                  background:"#FEF2F2", border:"1px solid #FCA5A5", alignItems:"flex-start" }}>
-                  <span style={{ color:C.red, fontWeight:700, flexShrink:0, marginTop:1 }}>!</span>
-                  <span style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.5 }}>{a.text}</span>
-                </div>
-              ))}
-              {medPriority.length > 0 && (
-                <div style={{ fontFamily:F, fontSize:11, color:C.muted, paddingTop:4 }}>
-                  + {medPriority.length} medium-priority item{medPriority.length>1?"s":""} — see Action Items
-                </div>
-              )}
-            </div>
-          )}
-        </Card>
-
-        {/* Quick nav — links to other sections, no data duplication */}
-        <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Go to Section</div>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-            {[
-              { icon:"📊", label:"Full Dashboard",    sub:"All KPIs & P&L",         action:"dashboard",      color:C.blue   },
-              { icon:"💰", label:"Cash Forecast",     sub:"6-month projection",      action:"cashflow",       color:C.teal   },
-              { icon:"📈", label:"Profitability",     sub:"Margins & cost analysis", action:"myreport",       color:C.purple },
-              uaeClient
-                ? { icon:"⚖️", label:"Rev Reconciliation", sub:"IFRS vs VAT",   action:"revrecon",      color:"#0891B2" }
-                : { icon:"✅", label:"Action Items",        sub:pendingActions.length+" pending", action:"actions", color:C.amber },
-            ].map((q,i) => (
-              <button key={i} onClick={()=>setPage(q.action)}
-                style={{ display:"flex", gap:8, alignItems:"center", padding:"10px 12px",
-                  borderRadius:10, background:"white", border:`1px solid ${C.border}`,
-                  cursor:"pointer", textAlign:"left" }}>
-                <div style={{ width:32, height:32, borderRadius:8, background:`${q.color}15`,
-                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, flexShrink:0 }}>
-                  {q.icon}
-                </div>
-                <div>
-                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text }}>{q.label}</div>
-                  <div style={{ fontFamily:F, fontSize:10, color:C.muted }}>{q.sub}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-          <a href={WA} target="_blank" rel="noopener noreferrer"
-            style={{ display:"flex", alignItems:"center", gap:10, padding:"12px 14px",
-              borderRadius:10, background:"linear-gradient(135deg,#E7FAF0,#D1F5E4)",
-              border:"1px solid #A7F0C4", textDecoration:"none" }}>
-            <span style={{ fontSize:20 }}>📱</span>
-            <div>
-              <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:"#065F46" }}>Chat with Garima</div>
-              <div style={{ fontFamily:F, fontSize:10, color:"#047857" }}>Quick questions · WhatsApp</div>
-            </div>
-          </a>
-        </div>
-      </div>
-
-      <style>{`
-        @media(max-width:700px) {
-          .ov-health { grid-template-columns: 1fr !important; }
-          .ov-bottom { grid-template-columns: 1fr !important; }
-        }
-      `}</style>
-    </div>
-  );
-}
-
-
-
-
-
-function Dashboard({ client, kpis, garimaNote, reportData }) {
-  const displayKpis = kpis || KPIs;
-  const pack    = client?.client_pack || client?.clientPack || "startup";
-  const packCfg = PACK_CONFIG[pack] || PACK_CONFIG.startup;
-  const accent  = pack==="msme" ? C.blue : pack==="corporate" ? C.purple : C.blue;
-  const pl      = reportData?.pl || {};
-
-  // Month story — auto generated
-  const storyLines = (() => {
-    const lines = [];
-    const rev = displayKpis.find(k=>k.label?.toLowerCase().includes("rev"));
-    const mar = displayKpis.find(k=>k.label?.toLowerCase().includes("margin")||k.label?.toLowerCase().includes("gross"));
-    const cash= displayKpis.find(k=>k.label?.toLowerCase().includes("cash"));
-    const run = displayKpis.find(k=>k.label?.toLowerCase().includes("runway"));
-    const burn= displayKpis.find(k=>k.label?.toLowerCase().includes("burn"));
-    if (rev)  lines.push({ text: rev.trend==="up" ? `Revenue grew to ${rev.value} — growth on track.` : `Revenue at ${rev.value} — monitor pipeline closely.`, pos: rev.trend==="up" });
-    if (mar)  lines.push({ text: mar.trend==="up" ? `Gross margin improved to ${mar.value} — unit economics strengthening.` : `Margin compressed to ${mar.value} — review cost structure.`, pos: mar.trend==="up" });
-    if (cash) lines.push({ text: cash.trend==="up" ? `Cash position healthy at ${cash.value}.` : `Cash dropped to ${cash.value} — monitor collections.`, pos: cash.trend==="up" });
-    if (burn) lines.push({ text: burn.trend==="up" ? `Burn improved to ${burn.value} — efficiency gaining.` : `Burn increased to ${burn.value} — review discretionary spend.`, pos: burn.trend==="up" });
-    if (run) {
-      const n = parseFloat(run.value);
-      lines.push({ text: n < 6 ? `Runway at ${run.value} — fundraise or cut costs urgently.` : n < 9 ? `Runway at ${run.value} — begin fundraise conversations.` : `Runway comfortable at ${run.value}.`, pos: n >= 9 });
-    }
-    return lines;
-  })();
+  const accentColor = uaeClient ? "#00732F" : C.blue;
 
   return (
-    <div style={{ padding:24, display:"flex", flexDirection:"column", gap:20 }}>
+    <div style={{ display:"flex", flexDirection:"column", gap:0, background:"#F3F4F6", minHeight:"100vh" }}>
 
-      {/* ── Header strip ── */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8 }}>
+      {/* ── Top bar ── */}
+      <div style={{ background:"white", borderBottom:`1px solid ${C.border}`,
+        padding:"10px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
         <div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text }}>
-            KPI Dashboard
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text }}>
+            {greeting}, {client?.name?.split(" ")[0] || "there"}
           </div>
-          <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:2 }}>
-            {client?.company} · {reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:1 }}>
+            {client?.company} · {uaeClient ? "UAE CFO Dashboard" : `${ovPack.toUpperCase()} Pack`} · {reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}
           </div>
         </div>
-        {reportData?.monthLabel && (
-          <span style={{ fontFamily:F, fontSize:12, fontWeight:700, color:accent,
-            background:`${accent}12`, padding:"5px 14px", borderRadius:100, border:`1px solid ${accent}20` }}>
-            {reportData.monthLabel}
-          </span>
-        )}
+        <div style={{ display:"flex", gap:8 }}>
+          {highPriority.length > 0 && (
+            <div style={{ padding:"5px 12px", borderRadius:3, background:"#FEF2F2",
+              border:"1px solid #FCA5A5", fontFamily:F, fontSize:12, fontWeight:700, color:C.red,
+              display:"flex", alignItems:"center", gap:5 }}>
+              🔴 {highPriority.length} High Priority Action{highPriority.length>1?"s":""}
+            </div>
+          )}
+          <div style={{ padding:"5px 12px", borderRadius:3, background:`${accentColor}12`,
+            border:`1px solid ${accentColor}40`, fontFamily:F, fontSize:12, fontWeight:700, color:accentColor }}>
+            Score: {healthScore}/100 · {healthLabel}
+          </div>
+        </div>
       </div>
 
-      {/* ── KPI grid ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14 }} className="kpi-grid">
-        {displayKpis.map((k,i) => (
-          <div key={i} style={{ padding:"18px 20px", borderRadius:14, background:"white",
-            border:`1px solid ${C.border}`, boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:10 }}>
-              <div style={{ width:36, height:36, borderRadius:10, background:k.bg,
-                display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <Icon name={k.icon||"rev"} size={18} color={k.color}/>
+      <div style={{ padding:"16px 24px", display:"flex", flexDirection:"column", gap:14 }}>
+
+        {/* ── Row 1: KPI tiles (NetSuite style) ── */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>
+          {displayKpis.slice(0,6).map((kpi,i) => (
+            <div key={i} style={{ background:"white", borderRadius:6, padding:"12px 14px",
+              border:`1px solid ${C.border}`, borderTop:`3px solid ${k.color||C.accent}`,
+              boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
+              <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
+                textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4 }}>
+                {kpi.label}
               </div>
-              {k.prev && k.prev !== "—" && (
-                <span style={{ fontSize:11, fontWeight:700,
-                  color:k.trend==="up"?C.green:C.red,
-                  background:k.trend==="up"?"#ECFDF5":"#FEF2F2",
-                  padding:"3px 8px", borderRadius:100, fontFamily:F,
-                  display:"flex", alignItems:"center", gap:3 }}>
-                  <Icon name={k.trend==="up"?"trend_up":"trend_down"} size={10} color={k.trend==="up"?C.green:C.red}/>
-                  vs last month
-                </span>
+              <div style={{ fontFamily:FM, fontSize:14, fontWeight:900, color:C.text, lineHeight:1.1 }}>
+                {kpi.value}
+              </div>
+              {kpi.prev && kpi.prev !== "—" && (
+                <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3, display:"flex", alignItems:"center", gap:3 }}>
+                  <span style={{ color: kpi.trend==="up"?C.green:C.red, fontWeight:700 }}>
+                    {kpi.trend==="up"?"↑":"↓"}
+                  </span>
+                  prev: {kpi.prev}
+                </div>
               )}
             </div>
-            <div style={{ fontFamily:F, fontSize:22, fontWeight:800, color:C.text, marginBottom:3 }}>{k.value}</div>
-            <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.muted, marginBottom:2 }}>{k.label}</div>
-            <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>{kpiContext(k)}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── P&L snapshot ── */}
-      {pl.revenue?.actual && (
-        <div style={{ borderRadius:14, background:"white", border:`1px solid ${C.border}`, overflow:"hidden" }}>
-          <div style={{ padding:"14px 20px", borderBottom:`1px solid ${C.border}`,
-            display:"flex", alignItems:"center", gap:8 }}>
-            <Icon name="chart_bar" size={15} color={accent}/>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>
-              P&L Snapshot — {reportData?.monthLabel || ""}
-            </div>
-          </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)" }} className="pl-snap">
-            {[
-              { label:"Revenue",    val:pl.revenue?.actual,     prev:pl.revenue?.prev,     color:accent  },
-              { label:"Gross Profit",val:pl.grossProfit?.actual,prev:pl.grossProfit?.prev, color:C.green },
-              { label:"EBITDA",     val:pl.ebitda?.actual,      prev:pl.ebitda?.prev,      color:C.teal  },
-              { label:"Net Profit", val:pl.pat?.actual,         prev:pl.pat?.prev,         color:C.purple},
-            ].map((r,i) => r.val ? (
-              <div key={i} style={{ padding:"16px 20px",
-                borderRight: i < 3 ? `1px solid ${C.border}` : "none" }}>
-                <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600,
-                  textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{r.label}</div>
-                <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:r.color, marginBottom:3 }}>{r.val}</div>
-                {r.prev && <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>Prev: {r.prev}</div>}
-              </div>
-            ) : null)}
-          </div>
+          ))}
         </div>
-      )}
 
-      {/* ── Month story ── */}
-      {storyLines.length > 0 && (
-        <div style={{ padding:"18px 20px", borderRadius:14, background:C.navy }}>
-          <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-            <Icon name="info" size={14} color="rgba(255,255,255,0.5)"/>
-            <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.5)",
-              textTransform:"uppercase", letterSpacing:"0.1em" }}>
-              This Month's Story
-            </div>
-          </div>
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {storyLines.map((line,i) => (
-              <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-                <div style={{ width:6, height:6, borderRadius:"50%", flexShrink:0, marginTop:5,
-                  background: line.pos ? C.green : C.amber }}/>
-                <span style={{ fontFamily:F, fontSize:13, color:"rgba(255,255,255,0.8)", lineHeight:1.6 }}>
-                  {line.text}
-                </span>
+        {/* ── Row 2: P&L + Health Score + Garima Note ── */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 200px 1fr", gap:14 }}>
+
+          {/* P&L Summary table */}
+          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
+            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
+              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>
+                P&L Summary
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Variance snapshot ── */}
-      {(reportData?.variance||[]).filter(v=>v.budget&&v.actual).length > 0 && (
-        <div style={{ borderRadius:14, background:"white", border:`1px solid ${C.border}`, overflow:"hidden" }}>
-          <div style={{ padding:"14px 20px", borderBottom:`1px solid ${C.border}`,
-            display:"flex", alignItems:"center", gap:8 }}>
-            <Icon name="scenario" size={15} color={accent}/>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>Budget vs Actual</div>
-          </div>
-          <div style={{ overflowX:"auto" }}>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>
+                {reportData?.monthLabel || "Current vs Prior"}
+              </div>
+            </div>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
               <thead>
-                <tr style={{ background:C.bg2 }}>
-                  {["Metric","Budget","Actual","Variance","Status"].map(h => (
-                    <th key={h} style={{ padding:"10px 16px", textAlign:"left", fontWeight:700,
-                      fontSize:11, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</th>
-                  ))}
+                <tr style={{ background:"#F9FAFB" }}>
+                  <th style={{ padding:"7px 16px", textAlign:"left", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Line</th>
+                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Current</th>
+                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Prior</th>
                 </tr>
               </thead>
               <tbody>
-                {(reportData.variance).filter(v=>v.budget&&v.actual).map((v,i) => {
-                  const bNum = parseFloat(String(v.budget).replace(/[^0-9.]/g,""));
-                  const aNum = parseFloat(String(v.actual).replace(/[^0-9.]/g,""));
-                  const diff = bNum > 0 ? (((aNum-bNum)/bNum)*100).toFixed(1) : null;
-                  const unfav = v.fav ? aNum < bNum : aNum > bNum;
+                {plRows.map((r,i) => (
+                  <tr key={i} style={{ borderTop:`1px solid ${C.border}`, background: i===0?"#F0FDF4":"white" }}>
+                    <td style={{ padding:"8px 16px", fontWeight: i===0||i===plRows.length-1?700:400, color:C.text }}>{r.label}</td>
+                    <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, fontWeight:700, color:C.text }}>{r.curr}</td>
+                    <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, color:C.muted }}>{r.prev}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Health Score meter (NetSuite KPI Meter) */}
+          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex",
+            flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
+            <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
+              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>
+              Financial Health
+            </div>
+            {/* Gauge arc */}
+            <svg width="120" height="68" viewBox="0 0 120 68">
+              <path d="M10,60 A50,50 0 0,1 110,60" stroke="#E5E7EB" strokeWidth="10" fill="none" strokeLinecap="round"/>
+              <path d="M10,60 A50,50 0 0,1 110,60"
+                stroke={healthColor} strokeWidth="10" fill="none" strokeLinecap="round"
+                strokeDasharray={`${(healthScore/100)*157} 157`}/>
+              <text x="60" y="56" textAnchor="middle" fontSize="20" fontWeight="900"
+                fill={healthColor} fontFamily="monospace">{healthScore}</text>
+            </svg>
+            <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:healthColor, marginTop:4 }}>
+              {healthLabel}
+            </div>
+            <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:2, textAlign:"center" }}>
+              {highPriority.length} high-priority actions
+            </div>
+          </div>
+
+          {/* Garima's Note */}
+          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+            borderLeft:`4px solid ${accentColor}`,
+            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex", flexDirection:"column" }}>
+            <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:accentColor,
+              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
+              💬 Garima's CFO Note
+            </div>
+            <p style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.8, margin:0, flex:1 }}>
+              {displayNote}
+            </p>
+            <button onClick={() => setPage("myreport")}
+              style={{ marginTop:12, padding:"6px 12px", borderRadius:7, border:`1px solid ${accentColor}`,
+                background:"transparent", color:accentColor, fontFamily:F, fontSize:11,
+                fontWeight:700, cursor:"pointer", alignSelf:"flex-start" }}>
+              Full Report →
+            </button>
+          </div>
+        </div>
+
+        {/* ── Row 3: Action Items + AR Aging + Cash Flow ── */}
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }}>
+
+          {/* Action Items */}
+          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
+            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
+              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Action Items</div>
+              <span style={{ padding:"2px 8px", borderRadius:6, background:"#FEF2F2",
+                color:C.red, fontSize:10, fontWeight:700, fontFamily:F }}>
+                {pendingActions.length} pending
+              </span>
+            </div>
+            <div style={{ maxHeight:200, overflowY:"auto" }}>
+              {pendingActions.length === 0 ? (
+                <div style={{ padding:"20px 16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>
+                  ✅ All actions complete
+                </div>
+              ) : pendingActions.slice(0,6).map((a,i) => (
+                <div key={i} style={{ padding:"9px 16px", borderBottom:`1px solid ${C.border}`,
+                  display:"flex", alignItems:"flex-start", gap:10,
+                  background: a.priority==="High" ? "#FFF5F5" : "white" }}>
+                  <div style={{ width:6, height:6, borderRadius:"50%", flexShrink:0, marginTop:5,
+                    background: a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.green }} />
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:500, lineHeight:1.4 }}>
+                      {a.title||a.text||a.action}
+                    </div>
+                    {a.due && <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:1 }}>Due: {a.due}</div>}
+                  </div>
+                  <span style={{ fontFamily:F, fontSize:9, fontWeight:700, padding:"2px 6px",
+                    borderRadius:4, flexShrink:0,
+                    background: a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#F0FDF4",
+                    color: a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.green }}>
+                    {a.priority||"Low"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* AR Aging chart */}
+          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
+            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
+              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>A/R Aging</div>
+              {hasAR && <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.muted }}>
+                Total: {uaeClient?"AED ":"₹"}{arTotal.toLocaleString()}
+              </div>}
+            </div>
+            {!hasAR ? (
+              <div style={{ padding:"32px 16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>
+                No AR data entered yet
+              </div>
+            ) : (
+              <div style={{ padding:16 }}>
+                {arBuckets.map((b,i) => {
+                  const pct = arTotal > 0 ? (b.val/arTotal*100) : 0;
                   return (
-                    <tr key={i} style={{ borderTop:`1px solid ${C.border}` }}>
-                      <td style={{ padding:"10px 16px", fontWeight:600, color:C.text }}>{v.metric}</td>
-                      <td style={{ padding:"10px 16px", color:C.muted }}>{v.budget}</td>
-                      <td style={{ padding:"10px 16px", fontWeight:700, color:C.text }}>{v.actual}</td>
-                      <td style={{ padding:"10px 16px" }}>
-                        {diff && <span style={{ fontWeight:700, color:!unfav?C.green:C.red }}>
-                          {!unfav?"▲":"▼"} {Math.abs(diff)}%
-                        </span>}
+                    <div key={i} style={{ marginBottom:10 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                        <span style={{ fontFamily:F, fontSize:11, color:C.text }}>{b.label}</span>
+                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
+                          {uaeClient?"AED ":"₹"}{b.val.toLocaleString()} <span style={{color:C.muted,fontWeight:400}}>({pct.toFixed(0)}%)</span>
+                        </span>
+                      </div>
+                      <div style={{ height:6, background:"#F3F4F6", borderRadius:3, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:3, transition:"width 0.4s" }}/>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Cash Flow sparkline */}
+          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
+            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Cash Flow Trend</div>
+            </div>
+            {cfVals.length < 2 ? (
+              <div style={{ padding:"32px 16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>
+                No cashflow data entered yet
+              </div>
+            ) : (
+              <div style={{ padding:16 }}>
+                <svg width="100%" height={sparkH+20} viewBox={`0 0 ${sparkW} ${sparkH+20}`} preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor={accentColor} stopOpacity="0.3"/>
+                      <stop offset="100%" stopColor={accentColor} stopOpacity="0"/>
+                    </linearGradient>
+                  </defs>
+                  {(() => {
+                    const pts = cfVals.map((v,i) => {
+                      const x = cfVals.length > 1 ? (i/(cfVals.length-1))*(sparkW-4)+2 : sparkW/2;
+                      const y = sparkH - ((v-cfMin)/cfRange)*(sparkH-4) + 2;
+                      return [x,y];
+                    });
+                    const lineD = pts.map((p,i) => (i===0?`M${p[0]},${p[1]}`:`L${p[0]},${p[1]}`)).join(" ");
+                    const fillD = lineD + ` L${pts[pts.length-1][0]},${sparkH+2} L${pts[0][0]},${sparkH+2} Z`;
+                    return (<>
+                      <path d={fillD} fill="url(#sparkGrad)"/>
+                      <path d={lineD} stroke={accentColor} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      {pts.map(([x,y],i) => <circle key={i} cx={x} cy={y} r="2" fill={accentColor}/>)}
+                    </>);
+                  })()}
+                </svg>
+                <div style={{ display:"flex", justifyContent:"space-between", marginTop:4 }}>
+                  {cfData.slice(0,4).map((m,i) => (
+                    <span key={i} style={{ fontFamily:F, fontSize:9, color:C.muted }}>{m.month}</span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* ── Row 4: Key Indicators table (NetSuite style) ── */}
+        {(reportData?.variance||[]).length > 0 && (
+          <div style={{ background:"white", borderRadius:6, border:`1px solid ${C.border}`,
+            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
+            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
+              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Key Performance Indicators</div>
+            </div>
+            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
+              <thead>
+                <tr style={{ background:"#F9FAFB" }}>
+                  <th style={{ padding:"7px 16px", textAlign:"left", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Indicator</th>
+                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Budget</th>
+                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Actual</th>
+                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Variance</th>
+                  <th style={{ padding:"7px 12px", textAlign:"center", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(reportData.variance||[]).slice(0,6).map((v,i) => {
+                  const diff = v.noCalc ? null : (() => {
+                    const b = parseFloat(String(v.budget||"0").replace(/[^0-9.-]/g,""));
+                    const a = parseFloat(String(v.actual||"0").replace(/[^0-9.-]/g,""));
+                    if (!b) return null;
+                    return (((a-b)/Math.abs(b))*100).toFixed(1);
+                  })();
+                  const favourable = v.fav ? (diff===null||parseFloat(diff)>=0) : (diff===null||parseFloat(diff)<=0);
+                  return (
+                    <tr key={i} style={{ borderTop:`1px solid ${C.border}`, background:i%2===0?"white":"#FAFAFA" }}>
+                      <td style={{ padding:"8px 16px", fontWeight:500, color:C.text }}>{v.metric}</td>
+                      <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, color:C.muted }}>{v.budget}</td>
+                      <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, fontWeight:700, color:C.text }}>{v.actual}</td>
+                      <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, fontWeight:700,
+                        color: diff===null?C.muted:favourable?C.green:C.red }}>
+                        {diff===null?"—":(parseFloat(diff)>0?"+":"")+diff+"%"}
                       </td>
-                      <td style={{ padding:"10px 16px" }}>
-                        <span style={{ padding:"2px 8px", borderRadius:100, fontSize:11, fontWeight:700,
-                          background:!unfav?`${C.green}15`:`${C.red}15`,
-                          color:!unfav?C.green:C.red }}>
-                          {!unfav ? "On track" : "Watch"}
+                      <td style={{ padding:"8px 12px", textAlign:"center" }}>
+                        <span style={{ padding:"2px 8px", borderRadius:6, fontSize:10, fontWeight:700, fontFamily:F,
+                          background:favourable?"#F0FDF4":"#FEF2F2",
+                          color:favourable?C.green:C.red }}>
+                          {favourable?"✓ Favourable":"✗ Watch"}
                         </span>
                       </td>
                     </tr>
@@ -1556,48 +1548,180 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
 
-      <style>{`
-        .kpi-grid{grid-template-columns:repeat(3,1fr)!important}
-        .pl-snap{grid-template-columns:repeat(4,1fr)!important}
-        @media(max-width:900px){.kpi-grid{grid-template-columns:1fr 1fr!important}.pl-snap{grid-template-columns:1fr 1fr!important}}
-        @media(max-width:480px){.kpi-grid{grid-template-columns:1fr!important}.pl-snap{grid-template-columns:1fr!important}}
-      `}</style>
+      </div>
     </div>
   );
 }
 
 
+function Dashboard({ client, kpis, garimaNote, reportData }) {
+  const displayKpis = kpis || KPIs;
+  const pack    = client?.client_pack || client?.clientPack || "startup";
+  const accent  = pack==="msme" ? C.blue : pack==="corporate" ? C.purple : C.blue;
+  const pl      = reportData?.pl || {};
+  const uae     = isUAE(client);
 
-// ─── PACK-SPECIFIC CASHFLOW DEMO DATA ────────────────────────────────────────
-const CASHFLOW_MSME = [
-  { month:"Sep", inflow:76, outflow:61, net:15 },
-  { month:"Oct", inflow:79, outflow:64, net:15 },
-  { month:"Nov", inflow:82, outflow:65, net:17 },
-  { month:"Dec", inflow:88, outflow:68, net:20 },
-  { month:"Jan", inflow:81, outflow:64, net:17 },
-  { month:"Feb", inflow:84, outflow:67, net:17 },
-  { month:"Mar", inflow:null, outflow:null, net:null, fInflow:78, fOutflow:69, fNet:9  },
-  { month:"Apr", inflow:null, outflow:null, net:null, fInflow:86, fOutflow:66, fNet:20 },
-  { month:"May", inflow:null, outflow:null, net:null, fInflow:90, fOutflow:67, fNet:23 },
-];
-const CASHFLOW_CORPORATE = [
-  { month:"Sep", operating:32, investing:-8,  financing:-5,  net:19 },
-  { month:"Oct", operating:34, investing:-6,  financing:-5,  net:23 },
-  { month:"Nov", operating:38, investing:-12, financing:-5,  net:21 },
-  { month:"Dec", operating:42, investing:-8,  financing:-10, net:24 },
-  { month:"Jan", operating:36, investing:-5,  financing:-5,  net:26 },
-  { month:"Feb", operating:45, investing:-7,  financing:-5,  net:33 },
-  { month:"Mar", operating:null, investing:null, financing:null, net:null, fOp:38, fInv:-15, fFin:-5, fNet:18 },
-  { month:"Apr", operating:null, investing:null, financing:null, net:null, fOp:44, fInv:-6,  fFin:-5, fNet:33 },
-  { month:"May", operating:null, investing:null, financing:null, net:null, fOp:47, fInv:-5,  fFin:-5, fNet:37 },
-];
+  // Period-over-period P&L rows
+  const plRows = [
+    { label:"Revenue",       curr:pl.revenue?.actual||"—",     prev:pl.revenue?.prev||"—",     key:"revenue"    },
+    { label:"Cost of Sales", curr:pl.cogs?.actual||"—",        prev:pl.cogs?.prev||"—",        key:"cogs"       },
+    { label:"Gross Profit",  curr:pl.grossProfit?.actual||"—", prev:pl.grossProfit?.prev||"—", key:"gp"         },
+    { label:"GP Margin %",   curr:pl.gpMargin?.actual||"—",    prev:pl.gpMargin?.prev||"—",    key:"gpmargin"   },
+    { label:"EBITDA",        curr:pl.ebitda?.actual||"—",      prev:pl.ebitda?.prev||"—",      key:"ebitda"     },
+    { label:"EBITDA Margin", curr:pl.ebitdaMargin?.actual||"—",prev:pl.ebitdaMargin?.prev||"—",key:"ebitdamargin"},
+    { label:"Net Profit",    curr:pl.pat?.actual||"—",         prev:pl.pat?.prev||"—",         key:"pat"        },
+    { label:"Net Margin %",  curr:pl.netMargin?.actual||"—",   prev:pl.netMargin?.prev||"—",   key:"netmargin"  },
+  ];
 
-// ─── CASH FLOW ────────────────────────────────────────────────────────────────
-// FIXED: CashFlow is now future-only — NO historical revenue, gross margin, or AR.
-// Historical metrics live exclusively in Dashboard. This section = forward cash projection + scenarios.
+  // Variance rows
+  const varRows = (reportData?.variance||[]).slice(0,6);
+
+  // Key metric summary (NetSuite "Financials" strip)
+  const summaryMetrics = [
+    { label:"Gross Profit %",         value:pl.gpMargin?.actual||"—"     },
+    { label:"Net Income as % Revenue", value:pl.netMargin?.actual||"—"    },
+    { label:"EBITDA",                  value:pl.ebitda?.actual||"—"       },
+    { label:"Cash Balance",            value:displayKpis.find(k=>k.label?.toLowerCase().includes("cash"))?.value||"—" },
+  ];
+
+  return (
+    <div className="ns-page">
+      {/* Page title */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div>
+          <div className="ns-page-title">KPI Dashboard</div>
+          <div className="ns-sub" style={{ marginTop:2 }}>{client?.company} · {reportData?.monthLabel||new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}</div>
+        </div>
+        {reportData?.monthLabel && (
+          <span className="ns-badge blue">{reportData.monthLabel}</span>
+        )}
+      </div>
+
+      {/* Summary metrics strip — NetSuite Financials Overview */}
+      <div className="ns-panel">
+        <div className="ns-panel-header"><h3>Financials Overview</h3></div>
+        <div style={{ display:"flex", gap:0, borderBottom:"1px solid #E5E7EB" }}>
+          {summaryMetrics.map((m,i) => (
+            <div key={i} style={{ flex:1, padding:"14px 18px",
+              borderRight:i<summaryMetrics.length-1?"1px solid #E5E7EB":"none" }}>
+              <div className="ns-label">{m.label}</div>
+              <div style={{ fontFamily:FM, fontSize:16, fontWeight:900, color:"#111827", marginTop:4 }}>{m.value}</div>
+            </div>
+          ))}
+        </div>
+        {/* Multi-period P&L table */}
+        <table className="ns-table">
+          <thead>
+            <tr>
+              <th>Indicator</th>
+              <th className="right">This Period</th>
+              <th className="right">Last Period</th>
+            </tr>
+          </thead>
+          <tbody>
+            {plRows.map((r,i) => {
+              const isMargin = r.key.includes("margin");
+              const isSubtot = ["gp","ebitda","pat"].includes(r.key);
+              const isTotal  = r.key === "pat";
+              return (
+                <tr key={i} className={isTotal?"total":isSubtot?"subtotal":"striped"}>
+                  <td className={isTotal||isSubtot?"bold":""}>{r.label}</td>
+                  <td className="right mono bold">{r.curr}</td>
+                  <td className="right mono muted">{r.prev}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {/* KPI grid — 6 tiles */}
+      <div className="ns-grid-6">
+        {displayKpis.slice(0,6).map((k,i) => (
+          <div key={i} className="ns-kpi-tile" style={{ borderTop:`3px solid ${k.color||C.accent}` }}>
+            <div className="label">{k.label}</div>
+            <div className="value">{k.value}</div>
+            {k.prev && k.prev!=="—" && (
+              <div className="trend">
+                <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:800 }}>
+                  {k.trend==="up"?"↑":"↓"}
+                </span>
+                <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Variance table */}
+      {varRows.length > 0 && (
+        <div className="ns-panel">
+          <div className="ns-panel-header"><h3>Budget vs Actual — Key Performance Indicators</h3></div>
+          <table className="ns-table">
+            <thead>
+              <tr>
+                <th>Metric</th>
+                <th className="right">Budget</th>
+                <th className="right">Actual</th>
+                <th className="right">Variance</th>
+                <th style={{ textAlign:"center" }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {varRows.map((v,i) => {
+                const diff = v.noCalc ? null : (() => {
+                  const b = parseFloat(String(v.budget||"0").replace(/[^0-9.-]/g,""));
+                  const a = parseFloat(String(v.actual||"0").replace(/[^0-9.-]/g,""));
+                  if (!b) return null;
+                  return (((a-b)/Math.abs(b))*100).toFixed(1);
+                })();
+                const fav = v.fav ? (diff===null||parseFloat(diff)>=0) : (diff===null||parseFloat(diff)<=0);
+                return (
+                  <tr key={i} className="striped">
+                    <td>{v.metric}</td>
+                    <td className="right mono">{v.budget}</td>
+                    <td className="right mono bold">{v.actual}</td>
+                    <td className="right mono" style={{ color:diff===null?"#9CA3AF":fav?C.green:C.red, fontWeight:700 }}>
+                      {diff===null?"—":(parseFloat(diff)>0?"+":"")+diff+"%"}
+                    </td>
+                    <td style={{ textAlign:"center" }}>
+                      <span className={`ns-badge ${fav?"green":"red"}`}>{fav?"✓ On Track":"✗ Watch"}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Score breakdown if available */}
+      {(reportData?.scoreBreakdown||[]).length > 0 && (
+        <div className="ns-panel">
+          <div className="ns-panel-header"><h3>Financial Health Score — Breakdown</h3>
+            <span className="ns-badge blue">{reportData.score||reportData.healthScore||"—"}/100</span>
+          </div>
+          <table className="ns-table">
+            <thead><tr><th>Category</th><th className="right">Score</th><th>Comment</th></tr></thead>
+            <tbody>
+              {reportData.scoreBreakdown.map((s,i) => (
+                <tr key={i} className="striped">
+                  <td className="bold">{s.label}</td>
+                  <td className="right mono" style={{ color:parseInt(s.score)>=70?C.green:parseInt(s.score)>=50?C.amber:C.red, fontWeight:800 }}>{s.score}</td>
+                  <td className="muted">{s.comment}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 function CashFlow({ reportData, client, kpis }) {
   const pack = client?.client_pack || client?.clientPack || "startup";
 
@@ -1605,8 +1729,8 @@ function CashFlow({ reportData, client, kpis }) {
   const Tip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ background:C.bg2, border:`1px solid ${C.border}`, borderRadius:10,
-        padding:"10px 14px", fontFamily:F, boxShadow:"0 4px 16px rgba(0,0,0,0.08)" }}>
+      <div style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:6,
+        padding:"10px 14px", fontFamily:F, boxShadow:"0 2px 8px rgba(0,0,0,0.08)" }}>
         <div style={{ fontSize:12, color:C.muted, marginBottom:6, fontWeight:700 }}>{label}</div>
         {payload.map((p,i) => (
           <div key={i} style={{ fontSize:13, fontWeight:700, color:p.color || p.stroke, marginBottom:2 }}>
@@ -1621,10 +1745,10 @@ function CashFlow({ reportData, client, kpis }) {
   const KpiBar = ({ items }) => (
     <div style={{ display:"grid", gridTemplateColumns:`repeat(${items.length},1fr)`, gap:12, marginBottom:20 }} className="cf-kpi">
       {items.map((k,i) => (
-        <div key={i} style={{ padding:"14px 16px", borderRadius:12, background:k.bg||C.bg,
+        <div key={i} style={{ padding:"14px 16px", borderRadius:6, background:k.bg||C.bg,
           border:`1px solid ${k.border||C.border}`, textAlign:"center" }}>
           <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{k.label}</div>
-          <div style={{ fontFamily:FM, fontSize:20, fontWeight:700, color:k.color }}>{k.value}</div>
+          <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:k.color }}>{k.value}</div>
           {k.sub && <div style={{ fontFamily:F, fontSize:10, color:k.trend==="up"?C.green:k.trend==="down"?C.red:C.dim, marginTop:3 }}>{k.sub}</div>}
         </div>
       ))}
@@ -1634,7 +1758,7 @@ function CashFlow({ reportData, client, kpis }) {
 
   // ── FIXED: Garima note — always shown at top, unique forward-looking insight ──
   const GarimaNoteCF = ({ note }) => (
-    <Card style={{ marginBottom:20, background:"#FFFBF0", border:"1px solid #FDE68A", borderLeft:`4px solid #F59E0B` }}>
+    <Card style={{ marginBottom:14, background:"#FFFBF0", border:"1px solid #FDE68A", borderLeft:`4px solid #F59E0B` }}>
       <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
         <div style={{ width:38, height:38, borderRadius:"50%", flexShrink:0,
           background:"linear-gradient(135deg,#F59E0B,#D97706)",
@@ -1652,7 +1776,7 @@ function CashFlow({ reportData, client, kpis }) {
             style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#25D366",
               color:"white", borderRadius:8, padding:"7px 14px", fontFamily:F,
               fontWeight:700, fontSize:12, textDecoration:"none" }}>
-            📱 WhatsApp Garima
+            WhatsApp Garima
           </a>
         </div>
       </div>
@@ -1685,7 +1809,7 @@ function CashFlow({ reportData, client, kpis }) {
     const nextForecast = cfData.find(r => r.forecast && !r.value);
     // FIXED: title now says "Cash Flow Forecast" — clearly future-focused
     return (
-      <div style={{ padding:24 }}>
+      <div className="ns-page">
         {/* FIXED: Garima note at very top — forward-looking insight, not in Overview */}
         <GarimaNoteCF note={reportData?.cashflowNote || reportData?.packNote || garimaDefaults.startup}/>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
@@ -1699,9 +1823,9 @@ function CashFlow({ reportData, client, kpis }) {
               setTimeout(() => w.print(), 600);
             }}
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-              borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
+              borderRadius:6, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
               color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            {"📄 Download Cash Report"}
+            {"Download Cash Report"}
           </button>
         </div>
 
@@ -1816,21 +1940,21 @@ function CashFlow({ reportData, client, kpis }) {
               { label:"Creditors (AP)", value: reportData?.creditors  || "₹22.1L", days: reportData?.creditorDays || "—", color:C.purple, flag: false,                                                              note: reportData?.creditorDays ? `${reportData.creditorDays} creditor days` : "Well managed" },
               { label:"Inventory",      value: reportData?.inventory  || "—",       days: reportData?.inventoryDays|| "—", color:C.teal,   flag: false,                                                              note: "Stock on hand" },
             ].map((w,i) => (
-              <div key={i} style={{ padding:"14px 12px", borderRadius:12,
+              <div key={i} style={{ padding:"14px 12px", borderRadius:6,
                 background: w.flag ? `${C.amber}08` : C.bg,
                 border:`1px solid ${w.flag ? C.amber+"40" : C.border}`, textAlign:"center" }}>
-                <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:w.color }}>{w.value}</div>
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:w.color }}>{w.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
                 {w.days !== "—" && <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:w.color, marginTop:2 }}>{w.days}</div>}
                 <div style={{ fontFamily:F, fontSize:10, color:w.flag?C.amber:C.green, marginTop:3 }}>
-                  {w.flag ? "⚠️ " : "✅ "}{w.note}
+                  {w.flag ? "! " : "✓ "}{w.note}
                 </div>
               </div>
             ))}
             <style>{`.wc-cf-s{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-cf-s{grid-template-columns:1fr!important}}`}</style>
           </div>
           {(reportData?.debtorDays || reportData?.creditorDays) && (
-            <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
+            <div style={{ padding:"10px 14px", borderRadius:6, background:`${C.blue}06`, border:`1px solid ${C.blue}20` }}>
               <span style={{ fontFamily:F, fontSize:12, color:C.blue, fontWeight:600 }}>
                 Cash Conversion Cycle: AR {reportData?.debtorDays || "—"} − AP {reportData?.creditorDays || "—"} + Inv {reportData?.inventoryDays || "—"} = <strong>{reportData?.ccc || "—"}</strong>
                 {reportData?.ccc && parseInt(reportData.ccc) > 30 ? " — Above 30-day target" : " ✓"}
@@ -1850,8 +1974,8 @@ function CashFlow({ reportData, client, kpis }) {
               { label:"Net Burn",      value: kpis?.find(k=>k.label?.toLowerCase().includes("net"))?.value  || "₹31L/mo",  color:C.amber, note:"After revenue" },
               { label:"Runway",        value: kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value|| "4.4 mo",  color: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? C.red : C.green, note: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? "⚠️ Below 6 months" : "✅ Healthy" },
             ].map((b,i) => (
-              <div key={i} style={{ padding:"14px 12px", borderRadius:12, background:C.bg2, border:`1px solid ${C.border}`, textAlign:"center" }}>
-                <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:b.color }}>{b.value}</div>
+              <div key={i} style={{ padding:"14px 12px", borderRadius:6, background:"#fff", border:`1px solid ${C.border}`, textAlign:"center" }}>
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:b.color }}>{b.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{b.label}</div>
                 <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3 }}>{b.note}</div>
               </div>
@@ -1866,7 +1990,7 @@ function CashFlow({ reportData, client, kpis }) {
               { label:"Net Revenue Retention",value: reportData?.nrr              || "108%",  note:"Expansion + retention. Target >100%",flag: false },
             ].map((m,i) => (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px",
-                borderRadius:10, background:m.flag?`${C.amber}08`:C.bg,
+                borderRadius:6, background:m.flag?`${C.amber}08`:C.bg,
                 border:`1px solid ${m.flag?C.amber+"25":C.border}` }}>
                 <div style={{ flex:1 }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600 }}>{m.label}</div>
@@ -1880,7 +2004,7 @@ function CashFlow({ reportData, client, kpis }) {
 
         {/* Cash Pressure Points */}
         {(reportData?.cashPressure1 || reportData?.cashPressure2) && (
-          <Card style={{ marginBottom:20, borderLeft:`3px solid ${C.red}` }}>
+          <Card style={{ marginBottom:14, borderLeft:`3px solid ${C.red}` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
               {"Upcoming Cash Pressure Points"}
             </div>
@@ -1914,7 +2038,7 @@ function CashFlow({ reportData, client, kpis }) {
   if (pack === "msme") {
     const cfData = CASHFLOW_MSME;
     return (
-      <div style={{ padding:24 }}>
+      <div className="ns-page">
         {/* FIXED: Garima note at top — forward-looking, not shown in Overview/Dashboard */}
         <GarimaNoteCF note={reportData?.cashflowNote || reportData?.packNote || garimaDefaults.msme}/>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
@@ -1928,9 +2052,9 @@ function CashFlow({ reportData, client, kpis }) {
               setTimeout(() => w.print(), 600);
             }}
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-              borderRadius:12, background:`${C.teal}10`, border:`1.5px solid ${C.teal}25`,
+              borderRadius:6, background:`${C.teal}10`, border:`1.5px solid ${C.teal}25`,
               color:C.teal, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            {"📄 Download Cash Report"}
+            {"Download Cash Report"}
           </button>
         </div>
 
@@ -1976,17 +2100,17 @@ function CashFlow({ reportData, client, kpis }) {
               { label:"Creditors (AP)", value:"₹22.1L", days:"31 days", color:C.purple, flag:false, note:"Well managed" },
               { label:"Inventory",      value:"₹15.8L", days:"22 days", color:C.teal,   flag:false, note:"6.2x turnover" },
             ].map((w,i) => (
-              <div key={i} style={{ padding:"14px 12px", borderRadius:12, background:w.flag?`${C.amber}08`:C.bg,
+              <div key={i} style={{ padding:"14px 12px", borderRadius:6, background:w.flag?`${C.amber}08`:C.bg,
                 border:`1px solid ${w.flag?C.amber+"40":C.border}`, textAlign:"center" }}>
-                <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:w.color }}>{w.value}</div>
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:w.color }}>{w.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{w.label}</div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:w.color, marginTop:2 }}>{w.days}</div>
-                <div style={{ fontFamily:F, fontSize:10, color:w.flag?C.amber:C.green, marginTop:3 }}>{w.flag?"⚠️ ":"✅ "}{w.note}</div>
+                <div style={{ fontFamily:F, fontSize:10, color:w.flag?C.amber:C.green, marginTop:3 }}>{w.flag?"! ":"✓ "}{w.note}</div>
               </div>
             ))}
             <style>{`.wc-cf{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:480px){.wc-cf{grid-template-columns:1fr!important}}`}</style>
           </div>
-          <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
+          <div style={{ padding:"10px 14px", borderRadius:6, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
               ⚠️ Cash Conversion Cycle: AR 46 − AP 31 + Inv 22 = <strong>37 days</strong>. Every 1-day reduction in debtor days = ~₹2.8L freed up in cash.
             </span>
@@ -1994,7 +2118,7 @@ function CashFlow({ reportData, client, kpis }) {
         </Card>
 
         {/* March cash pressure */}
-        <Card style={{ marginBottom:20, borderLeft:`3px solid ${C.red}` }}>
+        <Card style={{ marginBottom:14, borderLeft:`3px solid ${C.red}` }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
             Cash Pressure Points
           </div>
@@ -2036,7 +2160,7 @@ function CashFlow({ reportData, client, kpis }) {
   // ───────────────────────────────────────────────────────────────────────────
   const cfData = CASHFLOW_CORPORATE;
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
         {/* FIXED: Garima note at top — forward-looking only, not in Overview/Dashboard */}
         <GarimaNoteCF note={reportData?.cashflowNote || reportData?.packNote || garimaDefaults.corporate}/>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
@@ -2050,9 +2174,9 @@ function CashFlow({ reportData, client, kpis }) {
               setTimeout(() => w.print(), 600);
             }}
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-              borderRadius:12, background:`${C.purple}10`, border:`1.5px solid ${C.purple}25`,
+              borderRadius:6, background:`${C.purple}10`, border:`1.5px solid ${C.purple}25`,
               color:C.purple, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            {"📄 Download Cash Report"}
+            {"Download Cash Report"}
           </button>
         </div>
 
@@ -2182,234 +2306,125 @@ function CashFlow({ reportData, client, kpis }) {
 // ─── ACTION ITEMS ─────────────────────────────────────────────────────────────
 function ActionItems({ actions: actionsProp, kpis, reportData }) {
   const [items, setItems] = useState(actionsProp || ACTIONS);
-  // Sync if parent passes new live data after load
   useEffect(() => { if (actionsProp) setItems(actionsProp); }, [actionsProp]);
+
   const toggle = async (id) => {
     setItems(prev => prev.map(a => a.id===id ? {...a, done:!a.done} : a));
-    // If connected to Supabase, update the record
     try {
       const item = items.find(a => a.id === id);
-      if (item && item.id && typeof item.id === "string") { // real Supabase UUID
+      if (item && item.id && typeof item.id === "string") {
         await supabase.from("action_items").update({ done: !item.done }).eq("id", id);
       }
-    } catch(e) { /* demo mode — no-op */ }
+    } catch(e) {}
   };
+
   const pending  = items.filter(a => !a.done);
   const done     = items.filter(a => a.done);
+  const high     = pending.filter(a => a.priority==="High");
+  const med      = pending.filter(a => a.priority==="Medium");
+  const low      = pending.filter(a => !a.priority || a.priority==="Low");
 
-  // Auto-generate strategic alerts from KPI data
-  const strategicAlerts = (() => {
-    if (!kpis || kpis.length === 0) return [];
-    const alerts = [];
-    const run  = kpis.find(k=>k.label?.toLowerCase().includes("runway"));
-    const cash = kpis.find(k=>k.label?.toLowerCase().includes("cash"));
-    const burn = kpis.find(k=>k.label?.toLowerCase().includes("burn"));
-    const rev  = kpis.find(k=>k.label?.toLowerCase().includes("rev"));
-    const mar  = kpis.find(k=>k.label?.toLowerCase().includes("margin"));
-    if (run  && parseFloat(run.value)  < 3)  alerts.push({ text:`🔴 Runway is ${run.value} — raise capital or cut costs immediately. Every week counts.`,   priority:"High",   color:C.red    });
-    if (run  && parseFloat(run.value)  < 6  && parseFloat(run.value) >= 3) alerts.push({ text:`⚠️ Runway at ${run.value} — start fundraise conversations now. 6 months is the minimum buffer.`, priority:"High", color:C.amber });
-    if (burn && burn.trend === "down") alerts.push({ text:`Burn increased to ${burn.value} — review discretionary spend and defer non-essential hiring.`, priority:"Medium", color:C.amber });
-    if (rev  && rev.trend  === "down") alerts.push({ text:`Revenue dipped to ${rev.value} — review pipeline and follow up on delayed deals before month end.`, priority:"High", color:C.red });
-    if (mar  && mar.trend  === "down") alerts.push({ text:`Gross margin compressed to ${mar.value} — audit COGS and renegotiate vendor contracts.`, priority:"Medium", color:C.amber });
-    if (cash && cash.trend === "down") alerts.push({ text:`Cash dropped to ${cash.value} — prioritise collections and delay non-critical payments.`, priority:"Medium", color:C.amber });
-    if (reportData?.loanScore && reportData.loanScore < 55) alerts.push({ text:"Loan readiness score is low — complete financial projections and clean up balance sheet before applying.", priority:"Medium", color:C.amber });
-    return alerts;
-  })();
+  const priorityColor = (p) => p==="High"?C.red:p==="Medium"?C.amber:C.green;
+  const priorityBadge = (p) => p==="High"?"red":p==="Medium"?"amber":"green";
 
   return (
-    <div style={{ padding:24 }}>
-      <SectionTitle
-        sub={`${pending.length} pending · ${done.length} completed`}>
-        Action Items from Garima
-      </SectionTitle>
-
-      {/* Strategic Alerts — auto-generated */}
-      {strategicAlerts.length > 0 && (
-        <div style={{ marginBottom:24 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase",
-            letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>{"⚡ Strategic Alerts — Based on Your Numbers"}</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {strategicAlerts.map((a, i) => (
-              <div key={i} style={{ padding:"12px 16px", borderRadius:12,
-                background:`${a.color}08`, border:`1px solid ${a.color}25`,
-                display:"flex", alignItems:"flex-start", gap:10 }}>
-                <div style={{ width:6, height:6, borderRadius:"50%", background:a.color,
-                  flexShrink:0, marginTop:5 }}/>
-                <div style={{ flex:1 }}>
-                  <p style={{ fontFamily:F, fontSize:13, color:C.text, margin:"0 0 4px", lineHeight:1.6 }}>{a.text}</p>
-                  <PriBadge p={a.priority}/>
-                </div>
-              </div>
-            ))}
-          </div>
+    <div className="ns-page">
+      {/* Header */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+        <div className="ns-page-title">Action Items</div>
+        <div style={{ display:"flex", gap:8 }}>
+          <span className="ns-badge red">{high.length} High</span>
+          <span className="ns-badge amber">{med.length} Medium</span>
+          <span className="ns-badge green">{low.length} Low</span>
+          <span className="ns-badge blue">{done.length} Done</span>
         </div>
-      )}
+      </div>
 
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20, marginBottom:20, textAlign:"center" }}>
+      {/* Summary strip */}
+      <div className="ns-grid-4">
         {[
-          { label:"Pending", n:pending.length, c:C.red,   bg:"#FEF2F2" },
-          { label:"Done",    n:done.length,    c:C.green, bg:"#ECFDF5" },
+          { label:"Total Pending",    value:pending.length, color:C.blue   },
+          { label:"High Priority",    value:high.length,    color:C.red    },
+          { label:"Due This Week",    value:pending.filter(a=>a.due).length, color:C.amber },
+          { label:"Completed",        value:done.length,    color:C.green  },
         ].map((s,i) => (
-          <Card key={i} style={{ padding:16 }}>
-            <div style={{ fontFamily:FM, fontSize:32, fontWeight:700, color:s.c }}>{s.n}</div>
-            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{s.label}</div>
-          </Card>
+          <div key={i} className="ns-kpi-tile" style={{ borderTop:`3px solid ${s.color}` }}>
+            <div className="label">{s.label}</div>
+            <div className="value" style={{ color:s.color, fontSize:28 }}>{s.value}</div>
+          </div>
         ))}
       </div>
 
-      {/* Pending */}
-      {pending.length > 0 && (
-        <div style={{ marginBottom:24 }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-            letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Pending</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {pending.map(a => (
-              <Card key={a.id} style={{ padding:"14px 16px" }}>
-                <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
-                  <button onClick={() => toggle(a.id)} style={{ width:20, height:20, borderRadius:6,
-                    border:`2px solid ${C.border}`, background:"white", cursor:"pointer",
-                    flexShrink:0, marginTop:1, touchAction:"manipulation" }}/>
-                  <div style={{ flex:1 }}>
-                    <p style={{ fontFamily:F, fontSize:14, color:C.text, margin:"0 0 6px", lineHeight:1.5 }}>{a.text}</p>
-                    <PriBadge p={a.priority}/>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+      {/* Pending actions table */}
+      <div className="ns-panel">
+        <div className="ns-panel-header">
+          <h3>Pending Actions ({pending.length})</h3>
         </div>
-      )}
+        <div className="ns-panel-body no-pad">
+          {pending.length === 0 ? (
+            <div style={{ padding:"32px 16px", textAlign:"center", color:"#9CA3AF", fontFamily:F, fontSize:13 }}>
+              ✅ All actions complete — great work!
+            </div>
+          ) : (
+            <table className="ns-table">
+              <thead>
+                <tr>
+                  <th style={{ width:32 }}></th>
+                  <th>Action</th>
+                  <th>Category</th>
+                  <th style={{ textAlign:"center" }}>Priority</th>
+                  <th className="right">Due</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((a,i) => (
+                  <tr key={a.id||i} className="striped" style={{ cursor:"pointer" }}
+                    onClick={()=>toggle(a.id||i)}>
+                    <td>
+                      <div style={{ width:16, height:16, borderRadius:4,
+                        border:`2px solid ${priorityColor(a.priority)}`,
+                        background:"white", cursor:"pointer", flexShrink:0 }}/>
+                    </td>
+                    <td className="bold">{a.title||a.text||a.action}</td>
+                    <td className="muted">{a.category||a.type||"—"}</td>
+                    <td style={{ textAlign:"center" }}>
+                      <span className={`ns-badge ${priorityBadge(a.priority)}`}>{a.priority||"Low"}</span>
+                    </td>
+                    <td className="right mono muted">{a.due||"—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
 
-      {/* Done */}
+      {/* Completed actions */}
       {done.length > 0 && (
-        <div>
-          <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-            letterSpacing:"0.08em", marginBottom:12, fontFamily:F }}>Completed</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-            {done.map(a => (
-              <Card key={a.id} style={{ padding:"14px 16px", opacity:0.6 }}>
-                <div style={{ display:"flex", alignItems:"flex-start", gap:12 }}>
-                  <div style={{ width:20, height:20, borderRadius:6, background:C.green,
+        <div className="ns-panel">
+          <div className="ns-panel-header"><h3>Completed ({done.length})</h3></div>
+          <table className="ns-table">
+            <thead><tr><th style={{width:32}}></th><th>Action</th><th>Category</th><th className="right">Completed</th></tr></thead>
+            <tbody>
+              {done.map((a,i) => (
+                <tr key={a.id||i} className="striped" style={{ opacity:0.6, cursor:"pointer" }}
+                  onClick={()=>toggle(a.id||i)}>
+                  <td><div style={{ width:16, height:16, borderRadius:4, background:C.green,
                     display:"flex", alignItems:"center", justifyContent:"center",
-                    flexShrink:0, marginTop:1, cursor:"pointer" }}
-                    onClick={() => toggle(a.id)}>
-                    <span style={{ color:"white", fontSize:11, fontWeight:900 }}>✓</span>
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:14, color:C.muted, margin:0, textDecoration:"line-through", lineHeight:1.5 }}>{a.text}</p>
-                </div>
-              </Card>
-            ))}
-          </div>
+                    fontSize:9, color:"white", fontWeight:900 }}>✓</div></td>
+                  <td style={{ textDecoration:"line-through", color:"#9CA3AF" }}>{a.title||a.text||a.action}</td>
+                  <td className="muted">{a.category||"—"}</td>
+                  <td className="right mono muted">{a.due||"—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
   );
 }
 
-// ─── SMART CFO PACKS ─────────────────────────────────────────────────────────
-
-const CFO_PACK_DATA = {
-  startup: {
-    label: "Startup Pack",
-    icon: "rev",
-    color: C.blue,
-    bg: "#EEF3FE",
-    grad: "linear-gradient(135deg,#3B6FF7,#7C5CF5)",
-    tagline: "Fundraise-ready financials for your next round",
-    fundraiseScore: 74,
-    fundraiseBreakdown: [
-      { label:"Revenue Growth",          score:85, comment:"Strong 42% YoY — above Series A median" },
-      { label:"Gross Margin",            score:78, comment:"41% is healthy; target 45%+ before raise" },
-      { label:"Runway",                  score:55, comment:"4.4 months — tight; raise in next 60 days" },
-      { label:"Financial Documentation", score:70, comment:"3yr P&L ready; projections need refresh" },
-      { label:"Unit Economics",          score:72, comment:"CAC/LTV ratio needs improvement" },
-    ],
-    investorMetrics: [
-      { label:"ARR",          value:"₹6.2 Cr",  flag:false, note:"Good for Series A" },
-      { label:"MoM Growth",   value:"6%",        flag:false, note:"Consistent" },
-      { label:"Burn Multiple",value:"1.2x",      flag:false, note:"Improved — target <1.5x ✅" },
-      { label:"CAC Payback",  value:"8 mo",      flag:false, note:"Down from 18mo — healthy ✅" },
-      { label:"NRR",          value:"112%",      flag:false, note:"Expansion revenue positive ✅" },
-      { label:"Gross Margin", value:"41%",       flag:false, note:"On track" },
-    ],
-    dueDiligence: [
-      { item:"Audited financials (3 years)",              done:true  },
-      { item:"5-year projections with assumptions",       done:true  },
-      { item:"Cap table (fully diluted)",                 done:true  },
-      { item:"MIS pack — last 6 months",                  done:false },
-      { item:"Unit economics — cohort analysis",          done:false },
-      { item:"Board resolutions for previous fundraises", done:true  },
-      { item:"ESOP scheme document",                      done:false },
-      { item:"Shareholder agreement (all investors)",     done:true  },
-    ],
-    boardPacks: BOARD_PACKS,
-    garimaNote: "Your NRR at 112% is the single strongest metric in your deck — it tells investors that customers are expanding, not just renewing. Lead every investor conversation with this. The burn multiple at 1.2x is excellent and has improved from 1.8x six months ago — make sure this trend is visible in your deck. The one gap to address before serious investor conversations: unit economics by cohort. Most Series A investors will ask for a 12-month LTV/CAC by acquisition channel — let's build this together. CAC payback at 8 months is already strong; we just need to show it cleanly. I'd suggest scheduling a 2-hour working session this month to finalise the deck before you start outreach in May.",
-  },
-  msme: {
-    label: "MSME Pack",
-    icon: "🏭",
-    color: C.teal,
-    bg: "#E6FAF7",
-    grad: "linear-gradient(135deg,#0CB8A4,#3B6FF7)",
-    tagline: "Cash flow health and working capital intelligence",
-    cashHealth: 68,
-    cashBreakdown: [
-      { label:"Cash Conversion Cycle",  score:55, comment:"42 days — reduce debtor days to improve" },
-      { label:"Working Capital Ratio",  score:72, comment:"1.6x — adequate but watch March dip" },
-      { label:"Debtor Days",            score:58, comment:"38 days — target <30 for your sector" },
-      { label:"Creditor Days",          score:80, comment:"52 days — well managed" },
-      { label:"Inventory Turnover",     score:75, comment:"6.2x — good for FMCG segment" },
-    ],
-    workingCapital: [
-      { label:"Current Ratio",       value:"1.62x", flag:false, note:"Healthy (>1.5)" },
-      { label:"Quick Ratio",         value:"1.18x", flag:false, note:"Adequate" },
-      { label:"Debtor Days",         value:"38 days",flag:true, note:"Target <30" },
-      { label:"Creditor Days",       value:"52 days",flag:false,note:"Well managed" },
-      { label:"Inventory Days",      value:"24 days",flag:false,note:"Lean" },
-      { label:"Cash Conversion",     value:"10 days",flag:false,note:"Good" },
-    ],
-    growth: [
-      { label:"Revenue Growth YoY",   value:"22%",    flag:false, note:"Sector avg: 18%" },
-      { label:"EBITDA Margin",        value:"14.2%",  flag:false, note:"Healthy" },
-      { label:"Gross Margin Trend",   value:"▲ +2pp", flag:false, note:"Improving" },
-      { label:"Debtor Concentration", value:"High",   flag:true,  note:"Top 3 = 64% of AR" },
-    ],
-    boardPacks: BOARD_PACKS,
-    garimaNote: "Working capital is healthy overall but the debtor concentration is your biggest risk right now — your top 3 clients represent 64% of accounts receivable. If any one of them delays payment, it cascades into a cash crunch during advance tax weeks. I've flagged Client B's ₹4.8L (90+ days) as Priority 1 this month. On the positive side: your creditor days at 52 are very well managed — that discipline is protecting your cash flow. For Q1 focus: reduce debtor days from 38 to under 30, and the cash conversion cycle improves automatically. The SBI FD renewal on 15 March is also time-sensitive — let's lock in 7.1% before any RBI rate action.",
-  },
-  corporate: {
-    label: "Corporate Pack",
-    icon: "users",
-    color: C.purple,
-    bg: "#F3EFFF",
-    grad: "linear-gradient(135deg,#7C5CF5,#E8509A)",
-    tagline: "IPO readiness, compliance flags & Ind AS health check",
-    ipoScore: 58,
-    ipoBreakdown: [
-      { label:"Revenue Scale",              score:75, comment:"₹85 Cr — approaching IPO threshold" },
-      { label:"Profitability Track Record", score:60, comment:"EBITDA positive 2yr; need 3yr PAT" },
-      { label:"Governance & Board",         score:55, comment:"Independent director appointment pending" },
-      { label:"Ind AS Compliance",          score:65, comment:"Ind AS 116 and 109 need attention" },
-      { label:"Audit Quality",              score:72, comment:"Big 4 auditor — positive signal" },
-    ],
-    complianceFlags: [
-      { flag:"Ind AS 116 — Lease Accounting",      severity:"High",   detail:"Operating leases not yet restated under IFRS 16 equivalent." },
-      { flag:"Ind AS 109 — Financial Instruments", severity:"High",   detail:"ECL provisioning not computed for trade receivables." },
-      { flag:"Related Party Disclosures",           severity:"Medium", detail:"2 transactions in FY24 may require enhanced disclosure." },
-      { flag:"Independent Director",                severity:"Medium", detail:"Board needs 1 additional independent director for LODR." },
-      { flag:"CSR Compliance",                      severity:"Low",    detail:"CSR spend at 1.8% vs required 2% — minor shortfall." },
-    ],
-    indAS: [
-      { standard:"Ind AS 36 — Impairment",    status:"Compliant",    note:"Tested annually" },
-      { standard:"Ind AS 116 — Leases",        status:"Action Needed",note:"Restatement required" },
-      { standard:"Ind AS 109 — Fin Instruments",status:"Action Needed",note:"ECL model needed" },
-      { standard:"Ind AS 113 — Fair Value",    status:"Compliant",    note:"Mark-to-market current" },
-      { standard:"Ind AS 21 — Foreign Ops",    status:"Compliant",    note:"USD invoices hedged" },
-    ],
-    boardPacks: BOARD_PACKS,
-    garimaNote: "The IPO readiness score of 58 reflects real gaps — but they're all fixable within 6 months if we move now. The two Ind AS items (116 and 109) should be your immediate priority: commission a Big 4 firm to run the restatement project in parallel with your Q1 close. This typically takes 8–10 weeks. The governance gap (independent director) takes longer — start the search now, not after you've engaged bankers. On the positive side: EBITDA margin at 17.5% and ROCE at 22.4% are genuinely strong metrics that will resonate with QIBs. Revenue scale at ₹85 Cr is approaching the ₹100 Cr threshold that makes the IPO story cleaner. One more quarter like February and we're there.",
-  },
-};
 
 function ScoreGauge({ score, color, size=100 }) {
   const r = (size/2) - 8;
@@ -2442,7 +2457,7 @@ function StartupCFOPack({ data, client, reportData }) {
           <div>
             <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Fundraise Readiness Score</div>
-            <h3 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, margin:"0 0 4px" }}>
+            <h3 style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text, margin:"0 0 4px" }}>
               Overall: {reportData?.score || data.fundraiseScore}/100
             </h3>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
@@ -2456,7 +2471,7 @@ function StartupCFOPack({ data, client, reportData }) {
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"140px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                <div style={{ height:6, borderRadius:3, background:C.bg3, flex:1 }}>
+                <div style={{ height:6, borderRadius:3, background:C.canvas, flex:1 }}>
                   <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
                     background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
                     transition:"width 0.8s ease" }}/>
@@ -2472,7 +2487,7 @@ function StartupCFOPack({ data, client, reportData }) {
                 <div style={{ marginTop:6, marginLeft:152 }}>
                   <a href={WA} target="_blank" rel="noopener"
                     style={{ fontSize:11, fontWeight:700, color:C.blue, fontFamily:F,
-                      textDecoration:"none", padding:"3px 10px", borderRadius:100,
+                      textDecoration:"none", padding:"3px 10px", borderRadius:3,
                       border:`1px solid ${C.blue}40`, background:`${C.blue}08` }}>
                     💬 Discuss with Garima →
                   </a>
@@ -2488,15 +2503,15 @@ function StartupCFOPack({ data, client, reportData }) {
         <SectionTitle sub="Key metrics investors will ask about in your data room">Investor Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
           {(Array.isArray(reportData?.metrics) && reportData.metrics.some(m=>m.value) ? reportData.metrics : data.investorMetrics).map((m, i) => (
-            <div key={i} style={{ padding:"14px 14px", borderRadius:12,
+            <div key={i} style={{ padding:"14px 14px", borderRadius:6,
               background: m.flag ? "#FEF2F2" : C.bg,
               border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:18, fontWeight:700,
+              <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
                 color: m.flag ? C.red : C.blue, marginBottom:4 }}>{m.value}</div>
               <div style={{ fontFamily:F, fontSize:11,
                 color: m.flag ? C.red : C.green, fontWeight:600 }}>
-                {m.flag ? "⚠️ " : "✅ "}{m.note}
+                {m.flag ? "! " : "✓ "}{m.note}
               </div>
             </div>
           ))}
@@ -2509,7 +2524,7 @@ function StartupCFOPack({ data, client, reportData }) {
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {(Array.isArray(reportData?.checklist) && reportData.checklist.length ? reportData.checklist : data.dueDiligence).map((d, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:10, background:d.done ? `${C.green}08` : "#FFFBEB",
+              borderRadius:6, background:d.done ? `${C.green}08` : "#FFFBEB",
               border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
               <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
                 background:d.done ? C.green : C.amber,
@@ -2529,7 +2544,7 @@ function StartupCFOPack({ data, client, reportData }) {
 
 function MSMECFOPack({ data, reportData }) {
   return (
-    <>
+    <div className="ns-page">
       {/* Cash Health Score */}
       <Card style={{ marginBottom:20 }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
@@ -2537,7 +2552,7 @@ function MSMECFOPack({ data, reportData }) {
           <div>
             <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Cash Flow Health Score</div>
-            <h3 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, margin:"0 0 4px" }}>
+            <h3 style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text, margin:"0 0 4px" }}>
               Overall: {reportData?.score || data.cashHealth}/100
             </h3>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
@@ -2551,7 +2566,7 @@ function MSMECFOPack({ data, reportData }) {
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"160px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                <div style={{ height:6, borderRadius:3, background:C.bg3 }}>
+                <div style={{ height:6, borderRadius:3, background:C.canvas }}>
                   <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
                     background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
                     transition:"width 0.8s ease" }}/>
@@ -2567,7 +2582,7 @@ function MSMECFOPack({ data, reportData }) {
                 <div style={{ marginTop:6, marginLeft:172 }}>
                   <a href={WA} target="_blank" rel="noopener"
                     style={{ fontSize:11, fontWeight:700, color:C.teal, fontFamily:F,
-                      textDecoration:"none", padding:"3px 10px", borderRadius:100,
+                      textDecoration:"none", padding:"3px 10px", borderRadius:3,
                       border:`1px solid ${C.teal}40`, background:`${C.teal}08` }}>
                     💬 Discuss with Garima →
                   </a>
@@ -2583,13 +2598,13 @@ function MSMECFOPack({ data, reportData }) {
         <SectionTitle sub="Working capital ratios vs benchmarks">Working Capital Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="inv-grid">
           {(reportData?.metrics?.some(m=>m.value) ? reportData.metrics : data.workingCapital).map((m, i) => (
-            <div key={i} style={{ padding:"14px 14px", borderRadius:12,
+            <div key={i} style={{ padding:"14px 14px", borderRadius:6,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:18, fontWeight:700,
+              <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
                 color: m.flag ? C.red : C.teal, marginBottom:4 }}>{m.value}</div>
               <div style={{ fontFamily:F, fontSize:11, color:m.flag ? C.red : C.green, fontWeight:600 }}>
-                {m.flag ? "⚠️ " : "✅ "}{m.note}
+                {m.flag ? "! " : "✓ "}{m.note}
               </div>
             </div>
           ))}
@@ -2601,16 +2616,16 @@ function MSMECFOPack({ data, reportData }) {
         <SectionTitle sub="Growth and profitability indicators">Growth Metrics</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
           {data.growth.map((m, i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:12,
+            <div key={i} style={{ padding:"14px 16px", borderRadius:6,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}`,
               display:"flex", justifyContent:"space-between", alignItems:"center" }}>
               <div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:m.flag ? C.red : C.green, fontWeight:600 }}>
-                  {m.flag ? "⚠️ " : "✅ "}{m.note}
+                  {m.flag ? "! " : "✓ "}{m.note}
                 </div>
               </div>
-              <div style={{ fontFamily:FM, fontSize:20, fontWeight:700,
+              <div style={{ fontFamily:FM, fontSize:15, fontWeight:700,
                 color: m.flag ? C.red : C.teal }}>{m.value}</div>
             </div>
           ))}
@@ -2631,13 +2646,13 @@ function MSMECFOPack({ data, reportData }) {
             { label:"Cash Conversion Cycle",   value: reportData?.ccc || "37 days",           flag: reportData?.ccc ? parseFloat(reportData.ccc)>45 : false,  note: reportData?.ccc ? (parseFloat(reportData.ccc)>45?"Target <30 days":"Target <30 days") : "Target <30 days" },
             { label:"Working Capital",         value: reportData?.workingCapital || "Rs.32.4L", flag: false, note:"Net current assets" },
           ].map((m,i) => (
-            <div key={i} style={{ padding:"12px 14px", borderRadius:12,
+            <div key={i} style={{ padding:"12px 14px", borderRadius:6,
               background: m.flag ? "#FEF2F2" : C.bg, border:`1px solid ${m.flag ? C.red+"40" : C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:17, fontWeight:700,
+              <div style={{ fontFamily:FM, fontSize:14, fontWeight:700,
                 color: m.flag ? C.red : C.teal, marginBottom:4 }}>{m.value}</div>
               <div style={{ fontFamily:F, fontSize:11, color:m.flag ? C.red : C.green, fontWeight:600 }}>
-                {m.flag ? "⚠️ " : "✅ "}{m.note}
+                {m.flag ? "! " : "✓ "}{m.note}
               </div>
             </div>
           ))}
@@ -2660,7 +2675,7 @@ function MSMECFOPack({ data, reportData }) {
             { item:"Business continuity / succession plan",                       done:false },
           ].map((d,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:10, background:d.done ? `${C.green}08` : "#FFFBEB",
+              borderRadius:6, background:d.done ? `${C.green}08` : "#FFFBEB",
               border:`1px solid ${d.done ? C.green+"25" : C.amber+"40"}` }}>
               <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
                 background:d.done ? C.green : C.amber,
@@ -2674,7 +2689,7 @@ function MSMECFOPack({ data, reportData }) {
           ))}
         </div>
       </Card>
-    </>
+    </div>
   );
 }
 
@@ -2692,7 +2707,7 @@ function CorporateCFOPack({ data, reportData }) {
           <div>
             <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>IPO Readiness Score</div>
-            <h3 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, margin:"0 0 4px" }}>
+            <h3 style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text, margin:"0 0 4px" }}>
               Preliminary: {data.ipoScore}/100
             </h3>
             <p style={{ fontFamily:F, fontSize:13, color:C.muted, margin:0 }}>
@@ -2706,7 +2721,7 @@ function CorporateCFOPack({ data, reportData }) {
             <div key={i} style={{ marginBottom: item.score < 70 ? 12 : 8 }}>
               <div style={{ display:"grid", gridTemplateColumns:"180px 1fr auto", gap:12, alignItems:"center" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{item.label}</span>
-                <div style={{ height:6, borderRadius:3, background:C.bg3 }}>
+                <div style={{ height:6, borderRadius:3, background:C.canvas }}>
                   <div style={{ height:"100%", borderRadius:3, width:`${item.score}%`,
                     background: item.score>=75 ? C.green : item.score>=55 ? C.amber : C.red,
                     transition:"width 0.8s ease" }}/>
@@ -2722,7 +2737,7 @@ function CorporateCFOPack({ data, reportData }) {
                 <div style={{ marginTop:6, marginLeft:192 }}>
                   <a href={WA} target="_blank" rel="noopener"
                     style={{ fontSize:11, fontWeight:700, color:C.purple, fontFamily:F,
-                      textDecoration:"none", padding:"3px 10px", borderRadius:100,
+                      textDecoration:"none", padding:"3px 10px", borderRadius:3,
                       border:`1px solid ${C.purple}40`, background:`${C.purple}08` }}>
                     💬 Discuss with Garima →
                   </a>
@@ -2738,7 +2753,7 @@ function CorporateCFOPack({ data, reportData }) {
         <SectionTitle sub="Issues requiring attention before IPO or auditor review">Compliance Flags</SectionTitle>
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {data.complianceFlags.map((f, i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:12,
+            <div key={i} style={{ padding:"14px 16px", borderRadius:6,
               background:sevBg[f.severity], border:`1px solid ${sevColor[f.severity]}30` }}>
               <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
                 flexWrap:"wrap", gap:8, marginBottom:6 }}>
@@ -2757,7 +2772,7 @@ function CorporateCFOPack({ data, reportData }) {
         <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
           {data.indAS.map((s, i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              flexWrap:"wrap", gap:10, padding:"11px 14px", borderRadius:10,
+              flexWrap:"wrap", gap:10, padding:"11px 14px", borderRadius:6,
               background: s.status==="Action Needed" ? "#FEF2F2" : C.bg,
               border:`1px solid ${s.status==="Action Needed" ? C.red+"30" : C.border}` }}>
               <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{s.standard}</span>
@@ -2807,7 +2822,7 @@ function PackPreview({ p, label }) {
     <div style={{ borderTop:`1px solid ${C.border}`, marginTop:14, paddingTop:14 }}>
       {/* Mock page header */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-        padding:"10px 14px", borderRadius:10,
+        padding:"10px 14px", borderRadius:6,
         background:"linear-gradient(135deg,#5B4FDB,#7C3AED)", marginBottom:12 }}>
         <div>
           <div style={{ fontFamily:F, fontWeight:800, fontSize:13, color:"white", letterSpacing:"-0.01em" }}>
@@ -2873,7 +2888,7 @@ function ArchiveRow({ p, label }) {
     <Card style={{ padding:"14px 18px" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-          <div style={{ width:38, height:38, borderRadius:10, background:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?`${C.blue}12`:`${C.muted}0A`,
+          <div style={{ width:38, height:38, borderRadius:6, background:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?`${C.blue}12`:`${C.muted}0A`,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📄</div>
           <div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, display:"flex", alignItems:"center", gap:7 }}>
@@ -2925,7 +2940,7 @@ const StatRow = ({ label, value, pct, trend, sub }) => (
     </div>
     <div style={{ display:"flex", alignItems:"center", gap:10 }}>
       <span style={{ fontFamily:FM, fontSize:15, fontWeight:600, color:C.text }}>{value}</span>
-      {pct && <span style={{ fontSize:11, fontWeight:700, color:trend==="up"?C.green:C.red, background:trend==="up"?"#ECFDF5":"#FEF2F2", padding:"2px 8px", borderRadius:100, fontFamily:F }}>{trend==="up"?"▲":"▼"} {pct}</span>}
+      {pct && <span style={{ fontSize:11, fontWeight:700, color:trend==="up"?C.green:C.red, background:trend==="up"?"#ECFDF5":"#FEF2F2", padding:"2px 8px", borderRadius:3, fontFamily:F }}>{trend==="up"?"▲":"▼"} {pct}</span>}
     </div>
   </div>
 );
@@ -2936,7 +2951,7 @@ const AgeingTable = ({ title, rows, color }) => (
     <div style={{ overflowX:"auto" }}>
       <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F, fontSize:12 }}>
         <thead>
-          <tr style={{ background:C.bg3 }}>
+          <tr style={{ background:C.canvas }}>
             {["Party","0–30 days","31–60 days","61–90 days","90+ days","Total","% of total"].map(h => (
               <th key={h} style={{ padding:"8px 10px", textAlign:h==="Party"?"left":"right", color:C.muted, fontWeight:700, fontSize:11, whiteSpace:"nowrap", borderBottom:`1px solid ${C.border}` }}>{h}</th>
             ))}
@@ -3183,7 +3198,7 @@ function MarketWidget({ pack, client }) {
     (isCrossBorder) && m.sar && { label:"SAR / INR", value:m.sar, color:C.teal,
                     note:"Saudi Riyal",                         icon:"🇸🇦" },
     (isCrossBorder) && m.aed && { label:"AED / INR", value:m.aed, color:C.amber,
-                    note:"UAE Dirham",                          icon:"🇦🇪" },
+                    note:"UAE Dirham",                          icon:"market" },
   ].filter(Boolean);
 
   if (items.length === 0) return null;
@@ -3206,14 +3221,14 @@ function MarketWidget({ pack, client }) {
         gridTemplateColumns:`repeat(${Math.min(items.length, 4)}, 1fr)` }}
         className="mkt-grid">
         {items.map((item, i) => (
-          <div key={i} style={{ padding:"12px 14px", borderRadius:12,
+          <div key={i} style={{ padding:"12px 14px", borderRadius:6,
             background:`${item.color}08`, border:`1px solid ${item.color}18` }}>
             <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
               <span style={{ fontSize:14 }}>{item.icon}</span>
               <span style={{ fontFamily:F, fontSize:10, color:C.muted, fontWeight:600,
                 textTransform:"uppercase", letterSpacing:"0.05em" }}>{item.label}</span>
             </div>
-            <div style={{ fontFamily:FM, fontSize:18, fontWeight:800, color:item.color }}>
+            <div style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:item.color }}>
               {item.value}
             </div>
             <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:3 }}>
@@ -3300,11 +3315,11 @@ function MarketIntel({ client }) {
     : ["sector","grossMargin","ebitdaMargin","roce","pe","evEbitda"];
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
         flexWrap:"wrap", gap:12, marginBottom:24 }}>
         <div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, marginBottom:4 }}>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, marginBottom:4 }}>
             {"Market Intelligence"}
           </div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>
@@ -3331,14 +3346,14 @@ function MarketIntel({ client }) {
             m.usd   && { label:"USD / INR",      value:m.usd,   sub:"Live rate", color:C.purple,icon:"💱" },
             m.sar   && { label:"SAR / INR",       value:m.sar,   sub:"Saudi Riyal",color:C.teal, icon:"🇸🇦" },
           ].filter(Boolean).map((item,i) => (
-            <div key={i} style={{ padding:"12px 14px", borderRadius:12,
+            <div key={i} style={{ padding:"12px 14px", borderRadius:6,
               background:`${item.color}08`, border:`1px solid ${item.color}18` }}>
               <div style={{ display:"flex", gap:6, alignItems:"center", marginBottom:4 }}>
                 <span>{item.icon}</span>
                 <span style={{ fontFamily:F, fontSize:10, color:C.muted, fontWeight:700,
                   textTransform:"uppercase", letterSpacing:"0.05em" }}>{item.label}</span>
               </div>
-              <div style={{ fontFamily:FM, fontSize:20, fontWeight:800, color:item.color }}>{item.value}</div>
+              <div style={{ fontFamily:FM, fontSize:15, fontWeight:800, color:item.color }}>{item.value}</div>
               <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:3 }}>{item.sub}</div>
             </div>
           ))}
@@ -3402,13 +3417,13 @@ function MarketIntel({ client }) {
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }} className="inv-grid">
           {funding.map((item,i) => (
-            <div key={i} style={{ padding:"12px 14px", borderRadius:12,
-              background:C.bg2, border:`1px solid ${C.border}` }}>
+            <div key={i} style={{ padding:"12px 14px", borderRadius:6,
+              background:"#fff", border:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600,
                 marginBottom:4, textTransform:"uppercase", letterSpacing:"0.05em" }}>
                 {item.label}
               </div>
-              <div style={{ fontFamily:FM, fontSize:18, fontWeight:800, color:C.blue }}>
+              <div style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.blue }}>
                 {item.value}
               </div>
               <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:3 }}>
@@ -3439,7 +3454,7 @@ function MarketIntel({ client }) {
             { date:"30 Sep", item:"Director KYC (DIR-3 KYC)",               priority:"low"    },
           ].map((item,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
-              padding:"10px 14px", borderRadius:10,
+              padding:"10px 14px", borderRadius:6,
               background: item.priority==="high" ? `${C.red}06` : item.priority==="medium" ? `${C.amber}06` : C.bg2,
               border:`1px solid ${item.priority==="high"?C.red+"20":item.priority==="medium"?C.amber+"20":C.border}` }}>
               <div style={{ width:52, fontFamily:FM, fontSize:12, fontWeight:700,
@@ -3449,7 +3464,7 @@ function MarketIntel({ client }) {
               <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
                 color: item.priority==="high"?C.red:item.priority==="medium"?C.amber:C.green,
                 background: item.priority==="high"?`${C.red}12`:item.priority==="medium"?`${C.amber}12`:`${C.green}12`,
-                padding:"3px 10px", borderRadius:100, flexShrink:0 }}>
+                padding:"3px 10px", borderRadius:3, flexShrink:0 }}>
                 {item.priority==="high"?"Critical":item.priority==="medium"?"Important":"Routine"}
               </span>
             </div>
@@ -4018,13 +4033,13 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
     <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
 
       {/* ── Dropdown nav — always shown ── */}
-      <div style={{ padding:"14px 20px 0", background:"#F9FAFB",
-        borderBottom:"1px solid #E5E7EB" }}>
+      <div style={{ padding:"8px 16px", background:"white",
+        borderBottom:"1px solid #E5E7EB", display:"flex", alignItems:"center", gap:12 }}>
         <div ref={dropRef} style={{ position:"relative", maxWidth:320 }}>
 
           {/* Trigger button */}
           <button onClick={() => setOpen(o => !o)} style={{
-            width:"100%", padding:"10px 14px", borderRadius:10,
+            width:"100%", padding:"10px 14px", borderRadius:6,
             border:`1.5px solid ${open ? accent : "#E5E7EB"}`,
             background:"white", display:"flex", alignItems:"center",
             justifyContent:"space-between", cursor:"pointer",
@@ -4053,8 +4068,8 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
           {/* Dropdown panel */}
           {open && (
             <div style={{ position:"absolute", top:"calc(100% + 6px)", left:0, right:0, zIndex:200,
-              background:"white", borderRadius:14, border:`1px solid #E5E7EB`,
-              boxShadow:"0 12px 40px rgba(0,0,0,0.14)", overflow:"hidden", minWidth:260 }}>
+              background:"white", borderRadius:8, border:`1px solid #E5E7EB`,
+              boxShadow:"0 4px 20px rgba(0,0,0,0.12)", overflow:"hidden", minWidth:260 }}>
               {groups.map((g, gi) => (
                 <div key={gi}>
                   <div style={{ padding:"9px 14px 5px", fontSize:10, fontWeight:700,
@@ -4192,8 +4207,8 @@ function MSMEPackContent({ reportData, kpis, client }) {
           <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>Working Capital Analysis</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }} className="wc-g">
             {reportData.metrics.filter(m => m.value).map((m,i) => (
-              <div key={i} style={{ padding:"14px 10px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}`, textAlign:"center" }}>
-                <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:C.teal }}>{m.value}</div>
+              <div key={i} style={{ padding:"14px 10px", borderRadius:6, background:C.bg, border:`1px solid ${C.border}`, textAlign:"center" }}>
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:C.teal }}>{m.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:4 }}>{m.label}</div>
                 {m.sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{m.sub}</div>}
               </div>
@@ -4219,7 +4234,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
           {COMPLIANCE_DATES.map((c,i) => {
             const [col,bg] = c.status==="critical"?[C.red,"#FEF2F2"]:c.status==="due-soon"?[C.amber,"#FFFBEB"]:[C.blue,"#EEF3FE"];
             return (
-              <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", borderRadius:10, background:bg, border:`1px solid ${col}22` }}>
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px", borderRadius:6, background:bg, border:`1px solid ${col}22` }}>
                 <div style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:col, minWidth:52, whiteSpace:"nowrap" }}>{c.due}</div>
                 <div style={{ flex:1 }}>
                   <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{c.item}</div>
@@ -4269,7 +4284,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                         <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.budget||"—"}</td>
                         <td style={{ padding:"10px 12px", textAlign:"right", fontWeight:700, fontFamily:FM }}>{r.actual||"—"}</td>
                         <td style={{ padding:"10px 12px", textAlign:"right" }}>
-                          <span style={{ padding:"3px 8px", borderRadius:100, fontSize:10, fontWeight:700,
+                          <span style={{ padding:"3px 8px", borderRadius:3, fontSize:10, fontWeight:700,
                             background:r.fav?`${C.green}15`:`${C.red}15`, color:r.fav?C.green:C.red }}>
                             {r.fav?"▲ Fav":"▼ Unfav"}
                           </span>
@@ -4285,7 +4300,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Commentary</div>
                 {reportData.varianceCommentary.filter(v => v.item).map((v,i,arr) => (
                   <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
-                    <div style={{ width:8, height:8, borderRadius:100, background:v.favorable?C.green:C.red, flexShrink:0, marginTop:6 }}/>
+                    <div style={{ width:8, height:8, borderRadius:3, background:v.favorable?C.green:C.red, flexShrink:0, marginTop:6 }}/>
                     <div>
                       <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
                       {v.note && <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>}
@@ -4310,7 +4325,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
-                borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
               💬 Discuss cash health with Garima
             </a>
@@ -4333,7 +4348,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
           {/* Question this tab answers */}
-          <div style={{ padding:"16px 20px", borderRadius:14,
+          <div style={{ padding:"16px 20px", borderRadius:8,
             background:`linear-gradient(135deg,${C.teal}10,${C.blue}06)`,
             border:`1px solid ${C.teal}20` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4362,17 +4377,17 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 { label:"=", value:null, color:C.muted },
                 { label:"CCC", value: reportData?.ccc || "37 days", color: parseInt(reportData?.ccc||"37")<=30?C.green:C.amber, bad: parseInt(reportData?.ccc||"37")>30 },
               ].map((item, i) => item.value === null ? (
-                <div key={i} style={{ fontFamily:FM, fontSize:24, fontWeight:700, color:item.color }}>{item.label}</div>
+                <div key={i} style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:item.color }}>{item.label}</div>
               ) : (
-                <div key={i} style={{ padding:"12px 16px", borderRadius:12, textAlign:"center",
+                <div key={i} style={{ padding:"12px 16px", borderRadius:6, textAlign:"center",
                   background: item.bad ? `${C.amber}08` : `${item.color}08`,
                   border:`1px solid ${item.bad ? C.amber+"30" : item.color+"20"}` }}>
-                  <div style={{ fontFamily:FM, fontSize:22, fontWeight:800, color:item.color }}>{item.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color:item.color }}>{item.value}</div>
                   <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:3 }}>{item.label}</div>
                 </div>
               ))}
             </div>
-            <div style={{ padding:"10px 14px", borderRadius:10,
+            <div style={{ padding:"10px 14px", borderRadius:6,
               background: parseInt(reportData?.ccc||"37")<=30 ? `${C.green}08` : `${C.amber}08`,
               border:`1px solid ${parseInt(reportData?.ccc||"37")<=30 ? C.green+"20" : C.amber+"25"}` }}>
               <div style={{ fontFamily:F, fontSize:12, fontWeight:600,
@@ -4400,18 +4415,18 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 { band:"90+ days",    value: reportData?.ar90plus  || "₹2.9L",  pct:"8%",  color:C.red,    action:"Legal notice or write-off decision required" },
               ].map((row, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-                  borderRadius:10, background:C.bg2, border:`1px solid ${C.border}` }}>
+                  borderRadius:6, background:"#fff", border:`1px solid ${C.border}` }}>
                   <div style={{ width:3, height:36, borderRadius:2, background:row.color, flexShrink:0 }}/>
                   <div style={{ width:90, fontFamily:F, fontSize:12, color:C.muted, fontWeight:600 }}>{row.band}</div>
                   <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:row.color, width:70 }}>{row.value}</div>
                   <div style={{ fontFamily:F, fontSize:10, color:C.dim,
-                    background:C.bg, padding:"2px 8px", borderRadius:100, marginRight:8 }}>{row.pct}</div>
+                    background:C.bg, padding:"2px 8px", borderRadius:3, marginRight:8 }}>{row.pct}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.text, flex:1, lineHeight:1.4 }}>{row.action}</div>
                 </div>
               ))}
             </div>
             {reportData?.arNote && (
-              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:10,
+              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:6,
                 background:`${C.amber}06`, border:`1px solid ${C.amber}20`,
                 fontFamily:F, fontSize:12, color:C.text, lineHeight:1.6 }}>
                 {reportData.arNote}
@@ -4436,12 +4451,12 @@ function MSMEPackContent({ reportData, kpis, client }) {
               ].map((r, i) => {
                 const good = r.higher ? r.actual >= r.target : r.actual <= r.target;
                 return (
-                  <div key={i} style={{ padding:"14px", borderRadius:12,
+                  <div key={i} style={{ padding:"14px", borderRadius:6,
                     background: good ? `${C.green}06` : `${C.amber}06`,
                     border:`1px solid ${good ? C.green+"20" : C.amber+"25"}` }}>
                     <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700,
                       textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6 }}>{r.label}</div>
-                    <div style={{ fontFamily:FM, fontSize:22, fontWeight:800,
+                    <div style={{ fontFamily:FM, fontSize:16, fontWeight:800,
                       color: good ? C.green : C.amber, marginBottom:4 }}>{r.value}</div>
                     <div style={{ fontFamily:F, fontSize:10, color:C.blue, lineHeight:1.5, marginBottom:4 }}>{r.benchmark}</div>
                     <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color: good ? C.green : C.amber }}>
@@ -4472,7 +4487,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
           {/* Question this tab answers */}
-          <div style={{ padding:"16px 20px", borderRadius:14,
+          <div style={{ padding:"16px 20px", borderRadius:8,
             background:`linear-gradient(135deg,${C.blue}10,${C.purple}06)`,
             border:`1px solid ${C.blue}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4504,7 +4519,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
               {reportData?.loanScore && <ScoreGauge score={parseInt(reportData.loanScore)} color={C.blue} size={90}/>}
             </div>
             {reportData?.loanScore && (
-              <div style={{ height:8, borderRadius:4, background:C.bg3 }}>
+              <div style={{ height:8, borderRadius:4, background:C.canvas }}>
                 <div style={{ height:"100%", borderRadius:4, width:`${reportData.loanScore}%`,
                   background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
               </div>
@@ -4526,19 +4541,19 @@ function MSMEPackContent({ reportData, kpis, client }) {
                 { label:"Current Ratio",      value:reportData?.currentRatio,     benchmark:"Minimum 1.33x for working capital",what:"Short-term assets vs liabilities",              good: reportData?.currentRatio ? parseFloat(reportData.currentRatio)>=1.33 : null },
                 { label:"Debt / EBITDA",      value:reportData?.debtEbitda,       benchmark:"Banks prefer <4x for MSMEs",     what:"How many years of earnings to repay debt",      good: reportData?.debtEbitda ? parseFloat(reportData.debtEbitda)<=4 : null },
               ].map((r, i) => (
-                <div key={i} style={{ padding:"16px", borderRadius:12,
+                <div key={i} style={{ padding:"16px", borderRadius:6,
                   background: r.good===true ? `${C.green}06` : r.good===false ? `${C.red}06` : C.bg2,
                   border:`1px solid ${r.good===true?C.green+"20":r.good===false?C.red+"20":C.border}` }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700,
                     textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6 }}>{r.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:24, fontWeight:800, marginBottom:4,
+                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, marginBottom:4,
                     color: r.good===true?C.green:r.good===false?C.red:C.dim }}>{r.value || "Not assessed"}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.blue, marginBottom:6, lineHeight:1.4 }}>{r.benchmark}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.dim, lineHeight:1.4, marginBottom: r.good!==null?6:0 }}>{r.what}</div>
                   {r.good !== null && (
                     <div style={{ fontFamily:F, fontSize:11, fontWeight:700,
                       color:r.good?C.green:C.red, background:r.good?`${C.green}10`:`${C.red}08`,
-                      padding:"3px 10px", borderRadius:100, display:"inline-block" }}>
+                      padding:"3px 10px", borderRadius:3, display:"inline-block" }}>
                       {r.good ? "✅ Meets threshold" : "❌ Below bank requirement"}
                     </div>
                   )}
@@ -4588,14 +4603,14 @@ function MSMEPackContent({ reportData, kpis, client }) {
               { name:"Bank Working Capital OD",   amount:"Based on AR",   rate:"Repo + 3–4%",  note:"Overdraft against debtors — best for managing cash gaps.",              hot:false, color:C.muted  },
             ].map((s, i) => (
               <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12,
-                padding:"12px 14px", borderRadius:12, marginBottom:8,
-                background:C.bg2, border:`1px solid ${s.hot?s.color+"25":C.border}` }}>
+                padding:"12px 14px", borderRadius:6, marginBottom:8,
+                background:"#fff", border:`1px solid ${s.hot?s.color+"25":C.border}` }}>
                 <div style={{ width:8, height:8, borderRadius:"50%", background:s.color, flexShrink:0, marginTop:5 }}/>
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
                     <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{s.name}</span>
                     {s.hot && <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
-                      color:s.color, background:`${s.color}15`, padding:"2px 8px", borderRadius:100 }}>{"RECOMMENDED"}</span>}
+                      color:s.color, background:`${s.color}15`, padding:"2px 8px", borderRadius:60 }}>{"RECOMMENDED"}</span>}
                   </div>
                   <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:2 }}>{s.amount}{" | "}{s.rate}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.dim }}>{s.note}</div>
@@ -4612,13 +4627,13 @@ function MSMEPackContent({ reportData, kpis, client }) {
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
               <a href={WA} target="_blank" rel="noopener"
                 style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-                  borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                  borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                   color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
                 {"💬 WhatsApp Garima"}
               </a>
               <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
-                  borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
+                  borderRadius:6, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
                   color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
                 {"📄 Download Finance Report"}
               </button>
@@ -4636,7 +4651,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
 
       {tab === "packs" && (
         <div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.7 }}>
             Monthly packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -4702,7 +4717,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
-          <div style={{ padding:"16px 20px", borderRadius:14,
+          <div style={{ padding:"16px 20px", borderRadius:8,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4720,9 +4735,9 @@ function CorporatePackContent({ reportData, kpis, client }) {
               { label:"EBITDA Margin", value:reportData?.plInputs?.ebitdaMargin ||"17.5%", budget:"14.2%",  color:C.purple },
               { label:"PAT",           value:reportData?.plInputs?.pat          ||"₹81L",  budget:"₹56L",   color:C.green  },
             ].map((k,i) => (
-              <div key={i} style={{ padding:"14px", borderRadius:12,
+              <div key={i} style={{ padding:"14px", borderRadius:6,
                 background:`${k.color}08`, border:`1px solid ${k.color}20`, textAlign:"center" }}>
-                <div style={{ fontFamily:FM, fontSize:20, fontWeight:800, color:k.color }}>{k.value}</div>
+                <div style={{ fontFamily:FM, fontSize:15, fontWeight:800, color:k.color }}>{k.value}</div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:3 }}>{k.label}</div>
                 <div style={{ fontFamily:F, fontSize:10, color:C.green, marginTop:2 }}>
                   {"▲ vs budget "}{k.budget}
@@ -4812,7 +4827,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                   .filter(Boolean)
                   .map((h, i) => (
                     <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px",
-                      borderRadius:10, background:C.bg2, border:`1px solid ${C.border}`,
+                      borderRadius:6, background:"#fff", border:`1px solid ${C.border}`,
                       alignItems:"flex-start" }}>
                       <span style={{ fontFamily:FM, fontWeight:800, color:C.purple,
                         background:`${C.purple}12`, borderRadius:6, padding:"2px 8px",
@@ -4852,7 +4867,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                         <td style={{ padding:"10px 12px", textAlign:"right", color:C.muted, fontFamily:FM }}>{r.budget||"—"}</td>
                         <td style={{ padding:"10px 12px", textAlign:"right", fontWeight:700, fontFamily:FM }}>{r.actual||"—"}</td>
                         <td style={{ padding:"10px 12px", textAlign:"right" }}>
-                          <span style={{ padding:"3px 8px", borderRadius:100, fontSize:10, fontWeight:700,
+                          <span style={{ padding:"3px 8px", borderRadius:3, fontSize:10, fontWeight:700,
                             background:r.fav?`${C.green}15`:`${C.red}15`, color:r.fav?C.green:C.red }}>
                             {r.fav?"▲ Fav":"▼ Unfav"}
                           </span>
@@ -4868,7 +4883,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Commentary</div>
                 {reportData.varianceCommentary.filter(v => v.item).map((v,i,arr) => (
                   <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
-                    <div style={{ width:8, height:8, borderRadius:100, background:v.favorable?C.green:C.red, flexShrink:0, marginTop:6 }}/>
+                    <div style={{ width:8, height:8, borderRadius:3, background:v.favorable?C.green:C.red, flexShrink:0, marginTop:6 }}/>
                     <div>
                       <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
                       {v.note && <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>}
@@ -4891,7 +4906,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
           {/* Question this tab answers */}
-          <div style={{ padding:"16px 20px", borderRadius:14,
+          <div style={{ padding:"16px 20px", borderRadius:8,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4912,10 +4927,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { label:"Independent Directors",  value: reportData?.indepDirectors   || "—", note:"SEBI requires ≥1/3 of board for listed",   color:C.teal, flag: reportData?.indepDirectors === "0" },
                 { label:"Board Meetings (YTD)",   value: reportData?.boardMeetings    || "—", note:"Min 4 per year under Companies Act",        color:C.purple },
               ].map((item, i) => (
-                <div key={i} style={{ padding:"14px", borderRadius:12,
+                <div key={i} style={{ padding:"14px", borderRadius:6,
                   background: item.flag ? `${C.red}06` : C.bg2,
                   border:`1px solid ${item.flag ? C.red+"20" : C.border}`, textAlign:"center" }}>
-                  <div style={{ fontFamily:FM, fontSize:24, fontWeight:800, color:item.flag?C.red:item.color }}>{item.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color:item.flag?C.red:item.color }}>{item.value}</div>
                   <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginTop:4 }}>{item.label}</div>
                   <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:3, lineHeight:1.4 }}>{item.note}</div>
                 </div>
@@ -4943,7 +4958,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 const isNA   = row.status === "na";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-                    borderRadius:10,
+                    borderRadius:6,
                     background: isDone ? `${C.green}06` : isNA ? C.bg2 : `${C.amber}06`,
                     border:`1px solid ${isDone?C.green+"20":isNA?C.border:C.amber+"25"}` }}>
                     <span style={{ fontSize:14, flexShrink:0 }}>
@@ -4956,7 +4971,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                     <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
                       color:isDone?C.green:isNA?C.muted:C.amber,
                       background:isDone?`${C.green}15`:isNA?C.bg:`${C.amber}15`,
-                      padding:"3px 10px", borderRadius:100 }}>
+                      padding:"3px 10px", borderRadius:60 }}>
                       {isDone?"Done":isNA?"N/A":"Pending"}
                     </span>
                   </div>
@@ -4982,7 +4997,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
               ].map((item, i) => {
                 const ok = item.status === "done";
                 return (
-                  <div key={i} style={{ padding:"12px", borderRadius:10,
+                  <div key={i} style={{ padding:"12px", borderRadius:6,
                     background: ok ? `${C.green}06` : `${C.amber}06`,
                     border:`1px solid ${ok?C.green+"20":C.amber+"25"}` }}>
                     <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
@@ -5014,7 +5029,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
       {tab === "ipo" && (
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
-          <div style={{ padding:"16px 20px", borderRadius:14,
+          <div style={{ padding:"16px 20px", borderRadius:8,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -5043,7 +5058,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 const done = item.status === "done";
                 return (
                   <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10,
-                    padding:"12px 14px", borderRadius:10,
+                    padding:"12px 14px", borderRadius:6,
                     background: done ? `${C.green}06` : `${C.amber}06`,
                     border:`1px solid ${done ? C.green+"20" : C.amber+"25"}` }}>
                     <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>{done ? "✅" : "⭕"}</span>
@@ -5055,7 +5070,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                     <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
                       color: done ? C.green : C.amber,
                       background: done ? `${C.green}15` : `${C.amber}12`,
-                      padding:"3px 10px", borderRadius:100, flexShrink:0 }}>
+                      padding:"3px 10px", borderRadius:3, flexShrink:0 }}>
                       {done ? "Done" : "Pending"}
                     </span>
                   </div>
@@ -5077,7 +5092,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                 { phase:"18 → 24 months",   action:"Roadshow, book building, listing on NSE/BSE",                               color:C.green  },
               ].map((item, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
-                  padding:"10px 14px", borderRadius:10, background:C.bg2,
+                  padding:"10px 14px", borderRadius:6, background:"#fff",
                   border:`1px solid ${C.border}` }}>
                   <div style={{ width:3, height:36, borderRadius:2, background:item.color, flexShrink:0 }}/>
                   <div style={{ width:110, fontFamily:F, fontSize:11, fontWeight:700, color:item.color, flexShrink:0 }}>{item.phase}</div>
@@ -5103,7 +5118,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
-                borderRadius:12, background:`${C.purple}10`, border:`1.5px solid ${C.purple}30`,
+                borderRadius:6, background:`${C.purple}10`, border:`1.5px solid ${C.purple}30`,
                 color:C.purple, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
               {"💬 Discuss IPO readiness with Garima"}
             </a>
@@ -5120,7 +5135,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
 
       {tab === "packs" && (
         <div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.7 }}>
             Monthly board packs prepared by Garima — updated by the 20th of each month.
           </div>
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -5236,7 +5251,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
   if (revGrowth !== null && parseFloat(revGrowth) < 0)
     flags.push({ type:"danger",  icon:"⚠️", text:`Revenue declined ${Math.abs(revGrowth)}% vs last month` });
   if (revGrowth !== null && parseFloat(revGrowth) > 15)
-    flags.push({ type:"success", icon:"🚀", text:`Strong revenue growth of ${revGrowth}% MoM` });
+    flags.push({ type:"success", icon:"startup", text:`Strong revenue growth of ${revGrowth}% MoM` });
   if (parseFloat(gpMargin) < 30)
     flags.push({ type:"warning", emoji:"📉", text:`Gross margin at ${gpMargin}% — below healthy threshold of 30%` });
   if (parseFloat(ebitdaMargin) < 0)
@@ -5265,7 +5280,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
     const items = data.filter(d => (d[valueKey]||0) > 0);
     const total = items.reduce((s,d) => s + (d[valueKey]||0), 0);
     if (!items.length || !total) return (
-      <div style={{ width:size, height:size, borderRadius:"50%", background:C.bg2,
+      <div style={{ width:size, height:size, borderRadius:"50%", background:"#fff",
         display:"flex", alignItems:"center", justifyContent:"center",
         fontFamily:F, fontSize:11, color:C.muted }}>No data</div>
     );
@@ -5315,7 +5330,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
                 <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600 }}>{d.icon} {d.name}</span>
                 <div style={{ display:"flex", gap:8, alignItems:"center" }}>
                   {margin !== null && (
-                    <span style={{ fontFamily:F, fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:100,
+                    <span style={{ fontFamily:F, fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:3,
                       background: parseFloat(margin)>=20?`${C.green}15`:parseFloat(margin)>=0?`${acc}15`:`${C.red}15`,
                       color: parseFloat(margin)>=20?C.green:parseFloat(margin)>=0?acc:C.red }}>
                       {margin}% margin
@@ -5368,7 +5383,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
                   <td style={{ padding:"9px 10px", color:gp>=0?C.green:C.red, fontWeight:700 }}>{fmt(gp)}</td>
                   <td style={{ padding:"9px 10px" }}>
                     {margin !== "—" && (
-                      <span style={{ padding:"2px 8px", borderRadius:100, fontSize:11, fontWeight:700,
+                      <span style={{ padding:"2px 8px", borderRadius:3, fontSize:11, fontWeight:700,
                         background:parseFloat(margin)>=20?`${C.green}15`:parseFloat(margin)>=0?`${acc}15`:`${C.red}15`,
                         color:parseFloat(margin)>=20?C.green:parseFloat(margin)>=0?acc:C.red }}>{margin}%</span>
                     )}
@@ -5386,10 +5401,10 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
   };
 
   const StatCard = ({ label, value, sub, color, icon }) => (
-    <div style={{ padding:"14px 16px", borderRadius:12, background:"white",
+    <div style={{ padding:"14px 16px", borderRadius:6, background:"white",
       border:`1px solid ${C.border}`, boxShadow:"0 1px 4px rgba(0,0,0,0.04)" }}>
       <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{icon} {label}</div>
-      <div style={{ fontFamily:F, fontSize:22, fontWeight:800, color:color||C.text, marginBottom:2 }}>{value}</div>
+      <div style={{ fontFamily:F, fontSize:16, fontWeight:800, color:color||C.text, marginBottom:2 }}>{value}</div>
       {sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{sub}</div>}
     </div>
   );
@@ -5442,7 +5457,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
           { id:"department", label:"Department",  icon:"users"   },
         ].map(v => (
           <button key={v.id} onClick={() => setView(v.id)} style={{
-            padding:"8px 18px", borderRadius:20, border:"none", cursor:"pointer",
+            padding:"6px 14px", borderRadius:4, border:"none", cursor:"pointer",
             fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
             background: view===v.id ? acc : C.bg2,
             color: view===v.id ? "white" : C.muted,
@@ -5458,7 +5473,7 @@ function BusinessIntelligence({ reportData, accentColor, client }) {
       {!hasData && (
         <Card>
           <div style={{ textAlign:"center", padding:"24px 0" }}>
-            <div style={{ fontSize:32, marginBottom:12 }}>📊</div>
+            <div style={{ fontSize:22, marginBottom:12 }}>📊</div>
             <div style={{ fontFamily:F, fontSize:14, color:C.muted, marginBottom:6 }}>No financial data entered yet.</div>
             <div style={{ fontFamily:F, fontSize:12, color:C.dim }}>Ask Garima to update your report data in the admin panel.</div>
           </div>
@@ -5708,7 +5723,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
   if (!hasData) return (
     <Card>
       <div style={{ textAlign:"center", padding:"32px 0" }}>
-        <div style={{ fontSize:32, marginBottom:12 }}>📐</div>
+        <div style={{ fontSize:22, marginBottom:12 }}>📐</div>
         <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text, marginBottom:6 }}>
           No financial data available
         </div>
@@ -5725,7 +5740,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
     <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
 
       {/* Header */}
-      <div style={{ padding:"16px 20px", borderRadius:14,
+      <div style={{ padding:"16px 20px", borderRadius:8,
         background:`linear-gradient(135deg,${acc}12,${acc}06)`,
         border:`1px solid ${acc}20` }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -5742,7 +5757,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
           const r = calc(s);
           const isActive = activeScenario === s.id;
           return (
-            <div key={s.id} style={{ borderRadius:16, overflow:"hidden",
+            <div key={s.id} style={{ borderRadius:8, overflow:"hidden",
               border:`2px solid ${isActive ? s.color : C.border}`,
               boxShadow: isActive ? `0 4px 20px ${s.color}25` : "none",
               transition:"all 0.2s", background:"white" }}>
@@ -5785,7 +5800,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
                           </span>
                         )}
                       </div>
-                      <div style={{ fontFamily:F, fontSize:18, fontWeight:800,
+                      <div style={{ fontFamily:F, fontSize:14, fontWeight:800,
                         color: isNeg ? C.red : i === 0 ? s.color : C.text }}>
                         {fmt(row.val)}
                       </div>
@@ -5819,7 +5834,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
               <div style={{ padding:"0 16px 14px" }}>
                 <button onClick={() => generateAnalysis(s.id)}
                   disabled={loadingAI && activeScenario === s.id}
-                  style={{ width:"100%", padding:"9px", borderRadius:10, border:"none",
+                  style={{ width:"100%", padding:"9px", borderRadius:6, border:"none",
                     background: isActive ? s.color : `${s.color}15`,
                     color: isActive ? "white" : s.color,
                     fontFamily:F, fontSize:12, fontWeight:700, cursor:"pointer",
@@ -5882,7 +5897,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
       {aiAnalysis && (
         <Card style={{ border:`1.5px solid ${SCENARIOS.find(s=>s.id===activeScenario)?.color}30` }}>
           <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:14 }}>
-            <div style={{ width:36, height:36, borderRadius:10,
+            <div style={{ width:36, height:36, borderRadius:6,
               background:`${SCENARIOS.find(s=>s.id===activeScenario)?.color}15`,
               display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
               {SCENARIOS.find(s=>s.id===activeScenario)?.icon}
@@ -5897,7 +5912,7 @@ Be direct. Use ₹ amounts. Indian business context. No fluff.`,
             </div>
           </div>
           <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.85,
-            whiteSpace:"pre-wrap", background:C.bg2, borderRadius:10, padding:"14px 16px" }}>
+            whiteSpace:"pre-wrap", background:"#fff", borderRadius:6, padding:"14px 16px" }}>
             {aiAnalysis}
           </div>
         </Card>
@@ -5918,7 +5933,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
     { name:"Technology / Product",benchmark:20, icon:"💻" },
     { name:"Operations",          benchmark:25, icon:"⚙️" },
     { name:"HR & People",         benchmark:20, icon:"👥" },
-    { name:"Admin & G&A",         benchmark:10, icon:"🏢" },
+    { name:"Admin & G&A",         benchmark:10, icon:"dashboard" },
     { name:"Finance & Legal",     benchmark:5,  icon:"⚖️" },
   ];
 
@@ -5979,7 +5994,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
   if (!hasData) return (
     <Card>
       <div style={{ textAlign:"center", padding:"32px 0" }}>
-        <div style={{ fontSize:32, marginBottom:12 }}>📊</div>
+        <div style={{ fontSize:22, marginBottom:12 }}>📊</div>
         <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text, marginBottom:6 }}>
           No spend data available yet
         </div>
@@ -6002,11 +6017,11 @@ function SpendIntelligence({ reportData, accentColor, client }) {
             { label:"Spend / Revenue",   val: `${((totalSpend/rev)*100).toFixed(1)}%`,
               color: (totalSpend/rev)>0.7 ? C.red : (totalSpend/rev)>0.5 ? "#D97706" : C.green },
           ].map((s,i) => (
-            <div key={i} style={{ padding:"14px 16px", borderRadius:12, background:"white",
+            <div key={i} style={{ padding:"14px 16px", borderRadius:6, background:"white",
               border:`1px solid ${C.border}` }}>
               <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.muted,
                 textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{s.label}</div>
-              <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.val}</div>
+              <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.val}</div>
             </div>
           ))}
         </div>
@@ -6025,8 +6040,8 @@ function SpendIntelligence({ reportData, accentColor, client }) {
             const barW     = rev > 0 ? Math.min((d.actual/rev)*100 / d.benchmark * 100, 150) : 0;
 
             return (
-              <div key={i} style={{ padding:"14px 16px", borderRadius:12,
-                background:C.bg2, border:`1px solid ${C.border}` }}>
+              <div key={i} style={{ padding:"14px 16px", borderRadius:6,
+                background:"#fff", border:`1px solid ${C.border}` }}>
                 {/* Row header */}
                 <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:10 }}>
                   <span style={{ fontSize:18 }}>{d.icon}</span>
@@ -6038,7 +6053,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
                   </div>
                   {flag && (
                     <span style={{ fontSize:10, fontWeight:700, padding:"2px 10px",
-                      borderRadius:100, background:`${flag.color}15`, color:flag.color,
+                      borderRadius:3, background:`${flag.color}15`, color:flag.color,
                       letterSpacing:"0.05em", flexShrink:0 }}>
                       {flag.label}
                     </span>
@@ -6090,7 +6105,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
             AI Spend Recommendations
           </div>
           <button onClick={generateInsight} disabled={loadingInsight}
-            style={{ padding:"7px 16px", borderRadius:20, border:"none",
+            style={{ padding:"7px 16px", borderRadius:3, border:"none",
               background: !loadingInsight ? acc : C.border,
               color:"white", fontFamily:F, fontSize:12, fontWeight:600,
               cursor: !loadingInsight ? "pointer" : "not-allowed" }}>
@@ -6099,7 +6114,7 @@ function SpendIntelligence({ reportData, accentColor, client }) {
         </div>
         {aiInsight ? (
           <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8,
-            whiteSpace:"pre-wrap", background:C.bg2, borderRadius:10, padding:"14px 16px" }}>
+            whiteSpace:"pre-wrap", background:"#fff", borderRadius:6, padding:"14px 16px" }}>
             {aiInsight}
           </div>
         ) : (
@@ -6147,33 +6162,33 @@ function FundUtilisation({ reportData, accentColor }) {
           💰 Fund Utilisation Tracker
         </div>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:20 }}>
-          <div style={{ padding:"14px 16px", borderRadius:12, background:`${acc}10`, border:`1px solid ${acc}25` }}>
+          <div style={{ padding:"14px 16px", borderRadius:6, background:`${acc}10`, border:`1px solid ${acc}25` }}>
             <div style={{ fontSize:11, fontWeight:700, color:acc, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Total Raised</div>
             <input
               type="number"
               placeholder="Enter amount (₹)"
               value={totalRaised}
               onChange={e => setTotalRaised(e.target.value)}
-              style={{ width:"100%", border:"none", background:"transparent", fontSize:18, fontWeight:700,
+              style={{ width:"100%", border:"none", background:"transparent", fontSize:14, fontWeight:700,
                 color:C.text, fontFamily:FM, marginTop:4, outline:"none" }}
             />
           </div>
-          <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
+          <div style={{ padding:"14px 16px", borderRadius:6, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Deployed</div>
-            <div style={{ fontSize:18, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
               {totalDeployed > 0 ? `₹${(totalDeployed/100000).toFixed(1)}L` : "—"}
               {deployedPct > 0 && <span style={{ fontSize:12, color:C.muted, fontFamily:F, marginLeft:6 }}>{deployedPct}%</span>}
             </div>
           </div>
-          <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.orange||"#F59E0B"}10`, border:`1px solid ${C.orange||"#F59E0B"}25` }}>
+          <div style={{ padding:"14px 16px", borderRadius:6, background:`${C.orange||"#F59E0B"}10`, border:`1px solid ${C.orange||"#F59E0B"}25` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.orange||"#F59E0B", textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Unallocated</div>
-            <div style={{ fontSize:18, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
               {raised > 0 ? `₹${(unallocated/100000).toFixed(1)}L` : "—"}
             </div>
           </div>
-          <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.purple}10`, border:`1px solid ${C.purple}25` }}>
+          <div style={{ padding:"14px 16px", borderRadius:6, background:`${C.purple}10`, border:`1px solid ${C.purple}25` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Est. Runway</div>
-            <div style={{ fontSize:18, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
+            <div style={{ fontSize:14, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
               {runwayMonths ? `${runwayMonths}mo` : "—"}
             </div>
           </div>
@@ -6206,7 +6221,7 @@ function FundUtilisation({ reportData, accentColor }) {
                     }}
                     style={{ width:"100%", padding:"6px 10px", borderRadius:8,
                       border:`1px solid ${C.border}`, fontFamily:F, fontSize:13, color:C.text,
-                      background:C.bg2, outline:"none" }}
+                      background:"#fff", outline:"none" }}
                   />
                 </div>
                 <div>
@@ -6220,7 +6235,7 @@ function FundUtilisation({ reportData, accentColor }) {
                     }}
                     style={{ width:"100%", padding:"6px 10px", borderRadius:8,
                       border:`1px solid ${C.border}`, fontFamily:F, fontSize:13, color:C.text,
-                      background:C.bg2, outline:"none" }}
+                      background:"#fff", outline:"none" }}
                   />
                 </div>
               </div>
@@ -6289,26 +6304,26 @@ function VerticalPnL({ reportData, accentColor }) {
             value={month}
             onChange={e => setMonth(e.target.value)}
             style={{ padding:"6px 12px", borderRadius:8, border:`1px solid ${C.border}`,
-              fontFamily:F, fontSize:12, color:C.text, background:C.bg2, outline:"none" }}
+              fontFamily:F, fontSize:12, color:C.text, background:"#fff", outline:"none" }}
           />
         </div>
 
         {/* Summary cards */}
         {totalRevenue > 0 && (
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10, marginBottom:20 }}>
-            <div style={{ padding:"12px 14px", borderRadius:12, background:`${acc}10`, border:`1px solid ${acc}25` }}>
+            <div style={{ padding:"12px 14px", borderRadius:6, background:`${acc}10`, border:`1px solid ${acc}25` }}>
               <div style={{ fontSize:10, fontWeight:700, color:acc, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Total Revenue</div>
               <div style={{ fontSize:16, fontWeight:700, color:C.text, fontFamily:FM, marginTop:4 }}>
                 ₹{(totalRevenue/100000).toFixed(1)}L
               </div>
             </div>
-            <div style={{ padding:"12px 14px", borderRadius:12, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
+            <div style={{ padding:"12px 14px", borderRadius:6, background:`${C.green}10`, border:`1px solid ${C.green}25` }}>
               <div style={{ fontSize:10, fontWeight:700, color:C.green, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Best Performer</div>
               <div style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:F, marginTop:4 }}>
                 {bestVertical?.name}
               </div>
             </div>
-            <div style={{ padding:"12px 14px", borderRadius:12, background:`${C.red}10`, border:`1px solid ${C.red}25` }}>
+            <div style={{ padding:"12px 14px", borderRadius:6, background:`${C.red}10`, border:`1px solid ${C.red}25` }}>
               <div style={{ fontSize:10, fontWeight:700, color:C.red, textTransform:"uppercase", letterSpacing:"0.08em", fontFamily:F }}>Needs Attention</div>
               <div style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:F, marginTop:4 }}>
                 {worstVertical?.name}
@@ -6326,8 +6341,8 @@ function VerticalPnL({ reportData, accentColor }) {
             ? Math.round(((parseFloat(v.revenue)||0)/totalRevenue)*100) : 0;
 
           return (
-            <div key={i} style={{ marginBottom:20, padding:"16px", borderRadius:12,
-              background:C.bg2, border:`1px solid ${C.border}` }}>
+            <div key={i} style={{ marginBottom:14, padding:"16px", borderRadius:6,
+              background:"#fff", border:`1px solid ${C.border}` }}>
               <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
                 <input
                   type="text"
@@ -6394,7 +6409,7 @@ function VerticalPnL({ reportData, accentColor }) {
         })}
 
         <button onClick={addVertical} style={{
-          width:"100%", padding:"10px", borderRadius:10,
+          width:"100%", padding:"10px", borderRadius:6,
           border:`1.5px dashed ${C.border}`, background:"transparent",
           fontFamily:F, fontSize:13, fontWeight:600, color:C.muted, cursor:"pointer" }}>
           + Add Vertical / Region
@@ -6438,7 +6453,7 @@ function VerticalPnL({ reportData, accentColor }) {
                         </td>
                         <td style={{ padding:"10px" }}>
                           <span style={{
-                            padding:"2px 8px", borderRadius:100, fontSize:11, fontWeight:700,
+                            padding:"2px 8px", borderRadius:3, fontSize:11, fontWeight:700,
                             background: margin >= 15 ? `${C.green}15` : margin >= 0 ? "#FEF3C715" : `${C.red}15`,
                             color: margin >= 15 ? C.green : margin >= 0 ? "#D97706" : C.red
                           }}>
@@ -6448,7 +6463,7 @@ function VerticalPnL({ reportData, accentColor }) {
                       </tr>
                     );
                   })}
-                <tr style={{ borderTop:`2px solid ${C.border}`, background:C.bg2 }}>
+                <tr style={{ borderTop:`3px solid ${k.color||C.accent}`, background:"#fff" }}>
                   <td style={{ padding:"10px", fontWeight:700, color:C.text }}>Total</td>
                   <td style={{ padding:"10px", fontWeight:700, color:C.text }}>₹{(totalRevenue/100000).toFixed(1)}L</td>
                   <td colSpan={2} style={{ padding:"10px", fontWeight:700,
@@ -6616,7 +6631,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                         <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.fav?C.green:C.red }}>{varVal}</td>
                         <td style={{ padding:"10px 12px", textAlign:"right", fontFamily:FM, color:r.fav?C.green:C.red }}>{varPct}</td>
                         <td style={{ padding:"10px 12px", textAlign:"right" }}>
-                          <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700,
+                          <span style={{ padding:"3px 10px", borderRadius:3, fontSize:11, fontWeight:700,
                             background:r.fav?`${C.green}15`:`${C.red}15`, color:r.fav?C.green:C.red }}>
                             {r.fav?"✅ Fav":"⚠️ Unfav"}
                           </span>
@@ -6636,7 +6651,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               { item:"Cash balance ₹0.3Cr below budget", note:"Advance vendor payments pulled forward from March. Temporary — will normalise by end of March.", c:C.amber },
             ].map((v,i) => (
               <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<2?`1px solid ${C.border}`:"none" }}>
-                <div style={{ width:8, height:8, borderRadius:100, background:v.c, flexShrink:0, marginTop:6 }}/>
+                <div style={{ width:8, height:8, borderRadius:3, background:v.c, flexShrink:0, marginTop:6 }}/>
                 <div>
                   <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
                   <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{v.note}</div>
@@ -6651,10 +6666,10 @@ function CFOPackContent({ reportData, client, kpis }) {
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
           {/* Header */}
-          <div style={{ padding:"18px 22px", borderRadius:16,
+          <div style={{ padding:"18px 22px", borderRadius:8,
             background:`linear-gradient(135deg,${C.blue}10,${C.teal}08)`,
             border:`1px solid ${C.blue}18` }}>
-            <div style={{ fontFamily:F, fontWeight:800, fontSize:17, color:C.text, marginBottom:4 }}>
+            <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text, marginBottom:4 }}>
               {"Unit Economics"}
             </div>
             <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
@@ -6704,7 +6719,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 good: reportData?.cacPayback ? parseInt(reportData.cacPayback) <= 12 : null,
               },
             ].map((m, i) => (
-              <div key={i} style={{ padding:"18px", borderRadius:14,
+              <div key={i} style={{ padding:"18px", borderRadius:8,
                 background: m.good===true ? `${C.green}08` : m.good===false ? `${C.red}06` : C.bg2,
                 border:`1px solid ${m.good===true ? C.green+"25" : m.good===false ? C.red+"20" : C.border}` }}>
                 <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:8 }}>
@@ -6714,12 +6729,12 @@ function CFOPackContent({ reportData, client, kpis }) {
                     <span style={{ fontSize:10, fontWeight:700, fontFamily:F,
                       color: m.good ? C.green : C.red,
                       background: m.good ? `${C.green}15` : `${C.red}10`,
-                      padding:"2px 8px", borderRadius:100 }}>
+                      padding:"2px 8px", borderRadius:60 }}>
                       {m.good ? "✅ On track" : "⚠️ Watch"}
                     </span>
                   )}
                 </div>
-                <div style={{ fontFamily:FM, fontWeight:800, fontSize:28, color:m.value==="—"?C.dim:m.color, marginBottom:4 }}>
+                <div style={{ fontFamily:FM, fontWeight:800, fontSize:18, color:m.value==="—"?C.dim:m.color, marginBottom:4 }}>
                   {m.value}
                 </div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:600, color:C.text, marginBottom:6 }}>{m.full}</div>
@@ -6782,12 +6797,12 @@ function CFOPackContent({ reportData, client, kpis }) {
                   color:C.teal,
                 },
               ].map((m, i) => (
-                <div key={i} style={{ padding:"14px", borderRadius:12,
+                <div key={i} style={{ padding:"14px", borderRadius:6,
                   background: m.good===true ? `${C.green}08` : m.good===false ? `${C.amber}08` : C.bg2,
                   border:`1px solid ${m.good===true ? C.green+"20" : m.good===false ? C.amber+"25" : C.border}` }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700,
                     textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6 }}>{m.label}</div>
-                  <div style={{ fontFamily:FM, fontWeight:800, fontSize:22,
+                  <div style={{ fontFamily:FM, fontWeight:800, fontSize:16,
                     color:m.value==="—"?C.dim:m.color, marginBottom:4 }}>{m.value}</div>
                   <div style={{ fontFamily:F, fontSize:10, color:C.blue, lineHeight:1.5 }}>{m.benchmark}</div>
                   {m.good !== null && (
@@ -6841,7 +6856,7 @@ function CFOPackContent({ reportData, client, kpis }) {
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
-                borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
               💬 Discuss your fundraise readiness with Garima
             </a>
@@ -6864,16 +6879,16 @@ function CFOPackContent({ reportData, client, kpis }) {
         <div style={{ display:"flex", flexDirection:"column", gap:16 }}>
 
           {/* HEADER */}
-          <div style={{ padding:"20px 22px", borderRadius:16, background:`linear-gradient(135deg,${C.blue}12,${C.purple}08)`, border:`1px solid ${C.blue}20` }}>
+          <div style={{ padding:"20px 22px", borderRadius:8, background:`linear-gradient(135deg,${C.blue}12,${C.purple}08)`, border:`1px solid ${C.blue}20` }}>
             <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:8 }}>
-              <div style={{ width:44, height:44, borderRadius:12, background:C.blue, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>{"🏦"}</div>
+              <div style={{ width:44, height:44, borderRadius:6, background:C.blue, display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>{"🏦"}</div>
               <div>
-                <div style={{ fontFamily:F, fontWeight:800, fontSize:18, color:C.text }}>{"Loan Readiness Report"}</div>
+                <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text }}>{"Loan Readiness Report"}</div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{reportData?.monthLabel ? `As of ${reportData.monthLabel}` : "Current Period"}{" | Prepared by Garima Agarwal CA"}</div>
               </div>
             </div>
             {reportData?.loanNote && (
-              <div style={{ marginTop:10, padding:"12px 14px", borderRadius:10, background:"rgba(255,255,255,0.7)", border:`1px solid ${C.blue}20` }}>
+              <div style={{ marginTop:10, padding:"12px 14px", borderRadius:6, background:"rgba(255,255,255,0.7)", border:`1px solid ${C.blue}20` }}>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:4 }}>{"Garima's Assessment"}</div>
                 <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.7, margin:0 }}>{reportData.loanNote}</p>
               </div>
@@ -6892,7 +6907,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               </div>
               <ScoreGauge score={parseInt(reportData?.loanScore) || 64} color={C.blue} size={100}/>
             </div>
-            <div style={{ height:8, borderRadius:4, background:C.bg3 }}>
+            <div style={{ height:8, borderRadius:4, background:C.canvas }}>
               <div style={{ height:"100%", borderRadius:4, width:`${reportData?.loanScore || 64}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
             </div>
           </Card>
@@ -6910,9 +6925,9 @@ function CFOPackContent({ reportData, client, kpis }) {
                 { label:"Cash Balance", value: kpis?.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—",                                      color:C.blue   },
                 { label:"Runway",       value: kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value || "—",                                    color:C.amber  },
               ].map((item, i) => (
-                <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:C.bg2, border:`1px solid ${C.border}`, textAlign:"center" }}>
+                <div key={i} style={{ padding:"12px 14px", borderRadius:6, background:"#fff", border:`1px solid ${C.border}`, textAlign:"center" }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{item.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:item.value==="—"?C.dim:item.color }}>{item.value}</div>
+                  <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:item.value==="—"?C.dim:item.color }}>{item.value}</div>
                 </div>
               ))}
             </div>
@@ -6928,7 +6943,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 { label:"Loan Amount Sought",    value: reportData?.loanAmountSought || "Not provided",  flag: false },
                 { label:"Purpose of Loan",       value: reportData?.loanPurpose || "Not provided",       flag: false },
               ].map((item, i) => (
-                <div key={i} style={{ padding:"12px 14px", borderRadius:12, background:item.flag?`${C.amber}08`:C.bg2, border:`1px solid ${item.flag?C.amber+"30":C.border}` }}>
+                <div key={i} style={{ padding:"12px 14px", borderRadius:6, background:item.flag?`${C.amber}08`:C.bg2, border:`1px solid ${item.flag?C.amber+"30":C.border}` }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{item.label}</div>
                   <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:item.value==="Not provided"?C.dim:item.flag?C.amber:C.text }}>{item.value}</div>
                 </div>
@@ -6972,12 +6987,12 @@ function CFOPackContent({ reportData, client, kpis }) {
                 },
               ].map((r, i) => (
                 <div key={i} style={{
-                  padding:"16px", borderRadius:14,
+                  padding:"16px", borderRadius:8,
                   background: r.good===true ? `${C.green}08` : r.good===false ? `${C.amber}08` : C.bg2,
                   border:`1px solid ${r.good===true ? C.green+"25" : r.good===false ? C.amber+"30" : C.border}`
                 }}>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em", marginBottom:6 }}>{r.label}</div>
-                  <div style={{ fontFamily:FM, fontSize:24, fontWeight:800, marginBottom:4,
+                  <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, marginBottom:4,
                     color: r.good===true ? C.green : r.good===false ? C.amber : C.dim }}>
                     {r.value || "—"}
                   </div>
@@ -6987,7 +7002,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                     <div style={{ display:"inline-flex", alignItems:"center", gap:4, fontFamily:F, fontSize:11, fontWeight:700,
                       color: r.good ? C.green : C.amber,
                       background: r.good ? `${C.green}15` : `${C.amber}15`,
-                      padding:"3px 10px", borderRadius:100 }}>
+                      padding:"3px 10px", borderRadius:60 }}>
                       {r.good ? "✅ Within range" : "⚠️ Needs attention"}
                     </div>
                   )}
@@ -7049,12 +7064,12 @@ function CFOPackContent({ reportData, client, kpis }) {
                 { name:"Mudra Tarun",            amount:"Up to Rs.10L",   rate:"10-12%",   note:"Early stage and micro enterprises.",                    color:C.amber,  hot:false },
                 { name:"NBFC / Fintech Debt",    amount:"Rs.25L-Rs.5 Cr", rate:"14-18%",  note:"Faster disbursement, lighter documentation.",           color:C.muted,  hot:false },
               ].map((s,i) => (
-                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", borderRadius:12, background:C.bg2, border:`1px solid ${s.hot?s.color+"30":C.border}` }}>
+                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12, padding:"12px 14px", borderRadius:6, background:"#fff", border:`1px solid ${s.hot?s.color+"30":C.border}` }}>
                   <div style={{ width:8, height:8, borderRadius:"50%", background:s.color, flexShrink:0, marginTop:5 }}/>
                   <div style={{ flex:1 }}>
                     <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:3 }}>
                       <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{s.name}</span>
-                      {s.hot && <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:s.color, background:`${s.color}15`, padding:"2px 8px", borderRadius:100 }}>{"RECOMMENDED"}</span>}
+                      {s.hot && <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:s.color, background:`${s.color}15`, padding:"2px 8px", borderRadius:60 }}>{"RECOMMENDED"}</span>}
                     </div>
                     <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:2 }}>{s.amount}{" | "}{s.rate}</div>
                     <div style={{ fontFamily:F, fontSize:12, color:C.dim }}>{s.note}</div>
@@ -7083,7 +7098,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"9px 12px", borderRadius:8, background:item.done?`${C.green}08`:C.bg2, border:`1px solid ${item.done?C.green+"20":C.border}` }}>
                   <span style={{ fontSize:14 }}>{item.done ? "✅" : "⬜"}</span>
                   <span style={{ fontFamily:F, fontSize:13, color:item.done?C.text:C.muted }}>{item.doc}</span>
-                  <span style={{ marginLeft:"auto", fontFamily:F, fontSize:10, fontWeight:700, color:item.done?C.green:C.amber, background:item.done?`${C.green}15`:`${C.amber}15`, padding:"2px 8px", borderRadius:100 }}>{item.done?"Ready":"Pending"}</span>
+                  <span style={{ marginLeft:"auto", fontFamily:F, fontSize:10, fontWeight:700, color:item.done?C.green:C.amber, background:item.done?`${C.green}15`:`${C.amber}15`, padding:"2px 8px", borderRadius:60 }}>{item.done?"Ready":"Pending"}</span>
                 </div>
               ))}
             </div>
@@ -7096,12 +7111,12 @@ function CFOPackContent({ reportData, client, kpis }) {
               {"Garima can prepare your complete loan application package — projections, ratios, business plan, lender deck — and connect you with SBI Startup Branch or SIDBI."}
             </p>
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-              <a href={WA} target="_blank" rel="noopener" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`, color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>{"💬 WhatsApp Garima"}</a>
+              <a href={WA} target="_blank" rel="noopener" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`, color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>{"💬 WhatsApp Garima"}</a>
               <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w = window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:12, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`, color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+                style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:6, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`, color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
                 {"📄 Download Full Report"}
               </button>
-              <div style={{ display:"inline-flex", alignItems:"center", padding:"11px 20px", borderRadius:12, background:`${C.purple}10`, border:`1.5px solid ${C.purple}20`, fontFamily:F, fontSize:12, fontWeight:600, color:C.purple }}>{"Loan Package from Rs.15,000"}</div>
+              <div style={{ display:"inline-flex", alignItems:"center", padding:"11px 20px", borderRadius:6, background:`${C.purple}10`, border:`1.5px solid ${C.purple}20`, fontFamily:F, fontSize:12, fontWeight:600, color:C.purple }}>{"Loan Package from Rs.15,000"}</div>
             </div>
           </Card>
 
@@ -7116,12 +7131,12 @@ function CFOPackContent({ reportData, client, kpis }) {
 
       {tab === "boardpacks" && (
         <div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.7 }}>
             Monthly packs prepared by Garima — updated by the 20th of each month.
           </div>
           {archiveDocs.length === 0 && !isDemo && (
             <Card style={{ textAlign:"center", padding:"32px 0", marginBottom:16 }}>
-              <div style={{ fontSize:32, marginBottom:8 }}>📭</div>
+              <div style={{ fontSize:22, marginBottom:8 }}>📭</div>
               <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>No packs uploaded yet. Garima will upload your monthly pack here.</div>
             </Card>
           )}
@@ -7155,9 +7170,9 @@ function BoardPacksTabbed() {
       <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:20 }}>
         Monthly packs prepared by Garima — updated by the 20th of each month.
       </div>
-      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
         {tabs.map(t => (
-          <button key={t.id} onClick={() => setTab(t.id)} style={{ padding:"10px 18px", borderRadius:100, border:"none", cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s", background:tab===t.id?t.color:C.bg2, color:tab===t.id?"white":C.muted, outline:`1.5px solid ${tab===t.id?t.color:C.border}`, boxShadow:tab===t.id?`0 4px 14px ${t.color}35`:"none", touchAction:"manipulation" }}>
+          <button key={t.id} onClick={() => setTab(t.id)} style={{ padding:"10px 18px", borderRadius:3, border:"none", cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s", background:tab===t.id?t.color:C.bg2, color:tab===t.id?"white":C.muted, outline:`1.5px solid ${tab===t.id?t.color:C.border}`, boxShadow:tab===t.id?`0 4px 14px ${t.color}35`:"none", touchAction:"manipulation" }}>
             {t.icon} {t.label}
           </button>
         ))}
@@ -7217,16 +7232,16 @@ function CFOPacks({ client, reportData }) {
     : ARCHIVE;
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       {/* Header */}
       <div style={{ marginBottom:20 }}>
         <div style={{ display:"flex", alignItems:"center", gap:12, marginBottom:4 }}>
-          <div style={{ width:40, height:40, borderRadius:12, background:data.grad,
+          <div style={{ width:40, height:40, borderRadius:6, background:data.grad,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:20 }}>
             {data.icon}
           </div>
           <div>
-            <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>{data.label}</h2>
+            <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0 }}>{data.label}</h2>
             <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0 }}>{data.tagline}</p>
           </div>
         </div>
@@ -7236,7 +7251,7 @@ function CFOPacks({ client, reportData }) {
       <div style={{ display:"flex", gap:8, marginBottom:20 }}>
         {[["pack","📊 Smart Analysis"],["boardpacks","📁 Board Packs"]].map(([id, label]) => (
           <button key={id} onClick={() => setTab(id)} style={{
-            padding:"9px 18px", borderRadius:100, border:"none", cursor:"pointer",
+            padding:"9px 18px", borderRadius:3, border:"none", cursor:"pointer",
             fontFamily:F, fontSize:13, fontWeight:600, transition:"all 0.15s",
             background: tab===id ? data.color : C.bg3,
             color: tab===id ? "white" : C.muted,
@@ -7249,7 +7264,7 @@ function CFOPacks({ client, reportData }) {
       {tab === "pack" && (
         <>
           {/* Garima's note */}
-          <Card style={{ marginBottom:20, borderLeft:`3px solid ${data.color}` }}>
+          <Card style={{ marginBottom:14, borderLeft:`3px solid ${data.color}` }}>
             <div style={{ fontSize:11, fontWeight:700, color:data.color, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
               Garima's Analysis — Feb 2026
@@ -7266,7 +7281,7 @@ function CFOPacks({ client, reportData }) {
           <div style={{ textAlign:"center", marginTop:8 }}>
             <a href={WA} target="_blank" rel="noopener"
               style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
-                borderRadius:12, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
+                borderRadius:6, background:`${C.green}10`, border:`1.5px solid ${C.green}30`,
                 color:C.green, fontFamily:F, fontWeight:700, fontSize:13 }}>
               💬 Discuss this pack with Garima
             </a>
@@ -7300,7 +7315,7 @@ function Engagement({ liveData }) {
   const pct = (eng.status / (eng.stages.length - 1)) * 100;
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <SectionTitle sub="Live status of your valuation engagement.">
         Valuation Status
       </SectionTitle>
@@ -7323,7 +7338,7 @@ function Engagement({ liveData }) {
 
         {/* Progress bar */}
         <div style={{ position:"relative", marginBottom:24 }}>
-          <div style={{ height:6, borderRadius:3, background:C.bg3, marginBottom:24 }}>
+          <div style={{ height:6, borderRadius:3, background:C.canvas, marginBottom:24 }}>
             <div style={{ height:"100%", borderRadius:3, background:C.grad1,
               width:`${pct}%`, transition:"width 0.6s" }}/>
           </div>
@@ -7348,7 +7363,7 @@ function Engagement({ liveData }) {
           </div>
         </div>
 
-        <div style={{ padding:"10px 14px", borderRadius:10, background:`${C.blue}08`,
+        <div style={{ padding:"10px 14px", borderRadius:6, background:`${C.blue}08`,
           border:`1px solid ${C.blue}20` }}>
           <span style={{ fontFamily:F, fontSize:13, color:C.blue, fontWeight:600 }}>
             📌 Currently: <strong>{eng.stages[eng.status]}</strong> — Garima is building the DCF model. On track for {eng.expectedDate}.
@@ -7364,7 +7379,7 @@ function Engagement({ liveData }) {
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {eng.docs.map((d,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-              borderRadius:10, background: d.done ? `${C.green}08` : C.bg,
+              borderRadius:6, background: d.done ? `${C.green}08` : C.bg,
               border:`1px solid ${d.done ? C.green+"25" : C.border}` }}>
               <div style={{ width:20, height:20, borderRadius:6, flexShrink:0,
                 background: d.done ? C.green : C.bg3,
@@ -7378,7 +7393,7 @@ function Engagement({ liveData }) {
           ))}
         </div>
         {eng.docs.some(d => !d.done) && (
-          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10,
+          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:6,
             background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
               ⚠️ Please upload pending documents to avoid delays. Send to garima@finzzup.com or WhatsApp.
@@ -7393,7 +7408,7 @@ function Engagement({ liveData }) {
 // ─── CALENDAR ────────────────────────────────────────────────────────────────
 function Calendar() {
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <SectionTitle sub="Book a 30-min Valuation call or 60-min CFO Strategy session with Garima.">
         Book a Call
       </SectionTitle>
@@ -7401,11 +7416,11 @@ function Calendar() {
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:20 }} className="cal-grid">
         <a href="https://calendly.com/agrgarima/30min" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
-          <Card style={{ padding:24, borderTop:`3px solid ${C.blue}`, cursor:"pointer",
+          <Card style={{ padding:14, borderTop:`3px solid ${C.blue}`, cursor:"pointer",
             transition:"box-shadow 0.2s" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(59,111,247,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
-            <div style={{ fontSize:32, marginBottom:14 }}>⚡</div>
+            <div style={{ fontSize:22, marginBottom:14 }}>⚡</div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
               30-min Valuation Call
             </div>
@@ -7413,7 +7428,7 @@ function Calendar() {
               Questions about your valuation report, methodology, UDIN, or Section 56(2)(viib) compliance.
             </p>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              padding:"12px 16px", borderRadius:10, background:C.blue }}>
+              padding:"12px 16px", borderRadius:6, background:C.blue }}>
               <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"white" }}>Book 30-min</span>
               <span style={{ color:"white", fontSize:16 }}>→</span>
             </div>
@@ -7425,11 +7440,11 @@ function Calendar() {
 
         <a href="https://calendly.com/agrgarima/cfo-strategy-call" target="_blank" rel="noopener"
           style={{ textDecoration:"none" }}>
-          <Card style={{ padding:24, borderTop:`3px solid ${C.purple}`, cursor:"pointer",
+          <Card style={{ padding:14, borderTop:`3px solid ${C.purple}`, cursor:"pointer",
             transition:"box-shadow 0.2s" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 6px 24px rgba(124,92,245,0.15)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}>
-            <div style={{ fontSize:32, marginBottom:14 }}>🧠</div>
+            <div style={{ fontSize:22, marginBottom:14 }}>🧠</div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:8 }}>
               60-min CFO Strategy Call
             </div>
@@ -7437,7 +7452,7 @@ function Calendar() {
               Monthly CFO review, cash flow planning, investor prep, board pack walkthrough.
             </p>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-              padding:"12px 16px", borderRadius:10, background:C.purple }}>
+              padding:"12px 16px", borderRadius:6, background:C.purple }}>
               <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"white" }}>Book 60-min</span>
               <span style={{ color:"white", fontSize:16 }}>→</span>
             </div>
@@ -7457,7 +7472,7 @@ function Calendar() {
             { icon:"⚡", title:"30-min Valuation", desc:"Best for: UDIN queries, valuation report review, methodology questions, Section 56 compliance." },
             { icon:"🧠", title:"60-min CFO Strategy", desc:"Best for: Monthly review, fundraise prep, cash flow planning, board pack walkthrough, investor narrative." },
           ].map((item, i) => (
-            <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px", borderRadius:10, background:C.bg }}>
+            <div key={i} style={{ display:"flex", gap:12, padding:"12px 14px", borderRadius:6, background:C.bg }}>
               <span style={{ fontSize:20 }}>{item.icon}</span>
               <div>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:3 }}>{item.title}</div>
@@ -7468,7 +7483,7 @@ function Calendar() {
         </div>
       </Card>
 
-      <div style={{ padding:"12px 16px", borderRadius:12,
+      <div style={{ padding:"12px 16px", borderRadius:6,
         background:`${C.green}06`, border:`1px solid ${C.green}20` }}>
         <div style={{ fontFamily:F, fontSize:12, color:"#047857", lineHeight:1.7 }}>
           💬 Can't find a slot? WhatsApp Garima directly at{" "}
@@ -7602,11 +7617,11 @@ function NewRequest({ client, setPage }) {
     <div style={{ padding:32, maxWidth:520 }}>
       <Card style={{ textAlign:"center", padding:48 }}>
         <div style={{ fontSize:56, marginBottom:16 }}>🎉</div>
-        <h2 style={{ fontFamily:F, fontWeight:800, fontSize:22, color:C.text, marginBottom:8 }}>Request Submitted!</h2>
+        <h2 style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text, marginBottom:8 }}>Request Submitted!</h2>
         <p style={{ fontFamily:F, fontSize:14, color:C.muted, lineHeight:1.7, marginBottom:24 }}>
           Garima will review your request and send a scoped proposal within 24 hours. You'll hear from her at <strong>{form.email || client?.email}</strong>.
         </p>
-        <div style={{ padding:"12px 16px", borderRadius:12, background:`${C.green}0A`,
+        <div style={{ padding:"12px 16px", borderRadius:6, background:`${C.green}0A`,
           border:`1px solid ${C.green}25`, marginBottom:20 }}>
           <div style={{ fontFamily:F, fontSize:13, color:C.green, fontWeight:600 }}>
             ✅ {SERVICES.find(s=>s.id===selected)?.name}
@@ -7617,12 +7632,12 @@ function NewRequest({ client, setPage }) {
         </div>
         <div style={{ display:"flex", gap:10, justifyContent:"center", flexWrap:"wrap" }}>
           <button onClick={() => { setStep(1); setSelected(null); setSubmitted(false); setForm({ name:"", company:"", email:"", phone:"", notes:"" }); setAgreed(false); }}
-            style={{ padding:"10px 20px", borderRadius:10, border:`1.5px solid ${C.border}`,
+            style={{ padding:"10px 20px", borderRadius:6, border:`1.5px solid ${C.border}`,
               background:"none", fontFamily:F, fontWeight:600, fontSize:13, color:C.muted, cursor:"pointer" }}>
             Make another request
           </button>
           <button onClick={() => setPage("overview")}
-            style={{ padding:"10px 20px", borderRadius:10, border:"none",
+            style={{ padding:"10px 20px", borderRadius:6, border:"none",
               background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
             Back to Overview →
           </button>
@@ -7632,11 +7647,11 @@ function NewRequest({ client, setPage }) {
   );
 
   return (
-    <div style={{ padding:24, maxWidth:900 }}>
+    <div className="ns-page" style={{ maxWidth:900 }}>
       <SectionTitle sub="Get a scoped proposal within 24 hours.">Request a Service</SectionTitle>
 
       {/* Stepper */}
-      <div style={{ display:"flex", alignItems:"center", gap:0, marginBottom:28, maxWidth:500 }}>
+      <div style={{ display:"flex", alignItems:"center", gap:0, marginBottom:16, maxWidth:500 }}>
         {[["1","Select Service"],["2","Your Details"],["3","Confirm"]].map(([n,lbl],i) => (
           <div key={n} style={{ display:"flex", alignItems:"center", flex:i<2?1:0 }}>
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -7661,7 +7676,7 @@ function NewRequest({ client, setPage }) {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="nr-grid">
             {SERVICES.map(s => (
               <div key={s.id} onClick={() => setSelected(s.id)}
-                style={{ position:"relative", padding:20, borderRadius:14,
+                style={{ position:"relative", padding:20, borderRadius:8,
                   border:`2px solid ${selected===s.id ? C.blue : C.border}`,
                   background: selected===s.id ? `${C.blue}06` : C.bg2,
                   cursor:"pointer", transition:"all 0.2s",
@@ -7669,7 +7684,7 @@ function NewRequest({ client, setPage }) {
                 {s.popular && (
                   <div style={{ position:"absolute", top:-10, right:16,
                     background:C.grad3, color:"white", fontSize:10, fontWeight:800,
-                    padding:"3px 10px", borderRadius:100, fontFamily:F }}>Most Popular</div>
+                    padding:"3px 10px", borderRadius:3, fontFamily:F }}>Most Popular</div>
                 )}
                 <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{s.name}</div>
@@ -7681,7 +7696,7 @@ function NewRequest({ client, setPage }) {
             ))}
           </div>
           <button onClick={() => { if (!selected) { alert("Please select a service."); return; } setStep(2); }}
-            style={{ padding:"14px 32px", borderRadius:12, border:"none",
+            style={{ padding:"14px 32px", borderRadius:6, border:"none",
               background: selected ? C.grad1 : C.bg3, color: selected ? "white" : C.muted,
               fontFamily:F, fontWeight:700, fontSize:13, cursor: selected ? "pointer" : "default",
               boxShadow: selected ? "0 6px 20px rgba(59,111,247,0.28)" : "none", transition:"all 0.2s" }}>
@@ -7711,7 +7726,7 @@ function NewRequest({ client, setPage }) {
               <input value={form[f.key] || f.val}
                 onChange={e => setForm(fv=>({...fv,[f.key]:e.target.value}))}
                 type={f.type} placeholder={f.ph}
-                style={{ width:"100%", padding:"10px 13px", borderRadius:10, fontSize:13,
+                style={{ width:"100%", padding:"10px 13px", borderRadius:6, fontSize:13,
                   border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                   background:C.bg, outline:"none", boxSizing:"border-box" }}
                 onFocus={e => e.target.style.borderColor = C.blue}
@@ -7727,19 +7742,19 @@ function NewRequest({ client, setPage }) {
             <textarea rows={3} value={form.notes}
               onChange={e => setForm(f=>({...f,notes:e.target.value}))}
               placeholder="Any specific requirements, timelines, or questions..."
-              style={{ width:"100%", padding:"10px 13px", borderRadius:10, fontSize:13,
+              style={{ width:"100%", padding:"10px 13px", borderRadius:6, fontSize:13,
                 border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                 background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
             />
           </div>
           <div style={{ display:"flex", gap:10 }}>
             <button onClick={() => setStep(1)}
-              style={{ padding:"12px 20px", borderRadius:10, border:`1px solid ${C.border}`,
+              style={{ padding:"12px 20px", borderRadius:6, border:`1px solid ${C.border}`,
                 background:"none", fontFamily:F, fontWeight:600, fontSize:14, color:C.muted, cursor:"pointer" }}>
               ← Back
             </button>
             <button onClick={() => setStep(3)}
-              style={{ flex:1, padding:"13px 0", borderRadius:10, border:"none",
+              style={{ flex:1, padding:"13px 0", borderRadius:6, border:"none",
                 background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:15,
                 cursor:"pointer", boxShadow:"0 6px 20px rgba(59,111,247,0.28)" }}>
               Review Request →
@@ -7773,7 +7788,7 @@ function NewRequest({ client, setPage }) {
           </Card>
 
           {/* Terms checkbox */}
-          <div style={{ padding:"14px 16px", borderRadius:12, background:`${C.blue}06`,
+          <div style={{ padding:"14px 16px", borderRadius:6, background:`${C.blue}06`,
             border:`1px solid ${C.blue}20`, marginBottom:16, display:"flex", gap:10, alignItems:"flex-start" }}>
             <input type="checkbox" id="terms-agree" checked={agreed}
               onChange={e => setAgreed(e.target.checked)}
@@ -7793,12 +7808,12 @@ function NewRequest({ client, setPage }) {
 
           <div style={{ display:"flex", gap:10 }}>
             <button onClick={() => setStep(2)}
-              style={{ padding:"12px 20px", borderRadius:10, border:`1px solid ${C.border}`,
+              style={{ padding:"12px 20px", borderRadius:6, border:`1px solid ${C.border}`,
                 background:"none", fontFamily:F, fontWeight:600, fontSize:14, color:C.muted, cursor:"pointer" }}>
               ← Back
             </button>
             <button onClick={handleSubmit} disabled={loading}
-              style={{ flex:1, padding:"13px 0", borderRadius:10, border:"none",
+              style={{ flex:1, padding:"13px 0", borderRadius:6, border:"none",
                 background: agreed ? C.grad1 : C.bg3, color: agreed ? "white" : C.muted,
                 fontFamily:F, fontWeight:700, fontSize:15,
                 cursor: agreed && !loading ? "pointer" : "default",
@@ -7840,13 +7855,13 @@ function Invoices({ client, liveInvoices }) {
   const InvoiceCard = ({ inv }) => {
     const isUnpaid = inv.status === "unpaid";
     return (
-      <div style={{ padding:"16px 18px", borderRadius:12,
+      <div style={{ padding:"16px 18px", borderRadius:6,
         border:`1.5px solid ${isUnpaid ? C.amber+"50" : C.border}`,
         background: isUnpaid ? `${C.amber}05` : C.bg2,
         display:"flex", alignItems:"center", justifyContent:"space-between",
         flexWrap:"wrap", gap:12, marginBottom:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:14 }}>
-          <div style={{ width:40, height:40, borderRadius:10,
+          <div style={{ width:40, height:40, borderRadius:6,
             background: isUnpaid ? `${C.amber}15` : `${C.green}15`,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
             {isUnpaid ? "⏳" : "✅"}
@@ -7860,7 +7875,7 @@ function Invoices({ client, liveInvoices }) {
           </div>
         </div>
         <div style={{ textAlign:"right" }}>
-          <div style={{ fontFamily:FM, fontSize:20, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
+          <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color: isUnpaid ? C.amber : C.green }}>
             {inv.amount}
           </div>
           <div style={{ display:"flex", gap:8, marginTop:8, justifyContent:"flex-end" }}>
@@ -7876,23 +7891,23 @@ function Invoices({ client, liveInvoices }) {
   };
 
   if (view === "detail" && selected) return (
-    <div style={{ padding:24, maxWidth:620 }}>
+    <div style={{ padding:14, maxWidth:620 }}>
       <button onClick={() => setView("list")}
         style={{ fontFamily:F, fontSize:13, color:C.blue, background:"none", border:"none",
-          cursor:"pointer", marginBottom:20, padding:0, fontWeight:600 }}>
+          cursor:"pointer", marginBottom:14, padding:0, fontWeight:600 }}>
         ← Back to Invoices
       </button>
 
       {/* Invoice header */}
-      <div style={{ padding:"28px 32px", borderRadius:16,
+      <div style={{ padding:"28px 32px", borderRadius:8,
         background:"linear-gradient(135deg,#0A1128 0%,#1a2a5e 100%)",
-        color:"white", marginBottom:20, position:"relative", overflow:"hidden" }}>
+        color:"white", marginBottom:14, position:"relative", overflow:"hidden" }}>
         <div style={{ position:"absolute", right:-20, top:-20, width:120, height:120,
           borderRadius:"50%", background:"rgba(255,255,255,0.04)" }}/>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:12 }}>
           <div>
             <div style={{ fontFamily:FM, fontSize:11, opacity:0.5, marginBottom:4, letterSpacing:"0.08em" }}>INVOICE</div>
-            <div style={{ fontFamily:FM, fontWeight:700, fontSize:22, marginBottom:6 }}>{selected.id}</div>
+            <div style={{ fontFamily:FM, fontWeight:700, fontSize:16, marginBottom:6 }}>{selected.id}</div>
             <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>Finzzup Advisory LLP</div>
             <div style={{ fontFamily:F, fontSize:12, opacity:0.6 }}>garima@finzzup.com</div>
           </div>
@@ -7931,8 +7946,8 @@ function Invoices({ client, liveInvoices }) {
           </div>
         ))}
         <div style={{ display:"flex", justifyContent:"flex-end", padding:"14px 0 0",
-          borderTop:`2px solid ${C.border}`, marginTop:8 }}>
-          <div style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:C.blue }}>
+          borderTop:`3px solid ${k.color||C.accent}`, marginTop:8 }}>
+          <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:C.blue }}>
             Total: {selected.amount}
           </div>
         </div>
@@ -7940,7 +7955,7 @@ function Invoices({ client, liveInvoices }) {
 
       {/* Contact to pay */}
       {selected.status === "unpaid" && (
-        <div style={{ padding:"14px 18px", borderRadius:12, background:`${C.amber}08`,
+        <div style={{ padding:"14px 18px", borderRadius:6, background:`${C.amber}08`,
           border:`1px solid ${C.amber}25`, marginBottom:12 }}>
           <div style={{ fontFamily:F, fontSize:13, color:C.amber, fontWeight:600, marginBottom:4 }}>
             ⏳ Payment Due: {selected.amount}
@@ -7958,7 +7973,7 @@ function Invoices({ client, liveInvoices }) {
           // Build a minimal invoice object if coming from live data
           downloadInvoicePDF(selected, client);
         }}
-        style={{ width:"100%", padding:"13px 0", borderRadius:12, border:`1.5px solid ${C.blue}`,
+        style={{ width:"100%", padding:"13px 0", borderRadius:6, border:`1.5px solid ${C.blue}`,
           background:"transparent", color:C.blue, fontFamily:F, fontWeight:700, fontSize:14,
           cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}>
         ⬇️ Download Invoice PDF
@@ -7967,7 +7982,7 @@ function Invoices({ client, liveInvoices }) {
   );
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <SectionTitle sub="Auto-generated invoices for your engagements.">Invoices</SectionTitle>
 
       {/* Summary */}
@@ -7978,8 +7993,8 @@ function Invoices({ client, liveInvoices }) {
           { label:"Total Invoices",    value:"3",         color:C.blue,  icon:"📄" },
         ].map((s,i) => (
           <Card key={i} style={{ padding:18, textAlign:"center" }}>
-            <div style={{ fontSize:24, marginBottom:8 }}>{s.icon}</div>
-            <div style={{ fontFamily:FM, fontSize:22, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
+            <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
+            <div style={{ fontFamily:FM, fontSize:16, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
             <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.label}</div>
           </Card>
         ))}
@@ -8095,12 +8110,12 @@ function MyDocuments({ client }) {
   const displayDocs = isDemo ? DEMO_DOCS : docs;
 
   return (
-    <div style={{ padding:24, maxWidth:700 }}>
+    <div className="ns-page" style={{ maxWidth:700 }}>
       <SectionTitle sub="Documents shared by Garima, and files you've uploaded.">My Documents</SectionTitle>
 
       {isDemo && (
-        <div style={{ padding:"10px 16px", borderRadius:10, background:`${C.amber}0A`,
-          border:`1px solid ${C.amber}25`, marginBottom:20,
+        <div style={{ padding:"10px 16px", borderRadius:6, background:`${C.amber}0A`,
+          border:`1px solid ${C.amber}25`, marginBottom:14,
           fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
           👋 Demo mode — uploads disabled. Real clients can upload and download files here.
         </div>
@@ -8118,7 +8133,7 @@ function MyDocuments({ client }) {
           <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
             Share financial statements, agreements, or any document with Garima. Max 10MB.
           </p>
-          <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
+          <label style={{ display:"block", padding:"28px 20px", borderRadius:6,
             border:`2px dashed ${dragOver ? C.blue : C.border}`,
             textAlign:"center", cursor:"pointer", background: dragOver ? `${C.blue}05` : C.bg,
             transition:"all 0.2s" }}
@@ -8132,7 +8147,7 @@ function MyDocuments({ client }) {
               </div>
             ) : (
               <>
-                <div style={{ fontSize:32, marginBottom:8 }}>📤</div>
+                <div style={{ fontSize:22, marginBottom:8 }}>📤</div>
                 <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text }}>
                   Click to upload or drag & drop
                 </div>
@@ -8166,7 +8181,7 @@ function MyDocuments({ client }) {
 
         {!loading && displayDocs.length === 0 && (
           <div style={{ textAlign:"center", padding:"32px 0" }}>
-            <div style={{ fontSize:32, marginBottom:8 }}>📭</div>
+            <div style={{ fontSize:22, marginBottom:8 }}>📭</div>
             <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
               No documents yet. Garima will upload your reports here.
             </div>
@@ -8178,15 +8193,15 @@ function MyDocuments({ client }) {
             const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
             return (
               <div key={doc.id || i} style={{ display:"flex", alignItems:"center",
-                justifyContent:"space-between", padding:"12px 14px", borderRadius:10,
+                justifyContent:"space-between", padding:"12px 14px", borderRadius:6,
                 background: byGarima ? `${C.blue}10` : C.bg,
                 border:`1px solid ${byGarima ? C.blue+"40" : C.border}`,
                 flexWrap:"wrap", gap:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, flex:1, minWidth:0 }}>
-                  <div style={{ width:38, height:38, borderRadius:10,
+                  <div style={{ width:38, height:38, borderRadius:6,
                     background: byGarima ? `${C.blue}12` : `${C.muted}0A`,
                     display:"flex", alignItems:"center", justifyContent:"center",
-                    fontSize:18, flexShrink:0 }}>
+                    fontSize:14, flexShrink:0 }}>
                     {fileIcon(doc.name, doc.file_url?.startsWith("data:text/html") ? "report" : null)}
                   </div>
                   <div style={{ minWidth:0 }}>
@@ -8305,7 +8320,7 @@ function Treasury({ client, reportData }) {
   };
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <SectionTitle sub={uae ? "Multi-currency cash, term deposits, and yield optimisation." : "Cash visibility, FD tracking, and yield optimisation."}>
         {uae ? "Treasury Management (AED)" : "Treasury Management"}
       </SectionTitle>
@@ -8319,17 +8334,17 @@ function Treasury({ client, reportData }) {
             { label:"Cash Conversion Cycle",         value:`${UAE_T.dso - UAE_T.dpo + UAE_T.dio} days`, color:C.amber, icon:"🔄" },
           ].map((s,i) => (
             <Card key={i} style={{ padding:18 }}>
-              <div style={{ fontSize:20, marginBottom:8 }}>{s.icon}</div>
+              <div style={{ fontSize:15, marginBottom:8 }}>{s.icon}</div>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-              <div style={{ fontFamily:F, fontSize:18, fontWeight:800, color:s.color }}>{s.value}</div>
+              <div style={{ fontFamily:F, fontSize:14, fontWeight:800, color:s.color }}>{s.value}</div>
             </Card>
           ))}
         </div>
       )}
 
-      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
         {[["overview","💰 Overview"],["maturity","📅 Maturity Schedule"],["recommendations","💡 Recommendations"]].map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
+          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:3, border:"none",
             cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
             background: tab===id ? C.blue : C.bg2, color: tab===id ? "white" : C.muted,
             outline:`1.5px solid ${tab===id ? C.blue : C.border}`,
@@ -8345,11 +8360,11 @@ function Treasury({ client, reportData }) {
             {[
               { label:"Total Cash",      value:TREASURY_DATA.totalCash,              icon:"💵", color:C.blue  },
               { label:uae?"In Term Deposits":"Invested in FDs", value:`${TREASURY_DATA.investedPct}%`, icon:"📈", color:C.teal  },
-              { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,                icon:"🏦", color:C.green },
+              { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,                icon:"treasury", color:C.green },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
-                <div style={{ fontSize:24, marginBottom:10 }}>{s.icon}</div>
-                <div style={{ fontFamily:F, fontSize:22, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
+                <div style={{ fontSize:16, marginBottom:10 }}>{s.icon}</div>
+                <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:s.color, marginBottom:4 }}>{s.value}</div>
                 <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.label}</div>
               </Card>
             ))}
@@ -8399,7 +8414,7 @@ function Treasury({ client, reportData }) {
               </div>
             </div>
           ))}
-          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
+          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:6, background:`${C.amber}08`, border:`1px solid ${C.amber}25` }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.amber, fontWeight:600 }}>
               ⚠️ ₹15L matures 28 Mar — time with advance tax payment to avoid overdraft facility.
             </span>
@@ -8433,7 +8448,7 @@ function Treasury({ client, reportData }) {
 // ─── UAE DISCLAIMER BANNER ────────────────────────────────────────────────────
 function UAEDisclaimer() {
   return (
-    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:10,
+    <div style={{ margin:"0 0 20px", padding:"10px 16px", borderRadius:6,
       background:"#FFF7ED", border:"1px solid #FED7AA",
       display:"flex", gap:10, alignItems:"flex-start" }}>
       <span style={{ fontSize:16, flexShrink:0 }}>⚠️</span>
@@ -8476,15 +8491,15 @@ function VATDashboard({ client, reportData }) {
   const tabs = [["overview","💡 Overview"],["returns","📋 Returns"],["cashimpact","💸 Cash Impact"],["invoices","🧾 VAT Invoices"]];
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <UAEDisclaimer/>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
         <div>
-          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>VAT Dashboard</h2>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0 }}>VAT Dashboard</h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>UAE VAT tracking, filing reminders, and cash impact.</p>
         </div>
         <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
-          <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 12px", borderRadius:100,
+          <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 12px", borderRadius:3,
             background:"#E8F5EE", border:"1px solid #86EFAC", color:"#15803D", fontSize:12, fontWeight:700, fontFamily:F }}>
             ✅ {vatData.registrationStatus}
           </span>
@@ -8492,9 +8507,9 @@ function VATDashboard({ client, reportData }) {
         </div>
       </div>
 
-      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
         {tabs.map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
+          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:3, border:"none",
             cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700, transition:"all 0.15s",
             background:tab===id?C.blue:"#F3F4F6", color:tab===id?"white":C.muted,
             outline:`1.5px solid ${tab===id?C.blue:C.border}` }}>
@@ -8512,9 +8527,9 @@ function VATDashboard({ client, reportData }) {
               { label:"VAT Payable",             value:fmtAED(vatData.vatPayable),color:C.amber, icon:"💰" },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
-                <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-                <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+                <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
               </Card>
             ))}
           </div>
@@ -8556,7 +8571,7 @@ function VATDashboard({ client, reportData }) {
                 </div>
                 <div style={{ display:"flex", alignItems:"center", gap:12 }}>
                   <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text }}>{r.vatNet}</div>
-                  <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                  <span style={{ padding:"3px 10px", borderRadius:3, fontSize:11, fontWeight:700, fontFamily:F,
                     background:due?"#FFFBEB":"#ECFDF5", color:due?C.amber:C.green }}>
                     {due ? "⏰ Due" : "✅ Filed"}
                   </span>
@@ -8564,7 +8579,7 @@ function VATDashboard({ client, reportData }) {
               </div>
             );
           })}
-          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:10, background:"#FEF2F2", border:"1px solid #FCA5A5" }}>
+          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:6, background:"#FEF2F2", border:"1px solid #FCA5A5" }}>
             <span style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:600 }}>
               ⚠️ Late filing penalty: AED 1,000 for first offence, AED 2,000 for repeat. File on time!
             </span>
@@ -8709,11 +8724,11 @@ function CorporateTax({ client, reportData, initialTab }) {
       {/* Header bar */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12, padding:"4px 0" }}>
         <div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:17, color:C.text }}>Corporate Tax (CT)</div>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text }}>Corporate Tax (CT)</div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>UAE Corporate Tax — effective June 2023</div>
         </div>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <span style={{ padding:"4px 12px", borderRadius:100, background:"#E8FAF3", border:"1px solid #86EFAC",
+          <span style={{ padding:"4px 12px", borderRadius:3, background:"#E8FAF3", border:"1px solid #86EFAC",
             color:C.green, fontSize:12, fontWeight:700, fontFamily:F }}>CT Rate: {ctData.effectiveCTRate}%</span>
           <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>TRN: {ctData.trnCT}</span>
           <button onClick={() => downloadCT(tab)} style={{ display:"flex", alignItems:"center", gap:6,
@@ -8738,9 +8753,9 @@ function CorporateTax({ client, reportData, initialTab }) {
               { label:"CT Return Due",     value:ctData.ctDue,                  color:C.blue, icon:"📅" },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
-                <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-                <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+                <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
               </Card>
             ))}
           </div>
@@ -8815,12 +8830,12 @@ function CorporateTax({ client, reportData, initialTab }) {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }}>
             <Card>
               <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Qualifying Income %</div>
-              <div style={{ fontFamily:F, fontSize:26, fontWeight:800, color:C.green }}>{ctData.qualifyingPct}%</div>
+              <div style={{ fontFamily:F, fontSize:18, fontWeight:800, color:C.green }}>{ctData.qualifyingPct}%</div>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:4 }}>Taxed at 0% CT</div>
             </Card>
             <Card>
               <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Non-Qualifying %</div>
-              <div style={{ fontFamily:F, fontSize:26, fontWeight:800, color:ctData.nonQualifyingPct>=5?C.red:C.amber }}>{ctData.nonQualifyingPct}%</div>
+              <div style={{ fontFamily:F, fontSize:18, fontWeight:800, color:ctData.nonQualifyingPct>=5?C.red:C.amber }}>{ctData.nonQualifyingPct}%</div>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:4 }}>De-minimis: must be &lt;5% or &lt;AED 5M</div>
             </Card>
           </div>
@@ -8838,7 +8853,7 @@ function CorporateTax({ client, reportData, initialTab }) {
               <div key={i} style={{ display:"flex", gap:10, padding:"9px 0", borderBottom:`1px solid ${C.border}`, alignItems:"center" }}>
                 <span style={{ color:s.done?C.green:C.red, fontWeight:700, flexShrink:0 }}>{s.done?"✓":"✗"}</span>
                 <span style={{ fontFamily:F, fontSize:13, color:C.text, flex:1 }}>{s.item}</span>
-                {!s.done && <span style={{ padding:"2px 8px", borderRadius:100, background:"#FFFBEB", color:C.amber, fontSize:10, fontWeight:700 }}>Action Needed</span>}
+                {!s.done && <span style={{ padding:"2px 8px", borderRadius:3, background:"#FFFBEB", color:C.amber, fontSize:10, fontWeight:700 }}>Action Needed</span>}
               </div>
             ))}
           </Card>
@@ -8852,13 +8867,13 @@ function CorporateTax({ client, reportData, initialTab }) {
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
               Taxable Income Reconciliation
             </div>
-            <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.6 }}>
+            <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
               Accounting profit adjusted to arrive at UAE Corporate Tax base — per Federal Decree-Law No. 47 of 2022.
             </p>
 
             {/* Column headers */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr auto auto", gap:8,
-              padding:"8px 12px", background:C.bg2, borderRadius:8, marginBottom:4 }}>
+              padding:"8px 12px", background:"#fff", borderRadius:8, marginBottom:4 }}>
               <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em" }}>Item</span>
               <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", textAlign:"right", minWidth:80 }}>Sign</span>
               <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em", textAlign:"right", minWidth:110 }}>Amount (AED)</span>
@@ -8882,7 +8897,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
                   <div style={{ textAlign:"right", minWidth:80 }}>
                     <span style={{
-                      display:"inline-block", padding:"2px 10px", borderRadius:100,
+                      display:"inline-block", padding:"2px 10px", borderRadius:3,
                       fontSize:11, fontWeight:700, fontFamily:F,
                       background: isFirst ? `${C.blue}12` : isAdd ? `${C.green}12` : `${C.red}12`,
                       color: isFirst ? C.blue : isAdd ? C.green : C.red,
@@ -8924,20 +8939,20 @@ function CorporateTax({ client, reportData, initialTab }) {
 
             {/* CT calculation */}
             <div style={{ marginTop:12, display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-              <div style={{ padding:"12px 14px", borderRadius:10, background:`${C.purple}08`, border:`1px solid ${C.purple}18` }}>
+              <div style={{ padding:"12px 14px", borderRadius:6, background:`${C.purple}08`, border:`1px solid ${C.purple}18` }}>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>CT Rate Applied</div>
-                <div style={{ fontFamily:FM, fontSize:18, fontWeight:800, color:C.purple }}>
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.purple }}>
                   {ctData.effectiveCTRate}%
                 </div>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>
                   {ctData.effectiveCTRate === 0 ? "QFZP / SBR exemption" : "Standard rate"}
                 </div>
               </div>
-              <div style={{ padding:"12px 14px", borderRadius:10,
+              <div style={{ padding:"12px 14px", borderRadius:6,
                 background: ctData.ctPayable === 0 ? "#F0FDF4" : "#FFFBEB",
                 border:`1px solid ${ctData.ctPayable===0?"#86EFAC":"#FCD34D"}` }}>
                 <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>CT Payable</div>
-                <div style={{ fontFamily:FM, fontSize:18, fontWeight:800,
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:800,
                   color: ctData.ctPayable === 0 ? C.green : C.amber }}>
                   {fmtAED(ctData.ctPayable || 0)}
                 </div>
@@ -8948,7 +8963,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             </div>
 
             {ctData.taxableFinalIncome === 0 && (
-              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:10, background:"#F0FDF4", border:"1px solid #86EFAC" }}>
+              <div style={{ marginTop:12, padding:"10px 14px", borderRadius:6, background:"#F0FDF4", border:"1px solid #86EFAC" }}>
                 <span style={{ fontFamily:F, fontSize:12, color:"#15803D", fontWeight:600 }}>
                   ✅ With QFZP qualifying income exclusion and SBR election, CT payable = <strong>AED 0</strong>. Ensure QFZP documentation is audit-ready.
                 </span>
@@ -9020,9 +9035,9 @@ function CorporateTax({ client, reportData, initialTab }) {
                 { label:"High-Risk Transactions", value:rptData.transactions.filter(t=>t.risk==="High").length, color:C.red, icon:"⚠️" },
               ].map((s,i) => (
                 <Card key={i} style={{ padding:18 }}>
-                  <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-                  <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+                  <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
                 </Card>
               ))}
             </div>
@@ -9059,9 +9074,9 @@ function CorporateTax({ client, reportData, initialTab }) {
                   </div>
                   <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
                     <span style={{ fontFamily:FM, fontSize:14, fontWeight:800, color:C.text }}>{fmtAED(t.amount)}</span>
-                    <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                    <span style={{ padding:"3px 10px", borderRadius:3, fontSize:11, fontWeight:700, fontFamily:F,
                       background:riskBg(t.risk), color:riskColor(t.risk) }}>{t.risk} Risk</span>
-                    <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                    <span style={{ padding:"3px 10px", borderRadius:3, fontSize:11, fontWeight:700, fontFamily:F,
                       background:t.armslength?"#ECFDF5":"#FEF2F2", color:t.armslength?C.green:C.red }}>
                       {t.armslength ? "✓ Arm's Length" : "✗ Not Arm's Length"}
                     </span>
@@ -9203,9 +9218,9 @@ function CorporateTax({ client, reportData, initialTab }) {
                 { label:"Non-Compliant Entities",  value:rptData.entities.filter(e=>!e.compliant).length,                         color:C.red,   icon:"⚠️" },
               ].map((s,i) => (
                 <Card key={i} style={{ padding:18 }}>
-                  <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-                  <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+                  <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
                 </Card>
               ))}
             </div>
@@ -9221,9 +9236,9 @@ function CorporateTax({ client, reportData, initialTab }) {
                     </div>
                   </div>
                   <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                    <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                    <span style={{ padding:"3px 10px", borderRadius:3, fontSize:11, fontWeight:700, fontFamily:F,
                       background:riskBg(e.risk), color:riskColor(e.risk) }}>{e.risk} Risk</span>
-                    <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                    <span style={{ padding:"3px 10px", borderRadius:3, fontSize:11, fontWeight:700, fontFamily:F,
                       background:e.compliant?"#ECFDF5":"#FEF2F2", color:e.compliant?C.green:C.red }}>
                       {e.compliant ? "✓ Arm's Length" : "✗ Non-Compliant"}
                     </span>
@@ -9371,7 +9386,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             <Card style={{ background:"#1E3A5F", border:"1px solid #2563EB", padding:"14px 18px" }}>
               <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
                 <div style={{ width:36, height:36, borderRadius:8, background:"#2563EB",
-                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, flexShrink:0 }}>🏛️</div>
+                  display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, flexShrink:0 }}>🏛️</div>
                 <div>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"white", marginBottom:4 }}>
                     FTA Public Clarification — CTP010
@@ -9415,7 +9430,7 @@ function CorporateTax({ client, reportData, initialTab }) {
 
               {/* Director vs Officer distinction — CTP010 */}
               <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
-                <div style={{ padding:"12px 14px", borderRadius:10, background:"white", border:"1px solid #C4B5FD" }}>
+                <div style={{ padding:"12px 14px", borderRadius:6, background:"white", border:"1px solid #C4B5FD" }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:12, color:C.purple, marginBottom:6 }}>
                     🪑 "DIRECTOR" — CTP010 Definition
                   </div>
@@ -9430,7 +9445,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                     </div>
                   </div>
                 </div>
-                <div style={{ padding:"12px 14px", borderRadius:10, background:"white", border:"1px solid #C4B5FD" }}>
+                <div style={{ padding:"12px 14px", borderRadius:6, background:"white", border:"1px solid #C4B5FD" }}>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:12, color:C.purple, marginBottom:6 }}>
                     👔 "OFFICER" — CTP010 Definition
                   </div>
@@ -9449,7 +9464,7 @@ function CorporateTax({ client, reportData, initialTab }) {
               </div>
 
               {/* Two-test rule */}
-              <div style={{ padding:"12px 14px", borderRadius:10, background:"#4C1D95" }}>
+              <div style={{ padding:"12px 14px", borderRadius:6, background:"#4C1D95" }}>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#C4B5FD",
                   textAlign:"center", marginBottom:8, letterSpacing:"0.05em" }}>
                   ART. 36(1) — TWO TESTS MUST BOTH PASS FOR DEDUCTIBILITY
@@ -9481,9 +9496,9 @@ function CorporateTax({ client, reportData, initialTab }) {
                 { label:"High Risk — Evidence Gaps",           value:cpData.persons.filter(p=>p.risk==="High").length, color:C.red,    icon:"⚠️" },
               ].map((s,i) => (
                 <Card key={i} style={{ padding:18 }}>
-                  <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-                  <div style={{ fontFamily:F, fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+                  <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
                 </Card>
               ))}
             </div>
@@ -9503,9 +9518,9 @@ function CorporateTax({ client, reportData, initialTab }) {
                       <div style={{ fontFamily:FM, fontSize:11, color:C.blue, marginTop:2 }}>{p.connectionRef}</div>
                     </div>
                     <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
-                      <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                      <span style={{ padding:"3px 10px", borderRadius:3, fontSize:11, fontWeight:700, fontFamily:F,
                         background:riskBg(p.risk), color:riskColor(p.risk) }}>{p.risk} Risk</span>
-                      <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+                      <span style={{ padding:"3px 10px", borderRadius:3, fontSize:11, fontWeight:700, fontFamily:F,
                         background:"#F5F3FF", color:C.purple }}>
                         {doneCount}/{p.docStatus.length} docs ({docPct}%)
                       </span>
@@ -9621,7 +9636,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                         <span style={{ fontFamily:F, fontSize:12,
                           color:d.done?C.text:C.amber, flex:1, lineHeight:1.4 }}>{d.item}</span>
                         {!d.done && (
-                          <span style={{ padding:"2px 8px", borderRadius:100, background:"#FFFBEB",
+                          <span style={{ padding:"2px 8px", borderRadius:3, background:"#FFFBEB",
                             color:C.amber, fontSize:10, fontWeight:700, flexShrink:0 }}>Action</span>
                         )}
                       </div>
@@ -9739,9 +9754,9 @@ function CorporateTax({ client, reportData, initialTab }) {
                 { label:"Require Adjustment",        value:alData.nonCompliant,       color:alData.nonCompliant>0?C.red:C.green, icon:"⚠️" },
               ].map((s,i) => (
                 <Card key={i} style={{ padding:18 }}>
-                  <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                  <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
                   <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-                  <div style={{ fontFamily:F, fontSize:22, fontWeight:800, color:s.color }}>{s.value}</div>
+                  <div style={{ fontFamily:F, fontSize:16, fontWeight:800, color:s.color }}>{s.value}</div>
                 </Card>
               ))}
             </div>
@@ -9756,8 +9771,8 @@ function CorporateTax({ client, reportData, initialTab }) {
                   {pct}%
                 </div>
               </div>
-              <div style={{ height:10, borderRadius:10, background:C.border, overflow:"hidden" }}>
-                <div style={{ height:"100%", width:`${pct}%`, borderRadius:10,
+              <div style={{ height:10, borderRadius:6, background:C.border, overflow:"hidden" }}>
+                <div style={{ height:"100%", width:`${pct}%`, borderRadius:6,
                   background:pct===100?"#10B981":pct>=75?"#F59E0B":"#EF4444",
                   transition:"width 0.5s" }}/>
               </div>
@@ -9796,7 +9811,7 @@ function CorporateTax({ client, reportData, initialTab }) {
                     <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{t.category}</div>
                     <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>{t.transaction}</div>
                   </div>
-                  <span style={{ padding:"4px 12px", borderRadius:100, fontSize:12, fontWeight:700, fontFamily:F,
+                  <span style={{ padding:"4px 12px", borderRadius:3, fontSize:12, fontWeight:700, fontFamily:F,
                     background:t.compliant?"#ECFDF5":"#FEF2F2", color:t.compliant?C.green:C.red,
                     border:`1px solid ${t.compliant?"#86EFAC":"#FCA5A5"}` }}>
                     {t.compliant ? "✓ Compliant" : "✗ Adjustment Required"}
@@ -9809,13 +9824,13 @@ function CorporateTax({ client, reportData, initialTab }) {
                     <span style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600 }}>Market Range</span>
                     <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>{t.marketRange}</span>
                   </div>
-                  <div style={{ position:"relative", height:10, borderRadius:10, background:C.border }}>
+                  <div style={{ position:"relative", height:10, borderRadius:6, background:C.border }}>
                     {/* Market range band */}
                     <div style={{
                       position:"absolute",
                       left:`${Math.max(0, ((t.marketLow - t.marketLow * 0.8) / (t.marketHigh * 1.2 - t.marketLow * 0.8)) * 100)}%`,
                       width:`${((t.marketHigh - t.marketLow) / (t.marketHigh * 1.2 - t.marketLow * 0.8)) * 100}%`,
-                      height:"100%", borderRadius:10,
+                      height:"100%", borderRadius:6,
                       background:"#BBF7D0",
                     }}/>
                     {/* Actual marker */}
@@ -9864,7 +9879,7 @@ function CorporateTax({ client, reportData, initialTab }) {
             ))}
 
             <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:14,
-              borderRadius:12, border:"none", background:C.purple, color:"white",
+              borderRadius:6, border:"none", background:C.purple, color:"white",
               fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>
               💬 Get Transfer Pricing Documentation from Garima
             </button>
@@ -10121,18 +10136,18 @@ function RevenueReconciliation({ client, reportData }) {
   };
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <UAEDisclaimer/>
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
-        marginBottom:20, flexWrap:"wrap", gap:12 }}>
+        marginBottom:14, flexWrap:"wrap", gap:12 }}>
         <div>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.blue,
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
             NEW · UAE VAT Compliance
           </div>
-          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, margin:0 }}>
+          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, margin:0 }}>
             Revenue Reconciliation
           </h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4, lineHeight:1.5 }}>
@@ -10140,7 +10155,7 @@ function RevenueReconciliation({ client, reportData }) {
           </p>
         </div>
         <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
-          padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
+          padding:"10px 20px", borderRadius:6, border:"none", cursor:"pointer",
           background:C.blue, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
           boxShadow:`0 4px 14px ${C.blue}40` }}>
           📄 Download PDF
@@ -10148,9 +10163,9 @@ function RevenueReconciliation({ client, reportData }) {
       </div>
 
       {/* What & Why explanation */}
-      <Card style={{ marginBottom:20, background:`${C.blue}06`, borderLeft:`4px solid ${C.blue}` }}>
+      <Card style={{ marginBottom:14, background:`${C.blue}06`, borderLeft:`4px solid ${C.blue}` }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:C.blue, flexShrink:0,
+          <div style={{ width:36, height:36, borderRadius:6, background:C.blue, flexShrink:0,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>💡</div>
           <div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:6 }}>
@@ -10181,9 +10196,9 @@ function RevenueReconciliation({ client, reportData }) {
           },
         ].map((s,i) => (
           <Card key={i} style={{ padding:18 }}>
-            <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+            <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
             <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-            <div style={{ fontFamily:FM||"monospace", fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+            <div style={{ fontFamily:FM||"monospace", fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
             <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:4 }}>{s.sub}</div>
           </Card>
         ))}
@@ -10199,7 +10214,7 @@ function RevenueReconciliation({ client, reportData }) {
       )}
 
       {/* Reconciliation Table */}
-      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+      <Card style={{ marginBottom:14, padding:0, overflow:"hidden" }}>
         {/* Table header */}
         <div style={{ display:"grid", gridTemplateColumns:"28fr 14fr 14fr 12fr 32fr",
           gap:0, background:"#1E3A5F", padding:"10px 16px" }}>
@@ -10264,7 +10279,7 @@ function RevenueReconciliation({ client, reportData }) {
       </Card>
 
       {/* Difference legend */}
-      <div style={{ display:"flex", gap:20, marginBottom:20, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:20, marginBottom:14, flexWrap:"wrap" }}>
         {[
           { color:"transparent", border:C.border, label:"No difference — IFRS = VAT" },
           { color:C.blue,        label:"IFRS higher than VAT (timing/scope)" },
@@ -10302,7 +10317,7 @@ function RevenueReconciliation({ client, reportData }) {
                   background:"#25D366", color:"white", borderRadius:8,
                   padding:"8px 16px", fontFamily:F, fontWeight:700,
                   fontSize:12, textDecoration:"none" }}>
-                📱 WhatsApp Garima
+                WhatsApp Garima
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
@@ -10317,7 +10332,7 @@ function RevenueReconciliation({ client, reportData }) {
       </Card>
 
       {/* FTA Audit note */}
-      <div style={{ marginTop:16, padding:"12px 16px", borderRadius:10,
+      <div style={{ marginTop:16, padding:"12px 16px", borderRadius:6,
         background:"#F0FDF4", border:"1px solid #86EFAC" }}>
         <div style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700, marginBottom:4 }}>
           🏛️ FTA Audit Readiness
@@ -10602,18 +10617,18 @@ function WorkingCapital({ client, reportData }) {
   };
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <UAEDisclaimer/>
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
-        marginBottom:20, flexWrap:"wrap", gap:12 }}>
+        marginBottom:14, flexWrap:"wrap", gap:12 }}>
         <div>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.green,
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
             NEW · Liquidity & Collections
           </div>
-          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, margin:0 }}>
+          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, margin:0 }}>
             Working Capital Management
           </h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
@@ -10621,7 +10636,7 @@ function WorkingCapital({ client, reportData }) {
           </p>
         </div>
         <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
-          padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
+          padding:"10px 20px", borderRadius:6, border:"none", cursor:"pointer",
           background:C.green, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
           boxShadow:`0 4px 14px ${C.green}40` }}>
           📄 Download PDF
@@ -10636,7 +10651,7 @@ function WorkingCapital({ client, reportData }) {
       )}
 
       {/* CCC Visual */}
-      <Card style={{ marginBottom:20, background:"#F0FDF4", border:`2px solid ${C.green}` }}>
+      <Card style={{ marginBottom:14, background:"#F0FDF4", border:`2px solid ${C.green}` }}>
         <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:"#065f46",
           textAlign:"center", marginBottom:16 }}>
           Cash Conversion Cycle — How Long Cash is Tied Up
@@ -10644,7 +10659,7 @@ function WorkingCapital({ client, reportData }) {
 
         {/* Formula */}
         <div style={{ display:"flex", alignItems:"center", justifyContent:"center",
-          gap:12, marginBottom:20, flexWrap:"wrap" }}>
+          gap:12, marginBottom:14, flexWrap:"wrap" }}>
           {[
             { val:dso, lbl:"DSO", sub:"Days to collect", color:C.blue },
             { op:"+" },
@@ -10653,17 +10668,17 @@ function WorkingCapital({ client, reportData }) {
             { val:dpo, lbl:"DPO", sub:"Days to pay", color:C.amber },
             { op:"=" },
           ].map((item,i) => item.op ? (
-            <div key={i} style={{ fontFamily:F, fontSize:22, fontWeight:700, color:C.green }}>{item.op}</div>
+            <div key={i} style={{ fontFamily:F, fontSize:16, fontWeight:700, color:C.green }}>{item.op}</div>
           ) : (
             <div key={i} style={{ background:"white", border:`2px solid ${C.green}`,
-              borderRadius:12, padding:"14px 22px", textAlign:"center", minWidth:110 }}>
+              borderRadius:6, padding:"14px 22px", textAlign:"center", minWidth:110 }}>
               <div style={{ fontFamily:"monospace", fontSize:30, fontWeight:900, color:item.color, lineHeight:1 }}>{item.val}</div>
               <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:"#065f46",
                 textTransform:"uppercase", letterSpacing:"0.05em", marginTop:4 }}>{item.lbl}</div>
               <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:2 }}>{item.sub}</div>
             </div>
           ))}
-          <div style={{ background:C.green, borderRadius:12, padding:"14px 24px", textAlign:"center", minWidth:130 }}>
+          <div style={{ background:C.green, borderRadius:6, padding:"14px 24px", textAlign:"center", minWidth:130 }}>
             <div style={{ fontFamily:"monospace", fontSize:34, fontWeight:900, color:"white", lineHeight:1 }}>{ccc}</div>
             <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.85)",
               textTransform:"uppercase", letterSpacing:"0.05em", marginTop:4 }}>CCC (Days)</div>
@@ -10697,14 +10712,14 @@ function WorkingCapital({ client, reportData }) {
         ].map((s,i) => (
           <Card key={i} style={{ padding:16 }}>
             <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.lbl}</div>
-            <div style={{ fontFamily:"monospace", fontSize:18, fontWeight:800, color:s.color }}>{s.val}</div>
+            <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:s.color }}>{s.val}</div>
             <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:3 }}>{s.sub}</div>
           </Card>
         ))}
       </div>
 
       {/* AR Aging Table */}
-      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+      <Card style={{ marginBottom:14, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#064E3B" }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
             AR Aging Schedule — {period}
@@ -10750,7 +10765,7 @@ function WorkingCapital({ client, reportData }) {
                 {fmtAED(total)}</div>
               <div style={{ fontFamily:F, fontSize:11, color:C.muted, textAlign:"right" }}>{pct}%</div>
               <div style={{ textAlign:"right" }}>
-                <span style={{ padding:"2px 8px", borderRadius:100, fontSize:10,
+                <span style={{ padding:"2px 8px", borderRadius:3, fontSize:10,
                   fontWeight:700, fontFamily:F, background:riskBg(r.risk), color:riskColor(r.risk) }}>
                   {r.risk}
                 </span>
@@ -10779,9 +10794,9 @@ function WorkingCapital({ client, reportData }) {
 
       {/* 90+ alert */}
       {total90 > 0 && (
-        <div style={{ padding:"12px 16px", borderRadius:10, background:"#FEF2F2",
+        <div style={{ padding:"12px 16px", borderRadius:6, background:"#FEF2F2",
           border:"1px solid #FCA5A5", borderLeft:`4px solid ${C.red}`,
-          marginBottom:20, fontFamily:F, fontSize:12, color:C.red }}>
+          marginBottom:14, fontFamily:F, fontSize:12, color:C.red }}>
           <strong>⚠️ IFRS 9 ECL Provision Required:</strong> AED {fmtAED(total90)} is 90+ days overdue.
           Provision AED {fmtAED(Math.round(total90*0.5))} (50% ECL) in accounts if not collected within 30 days.
           Issue formal demand letter immediately.
@@ -10789,7 +10804,7 @@ function WorkingCapital({ client, reportData }) {
       )}
 
       {/* AP Schedule */}
-      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+      <Card style={{ marginBottom:14, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#064E3B" }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>AP Schedule — Outstanding Payables</div>
           <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:2 }}>
@@ -10814,7 +10829,7 @@ function WorkingCapital({ client, reportData }) {
                 <div style={{ fontFamily:"monospace", fontSize:14, fontWeight:800, color:C.text }}>
                   {fmtAED(Number(r.amount||0))}
                 </div>
-                <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11,
+                <span style={{ padding:"3px 10px", borderRadius:3, fontSize:11,
                   fontWeight:700, fontFamily:F, background:priBg, color:priColor }}>
                   {r.priority}
                 </span>
@@ -10906,7 +10921,7 @@ function WorkingCapital({ client, reportData }) {
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
                   background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                📱 WhatsApp Garima
+                WhatsApp Garima
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
@@ -11219,7 +11234,7 @@ function VerticalAnalysis({ client, reportData }) {
           {id:"department", label:"By Department",    emoji:"🏢"},
         ].map(v=>(
           <button key={v.id} onClick={()=>setView(v.id)} style={{
-            padding:"8px 18px",borderRadius:20,border:"none",cursor:"pointer",
+            padding:"8px 18px",borderRadius:3,border:"none",cursor:"pointer",
             fontFamily:F,fontSize:13,fontWeight:600,transition:"all 0.15s",
             background:view===v.id?acc:"#F3F4F6",
             color:view===v.id?"white":C.muted,
@@ -11445,14 +11460,14 @@ function ComplianceCalendar({ client }) {
   const filtered  = filter === "all" ? deadlines : deadlines.filter(d => d.category === filter);
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <UAEDisclaimer/>
-      <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, marginBottom:6 }}>Compliance Calendar</h2>
+      <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>Compliance Calendar</h2>
       <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>All UAE deadlines — VAT, Corporate Tax, Audit, License — in one view.</p>
 
-      <div style={{ display:"flex", gap:8, marginBottom:20, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
         {[["all","All"],["vat","VAT"],["ct","Corp Tax"],["audit","Audit"],["license","License"]].map(([id,lbl]) => (
-          <button key={id} onClick={() => setFilter(id)} style={{ padding:"8px 16px", borderRadius:100, border:"none",
+          <button key={id} onClick={() => setFilter(id)} style={{ padding:"8px 16px", borderRadius:3, border:"none",
             cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700,
             background:filter===id?(catColors[id]||C.blue):"#F3F4F6",
             color:filter===id?"white":C.muted,
@@ -11485,11 +11500,11 @@ function ComplianceCalendar({ client }) {
                 <div style={{ flex:1 }}>
                   <div style={{ display:"flex", gap:8, alignItems:"center", marginBottom:4, flexWrap:"wrap" }}>
                     <span style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{d.label}</span>
-                    <span style={{ padding:"2px 8px", borderRadius:100, fontSize:10, fontWeight:700, fontFamily:F,
+                    <span style={{ padding:"2px 8px", borderRadius:3, fontSize:10, fontWeight:700, fontFamily:F,
                       background:`${catColors[d.category]}22`, color:catColors[d.category], border:`1px solid ${catColors[d.category]}44` }}>
                       {catLabels[d.category]}
                     </span>
-                    <span style={{ padding:"2px 8px", borderRadius:100, fontSize:10, fontWeight:700, fontFamily:F,
+                    <span style={{ padding:"2px 8px", borderRadius:3, fontSize:10, fontWeight:700, fontFamily:F,
                       background:d.priority==="High"?"#FEF2F2":d.priority==="Medium"?"#FFFBEB":"#ECFDF5",
                       color:d.priority==="High"?C.red:d.priority==="Medium"?C.amber:C.green }}>
                       {d.priority}
@@ -11497,7 +11512,7 @@ function ComplianceCalendar({ client }) {
                   </div>
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0, lineHeight:1.6 }}>{d.desc}</p>
                 </div>
-                {isPast && <span style={{ padding:"2px 8px", borderRadius:100, background:"#ECFDF5", color:C.green, fontSize:10, fontWeight:700 }}>✓ Past</span>}
+                {isPast && <span style={{ padding:"2px 8px", borderRadius:3, background:"#ECFDF5", color:C.green, fontSize:10, fontWeight:700 }}>✓ Past</span>}
               </div>
             </Card>
           );
@@ -11787,18 +11802,18 @@ function QFZPModule({ client, reportData }) {
   };
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <UAEDisclaimer/>
 
       {/* Header */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between",
-        marginBottom:20, flexWrap:"wrap", gap:12 }}>
+        marginBottom:14, flexWrap:"wrap", gap:12 }}>
         <div>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.purple,
             textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
             NEW · QFZP Compliance · Federal Decree-Law No. 47 of 2022
           </div>
-          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, margin:0 }}>
+          <h2 style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, margin:0 }}>
             QFZP Substance Tracker
           </h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
@@ -11806,7 +11821,7 @@ function QFZPModule({ client, reportData }) {
           </p>
         </div>
         <button onClick={handlePrint} style={{ display:"flex", alignItems:"center", gap:8,
-          padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
+          padding:"10px 20px", borderRadius:6, border:"none", cursor:"pointer",
           background:C.purple, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
           boxShadow:`0 4px 14px ${C.purple}40` }}>
           📄 Download PDF
@@ -11821,7 +11836,7 @@ function QFZPModule({ client, reportData }) {
       )}
 
       {/* Score + Status */}
-      <Card style={{ marginBottom:20, background:"#F5F3FF", border:`2px solid ${C.purple}` }}>
+      <Card style={{ marginBottom:14, background:"#F5F3FF", border:`2px solid ${C.purple}` }}>
         <div style={{ display:"flex", gap:24, alignItems:"center", flexWrap:"wrap" }}>
           <div style={{ textAlign:"center", minWidth:120 }}>
             <div style={{ fontFamily:"monospace", fontSize:56, fontWeight:900,
@@ -11831,9 +11846,9 @@ function QFZPModule({ client, reportData }) {
             </div>
           </div>
           <div style={{ flex:1 }}>
-            <div style={{ height:12, background:C.border, borderRadius:100,
+            <div style={{ height:12, background:C.border, borderRadius:3,
               overflow:"hidden", marginBottom:10 }}>
-              <div style={{ height:"100%", width:`${score}%`, borderRadius:100,
+              <div style={{ height:"100%", width:`${score}%`, borderRadius:3,
                 background:score>=80?C.green:score>=65?C.amber:C.red,
                 transition:"width 0.5s" }}/>
             </div>
@@ -11850,7 +11865,7 @@ function QFZPModule({ client, reportData }) {
                 { label:`${watchCount} Watch`,                                       color:C.amber,  bg:"#FFFBEB" },
                 { label:`${actionCount} Action Required`,                            color:C.red,    bg:"#FEF2F2" },
               ].map((s,i) => (
-                <span key={i} style={{ padding:"4px 12px", borderRadius:100, fontSize:12,
+                <span key={i} style={{ padding:"4px 12px", borderRadius:3, fontSize:12,
                   fontWeight:700, fontFamily:F, background:s.bg, color:s.color }}>
                   {s.label}
                 </span>
@@ -11870,16 +11885,16 @@ function QFZPModule({ client, reportData }) {
         ].map((s,i) => (
           <Card key={i} style={{ padding:16 }}>
             <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-            <div style={{ fontFamily:"monospace", fontSize:22, fontWeight:800, color:s.color }}>{s.val}</div>
+            <div style={{ fontFamily:"monospace", fontSize:16, fontWeight:800, color:s.color }}>{s.val}</div>
             <div style={{ fontFamily:F, fontSize:10, color:C.dim, marginTop:4 }}>{s.sub}</div>
           </Card>
         ))}
       </div>
 
       {/* What is QFZP box */}
-      <Card style={{ marginBottom:20, background:`${C.purple}06`, borderLeft:`4px solid ${C.purple}` }}>
+      <Card style={{ marginBottom:14, background:`${C.purple}06`, borderLeft:`4px solid ${C.purple}` }}>
         <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:36, height:36, borderRadius:10, background:C.purple, flexShrink:0,
+          <div style={{ width:36, height:36, borderRadius:6, background:C.purple, flexShrink:0,
             display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>🏙️</div>
           <div>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:6 }}>
@@ -11898,7 +11913,7 @@ function QFZPModule({ client, reportData }) {
       </Card>
 
       {/* CIGA Table */}
-      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+      <Card style={{ marginBottom:14, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#4C1D95" }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
             CIGA Analysis — Core Income-Generating Activities
@@ -11925,7 +11940,7 @@ function QFZPModule({ client, reportData }) {
             borderLeft:c.qualified?"none":`3px solid ${C.red}` }}>
             <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:c.qualified?400:500 }}>{c.activity}</div>
             <div>
-              <span style={{ padding:"3px 8px", borderRadius:100, fontSize:10, fontWeight:700, fontFamily:F,
+              <span style={{ padding:"3px 8px", borderRadius:3, fontSize:10, fontWeight:700, fontFamily:F,
                 background:c.qualified?"#ECFDF5":"#FEF2F2", color:c.qualified?C.green:C.red }}>
                 {c.qualified?"✓ Qualifying":"✗ Non-Qual."}
               </span>
@@ -11971,7 +11986,7 @@ function QFZPModule({ client, reportData }) {
       </Card>
 
       {/* 5-Pillar Substance Requirements */}
-      <Card style={{ marginBottom:20, padding:0, overflow:"hidden" }}>
+      <Card style={{ marginBottom:14, padding:0, overflow:"hidden" }}>
         <div style={{ padding:"12px 18px", background:"#4C1D95" }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:"white" }}>
             5-Pillar Substance Requirements
@@ -11997,7 +12012,7 @@ function QFZPModule({ client, reportData }) {
                   {s.requirement}
                 </div>
               </div>
-              <span style={{ padding:"5px 14px", borderRadius:100, fontSize:12, fontWeight:700,
+              <span style={{ padding:"5px 14px", borderRadius:3, fontSize:12, fontWeight:700,
                 fontFamily:F, background:statusBg(s.status), color:statusColor(s.status),
                 flexShrink:0 }}>
                 {statusLabel(s.status)}
@@ -12060,7 +12075,7 @@ function QFZPModule({ client, reportData }) {
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
                   background:"#25D366", color:"white", borderRadius:8, padding:"8px 16px",
                   fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                📱 WhatsApp Garima
+                WhatsApp Garima
               </a>
               <button onClick={handlePrint}
                 style={{ display:"inline-flex", alignItems:"center", gap:6,
@@ -12107,17 +12122,17 @@ function AuditReadiness({ client, reportData }) {
   const doneReq    = checklistItems.filter(c => c.req && c.done).length;
 
   return (
-    <div style={{ padding:24 }}>
+    <div className="ns-page">
       <UAEDisclaimer/>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16, flexWrap:"wrap", gap:12 }}>
         <div>
-          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:18, color:C.text, margin:0 }}>Audit Readiness</h2>
+          <h2 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, margin:0 }}>Audit Readiness</h2>
           <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
             QFZP audit pack checklist — {doneReq}/{totalReq} required docs ready
           </p>
         </div>
         <div style={{ textAlign:"right" }}>
-          <div style={{ fontFamily:F, fontSize:28, fontWeight:900,
+          <div style={{ fontFamily:F, fontSize:18, fontWeight:900,
             color:auditScore>=80?C.green:auditScore>=60?C.amber:C.red }}>{auditScore}/100</div>
           <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>Audit Readiness Score</div>
         </div>
@@ -12130,7 +12145,7 @@ function AuditReadiness({ client, reportData }) {
           <Card key={cat} style={{ marginBottom:14 }}>
             <div style={{ display:"flex", justifyContent:"space-between", marginBottom:12 }}>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{cat}</div>
-              <span style={{ padding:"2px 8px", borderRadius:100, fontSize:11, fontWeight:700, fontFamily:F,
+              <span style={{ padding:"2px 8px", borderRadius:3, fontSize:11, fontWeight:700, fontFamily:F,
                 background:doneCount===items.length?"#ECFDF5":"#FFFBEB",
                 color:doneCount===items.length?C.green:C.amber }}>
                 {doneCount}/{items.length}
@@ -12141,7 +12156,7 @@ function AuditReadiness({ client, reportData }) {
                 <span style={{ color:item.done?C.green:C.red, fontWeight:700, flexShrink:0 }}>{item.done?"✓":"✗"}</span>
                 <span style={{ fontFamily:F, fontSize:13, color:C.text, flex:1 }}>{item.item}</span>
                 {item.req && !item.done && (
-                  <span style={{ padding:"2px 8px", borderRadius:100, background:"#FEF2F2", color:C.red, fontSize:10, fontWeight:700 }}>Required</span>
+                  <span style={{ padding:"2px 8px", borderRadius:3, background:"#FEF2F2", color:C.red, fontSize:10, fontWeight:700 }}>Required</span>
                 )}
               </div>
             ))}
@@ -12156,7 +12171,7 @@ function AuditReadiness({ client, reportData }) {
         </p>
       </Card>
       <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:14,
-        borderRadius:12, border:"none", background:C.green, color:"white",
+        borderRadius:6, border:"none", background:C.green, color:"white",
         fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>
         💬 Get Audit Prep Support from Garima
       </button>
@@ -12168,12 +12183,12 @@ function AuditReadiness({ client, reportData }) {
 function Terms() {
   const [tab, setTab] = useState("terms");
   return (
-    <div style={{ padding:24, maxWidth:720 }}>
+    <div style={{ padding:14, maxWidth:720 }}>
       <SectionTitle sub="Legal documentation for Finzzup — Garima Agarwal, CA (M.No. 160944)">Legal & Compliance</SectionTitle>
 
-      <div style={{ display:"flex", gap:8, marginBottom:24, flexWrap:"wrap" }}>
+      <div style={{ display:"flex", gap:8, marginBottom:14, flexWrap:"wrap" }}>
         {[["terms","📄 Terms & Conditions"],["privacy","🔒 Privacy Policy"],["copyright","© Copyright"]].map(([id,lbl]) => (
-          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:100, border:"none",
+          <button key={id} onClick={() => setTab(id)} style={{ padding:"9px 18px", borderRadius:3, border:"none",
             cursor:"pointer", fontFamily:F, fontSize:13, fontWeight:700,
             background: tab===id ? C.blue : C.bg2, color: tab===id ? "white" : C.muted,
             outline:`1.5px solid ${tab===id ? C.blue : C.border}` }}>
@@ -12906,14 +12921,14 @@ function UAECFOReport({ client, reportData, kpis }) {
       <div style={{ padding:"20px 24px 0", display:"flex", alignItems:"center",
         justifyContent:"space-between", flexWrap:"wrap", gap:10, marginBottom:0 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:18, color:C.text }}>UAE CFO Report</div>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text }}>UAE CFO Report</div>
           <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#00732F",
-            background:"#E8F5EE", padding:"4px 12px", borderRadius:100 }}>
+            background:"#E8F5EE", padding:"4px 12px", borderRadius:60 }}>
             🇦🇪 {freezone}
           </span>
           {period && (
             <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
-              background:`${C.blue}12`, padding:"4px 12px", borderRadius:100 }}>
+              background:`${C.blue}12`, padding:"4px 12px", borderRadius:60 }}>
               {period}
             </span>
           )}
@@ -12953,9 +12968,9 @@ function UAECFOReport({ client, reportData, kpis }) {
                   { label:"Net Cash After Obligations",      value:reportData?.netCashAfterObl  || "AED 487K",                                    color:C.green,  icon:"✅" },
                 ].map((s,i) => (
                   <Card key={i} style={{ padding:18, borderTop:`3px solid ${s.color}` }}>
-                    <div style={{ fontSize:22, marginBottom:8 }}>{s.icon}</div>
+                    <div style={{ fontSize:16, marginBottom:8 }}>{s.icon}</div>
                     <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
-                    <div style={{ fontFamily:"monospace", fontSize:20, fontWeight:800, color:s.color }}>{s.value}</div>
+                    <div style={{ fontFamily:"monospace", fontSize:15, fontWeight:800, color:s.color }}>{s.value}</div>
                   </Card>
                 ))}
               </div>
@@ -13025,7 +13040,7 @@ function UAECFOReport({ client, reportData, kpis }) {
                       padding:"11px 14px", borderRadius:8,
                       background:s.color===C.green?"#F0FDF4":s.color===C.amber?"#FFFBEB":"#EFF6FF",
                       border:`1px solid ${s.color}33` }}>
-                      <span style={{ padding:"2px 8px", borderRadius:100, fontSize:10,
+                      <span style={{ padding:"2px 8px", borderRadius:3, fontSize:10,
                         fontWeight:700, fontFamily:F, flexShrink:0,
                         background:s.color===C.green?"#ECFDF5":s.color===C.amber?"#FEF3C7":"#EFF6FF",
                         color:s.color }}>{s.tag}</span>
@@ -13041,12 +13056,12 @@ function UAECFOReport({ client, reportData, kpis }) {
               {/* Download */}
               <div style={{ display:"flex", gap:10 }}>
                 <button onClick={() => { const html = generateVATPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
-                  style={{ padding:"10px 20px", borderRadius:10, border:"none", cursor:"pointer",
+                  style={{ padding:"10px 20px", borderRadius:6, border:"none", cursor:"pointer",
                     background:C.teal, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
                   📄 Download Cash Report
                 </button>
                 <a href={WA} target="_blank" rel="noopener noreferrer"
-                  style={{ padding:"10px 20px", borderRadius:10, border:`1px solid ${C.border}`,
+                  style={{ padding:"10px 20px", borderRadius:6, border:`1px solid ${C.border}`,
                     background:"white", color:C.text, fontFamily:F, fontWeight:700, fontSize:13,
                     textDecoration:"none", display:"inline-flex", alignItems:"center", gap:6 }}>
                   📱 Ask Garima
@@ -13102,15 +13117,15 @@ function MyReport({ client, reportData, kpis }) {
       {/* Report header with month context */}
       <div style={{ padding:"20px 24px 0", display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:18, color:C.text }}>{packLabel}</div>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text }}>{packLabel}</div>
           {reportData?.monthLabel ? (
             <span style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.blue,
-              background:`${C.blue}12`, padding:"4px 14px", borderRadius:100 }}>
+              background:`${C.blue}12`, padding:"4px 14px", borderRadius:60 }}>
               {reportData.monthLabel}
             </span>
           ) : (
             <span style={{ fontFamily:F, fontSize:11, color:C.dim,
-              background:C.bg3, padding:"4px 12px", borderRadius:100 }}>
+              background:C.canvas, padding:"4px 12px", borderRadius:60 }}>
               Month not set
             </span>
           )}
@@ -13208,7 +13223,7 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
       {/* Preview + Print */}
       <button onClick={handlePreview}
         style={{ display:"inline-flex", alignItems:"center", gap:6,
-          padding:"8px 16px", borderRadius:10,
+          padding:"8px 16px", borderRadius:6,
           border:"1.5px solid #E5E7EB", background:"white",
           color:"#374151", fontFamily:F, fontWeight:600,
           fontSize:12, cursor:"pointer" }}>
@@ -13217,7 +13232,7 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
       {/* Board Executive Summary */}
       <button onClick={handleExecSummary}
         style={{ display:"inline-flex", alignItems:"center", gap:6,
-          padding:"8px 16px", borderRadius:10,
+          padding:"8px 16px", borderRadius:6,
           border:`1.5px solid ${C.purple}30`, background:`${C.purple}08`,
           color:C.purple, fontFamily:F, fontWeight:600,
           fontSize:12, cursor:"pointer" }}>
@@ -13226,7 +13241,7 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
       {/* Save to My Documents */}
       <button onClick={handleSave} disabled={saving}
         style={{ display:"inline-flex", alignItems:"center", gap:6,
-          padding:"8px 18px", borderRadius:10,
+          padding:"8px 18px", borderRadius:6,
           background: saving ? "#E5E7EB" : "linear-gradient(135deg,#2563EB,#7C3AED)",
           color: saving ? "#9CA3AF" : "white",
           border:"none", fontFamily:F, fontWeight:700,
@@ -13498,14 +13513,138 @@ function Portal({ client, onLogout }) {
   };
 
   return (
-    <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
+    <div style={{ display:"flex", minHeight:"100vh", background:C.canvas, fontFamily:F }}>
+      <style>{`
+        /* ── Finzzup Enterprise Design System ── */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #F4F5F7; font-family: "Inter", system-ui, sans-serif; color: #0F1117; -webkit-font-smoothing: antialiased; }
+
+        /* Typography */
+        .fi-page-title { font-size:14px; font-weight:700; color:#0F1117; letter-spacing:-0.01em; }
+        .fi-label { font-size:10px; font-weight:600; color:#9499B0; text-transform:uppercase; letter-spacing:0.09em; }
+        .fi-value { font-size:18px; font-weight:700; color:#0F1117; font-family:"JetBrains Mono",monospace; }
+        .fi-sub { font-size:11px; color:#9499B0; }
+        .fi-muted { color:#52566B; font-size:12px; }
+
+        /* Panel */
+        .fi-panel { background:#fff; border:1px solid #E2E4E9; border-radius:3px; box-shadow:0 1px 3px rgba(0,0,0,0.05); overflow:hidden; }
+        .fi-panel-hdr { padding:8px 14px; background:#F4F5F7; border-bottom:1px solid #E2E4E9; display:flex; align-items:center; justify-content:space-between; }
+        .fi-panel-hdr h3 { font-size:10px; font-weight:600; color:#52566B; text-transform:uppercase; letter-spacing:0.09em; margin:0; }
+        .fi-panel-body { padding:14px; }
+
+        /* Tables */
+        .fi-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .fi-table thead tr { background:#F4F5F7; }
+        .fi-table thead th { padding:6px 12px; text-align:left; font-size:10px; font-weight:600; color:#52566B; text-transform:uppercase; letter-spacing:0.08em; border-bottom:1px solid #E2E4E9; white-space:nowrap; }
+        .fi-table thead th.r { text-align:right; }
+        .fi-table tbody tr { border-bottom:1px solid #EEF0F4; }
+        .fi-table tbody tr:hover { background:#F8F9FB; }
+        .fi-table tbody tr.alt { background:#FAFBFC; }
+        .fi-table tbody td { padding:7px 12px; color:#0F1117; font-size:12px; vertical-align:middle; }
+        .fi-table tbody td.r { text-align:right; }
+        .fi-table tbody td.mono { font-family:"JetBrains Mono",monospace; font-size:11px; }
+        .fi-table tbody td.bold { font-weight:600; }
+        .fi-table tbody td.dim { color:#9499B0; }
+        .fi-table tbody tr.subtotal td { background:#F8F9FB; font-weight:600; }
+        .fi-table tbody tr.total td { background:#EEF2FA; font-weight:700; color:#1B3A6B; border-top:2px solid #C7D4EE; }
+
+        /* KPI tiles */
+        .fi-kpi { background:#fff; border:1px solid #E2E4E9; border-radius:3px; padding:12px 14px; }
+        .fi-kpi .fi-label { display:block; margin-bottom:5px; }
+        .fi-kpi .fi-value { display:block; }
+        .fi-kpi .fi-trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
+
+        /* Badges */
+        .fi-badge { display:inline-flex; align-items:center; padding:2px 6px; border-radius:2px; font-size:10px; font-weight:600; border:1px solid transparent; }
+        .fi-badge.green { background:#DCFCE7; color:#059669; border-color:#6EE7B7; }
+        .fi-badge.red   { background:#FEF2F2; color:#EF4444; border-color:#FECACA; }
+        .fi-badge.amber { background:#FEF3C7; color:#B45309; border-color:#FDE68A; }
+        .fi-badge.blue  { background:#EEF2FF; color:#2563EB; border-color:#BFDBFE; }
+        .fi-badge.grey  { background:#F4F5F7; color:#52566B; border-color:#E2E4E9; }
+
+        /* Legacy ns-* aliases */
+        .ns-panel { background:#fff; border:1px solid #E2E4E9; border-radius:3px; box-shadow:0 1px 3px rgba(0,0,0,0.05); overflow:hidden; }
+        .ns-panel-header { padding:8px 14px; background:#F4F5F7; border-bottom:1px solid #E2E4E9; display:flex; align-items:center; justify-content:space-between; }
+        .ns-panel-header h3 { font-size:10px; font-weight:600; color:#52566B; text-transform:uppercase; letter-spacing:0.09em; margin:0; }
+        .ns-panel-body { padding:14px; }
+        .ns-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .ns-table thead tr { background:#F4F5F7; }
+        .ns-table thead th { padding:6px 12px; text-align:left; font-size:10px; font-weight:600; color:#52566B; text-transform:uppercase; letter-spacing:0.08em; border-bottom:1px solid #E2E4E9; white-space:nowrap; }
+        .ns-table thead th.right { text-align:right; }
+        .ns-table tbody tr { border-bottom:1px solid #EEF0F4; }
+        .ns-table tbody tr:hover { background:#F8F9FB; }
+        .ns-table tbody tr.striped:nth-child(even) { background:#FAFBFC; }
+        .ns-table tbody td { padding:7px 12px; color:#0F1117; font-size:12px; vertical-align:middle; }
+        .ns-table tbody td.right { text-align:right; }
+        .ns-table tbody td.mono { font-family:"JetBrains Mono",monospace; font-size:11px; }
+        .ns-table tbody td.bold { font-weight:600; }
+        .ns-table tbody td.muted { color:#9499B0; }
+        .ns-table tbody tr.subtotal td { background:#F8F9FB; font-weight:600; }
+        .ns-table tbody tr.total td { background:#EEF2FA; font-weight:700; color:#1B3A6B; border-top:2px solid #C7D4EE; }
+        .ns-kpi-tile { background:#fff; border:1px solid #E2E4E9; border-radius:3px; padding:12px 14px; }
+        .ns-kpi-tile .label { font-size:10px; font-weight:600; color:#9499B0; text-transform:uppercase; letter-spacing:0.08em; display:block; margin-bottom:5px; }
+        .ns-kpi-tile .value { font-size:17px; font-weight:700; color:#0F1117; font-family:"JetBrains Mono",monospace; display:block; }
+        .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
+        .ns-badge { display:inline-flex; align-items:center; padding:2px 6px; border-radius:2px; font-size:10px; font-weight:600; }
+        .ns-badge.green { background:#DCFCE7; color:#059669; }
+        .ns-badge.red { background:#FEE2E2; color:#EF4444; }
+        .ns-badge.amber { background:#FEF3C7; color:#D97706; }
+        .ns-badge.blue { background:#EEF2FF; color:#2563EB; }
+        .ns-badge.purple { background:#EDE9FE; color:#7C3AED; }
+        .ns-badge.pink { background:#FDF2F8; color:#DB2777; }
+        .ns-badge.teal { background:#E0F7FA; color:#0891B2; }
+        .ns-page { padding:16px; display:flex; flex-direction:column; gap:12px; background:#F4F5F7; min-height:calc(100vh - 44px); }
+        .ns-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+        .ns-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+        .ns-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+        .ns-grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
+        .ns-stat-row { display:flex; align-items:center; justify-content:space-between; padding:7px 14px; border-bottom:1px solid #EEF0F4; font-size:12px; }
+        .ns-stat-row:last-child { border-bottom:none; }
+        .ns-stat-row .stat-label { color:#0F1117; flex:1; }
+        .ns-stat-row .stat-period { color:#9499B0; font-size:11px; flex:1; }
+        .ns-stat-row .stat-value { font-family:"JetBrains Mono",monospace; font-weight:600; color:#0F1117; min-width:80px; text-align:right; }
+        .ns-stat-row .stat-change { min-width:50px; text-align:right; font-size:11px; font-weight:600; }
+        .ns-stat-row .stat-change.up { color:#0C7C4A; }
+        .ns-stat-row .stat-change.down { color:#C0392B; }
+        .ns-tile-row { display:flex; gap:10px; }
+        .ns-tile { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; padding:14px 10px; border-radius:3px; border:none; cursor:pointer; color:white; font-weight:600; font-size:11px; transition:opacity 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.12); }
+        .ns-tile:hover { opacity:0.88; }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width:4px; height:4px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#C8CCD6; border-radius:4px; }
+
+        /* Sidebar */
+        nav button:hover { background:rgba(255,255,255,0.05)!important; }
+
+        /* Responsive */
+        @media(max-width:900px){
+          .ns-grid-6{grid-template-columns:repeat(3,1fr)!important}
+          .ns-grid-4{grid-template-columns:repeat(2,1fr)!important}
+          .ns-grid-3{grid-template-columns:1fr!important}
+          .ns-grid-2{grid-template-columns:1fr!important}
+        }
+
+        /* Smooth transitions */
+        button { transition:all 0.1s ease; }
+        input, textarea, select { font-family:inherit; }
+        a { color:inherit; }
+
+        /* Admin */
+        .admin-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .admin-table th { background:#F4F5F7; padding:7px 12px; text-align:left; font-size:10px; font-weight:600; color:#52566B; letter-spacing:0.08em; text-transform:uppercase; }
+        .admin-table td { padding:7px 12px; border-bottom:1px solid #EEF0F4; color:#0F1117; font-size:12px; }
+        .admin-table tr:hover td { background:#F8F9FB; }
+`}</style>
       {dataLoading && !isDemo && (
         <div style={{ position:"fixed", top:0, left:0, right:0, height:3, zIndex:9999,
           background:C.grad1, animation:"progress 1.5s ease-in-out infinite" }}/>
       )}
       <Sidebar page={page} setPage={setPage} client={client}
         onLogout={onLogout} collapsed={collapsed} setCollapsed={setCollapsed}/>
-      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden" }}>
+      <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden", background:C.canvas }}>
         <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
           notifItems={[
             ...((isDemo ? null : liveInvoices) || [])
@@ -13634,7 +13773,7 @@ function AIChatbot({ client, reportData, kpis }) {
       {showBubble && !open && (
         <div style={{
           position:"fixed", bottom:90, right:24, zIndex:9998,
-          background:"white", borderRadius:12, padding:"10px 14px",
+          background:"white", borderRadius:6, padding:"10px 14px",
           boxShadow:"0 4px 20px rgba(0,0,0,0.12)", maxWidth:220,
           fontSize:13, color:"#374151", fontFamily:F, lineHeight:1.5,
           animation:"popIn 0.3s ease",
@@ -13670,7 +13809,7 @@ function AIChatbot({ client, reportData, kpis }) {
       {open && (
         <div style={{
           position:"fixed", bottom:24, right:24, zIndex:9999,
-          width:360, height:520, borderRadius:20,
+          width:360, height:520, borderRadius:3,
           background:"white", boxShadow:"0 8px 40px rgba(0,0,0,0.18)",
           display:"flex", flexDirection:"column", overflow:"hidden",
           animation:"popIn 0.25s ease",
@@ -13703,14 +13842,14 @@ function AIChatbot({ client, reportData, kpis }) {
                 {m.role === "user" && (
                   <div style={{
                     width:28, height:28, borderRadius:"50%", flexShrink:0,
-                    background:C.bg2, display:"flex", alignItems:"center",
+                    background:"#fff", display:"flex", alignItems:"center",
                     justifyContent:"center", fontSize:12, fontWeight:700, color:C.muted
                   }}>
                     {client?.name ? client.name[0].toUpperCase() : "U"}
                   </div>
                 )}
                 <div style={{
-                  maxWidth:"75%", padding:"9px 12px", borderRadius:14,
+                  maxWidth:"75%", padding:"9px 12px", borderRadius:8,
                   background: m.role==="user"
                     ? "linear-gradient(135deg,#2563EB,#7C3AED)"
                     : C.bg2,
@@ -13727,7 +13866,7 @@ function AIChatbot({ client, reportData, kpis }) {
             {loading && (
               <div style={{ display:"flex", gap:8, alignItems:"flex-start" }}>
                 <Avatar size={28}/>
-                <div style={{ padding:"10px 14px", borderRadius:14, borderBottomLeftRadius:4, background:C.bg2 }}>
+                <div style={{ padding:"10px 14px", borderRadius:8, borderBottomLeftRadius:4, background:"#fff" }}>
                   <div style={{ display:"flex", gap:4, alignItems:"center" }}>
                     {[0,1,2].map(i => (
                       <div key={i} style={{
@@ -13754,9 +13893,9 @@ function AIChatbot({ client, reportData, kpis }) {
               onKeyDown={e => e.key === "Enter" && !e.shiftKey && sendMessage()}
               placeholder="Ask about your finances..."
               style={{
-                flex:1, padding:"9px 12px", borderRadius:20,
+                flex:1, padding:"9px 12px", borderRadius:3,
                 border:`1.5px solid ${C.border}`, fontFamily:F, fontSize:13,
-                outline:"none", color:C.text, background:C.bg2,
+                outline:"none", color:C.text, background:"#fff",
                 transition:"border 0.2s"
               }}
               onFocus={e => e.target.style.borderColor = C.purple}
@@ -13800,3836 +13939,10 @@ function fmtLakh(val) {
   return (n < 0 ? "-" : "") + formatted;
 }
 
-function AdminInput({ label, val, onChange, type="text", placeholder="", mono=false, multiline=false, lakh=false, C, F, FM }) {
-  const [local, setLocal] = React.useState(val ?? "");
-  React.useEffect(() => { setLocal(val ?? ""); }, [val]);
 
-  const sharedStyle = { width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-    border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
-    background:C.bg, outline:"none", boxSizing:"border-box" };
-
-  // Show lakh-formatted hint below the field when lakh=true
-  const lakhHint = lakh && local && !isNaN(Number(String(local).replace(/,/g,"")))
-    ? fmtLakh(local)
-    : null;
-
-  return (
-    <div style={{ marginBottom:12 }}>
-      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-        letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
-      {multiline ? (
-        <textarea
-          value={local}
-          placeholder={placeholder}
-          rows={3}
-          onChange={e => setLocal(e.target.value)}
-          onBlur={e => { onChange(local); e.target.style.borderColor = C.border; }}
-          onFocus={e => e.target.style.borderColor = C.amber}
-          style={{ ...sharedStyle, resize:"vertical", lineHeight:1.6 }}
-        />
-      ) : (
-        <input
-          value={local}
-          type={type}
-          placeholder={placeholder}
-          onChange={e => setLocal(e.target.value)}
-          onBlur={e => { onChange(local); e.target.style.borderColor = C.border; }}
-          onFocus={e => e.target.style.borderColor = C.amber}
-          style={sharedStyle}
-        />
-      )}
-      {lakhHint && (
-        <div style={{ fontFamily:FM, fontSize:11, color:C.muted, marginTop:3 }}>
-          = {lakhHint} &nbsp;·&nbsp; {Number(String(local).replace(/,/g,"")) >= 100000
-            ? (Number(String(local).replace(/,/g,"")) / 100000).toFixed(2) + "L"
-            : Number(String(local).replace(/,/g,"")) >= 1000
-              ? (Number(String(local).replace(/,/g,"")) / 1000).toFixed(1) + "K"
-              : local}
-        </div>
-      )}
-    </div>
-  );
-}
-const AdminSelect = ({ label, val, onChange, options, C, F }) => (
-  <div style={{ marginBottom:12 }}>
-    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
-    <select value={val} onChange={e => onChange(e.target.value)}
-      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-        border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-        background:C.bg, outline:"none", boxSizing:"border-box" }}>
-      {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-    </select>
-  </div>
-);
-const AdminSaveBtn = ({ onClick, loading, saved, label="Save Changes", F }) => (
-  <button onClick={onClick} disabled={loading} style={{ padding:"11px 24px", borderRadius:10,
-    border:"none", background:"linear-gradient(135deg,#F59E0B,#EF4444)", color:"white",
-    fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", opacity:loading?0.75:1,
-    touchAction:"manipulation" }}>
-    {loading ? "Saving…" : saved ? "✅ Saved!" : label}
-  </button>
-);
-
-// ─── INLINE INPUT — for table cells, commits on blur only ─────────────────────
-function InlineInput({ value, onCommit, placeholder="", style={} }) {
-  const [local, setLocal] = React.useState(value ?? "");
-  React.useEffect(() => { setLocal(value ?? ""); }, [value]);
-  return (
-    <input
-      value={local}
-      onChange={e => setLocal(e.target.value)}
-      onBlur={() => onCommit(local)}
-      placeholder={placeholder}
-      style={{ padding:"6px 8px", borderRadius:7, fontSize:12, border:"1.5px solid #E5E7EB",
-        fontFamily:"'DM Mono',monospace", color:"#111827", background:"#F9FAFB",
-        outline:"none", width:"100%", boxSizing:"border-box", ...style }}
-      onFocus={e => e.target.style.borderColor="#D97706"}
-    />
-  );
-}
-
-function AdminLogin({ onLogin }) {
-  const [form, setForm] = useState({ email:"", password:"" });
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const signIn = async () => {
-    if (!form.email || !form.password) { setError("Please fill in all fields."); return; }
-    setLoading(true); setError("");
-    const { error: authErr } = await supabase.auth.signInWithPassword({
-      email: form.email, password: form.password
-    });
-    if (authErr) { setLoading(false); setError("Invalid credentials."); return; }
-    // Check if admin
-    const { data: adminData } = await supabase
-      .from("admins").select("*").eq("email", form.email).maybeSingle();
-    setLoading(false);
-    if (!adminData) { await supabase.auth.signOut(); setError("Not authorised as admin."); return; }
-    onLogin(adminData);
-  };
-
-  return (
-    <div style={{ minHeight:"100vh", background:"#0A1128", display:"flex", alignItems:"center",
-      justifyContent:"center", padding:20, fontFamily:F }}>
-      <div style={{ width:"100%", maxWidth:400 }}>
-        <div style={{ textAlign:"center", marginBottom:32 }}>
-          <div style={{ display:"flex", justifyContent:"center", marginBottom:10 }}>
-            <Logo size={32} dark={true} showTagline={false}/>
-          </div>
-          <div style={{ display:"inline-block", padding:"4px 14px", borderRadius:100,
-            background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.3)" }}>
-            <span style={{ fontSize:11, fontWeight:700, color:"#FBBF24", letterSpacing:"0.1em" }}>ADMIN ACCESS</span>
-          </div>
-        </div>
-        <Card style={{ padding:32 }}>
-          <h2 style={{ fontWeight:700, fontSize:20, color:C.text, marginBottom:20, textAlign:"center" }}>
-            Garima's Admin Panel
-          </h2>
-          {[
-            { label:"Email", key:"email", type:"email", placeholder:"garima@finzzup.com" },
-            { label:"Password", key:"password", type:"password", placeholder:"Your password" },
-          ].map(({ label, key, type, placeholder }) => (
-            <div key={key} style={{ marginBottom:14 }}>
-              <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                letterSpacing:"0.08em", display:"block", marginBottom:7, fontFamily:F }}>{label}</label>
-              <input value={form[key]}
-                onChange={e => { setForm(f=>({...f,[key]:e.target.value})); setError(""); }}
-                onKeyDown={e => e.key==="Enter" && signIn()}
-                type={type} placeholder={placeholder}
-                style={{ width:"100%", padding:"12px 14px", borderRadius:10, fontSize:16,
-                  border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                  background:C.bg, outline:"none", boxSizing:"border-box" }}
-                onFocus={e => e.target.style.borderColor = C.amber}
-                onBlur={e  => e.target.style.borderColor = C.border}
-              />
-            </div>
-          ))}
-          {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-          <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:14,
-            borderRadius:12, border:"none", background:"linear-gradient(135deg,#F59E0B,#EF4444)",
-            color:"white", fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer",
-            opacity:loading?0.75:1, touchAction:"manipulation" }}>
-            {loading ? "Signing in…" : "Sign In →"}
-          </button>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function AdminPanel({ admin, onLogout }) {
-  const [tab, setTab]         = useState("clients");
-  const [clients, setClients] = useState([]);
-  const [selected, setSelected] = useState(null); // selected client for editing
-  const [loading, setLoading]       = useState(false);
-  const [saved, setSaved]           = useState(false);
-  const [aiGenerating, setAiGen]    = useState(false);
-  const [aiDraft, setAiDraft]       = useState(null);
-  const [aiError, setAiError]       = useState("");
-
-  // KPI edit state
-  const [kpis, setKpis] = useState({
-    month:"", revenue:"", gross_margin:"", cash_balance:"",
-    burn_rate:"", runway:"", arr:"", garima_note:""
-  });
-
-  // Action items state
-  const [actions, setActions] = useState([]);
-  const [newAction, setNewAction] = useState({ text:"", priority:"High", month:"" });
-
-  // New client state
-  const [newClient, setNewClient] = useState({
-    name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both"
-  });
-
-  // Engagement state
-  const [engagement, setEngagement] = useState({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
-  const [requests,   setRequests]   = useState([]);
-  const [reqLoading, setReqLoading] = useState(false);
-  const [docs, setDocs]           = useState([]);
-  const [docLoading, setDocLoading] = useState(false);
-
-  // Invoice state
-  const [invoices,    setInvoices]    = useState([]);
-  const [newInvoice,  setNewInvoice]  = useState({
-    invoice_number:"", description:"", amount:"", due_date:"", status:"unpaid"
-  });
-
-  // Report data state — cash flow, prev KPIs, pack scores, benchmarks, checklists
-  const [reportData, setReportData] = useState(null);
-  const defaultReportData = (pack) => ({
-    // Cash flow — 6 actual + 3 forecast months
-    cashflow: [
-      { month:"Sep", actual:"", forecast:"" },
-      { month:"Oct", actual:"", forecast:"" },
-      { month:"Nov", actual:"", forecast:"" },
-      { month:"Dec", actual:"", forecast:"" },
-      { month:"Jan", actual:"", forecast:"" },
-      { month:"Feb", actual:"", forecast:"" },
-      { month:"Mar", actual:"", forecast:"" },
-      { month:"Apr", actual:"", forecast:"" },
-      { month:"May", actual:"", forecast:"" },
-    ],
-    treasury: {
-      totalCash: "",
-      investedPct: "",
-      yieldPA: "",
-      cashPositions: [
-        { bank:"", balance:"", type:"Operating",    rate:"", flag:false, note:"" },
-        { bank:"", balance:"", type:"FD",           rate:"", flag:false, note:"" },
-        { bank:"", balance:"", type:"Sweep FD",     rate:"", flag:false, note:"" },
-        { bank:"", balance:"", type:"Reserve",      rate:"", flag:true,  note:"" },
-      ],
-      maturitySchedule: [
-        { item:"", maturity:"", amount:"", action:"Renew"   },
-        { item:"", maturity:"", amount:"", action:"Redeem"  },
-        { item:"", maturity:"", amount:"", action:"Auto-renew" },
-      ],
-      recommendations: [
-        { priority:"High",   text:"" },
-        { priority:"High",   text:"" },
-        { priority:"Medium", text:"" },
-        { priority:"Low",    text:"" },
-      ],
-    },
-    // Previous month KPI values (for trend arrows)
-    prevKpis: { revenue:"", gross_margin:"", cash_balance:"", burn_rate:"", runway:"", arr:"" },
-    // Pack-specific scores
-    score: "",          // fundraise / cash health / ipo score (0-100)
-    scoreBreakdown: pack === "startup" ? [
-      { label:"Revenue Growth",          score:"", comment:"" },
-      { label:"Gross Margin",            score:"", comment:"" },
-      { label:"Runway",                  score:"", comment:"" },
-      { label:"Financial Documentation", score:"", comment:"" },
-      { label:"Unit Economics",          score:"", comment:"" },
-    ] : pack === "msme" ? [
-      { label:"Cash Conversion Cycle",  score:"", comment:"" },
-      { label:"Working Capital Ratio",  score:"", comment:"" },
-      { label:"Debtor Days",            score:"", comment:"" },
-      { label:"Creditor Days",          score:"", comment:"" },
-      { label:"Inventory Turnover",     score:"", comment:"" },
-    ] : [
-      { label:"Revenue Scale",              score:"", comment:"" },
-      { label:"Profitability Track Record", score:"", comment:"" },
-      { label:"Governance & Board",         score:"", comment:"" },
-      { label:"Ind AS Compliance",          score:"", comment:"" },
-      { label:"Audit Quality",              score:"", comment:"" },
-    ],
-    // Investor/working capital metrics
-    metrics: pack === "startup" ? [
-      { label:"ARR",           value:"", flag:false, note:"" },
-      { label:"MoM Growth",    value:"", flag:false, note:"" },
-      { label:"Burn Multiple", value:"", flag:false, note:"" },
-      { label:"CAC Payback",   value:"", flag:false, note:"" },
-      { label:"NRR",           value:"", flag:false, note:"" },
-      { label:"Gross Margin",  value:"", flag:false, note:"" },
-    ] : pack === "msme" ? [
-      { label:"Current Ratio",   value:"", flag:false, note:"" },
-      { label:"Quick Ratio",     value:"", flag:false, note:"" },
-      { label:"Debtor Days",     value:"", flag:false, note:"" },
-      { label:"Creditor Days",   value:"", flag:false, note:"" },
-      { label:"Inventory Days",  value:"", flag:false, note:"" },
-      { label:"Cash Conversion", value:"", flag:false, note:"" },
-    ] : [
-      { label:"Revenue",         value:"", flag:false, note:"" },
-      { label:"EBITDA Margin",   value:"", flag:false, note:"" },
-      { label:"PAT",             value:"", flag:false, note:"" },
-      { label:"Debt/Equity",     value:"", flag:false, note:"" },
-      { label:"ROE",             value:"", flag:false, note:"" },
-      { label:"Current Ratio",   value:"", flag:false, note:"" },
-    ],
-    // Due diligence checklist (startup) / compliance flags (corporate)
-    checklist: pack === "startup" ? [
-      { item:"Audited financials (3 years)",              done:false },
-      { item:"5-year projections with assumptions",       done:false },
-      { item:"Cap table (fully diluted)",                 done:false },
-      { item:"MIS pack — last 6 months",                  done:false },
-      { item:"Unit economics — cohort analysis",          done:false },
-      { item:"Board resolutions for previous fundraises", done:false },
-      { item:"ESOP scheme document",                      done:false },
-      { item:"Shareholder agreement (all investors)",     done:false },
-    ] : pack === "msme" ? [
-      { item:"3-year audited financials",                 done:false },
-      { item:"GST returns last 12 months",                done:false },
-      { item:"Bank statements last 12 months",            done:false },
-      { item:"Debtor/creditor ageing report",             done:false },
-      { item:"Inventory valuation certificate",           done:false },
-      { item:"Loan sanction letters",                     done:false },
-    ] : [
-      { item:"Ind AS 116 — Lease restatement",            done:false },
-      { item:"Ind AS 109 — ECL provisioning",             done:false },
-      { item:"Related party disclosure review",           done:false },
-      { item:"Independent director appointment",          done:false },
-      { item:"CSR spend reconciliation",                  done:false },
-      { item:"LODR compliance checklist",                 done:false },
-    ],
-    // Market benchmarks
-    benchmarks: [
-      { metric:"ARR Growth YoY",   yours:"", median:"", bench:"", ok:true  },
-      { metric:"Gross Margin",     yours:"", median:"", bench:"", ok:true  },
-      { metric:"Burn Multiple",    yours:"", median:"", bench:"", ok:true  },
-      { metric:"NRR",              yours:"", median:"", bench:"", ok:true  },
-      { metric:"CAC Payback",      yours:"", median:"", bench:"", ok:false },
-      { metric:"Revenue per FTE",  yours:"", median:"", bench:"", ok:true  },
-    ],
-    packNote: "",
-    reportNote: "",
-    cashflowNote: "",
-    // ── NEW: Month label for KPI Snapshot header ──────────────────────────
-    monthLabel: "",
-    // ── NEW: P&L inputs (current month + previous month) ──────────────────
-    pl: {
-      revenue:      { actual:"", prev:"" },
-      cogs:         { actual:"", prev:"" },
-      grossProfit:  { actual:"", prev:"" },
-      ebitda:       { actual:"", prev:"" },
-      pat:          { actual:"", prev:"" },
-      gpMargin:     { actual:"", prev:"" },
-      ebitdaMargin: { actual:"", prev:"" },
-      netMargin:    { actual:"", prev:"" },
-    },
-    // ── NEW: Variance analysis — budget vs actual ──────────────────────────
-    variance: [
-      { metric:"Revenue",          budget:"", actual:"", fav:true  },
-      { metric:"Cost of Sales",    budget:"", actual:"", fav:false },
-      { metric:"Gross Profit",     budget:"", actual:"", fav:true  },
-      { metric:"GP Margin %",      budget:"", actual:"", fav:true,  noCalc:true },
-      { metric:"EBITDA",           budget:"", actual:"", fav:true  },
-      { metric:"EBITDA Margin %",  budget:"", actual:"", fav:true,  noCalc:true },
-      { metric:"Net Profit / PAT", budget:"", actual:"", fav:true  },
-    ],
-    varianceCommentary: [
-      { item:"", note:"", favorable:true  },
-      { item:"", note:"", favorable:true  },
-      { item:"", note:"", favorable:false },
-    ],
-  });
-
-  useEffect(() => { fetchClients(); }, []);
-
-  const fetchClients = async () => {
-    const { data } = await supabase.from("clients").select("*").order("created_at", { ascending:false });
-    setClients(data || []);
-    // Pre-load all requests so the Requests tab works without selecting a client
-    const { data: allReqs } = await supabase.from("requests").select("*").order("created_at", { ascending:false });
-    if (allReqs) setRequests(allReqs);
-  };
-
-  const selectClient = async (c) => {
-    setSelected(c); setSaved(false);
-    // Load latest KPIs
-    const { data: kpiData } = await supabase.from("kpis")
-      .select("*").eq("client_id", c.id).order("updated_at", { ascending:false }).limit(1).maybeSingle();
-    if (kpiData) setKpis(kpiData);
-    else setKpis({ month:"", revenue:"", gross_margin:"", cash_balance:"", burn_rate:"", runway:"", arr:"", garima_note:"" });
-    // Load actions
-    const { data: actData } = await supabase.from("action_items")
-      .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
-    setActions(actData || []);
-    // Load engagement
-    const { data: engData } = await supabase.from("engagements")
-      .select("*").eq("client_id", c.id).maybeSingle();
-    if (engData) setEngagement(engData);
-    else setEngagement({ type:"", ref_number:"", status:0, expected_date:"", garima_note:"" });
-    // Load documents
-    const { data: docData } = await supabase.from("documents")
-      .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
-    setDocs(docData || []);
-    // Load invoices
-    const { data: invData } = await supabase.from("invoices")
-      .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
-    setInvoices(invData || []);
-    // Load requests
-    const { data: reqData } = await supabase.from("requests")
-      .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
-    setRequests(reqData || []);
-    // Load report data
-    const { data: rdData } = await supabase.from("report_data")
-      .select("*").eq("client_id", c.id).maybeSingle();
-    const defaults = defaultReportData(c.client_pack || "startup");
-    if (rdData?.data) {
-      try {
-        const parsed = JSON.parse(rdData.data);
-        setReportData({
-          ...defaults,
-          ...parsed,
-          pl:                 { ...defaults.pl,       ...(parsed.pl                || {}) },
-          variance:           parsed.variance           || defaults.variance,
-          varianceCommentary: parsed.varianceCommentary || defaults.varianceCommentary,
-          prevKpis:           { ...defaults.prevKpis, ...(parsed.prevKpis          || {}) },
-        });
-      } catch(e) { setReportData(defaults); }
-    }
-    else setReportData(defaults);
-    // Smart tab switch: UAE clients default to UAE tab, India clients to KPIs
-    const currentTabIsNeutral = ["clients","addclient"].includes(tab);
-    if (currentTabIsNeutral || !tab) {
-      setTab(isUAE(c) ? "uae" : "kpis");
-    }
-  };
-
-  const saveKPIs = async () => {
-    if (!selected) return;
-    setLoading(true);
-    const payload = { ...kpis, client_id: selected.id, updated_at: new Date().toISOString() };
-    if (kpis.id) {
-      await supabase.from("kpis").update(payload).eq("id", kpis.id);
-    } else {
-      const { data } = await supabase.from("kpis").insert(payload).select().single();
-      if (data) setKpis(data);
-    }
-    setLoading(false); setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
-
-  const addAction = async () => {
-    if (!selected || !newAction.text) return;
-    const { data } = await supabase.from("action_items")
-      .insert({ ...newAction, client_id: selected.id }).select().single();
-    if (data) setActions(prev => [data, ...prev]);
-    setNewAction({ text:"", priority:"High", month:newAction.month });
-  };
-
-  const toggleAction = async (a) => {
-    const newDone = !a.done;
-    await supabase.from("action_items").update({ done: newDone }).eq("id", a.id);
-    setActions(prev => prev.map(x => x.id===a.id ? {...x, done:newDone} : x));
-  };
-
-  const deleteAction = async (id) => {
-    await supabase.from("action_items").delete().eq("id", id);
-    setActions(prev => prev.filter(x => x.id!==id));
-  };
-
-  const saveEngagement = async () => {
-    if (!selected) return;
-    setLoading(true);
-    if (engagement.id) {
-      await supabase.from("engagements").update(engagement).eq("id", engagement.id);
-    } else {
-      const { data } = await supabase.from("engagements")
-        .insert({ ...engagement, client_id: selected.id }).select().single();
-      if (data) setEngagement(data);
-    }
-    setLoading(false); setSaved(true);
-    setTimeout(() => setSaved(false), 2500);
-  };
-
-  const saveReportData = async () => {
-    if (!selected || !reportData) return;
-    setLoading(true);
-    const payload = { client_id: selected.id, data: JSON.stringify(reportData), updated_at: new Date().toISOString() };
-    // Check if exists first
-    const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).maybeSingle();
-    if (existing?.id) {
-      await supabase.from("report_data").update(payload).eq("id", existing.id);
-    } else {
-      await supabase.from("report_data").insert(payload);
-    }
-    setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
-  };
-
-  const addInvoice = async () => {
-    if (!selected || !newInvoice.invoice_number || !newInvoice.amount) return;
-    setLoading(true);
-    const { data } = await supabase.from("invoices").insert({
-      ...newInvoice, client_id: selected.id
-    }).select().single();
-    if (data) setInvoices(prev => [data, ...prev]);
-    setNewInvoice({ invoice_number:"", description:"", amount:"", due_date:"", status:"unpaid" });
-    setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
-  };
-
-  const deleteInvoice = async (id) => {
-    if (!window.confirm("Delete this invoice?")) return;
-    await supabase.from("invoices").delete().eq("id", id);
-    setInvoices(prev => prev.filter(x => x.id !== id));
-  };
-
-  const markInvoicePaid = async (inv) => {
-    const newStatus = inv.status === "paid" ? "unpaid" : "paid";
-    await supabase.from("invoices").update({
-      status: newStatus,
-      paid_at: newStatus === "paid" ? new Date().toISOString() : null
-    }).eq("id", inv.id);
-    setInvoices(prev => prev.map(x => x.id===inv.id ? {...x, status:newStatus} : x));
-  };
-
-  const toggleClientActive = async (c) => {
-    await supabase.from("clients").update({ active: !c.active }).eq("id", c.id);
-    setClients(prev => prev.map(x => x.id===c.id ? {...x, active:!x.active} : x));
-    if (selected?.id === c.id) setSelected(s => ({...s, active:!s.active}));
-  };
-
-  const createClient = async () => {
-    if (!newClient.name || !newClient.email || !newClient.invite_code) return;
-    const { data, error } = await supabase.from("clients").insert(newClient).select().single();
-    if (error) { alert("Error: " + error.message); return; }
-    setClients(prev => [data, ...prev]);
-    setNewClient({ name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both" });
-    setTab("clients");
-  };
-
-  const genCode = () => {
-    const prefix = newClient.company?.slice(0,4).toUpperCase().replace(/\s/g,"") || "CLIE";
-    const year = new Date().getFullYear();
-    setNewClient(c => ({ ...c, invite_code: `${prefix}${year}` }));
-  };
-
-  const ADMIN_TABS = [
-    // ── Client Management ──
-    { id:"clients",    icon:"👥", label:"All Clients",    group:"Clients"    },
-    { id:"addclient",  icon:"➕", label:"Add Client",     group:"Clients"    },
-    // ── India Client Data ──
-    { id:"kpis",       icon:"📊", label:"KPIs",           group:"India"      },
-    { id:"actions",    icon:"✅", label:"Action Items",   group:"India"      },
-    { id:"reportdata", icon:"📈", label:"Report Data",    group:"India"      },
-    { id:"engagement", icon:"⚖️", label:"Valuation",      group:"India"      },
-    { id:"analytics",  icon:"🌏", label:"BI & Scenarios", group:"India"      },
-    { id:"treasury",   icon:"🏛️", label:"Treasury",       group:"India"      },
-    // ── UAE Client Data ──
-    { id:"uae",        icon:"🇦🇪", label:"UAE Profile & Tax", group:"UAE"   },
-    { id:"uaecashflow",icon:"💰", label:"UAE Cash & Notes",   group:"UAE"   },
-    // ── Shared ──
-    { id:"invoices",   icon:"🧾", label:"Invoices",       group:"Shared"     },
-    { id:"documents",  icon:"📁", label:"Documents",      group:"Shared"     },
-    { id:"requests",   icon:"📩", label:"Requests",       group:"Shared"     },
-    { id:"market",     icon:"🌐", label:"Market Intel",   group:"Shared"     },
-  ];
-
-  // Stable component references — prevents remount/focus-loss on every render
-
-  // ── AUTO-CALCULATE RATIOS FROM ENTERED DATA ─────────────────────────────────
-  const calcRatios = () => {
-    if (!reportData) return {};
-    var pl     = reportData?.plInputs || {};
-    var rd     = reportData || {};
-    // Admin kpis is a form object {revenue, gross_margin, cash_balance...}
-    // Map it to match what calcRatios expects
-    var kv     = {
-      revenue:       kpis?.revenue       || "",
-      cash_balance:  kpis?.cash_balance  || "",
-      burn_rate:     kpis?.burn_rate     || "",
-      runway:        kpis?.runway        || "",
-      arr:           kpis?.arr           || "",
-    };
-    var calc   = {};
-
-    // Helper: parse numeric value from strings like "₹84L", "₹2.1 Cr", "41%", "4.2x"
-    var parse = (val) => {
-      if (!val) return null;
-      var s = String(val).replace(/[₹,\s]/g, "");
-      var n = parseFloat(s);
-      if (isNaN(n)) return null;
-      if (s.toLowerCase().includes("cr"))  n = n * 100; // Cr → L
-      if (s.toLowerCase().includes("%"))   n = n;       // keep as %
-      return n;
-    };
-
-    var revenue   = parse(pl.revenue)      || parse(kv.revenue);
-    var gp        = parse(pl.grossProfit);
-    var gpMargin  = parse(pl.gpMargin);
-    var ebitda    = parse(pl.ebitda);
-    var pat       = parse(pl.pat);
-    var cash      = parse(kv.cash_balance) || parse(rd.closingCash);
-    var burn      = parse(kv.burn_rate);
-    var runway    = parse(kv.runway);
-    var arr       = parse(kv.arr)          || parse(rd.arr);
-    var debt      = parse(rd.existingDebt);
-    var interest  = parse(rd.interestCost);
-    var operCF    = parse(rd.operatingCF);
-    var freeCF    = parse(rd.freeCF);
-    var debtors   = parse(rd.debtors);
-    var creditors = parse(rd.creditors);
-    var inventory = parse(rd.inventory);
-    var ddays     = parse(rd.debtorDays);
-    var cdays     = parse(rd.creditorDays);
-    var idays     = parse(rd.inventoryDays);
-    var cac       = parse(rd.cac);
-    var ltv       = parse(rd.ltv);
-    var momGrowth = parse(rd.momGrowth);
-    var churn     = parse(rd.churnRate);
-    var nrr       = parse(rd.nrr);
-
-    // ── P&L DERIVED ──
-    if (revenue && gp)          calc.gpMarginCalc      = ((gp/revenue)*100).toFixed(1) + "%";
-    if (ebitda && revenue)      calc.ebitdaMarginCalc  = ((ebitda/revenue)*100).toFixed(1) + "%";
-    if (pat && revenue)         calc.netMarginCalc     = ((pat/revenue)*100).toFixed(1) + "%";
-
-    // ── DEBT RATIOS ──
-    if (ebitda && interest && interest > 0)
-      calc.interestCoverageCalc = (ebitda / interest).toFixed(2) + "x";
-
-    if (debt && ebitda && ebitda > 0)
-      calc.debtEbitdaCalc       = (debt / ebitda).toFixed(2) + "x";
-
-    if (debt && pat && pat > 0 && interest)
-      calc.dscrCalc             = ((ebitda - interest) / (interest)).toFixed(2) + "x";
-
-    if (operCF && interest && interest > 0)
-      calc.dscrCalc             = (operCF / interest).toFixed(2) + "x"; // override with actual CF
-
-    // ── WORKING CAPITAL ──
-    if (ddays !== null && cdays !== null && idays !== null)
-      calc.cccCalc              = (ddays - cdays + idays).toFixed(0) + " days";
-    else if (ddays !== null && cdays !== null)
-      calc.cccCalc              = (ddays - cdays).toFixed(0) + " days";
-
-    if (revenue && debtors)
-      calc.debtorDaysCalc       = ((debtors / (revenue/30))).toFixed(0) + " days";
-    if (revenue && creditors)
-      calc.creditorDaysCalc     = ((creditors / (revenue/30))).toFixed(0) + " days";
-    if (revenue && inventory)
-      calc.inventoryDaysCalc    = ((inventory / (revenue/30))).toFixed(0) + " days";
-
-    // ── STARTUP UNIT ECONOMICS ──
-    // Calculate CAC and LTV from raw inputs if available
-    var mktgSpend    = parse(rd.totalMktgSpend);
-    var newCusts     = parse(rd.newCustomers);
-    var avgRevCust   = parse(rd.avgRevPerCust);
-    var retentionMos = parse(rd.avgRetentionMos);
-    var derivedCac   = (mktgSpend && newCusts && newCusts > 0) ? mktgSpend / newCusts : cac;
-    var derivedLtv   = (avgRevCust && retentionMos) ? avgRevCust * retentionMos / 12 : ltv;
-
-    if (derivedCac && !cac)
-      calc.cacCalc = "Rs." + Math.round(derivedCac * 100).toLocaleString("en-IN");
-    if (derivedLtv && !ltv)
-      calc.ltvCalc = "Rs." + Math.round(derivedLtv * 1000).toLocaleString("en-IN");
-    if ((derivedLtv || ltv) && (derivedCac || cac) && (derivedCac || cac) > 0)
-      calc.ltvCacCalc = ((derivedLtv||ltv) / (derivedCac||cac)).toFixed(1) + "x";
-    if ((derivedCac || cac) && ebitda && revenue) {
-      var margin = parse(pl.gpMargin) || 40;
-      calc.cacPaybackCalc = (((derivedCac||cac) / (revenue * margin / 100)) * 12).toFixed(0) + " months";
-    }
-
-    if (burn && arr && arr > 0)
-      calc.burnMultipleCalc     = (burn / (arr / 12)).toFixed(2) + "x";
-
-    // ── RUNWAY CHECK ──
-    if (cash && burn && burn > 0 && !runway)
-      calc.runwayCalc           = (cash / burn).toFixed(1) + " months";
-
-    return calc;
-  };
-
-  // ── AI ANALYSIS GENERATOR ──────────────────────────────────────────────────
-  const generateAnalysis = async () => {
-    if (!selected) return;
-    setAiGen(true);
-    setAiError("");
-    setAiDraft(null);
-
-    const pack    = selected.client_pack || "startup";
-    const company = selected.company || selected.name || "the client";
-    const month   = reportData?.monthLabel || "current month";
-
-    // Auto-calculate ratios from entered data
-    const calc = calcRatios();
-
-    // Auto-apply calculated ratios to reportData fields that aren't manually set
-    const autoFields = {};
-    if (calc.interestCoverageCalc && !reportData?.interestCoverage) autoFields.interestCoverage = calc.interestCoverageCalc;
-    if (calc.debtEbitdaCalc && !reportData?.debtEbitda)             autoFields.debtEbitda       = calc.debtEbitdaCalc;
-    if (calc.dscrCalc && !reportData?.dscr)                         autoFields.dscr             = calc.dscrCalc;
-    if (calc.cccCalc && !reportData?.ccc)                           autoFields.ccc              = calc.cccCalc;
-    if (calc.debtorDaysCalc && !reportData?.debtorDays)             autoFields.debtorDays       = calc.debtorDaysCalc;
-    if (calc.creditorDaysCalc && !reportData?.creditorDays)         autoFields.creditorDays     = calc.creditorDaysCalc;
-    if (calc.inventoryDaysCalc && !reportData?.inventoryDays)       autoFields.inventoryDays    = calc.inventoryDaysCalc;
-    if (calc.ltvCacCalc && !reportData?.ltvCac)                     autoFields.ltvCac           = calc.ltvCacCalc;
-    if (calc.burnMultipleCalc && !reportData?.burnMultiple)         autoFields.burnMultiple     = calc.burnMultipleCalc;
-    if (calc.cacPaybackCalc && !reportData?.cacPayback)             autoFields.cacPayback       = calc.cacPaybackCalc;
-    if (Object.keys(autoFields).length > 0) setReportData(r => ({...r, ...autoFields}));
-
-    // Build a rich context from all available data
-    const kpiSummary = [
-      kpis.revenue      && `Revenue: ${kpis.revenue}`,
-      kpis.gross_margin && `Gross Margin: ${kpis.gross_margin}`,
-      kpis.cash_balance && `Cash Balance: ${kpis.cash_balance}`,
-      kpis.burn_rate    && `Burn Rate: ${kpis.burn_rate}`,
-      kpis.runway       && `Runway: ${kpis.runway}`,
-      kpis.arr          && `ARR: ${kpis.arr}`,
-    ].filter(Boolean).join(", ");
-
-    const plSummary = reportData?.plInputs ? [
-      reportData.plInputs.revenue      && `Revenue: ${reportData.plInputs.revenue}`,
-      reportData.plInputs.ebitda        && `EBITDA: ${reportData.plInputs.ebitda}`,
-      reportData.plInputs.pat           && `PAT: ${reportData.plInputs.pat}`,
-      reportData.plInputs.gpMargin      && `GP Margin: ${reportData.plInputs.gpMargin}`,
-      reportData.plInputs.ebitdaMargin  && `EBITDA Margin: ${reportData.plInputs.ebitdaMargin}`,
-    ].filter(Boolean).join(", ") : "";
-
-    const debtSummary = [
-      reportData?.existingDebt      && `Existing Debt: ${reportData.existingDebt}`,
-      reportData?.dscr              && `DSCR: ${reportData.dscr}`,
-      reportData?.currentRatio      && `Current Ratio: ${reportData.currentRatio}`,
-      reportData?.interestCoverage  && `Interest Coverage: ${reportData.interestCoverage}`,
-      reportData?.debtEbitda        && `Debt/EBITDA: ${reportData.debtEbitda}`,
-    ].filter(Boolean).join(", ");
-
-    const wcSummary = [
-      reportData?.debtorDays    && `Debtor Days: ${reportData.debtorDays}`,
-      reportData?.creditorDays  && `Creditor Days: ${reportData.creditorDays}`,
-      reportData?.ccc           && `CCC: ${reportData.ccc}`,
-      reportData?.workingCapital&& `Working Capital: ${reportData.workingCapital}`,
-    ].filter(Boolean).join(", ");
-
-    const packContext = pack === "startup"
-      ? `This is a startup on a CFO advisory pack. Key startup concerns: burn rate, runway, fundraising readiness, unit economics.`
-      : pack === "msme"
-      ? `This is an MSME on a working capital and bank finance pack. Key MSME concerns: collections, debtor days, bank loan eligibility, cash conversion cycle.`
-      : `This is a corporate entity on a board reporting pack. Key concerns: board-ready financials, IPO readiness, governance, Ind AS compliance.`;
-
-
-    // Build calculated ratios summary for prompt
-    const calcSummary = Object.entries(calc)
-      .map(([k,v]) => `${k.replace("Calc","")}: ${v}`)
-      .join(", ");
-
-    // Fetch live market context for AI
-    let marketContext = "";
-    try {
-      const fxRes  = await fetch("https://api.frankfurter.app/latest?from=INR");
-      const fxData = await fxRes.json();
-      const usd = fxData?.rates?.USD ? (1/fxData.rates.USD).toFixed(2) : null;
-      const sar = fxData?.rates?.SAR ? (1/fxData.rates.SAR).toFixed(2) : null;
-      const repoRate = "6.50";
-      marketContext = [
-        `RBI Repo Rate: ${repoRate}%`,
-        `SBI effective lending rate: ~${(parseFloat(repoRate)+2.5).toFixed(2)}%`,
-        usd && `USD/INR: ₹${usd}`,
-        sar && `SAR/INR: ₹${sar}`,
-      ].filter(Boolean).join(", ");
-    } catch(e) { /* non-critical */ }
-
-    const prompt = `You are Garima Agarwal, a Chartered Accountant and CFO advisor writing monthly financial analysis for your client ${company} for ${month}.
-
-${packContext}
-
-Financial data for ${month}:
-${kpiSummary ? "KPIs: " + kpiSummary : ""}
-${plSummary ? "P&L: " + plSummary : ""}
-${debtSummary ? "Debt/Ratios: " + debtSummary : ""}
-${wcSummary ? "Working Capital: " + wcSummary : ""}
-${reportData?.loanScore ? "Loan Readiness Score: " + reportData.loanScore + "/100" : ""}
-${reportData?.varianceCommentary ? "Variance note: " + reportData.varianceCommentary : ""}
-${calcSummary ? "Auto-calculated ratios: " + calcSummary : ""}
-${reportData?.loanAmountSought ? "Loan sought: " + reportData.loanAmountSought + " for " + (reportData.loanPurpose||"unspecified purpose") : ""}
-${marketContext ? "Current market context: " + marketContext : ""}
-${pack==="startup" && reportData?.cac ? "Unit economics entered: CAC " + reportData.cac + ", LTV " + (reportData.ltv||"—") : ""}
-
-Write the following analyses in Garima's voice — direct, specific, actionable. Use Indian financial context (lakhs, crores). Do NOT use generic filler. Every sentence should refer to actual numbers.
-
-Respond ONLY with a valid JSON object (no markdown, no backticks) with these exact keys:
-{
-  "garimaNote": "2-3 sentence monthly dashboard note — what happened, why it matters, what to watch",
-  "cashflowNote": "2-3 sentence cash flow analysis — cash position, burn/collections, forward outlook",
-  "varianceCommentary": "1-2 sentence variance note — what beat or missed budget and why",
-  "packNote": "3-4 sentence overall CFO pack commentary — performance narrative, key risks, recommended actions",
-  "execPerformance": "2-3 sentences on performance for board executive summary",
-  "execCash": "2-3 sentences on cash and liquidity for board executive summary",
-  "execRisks": "2-3 key risks as numbered points",
-  "execOpportunities": "2-3 opportunities as numbered points",
-  "execNextSteps": "3-4 next steps as numbered points",
-  "wcNote": "1-2 sentences on working capital efficiency (if MSME)",
-  "ueNote": "1-2 sentences on unit economics assessment (if startup)",
-  "loanNote": "1-2 sentences on loan readiness assessment",
-  "forecastNote": "2-3 sentences on 3-month forward outlook"
-}`;
-
-    try {
-      const apiKey = true; // Key is handled server-side via /api/chat
-      if (!apiKey) {
-        setAiError("API key not configured. Add VITE_ANTHROPIC_KEY to your Vercel environment variables.");
-        setAiGen(false);
-        return;
-      }
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
-          max_tokens: 4000,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err?.error?.message || `API error ${res.status}`);
-      }
-      const data = await res.json();
-      const raw = data?.content?.[0]?.text || "";
-      const clean = raw.replace(/```json|```/g, "").trim();
-      const parsed = JSON.parse(clean);
-      setAiDraft(parsed);
-    } catch(e) {
-      setAiError("Generation failed — check your numbers are filled in and try again.");
-      console.error(e);
-    } finally {
-      setAiGen(false);
-    }
-  };
-
-  // Convert AI string response for varianceCommentary into the array format the UI expects
-  const normalizeAiDraft = (draft) => {
-    if (!draft) return draft;
-    const out = {...draft};
-    // varianceCommentary: AI returns a string, UI expects [{item, note, favorable}]
-    if (typeof out.varianceCommentary === "string") {
-      const lines = out.varianceCommentary
-        .split(/\n|\.(?=\s)/)
-        .map(s => s.trim())
-        .filter(Boolean)
-        .slice(0, 4);
-      out.varianceCommentary = lines.map(line => ({
-        item: line.replace(/^\d+[\.\)]\s*/, "").substring(0, 40),
-        note: line,
-        favorable: !line.toLowerCase().includes("miss") && !line.toLowerCase().includes("below") && !line.toLowerCase().includes("down"),
-      }));
-    }
-    return out;
-  };
-
-  const applyDraft = (field) => {
-    if (!aiDraft?.[field]) return;
-    const normalized = normalizeAiDraft({[field]: aiDraft[field]});
-    const updates = normalized;
-    if (field === "garimaNote") {
-      updates.packNote   = aiDraft[field];
-      updates.reportNote = aiDraft[field];
-    }
-    setReportData(r => ({...r, ...updates}));
-    if (field === "garimaNote") setKpis(k => ({...k, garima_note: aiDraft[field]}));
-  };
-
-  const applyAllDraft = () => {
-    if (!aiDraft) return;
-    const mapped = normalizeAiDraft({...aiDraft});
-    if (aiDraft.garimaNote) {
-      mapped.packNote   = aiDraft.garimaNote;
-      mapped.reportNote = aiDraft.garimaNote;
-    }
-    setReportData(r => ({...r, ...mapped}));
-    if (aiDraft.garimaNote) {
-      setKpis(k => ({...k, garima_note: aiDraft.garimaNote}));
-    }
-    setAiDraft(null);
-    setSaved(false);
-  };
-
-
-  return (
-    <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
-      {/* Admin Sidebar */}
-      <aside style={{ width:220, minHeight:"100vh", background:C.navy, flexShrink:0,
-        display:"flex", flexDirection:"column", borderRight:"1px solid rgba(255,255,255,0.06)" }}>
-        <div style={{ padding:"22px 20px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-          <Logo size={28} dark={true} showTagline={false}/>
-          <div style={{ marginTop:10, padding:"4px 10px", borderRadius:100, display:"inline-block",
-            background:"rgba(251,191,36,0.15)", border:"1px solid rgba(251,191,36,0.3)" }}>
-            <span style={{ fontSize:10, fontWeight:700, color:"#FBBF24", letterSpacing:"0.1em" }}>ADMIN</span>
-          </div>
-        </div>
-        <div style={{ padding:"12px 16px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-          <div style={{ fontSize:11, color:"rgba(255,255,255,0.35)", fontFamily:F }}>Logged in as</div>
-          <div style={{ fontSize:13, fontWeight:700, color:"white", fontFamily:F, marginTop:2 }}>{admin.name}</div>
-        </div>
-        {/* Client selector */}
-        {clients.length > 0 && (
-          <div style={{ padding:"10px 12px", borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
-            <div style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.35)",
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
-              Active Client
-            </div>
-            <select value={selected?.id || ""} onChange={e => {
-              const c = clients.find(x => x.id===e.target.value);
-              if (c) selectClient(c);
-            }} style={{ width:"100%", padding:"8px 10px", borderRadius:8, fontSize:12,
-              background:"#1a2744", border:"1px solid rgba(255,255,255,0.2)",
-              color:"white", fontFamily:F, outline:"none" }}>
-              <option value="" style={{ background:"#1a2744", color:"white" }}>— Select client —</option>
-              {clients.filter(c=>isUAE(c)).length > 0 && (
-                <optgroup label="🇦🇪 UAE Clients" style={{ background:"#1a2744", color:"#86EFAC" }}>
-                  {clients.filter(c=>isUAE(c)).map(c => (
-                    <option key={c.id} value={c.id} style={{ background:"#1a2744", color:"white" }}>
-                      🇦🇪 {c.name} — {c.freezone||c.jurisdiction} ({c.client_pack})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-              {clients.filter(c=>!isUAE(c)).length > 0 && (
-                <optgroup label="🇮🇳 India Clients" style={{ background:"#1a2744", color:"#FCD34D" }}>
-                  {clients.filter(c=>!isUAE(c)).map(c => (
-                    <option key={c.id} value={c.id} style={{ background:"#1a2744", color:"white" }}>
-                      🇮🇳 {c.name} — {c.company} ({c.client_pack})
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-          </div>
-        )}
-        <nav style={{ flex:1, padding:"8px 0", overflowY:"auto" }}>
-          {/* Grouped admin tabs — clean sidebar navigation */}
-          {["Clients","India","UAE","Shared"].map(group => {
-            const groupTabs = ADMIN_TABS.filter(t => t.group === group);
-            return (
-              <div key={group}>
-                <div style={{ padding:"10px 16px 4px", fontFamily:F, fontSize:9,
-                  fontWeight:700, color:"rgba(255,255,255,0.3)",
-                  textTransform:"uppercase", letterSpacing:"0.12em" }}>
-                  {group === "India" ? "🇮🇳 India" : group === "UAE" ? "🇦🇪 UAE" : group}
-                </div>
-                {groupTabs.map(t => (
-                  <button key={t.id} onClick={() => setTab(t.id)} style={{
-                    display:"flex", alignItems:"center", gap:10, width:"100%",
-                    padding:"10px 16px", background:tab===t.id?"rgba(251,191,36,0.15)":"transparent",
-                    border:"none", cursor:"pointer",
-                    borderLeft:tab===t.id?"3px solid #FBBF24":"3px solid transparent",
-                    fontFamily:F }}>
-                    <span style={{ fontSize:14, opacity:tab===t.id?1:0.5 }}>{t.icon}</span>
-                    <span style={{ fontSize:12, fontWeight:600,
-                      color:tab===t.id?"#FBBF24":"rgba(255,255,255,0.5)" }}>{t.label}</span>
-                  </button>
-                ))}
-              </div>
-            );
-          })}
-        </nav>
-        <div style={{ padding:"10px 12px", borderTop:"1px solid rgba(255,255,255,0.07)" }}>
-          <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
-            width:"100%", padding:"10px 12px", background:"none", border:"none",
-            cursor:"pointer", borderRadius:8, fontFamily:F, fontSize:13,
-            fontWeight:600, color:"rgba(255,255,255,0.35)" }}>
-            <span>🚪</span> Sign Out
-          </button>
-        </div>
-      </aside>
-
-      {/* Main content */}
-      <div style={{ flex:1, overflowY:"auto" }}>
-        {/* Header */}
-        <div style={{ height:58, background:C.bg2, borderBottom:`1px solid ${C.border}`,
-          display:"flex", alignItems:"center", padding:"0 24px", gap:12 }}>
-          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:17, color:C.text, margin:0 }}>
-            {ADMIN_TABS.find(t=>t.id===tab)?.label}
-          </h1>
-          {selected && tab !== "clients" && tab !== "addclient" && (
-            <div style={{ padding:"4px 12px", borderRadius:100, background:`${C.amber}15`,
-              border:`1px solid ${C.amber}30` }}>
-              <span style={{ fontSize:12, fontWeight:700, color:C.amber, fontFamily:F }}>
-                {selected.name} — {selected.company}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div style={{ padding:24 }}>
-
-          {/* ── ALL CLIENTS ── */}
-          {tab === "clients" && (
-            <div>
-              <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20 }}>
-                {clients.length} client{clients.length!==1?"s":""} registered
-              </p>
-              <div style={{ display:"flex", flexDirection:"column", gap:12 }}>
-                {/* Filter: separate UAE and India clients visually */}
-                {[
-                  { label:"🇦🇪 UAE Clients", filter: c => isUAE(c) },
-                  { label:"🇮🇳 India Clients", filter: c => !isUAE(c) },
-                ].map(group => {
-                  const groupClients = clients.filter(group.filter);
-                  if (!groupClients.length) return null;
-                  return (
-                    <div key={group.label} style={{ marginBottom:8 }}>
-                      <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-                        textTransform:"uppercase", letterSpacing:"0.1em",
-                        padding:"8px 4px 4px" }}>
-                        {group.label} ({groupClients.length})
-                      </div>
-                      {groupClients.map(c => (
-                        <Card key={c.id} style={{ padding:"14px 18px", cursor:"pointer", marginBottom:8,
-                          borderLeft: selected?.id===c.id
-                            ? `3px solid ${C.amber}`
-                            : isUAE(c) ? `3px solid #00732F` : `3px solid ${C.blue}30`,
-                          transition:"box-shadow 0.15s" }}
-                          onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 16px rgba(15,26,56,0.1)"}
-                          onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(15,26,56,0.06)"}
-                          onClick={() => { selectClient(c); setTab(isUAE(c)?"uae":"kpis"); }}>
-                          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:8 }}>
-                            <div>
-                              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text }}>{c.name}</div>
-                              <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{c.company}</div>
-                              <div style={{ fontFamily:FM, fontSize:10, color:C.dim, marginTop:2 }}>{c.email}</div>
-                            </div>
-                            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:5 }}>
-                              <div style={{ display:"flex", gap:5, flexWrap:"wrap", justifyContent:"flex-end" }}>
-                                {isUAE(c) && (
-                                  <span style={{ fontFamily:F, fontSize:10, fontWeight:700,
-                                    background:"#E8F5EE", color:"#00732F",
-                                    padding:"2px 8px", borderRadius:100, border:"1px solid #86EFAC" }}>
-                                    {c.jurisdiction === "Cross-Border" ? "🌐 Cross-Border" : `🇦🇪 ${c.freezone||"UAE"}`}
-                                  </span>
-                                )}
-                                <Badge color={
-                                  c.client_pack==="msme" ? C.teal :
-                                  c.client_pack==="corporate" ? C.purple : C.blue
-                                }>{c.client_pack?.toUpperCase()}</Badge>
-                                <span style={{ fontFamily:FM, fontSize:10, fontWeight:700, color:C.amber,
-                                  background:`${C.amber}15`, padding:"2px 7px", borderRadius:100 }}>
-                                  {c.invite_code}
-                                </span>
-                              </div>
-                              <button onClick={e => { e.stopPropagation(); toggleClientActive(c); }}
-                                style={{ padding:"3px 10px", borderRadius:100, border:"none", cursor:"pointer",
-                                  fontFamily:F, fontSize:10, fontWeight:700,
-                                  background: c.active ? `${C.green}15` : `${C.red}15`,
-                                  color: c.active ? C.green : C.red }}>
-                                {c.active ? "● Active" : "● Inactive"}
-                              </button>
-                            </div>
-                          </div>
-                        </Card>
-                      ))}
-                    </div>
-                  );
-                })}
-              </div>
-              {clients.length === 0 && (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👥</div>
-                  <div style={{ fontFamily:F, fontSize:15, color:C.muted }}>No clients yet</div>
-                  <button onClick={() => setTab("addclient")} style={{ marginTop:16, padding:"10px 20px",
-                    borderRadius:10, border:"none", background:C.blue, color:"white",
-                    fontFamily:F, fontWeight:700, cursor:"pointer" }}>
-                    Add First Client →
-                  </button>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {/* ── ADD CLIENT ── */}
-          {tab === "addclient" && (
-            <Card style={{ maxWidth:520 }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:20 }}>
-                New Client Details
-              </div>
-              <AdminInput C={C} F={F} FM={FM} label="Client Name"    val={newClient.name}    onChange={v=>setNewClient(c=>({...c,name:v}))}    placeholder="e.g. Ravi Sharma" />
-              <AdminInput C={C} F={F} FM={FM} label="Company"        val={newClient.company} onChange={v=>setNewClient(c=>({...c,company:v}))} placeholder="e.g. Sharma Textiles Pvt Ltd" />
-              <AdminInput C={C} F={F} FM={FM} label="Email"          val={newClient.email}   onChange={v=>setNewClient(c=>({...c,email:v}))}   type="email" placeholder="client@company.com" />
-              <div style={{ display:"flex", gap:10, alignItems:"flex-end" }}>
-                <div style={{ flex:1 }}>
-                  <AdminInput C={C} F={F} FM={FM} label="Invite Code" val={newClient.invite_code}
-                    onChange={v=>setNewClient(c=>({...c,invite_code:v.toUpperCase()}))}
-                    placeholder="e.g. SHAR2026" mono={true} />
-                </div>
-                <button onClick={genCode} style={{ padding:"10px 14px", borderRadius:9, marginBottom:12,
-                  border:`1px solid ${C.border}`, background:C.bg3, fontFamily:F, fontSize:12,
-                  color:C.muted, cursor:"pointer", whiteSpace:"nowrap" }}>
-                  Auto-generate
-                </button>
-              </div>
-              <AdminSelect C={C} F={F} label="Pack Type" val={newClient.client_pack}
-                onChange={v=>setNewClient(c=>({...c,client_pack:v}))}
-                options={[
-                  {value:"startup",   label:"Startup / CFO Pack"},
-                  {value:"msme",      label:"MSME Pack"},
-                  {value:"corporate", label:"Corporate Pack"},
-                ]}/>
-              <AdminSelect C={C} F={F} label="Service Type" val={newClient.type}
-                onChange={v=>setNewClient(c=>({...c,type:v}))}
-                options={[
-                  {value:"both",      label:"CFO + Valuation"},
-                  {value:"cfo",       label:"CFO Only"},
-                  {value:"valuation", label:"Valuation Only"},
-                ]}/>
-              {/* ── UAE fields ── */}
-              <AdminSelect C={C} F={F} label="Jurisdiction" val={newClient.jurisdiction||"India"}
-                onChange={v=>setNewClient(c=>({...c,jurisdiction:v}))}
-                options={[
-                  {value:"India",        label:"🇮🇳 India"},
-                  {value:"UAE",          label:"🇦🇪 UAE / Dubai"},
-                  {value:"Cross-Border", label:"🌐 Cross-Border (India + UAE)"},
-                ]}/>
-              {(newClient.jurisdiction === "UAE" || newClient.jurisdiction === "Cross-Border") && (<>
-                <AdminSelect C={C} F={F} label="Free Zone" val={newClient.freezone||"DMCC"}
-                  onChange={v=>setNewClient(c=>({...c,freezone:v}))}
-                  options={[
-                    {value:"DMCC",  label:"DMCC — Dubai Multi Commodities Centre"},
-                    {value:"JAFZA", label:"JAFZA — Jebel Ali Free Zone"},
-                    {value:"ADGM",  label:"ADGM — Abu Dhabi Global Market"},
-                    {value:"DIFC",  label:"DIFC — Dubai Int'l Financial Centre"},
-                    {value:"RAK",   label:"RAKEZ — RAK Economic Zone"},
-                    {value:"Other", label:"Other / Mainland"},
-                  ]}/>
-                <AdminInput C={C} F={F} FM={FM} label="VAT TRN" val={newClient.trnVAT||""}
-                  onChange={v=>setNewClient(c=>({...c,trnVAT:v}))} placeholder="e.g. 100345678900003" mono/>
-                <AdminInput C={C} F={F} FM={FM} label="CT TRN (Corporate Tax)" val={newClient.trnCT||""}
-                  onChange={v=>setNewClient(c=>({...c,trnCT:v}))} placeholder="e.g. 900012345678901" mono/>
-                <AdminSelect C={C} F={F} label="Financial Year End" val={newClient.financialYearEnd||"31 Dec"}
-                  onChange={v=>setNewClient(c=>({...c,financialYearEnd:v}))}
-                  options={[
-                    {value:"31 Dec", label:"31 December (Calendar Year)"},
-                    {value:"31 Mar", label:"31 March (India-aligned)"},
-                  ]}/>
-                <AdminSelect C={C} F={F} label="VAT Registered?" val={newClient.vatRegistered?"yes":"no"}
-                  onChange={v=>setNewClient(c=>({...c,vatRegistered:v==="yes"}))}
-                  options={[{value:"yes",label:"✅ Yes — VAT Registered"},{value:"no",label:"❌ Not Registered"}]}/>
-                <AdminSelect C={C} F={F} label="QFZP Status?" val={newClient.qfzpStatus?"yes":"no"}
-                  onChange={v=>setNewClient(c=>({...c,qfzpStatus:v==="yes"}))}
-                  options={[{value:"yes",label:"✅ Active QFZP"},{value:"no",label:"❌ Not a QFZP"}]}/>
-                <AdminSelect C={C} F={F} label="SBR Eligible?" val={newClient.sbrEligible?"yes":"no"}
-                  onChange={v=>setNewClient(c=>({...c,sbrEligible:v==="yes"}))}
-                  options={[{value:"yes",label:"✅ SBR Eligible (revenue ≤ AED 3M)"},{value:"no",label:"❌ Not Eligible"}]}/>
-              </>)}
-              <div style={{ marginTop:8 }}>
-                <button onClick={createClient} style={{ padding:"12px 24px", borderRadius:10,
-                  border:"none", background:C.grad1, color:"white", fontFamily:F,
-                  fontWeight:700, fontSize:14, cursor:"pointer", touchAction:"manipulation" }}>
-                  Create Client →
-                </button>
-              </div>
-              <div style={{ marginTop:16, padding:"10px 14px", borderRadius:10,
-                background:`${C.blue}08`, border:`1px solid ${C.blue}20` }}>
-                <p style={{ fontFamily:F, fontSize:12, color:C.muted, margin:0, lineHeight:1.7 }}>
-                  💡 After creating, share the invite code with your client. They go to the portal,
-                  enter the code, and create their own password. No manual password setup needed.
-                </p>
-              </div>
-            </Card>
-          )}
-
-          {/* ── UPDATE KPIs ── */}
-          {tab === "kpis" && (
-            <div style={{ maxWidth:600 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (
-                <>
-                {/* UAE client guidance banner */}
-                {isUAE(selected) && (
-                  <div style={{ padding:"12px 16px", borderRadius:10, background:"#E8F5EE",
-                    border:"1px solid #86EFAC", marginBottom:16,
-                    display:"flex", alignItems:"center", gap:10 }}>
-                    <span style={{ fontSize:18 }}>🇦🇪</span>
-                    <div style={{ fontFamily:F, fontSize:12, color:"#065f46", flex:1 }}>
-                      <strong>UAE client selected</strong> — KPIs below are in AED.
-                      For VAT, CT, QFZP, and reconciliation data go to the <strong>🇦🇪 UAE Profile & Tax</strong> tab.
-                      For cash forecasts and Garima notes go to <strong>💰 UAE Cash & Notes</strong>.
-                    </div>
-                    <button onClick={()=>setTab("uae")} style={{ padding:"6px 14px", borderRadius:8,
-                      border:"none", background:"#00732F", color:"white",
-                      fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
-                      Go to UAE Tab →
-                    </button>
-                  </div>
-                )}
-                <Card>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:4, flexWrap:"wrap", gap:8 }}>
-                    <div>
-                      <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text }}>
-                        KPI Update — {selected.name}
-                      </div>
-                      {kpis.month && (
-                        <div style={{ fontFamily:F, fontSize:11, color:C.blue, marginTop:3, display:"flex", alignItems:"center", gap:5 }}>
-                          <span style={{ background:`${C.blue}12`, padding:"2px 10px", borderRadius:100, fontWeight:700 }}>
-                            📅 Currently showing: {kpis.month}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <span style={{ fontFamily:F, fontSize:11, color:saved?C.green:C.muted, fontWeight:saved?700:400 }}>
-                      {saved ? "✅ Saved to client portal" : "📝 Unsaved changes"}
-                    </span>
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20 }}>
-                    These numbers appear on the client's dashboard instantly after saving. Set the Month field to tell the client which period this covers.
-                  </p>
-                  <AdminInput C={C} F={F} FM={FM} label="Month" val={kpis.month} onChange={v=>setKpis(k=>({...k,month:v}))} placeholder="e.g. February 2026" />
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }} className="kpi-edit-grid">
-                    {(isUAE(selected) ? [
-                      { label:"Revenue (AED)",        key:"revenue",      placeholder:"e.g. AED 1.85M"  },
-                      { label:"Gross Margin",          key:"gross_margin", placeholder:"e.g. 45%"         },
-                      { label:"Cash Balance (AED)",   key:"cash_balance", placeholder:"e.g. AED 620K"   },
-                      { label:"Burn Rate (AED/mo)",   key:"burn_rate",    placeholder:"e.g. AED 75K/mo" },
-                      { label:"Runway (months)",       key:"runway",       placeholder:"e.g. 8.3 mo"     },
-                      { label:"VAT Payable (AED)",    key:"arr",          placeholder:"e.g. AED 92.5K"  },
-                    ] : selected.client_pack === "msme" ? [
-                      { label:"Revenue",           key:"revenue",      placeholder:"e.g. ₹84L"      },
-                      { label:"Gross Margin",       key:"gross_margin", placeholder:"e.g. 41%"       },
-                      { label:"Cash Balance",       key:"cash_balance", placeholder:"e.g. ₹26L"      },
-                      { label:"Working Capital",    key:"burn_rate",    placeholder:"e.g. ₹32.4L"    },
-                      { label:"Debtor Days",        key:"runway",       placeholder:"e.g. 46 days"   },
-                      { label:"Cash Conv. Cycle",   key:"arr",          placeholder:"e.g. 37 days"   },
-                    ] : selected.client_pack === "corporate" ? [
-                      { label:"Revenue",            key:"revenue",      placeholder:"e.g. ₹842L"     },
-                      { label:"EBITDA Margin",      key:"gross_margin", placeholder:"e.g. 17.5%"     },
-                      { label:"Cash Balance",       key:"cash_balance", placeholder:"e.g. ₹4.2 Cr"  },
-                      { label:"PAT",                key:"burn_rate",    placeholder:"e.g. ₹81L"      },
-                      { label:"Net Debt",           key:"runway",       placeholder:"e.g. ₹1.8 Cr"  },
-                      { label:"ROCE",               key:"arr",          placeholder:"e.g. 22.4%"     },
-                    ] : [
-                      { label:"Revenue",            key:"revenue",      placeholder:"e.g. ₹8.4 Cr"  },
-                      { label:"Gross Margin",       key:"gross_margin", placeholder:"e.g. 41%"       },
-                      { label:"Cash Balance",       key:"cash_balance", placeholder:"e.g. ₹2.1 Cr"  },
-                      { label:"Burn Rate",          key:"burn_rate",    placeholder:"e.g. ₹48L/mo"  },
-                      { label:"Runway",             key:"runway",       placeholder:"e.g. 4.4 months"},
-                      { label:"ARR",                key:"arr",          placeholder:"e.g. ₹6.2 Cr"  },
-                    ]).map(f => (
-                      <AdminInput C={C} F={F} FM={FM} key={f.key} label={f.label} val={kpis[f.key]||""}
-                        onChange={v=>setKpis(k=>({...k,[f.key]:v}))} placeholder={f.placeholder} mono />
-                    ))}
-                  </div>
-                  <div style={{ marginBottom:12 }}>
-                    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>
-                      Garima's Note (shown on dashboard)
-                    </label>
-                    <textarea value={kpis.garima_note||""} onChange={e=>setKpis(k=>({...k,garima_note:e.target.value}))}
-                      rows={4} placeholder="Write your monthly note for the client here..."
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-                        border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                        background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
-                      onFocus={e => e.target.style.borderColor = C.amber}
-                      onBlur={e  => e.target.style.borderColor = C.border}
-                    />
-                  </div>
-                  <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveKPIs}/>
-                </Card>
-                </>
-              )}
-              <style>{`.kpi-edit-grid{grid-template-columns:1fr 1fr!important}@media(max-width:480px){.kpi-edit-grid{grid-template-columns:1fr!important}}`}</style>
-            </div>
-          )}
-
-          {/* ── ACTION ITEMS ── */}
-          {tab === "actions" && (
-            <div style={{ maxWidth:600 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (<>
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-                    Add Action Item for {selected.name}
-                  </div>
-                  <AdminInput C={C} F={F} FM={FM} label="Action"
-                    val={newAction.text}
-                    onChange={v=>setNewAction(a=>({...a,text:v}))}
-                    placeholder="e.g. File GST returns for Q3 by 15 March"/>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <AdminSelect C={C} F={F} label="Priority" val={newAction.priority} onChange={v=>setNewAction(a=>({...a,priority:v}))}
-                      options={[{value:"High",label:"High"},{value:"Medium",label:"Medium"},{value:"Low",label:"Low"}]}/>
-                    <AdminInput C={C} F={F} FM={FM} label="Month" val={newAction.month} onChange={v=>setNewAction(a=>({...a,month:v}))} placeholder="e.g. March 2026"/>
-                  </div>
-                  <button onClick={addAction} style={{ padding:"10px 20px", borderRadius:10,
-                    border:"none", background:C.grad1, color:"white", fontFamily:F,
-                    fontWeight:700, fontSize:13, cursor:"pointer" }}>
-                    + Add Item
-                  </button>
-                </Card>
-                <Card>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-                    Current Action Items ({actions.length})
-                  </div>
-                  {actions.length === 0 && (
-                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No action items yet.</p>
-                  )}
-                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                    {actions.map(a => (
-                      <div key={a.id} style={{ display:"flex", alignItems:"flex-start", gap:10,
-                        padding:"10px 14px", borderRadius:10, background:a.done?`${C.green}06`:C.bg,
-                        border:`1px solid ${a.done?C.green+"25":C.border}` }}>
-                        <div onClick={() => toggleAction(a)} style={{ width:20, height:20, borderRadius:6,
-                          background:a.done?C.green:C.bg3, display:"flex", alignItems:"center",
-                          justifyContent:"center", cursor:"pointer", flexShrink:0, marginTop:2 }}>
-                          {a.done && <span style={{ color:"white", fontSize:10, fontWeight:900 }}>✓</span>}
-                        </div>
-                        <div style={{ flex:1 }}>
-                          <div style={{ fontFamily:F, fontSize:13, color:a.done?C.dim:C.text,
-                            textDecoration:a.done?"line-through":"none" }}>{a.text}</div>
-                          <div style={{ display:"flex", gap:8, marginTop:4, flexWrap:"wrap" }}>
-                            <PriBadge p={a.priority}/>
-                            {a.month && <span style={{ fontSize:11, color:C.dim, fontFamily:F }}>{a.month}</span>}
-                          </div>
-                        </div>
-                        <button onClick={() => deleteAction(a.id)} style={{ background:"none", border:"none",
-                          color:C.dim, cursor:"pointer", fontSize:16, padding:2 }}>🗑</button>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </>)}
-            </div>
-          )}
-
-          {/* ── VALUATION ENGAGEMENT ── */}
-          {tab === "engagement" && (
-            <div style={{ maxWidth:520 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (
-                <Card>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:16, color:C.text, marginBottom:20 }}>
-                    Valuation Engagement — {selected.name}
-                  </div>
-                  <AdminInput C={C} F={F} FM={FM} label="Engagement Type" val={engagement.type||""}
-                    onChange={v=>setEngagement(e=>({...e,type:v}))}
-                    placeholder="e.g. DCF Valuation — Section 56(2)(viib)"/>
-                  <AdminInput C={C} F={F} FM={FM} label="Reference Number" val={engagement.ref_number||""}
-                    onChange={v=>setEngagement(e=>({...e,ref_number:v}))}
-                    placeholder="e.g. VAL-240216" mono/>
-                  <AdminInput C={C} F={F} FM={FM} label="Expected Date" val={engagement.expected_date||""}
-                    onChange={v=>setEngagement(e=>({...e,expected_date:v}))}
-                    placeholder="e.g. 28 Feb 2026"/>
-                  <div style={{ marginBottom:12 }}>
-                    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                      letterSpacing:"0.08em", display:"block", marginBottom:10, fontFamily:F }}>
-                      Status (Stage {engagement.status} of 5)
-                    </label>
-                    <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                      {["Docs Requested","Docs Received","Analysis","Draft Ready","Revision","Final Signed"].map((s,i) => (
-                        <button key={i} onClick={() => setEngagement(e=>({...e,status:i}))}
-                          style={{ padding:"7px 12px", borderRadius:8, border:"none", cursor:"pointer",
-                            fontFamily:F, fontSize:12, fontWeight:600,
-                            background: engagement.status===i ? C.blue : C.bg3,
-                            color: engagement.status===i ? "white" : C.muted,
-                            touchAction:"manipulation" }}>
-                          {s}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div style={{ marginBottom:16 }}>
-                    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>
-                      Status Note
-                    </label>
-                    <textarea value={engagement.garima_note||""} rows={3}
-                      onChange={e=>setEngagement(en=>({...en,garima_note:e.target.value}))}
-                      placeholder="e.g. Working on DCF model, on track for 28 Feb..."
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-                        border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                        background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}/>
-                  </div>
-                  <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveEngagement}/>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {/* ── INVOICES ── */}
-          {tab === "invoices" && (
-            <div style={{ maxWidth:620 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (<>
-                {/* Create new invoice */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-                    Create Invoice for {selected.name}
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Invoice Number" val={newInvoice.invoice_number}
-                      onChange={v=>setNewInvoice(i=>({...i,invoice_number:v}))}
-                      placeholder="e.g. INV-2026-001" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Amount (₹)" val={newInvoice.amount}
-                      onChange={v=>setNewInvoice(i=>({...i,amount:v}))}
-                      placeholder="e.g. ₹50,000"/>
-                  </div>
-                  <AdminInput C={C} F={F} FM={FM} label="Description" val={newInvoice.description}
-                    onChange={v=>setNewInvoice(i=>({...i,description:v}))}
-                    placeholder="e.g. CFO Retainer — March 2026"/>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Due Date" val={newInvoice.due_date}
-                      onChange={v=>setNewInvoice(i=>({...i,due_date:v}))}
-                      placeholder="e.g. 31 Mar 2026"/>
-                    <AdminSelect C={C} F={F} label="Status" val={newInvoice.status}
-                      onChange={v=>setNewInvoice(i=>({...i,status:v}))}
-                      options={[{value:"unpaid",label:"Unpaid"},{value:"paid",label:"Paid"}]}/>
-                  </div>
-                  <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={addInvoice} label="+ Create Invoice"/>
-                </Card>
-
-                {/* Invoice list */}
-                <Card>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-                    All Invoices ({invoices.length})
-                  </div>
-                  {invoices.length === 0 && (
-                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No invoices yet for this client.</p>
-                  )}
-                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                    {invoices.map(inv => (
-                      <div key={inv.id} style={{ padding:"14px 16px", borderRadius:12,
-                        border:`1px solid ${inv.status==="paid" ? C.green+"30" : C.amber+"30"}`,
-                        background: inv.status==="paid" ? `${C.green}04` : `${C.amber}04` }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
-                          <div>
-                            <div style={{ fontFamily:FM, fontSize:13, fontWeight:700, color:C.text }}>
-                              {inv.invoice_number}
-                            </div>
-                            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:3 }}>
-                              {inv.description}
-                            </div>
-                            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:3 }}>
-                              Due: {inv.due_date || "—"}
-                              {inv.paid_at && ` · Paid: ${new Date(inv.paid_at).toLocaleDateString("en-IN")}`}
-                            </div>
-                          </div>
-                          <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:8 }}>
-                            <div style={{ fontFamily:FM, fontSize:15, fontWeight:700, color:C.text }}>
-                              {inv.amount}
-                            </div>
-                            <div style={{ display:"flex", gap:8 }}>
-                              <button onClick={() => markInvoicePaid(inv)}
-                                style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer",
-                                  fontFamily:F, fontSize:11, fontWeight:700,
-                                  background: inv.status==="paid" ? `${C.green}15` : `${C.amber}15`,
-                                  color: inv.status==="paid" ? C.green : C.amber }}>
-                                {inv.status==="paid" ? "✓ Paid" : "Mark Paid"}
-                              </button>
-                              <button onClick={() => deleteInvoice(inv.id)}
-                                style={{ padding:"5px 10px", borderRadius:8, border:`1px solid ${C.border}`,
-                                  background:"none", color:C.red, cursor:"pointer", fontSize:13 }}>
-                                🗑
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </>)}
-            </div>
-          )}
-
-          {/* ── REPORT DATA ── */}
-          {tab === "reportdata" && (
-            <div style={{ maxWidth:700 }}>
-              {!selected || !reportData ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (<>
-
-
-
-                {/* ══ 1: MONTH LABEL ═══════════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>📅 Month Label</div>
-                    {reportData?.monthLabel && (
-                      <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
-                        background:`${C.blue}12`, padding:"3px 12px", borderRadius:100 }}>
-                        Currently: {reportData.monthLabel}
-                      </span>
-                    )}
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                    This month label appears on the client's Dashboard, Overview, and My Report pages so they always know which period they're viewing.
-                  </p>
-                  <AdminInput C={C} F={F} FM={FM} label="Month Label" val={reportData.monthLabel || ""}
-                    onChange={v => setReportData(r => ({...r, monthLabel:v}))}
-                    placeholder="e.g. February 2026"/>
-                </Card>
-
-                {/* ══ 2: PREVIOUS KPI VALUES ═══════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Previous Month KPI Values</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                    Powers the <strong>▲ ▼ trend arrows</strong> and "Prev: …" text on the client dashboard.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    {(selected.client_pack === "msme" ? [
-                      { label:"Prev Revenue",          key:"revenue",      placeholder:"e.g. ₹79L"       },
-                      { label:"Prev Gross Margin",      key:"gross_margin", placeholder:"e.g. 39%"         },
-                      { label:"Prev Cash Balance",      key:"cash_balance", placeholder:"e.g. ₹24L"       },
-                      { label:"Prev Working Capital",   key:"burn_rate",    placeholder:"e.g. ₹30.1L"     },
-                      { label:"Prev Debtor Days",       key:"runway",       placeholder:"e.g. 51 days"    },
-                      { label:"Prev Cash Conv. Cycle",  key:"arr",          placeholder:"e.g. 42 days"    },
-                    ] : selected.client_pack === "corporate" ? [
-                      { label:"Prev Revenue",           key:"revenue",      placeholder:"e.g. ₹810L"      },
-                      { label:"Prev EBITDA Margin",     key:"gross_margin", placeholder:"e.g. 14.2%"      },
-                      { label:"Prev Cash Balance",      key:"cash_balance", placeholder:"e.g. ₹3.9 Cr"   },
-                      { label:"Prev PAT",               key:"burn_rate",    placeholder:"e.g. ₹56L"       },
-                      { label:"Prev Net Debt",          key:"runway",       placeholder:"e.g. ₹2.1 Cr"   },
-                      { label:"Prev ROCE",              key:"arr",          placeholder:"e.g. 18.3%"      },
-                    ] : [
-                      { label:"Prev Revenue",           key:"revenue",      placeholder:"e.g. ₹7.9 Cr"   },
-                      { label:"Prev Gross Margin",      key:"gross_margin", placeholder:"e.g. 38%"        },
-                      { label:"Prev Cash Balance",      key:"cash_balance", placeholder:"e.g. ₹2.6 Cr"   },
-                      { label:"Prev Burn Rate",         key:"burn_rate",    placeholder:"e.g. ₹52L/mo"   },
-                      { label:"Prev Runway",            key:"runway",       placeholder:"e.g. 5.0 months" },
-                      { label:"Prev ARR",               key:"arr",          placeholder:"e.g. ₹5.4 Cr"   },
-                    ]).map(f => (
-                      <AdminInput C={C} F={F} FM={FM} key={f.key} label={f.label}
-                        val={reportData.prevKpis?.[f.key] || ""}
-                        onChange={v => setReportData(r => ({...r, prevKpis:{...(r.prevKpis||{}),[f.key]:v}}))}
-                        placeholder={f.placeholder} mono/>
-                    ))}
-                  </div>
-                </Card>
-
-                {/* ══ 3: P&L INPUTS ════════════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>P&L Inputs</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Populates <strong>Monthly Report → P&L Summary</strong>. "Actual" = this month. "Prev" = last month.
-                    Use format like <code style={{ background:C.bg3, padding:"1px 6px", borderRadius:4, fontFamily:FM }}>₹84.2L</code>
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"150px 1fr 1fr", gap:10, marginBottom:8, paddingLeft:4 }}>
-                    <div/>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.07em" }}>This Month (Actual)</div>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.07em" }}>Prev Month</div>
-                  </div>
-                  {[
-                    { label:"Revenue",          key:"revenue",      placeholder:"e.g. ₹84.2L", bold:false },
-                    { label:"COGS",             key:"cogs",         placeholder:"e.g. ₹49.7L", bold:false },
-                    { label:"Gross Profit",     key:"grossProfit",  placeholder:"e.g. ₹34.5L", bold:true  },
-                    { label:"GP Margin %",      key:"gpMargin",     placeholder:"e.g. 41.0%",  bold:false, dim:true },
-                    { label:"EBITDA",           key:"ebitda",       placeholder:"e.g. ₹14.7L", bold:true  },
-                    { label:"EBITDA Margin %",  key:"ebitdaMargin", placeholder:"e.g. 17.5%",  bold:false, dim:true },
-                    { label:"Net Profit / PAT", key:"pat",          placeholder:"e.g. ₹10.2L", bold:true  },
-                    { label:"Net Margin %",     key:"netMargin",    placeholder:"e.g. 12.1%",  bold:false, dim:true },
-                  ].map(row => (
-                    <div key={row.key} style={{
-                      display:"grid", gridTemplateColumns:"150px 1fr 1fr", gap:10, marginBottom:6,
-                      padding: row.bold ? "10px 12px 10px 4px" : "3px 4px",
-                      background: row.bold ? `${C.blue}06` : "transparent",
-                      borderRadius: row.bold ? 10 : 0,
-                      borderTop: row.bold ? `1px solid ${C.border}` : "none",
-                    }}>
-                      <div style={{ fontFamily:F, fontSize:12, fontWeight:row.bold?700:500,
-                        color:row.dim?C.dim:C.text, fontStyle:row.dim?"italic":"normal",
-                        display:"flex", alignItems:"center" }}>{row.label}</div>
-                      <InlineInput value={reportData.pl?.[row.key]?.actual || ""}
-                        onCommit={v => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), actual:v}}}))}
-                        placeholder={row.placeholder}
-                        style={{ fontFamily:FM, fontWeight:row.bold?700:400, color:C.text, background:row.bold?"#F0F4FF":C.bg }}/>
-                      <InlineInput value={reportData.pl?.[row.key]?.prev || ""}
-                        onCommit={v => setReportData(r => ({...r, pl:{...(r.pl||{}), [row.key]:{...(r.pl?.[row.key]||{}), prev:v}}}))}
-                        placeholder="prev month"
-                        style={{ fontFamily:FM, color:C.muted, background:C.bg }}/>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* ══ 4: VARIANCE ANALYSIS ══════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Variance Analysis — Budget vs Actual</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Populates the <strong>Variance Analysis tab</strong> in the client's report. Variance auto-calculates. Toggle ✅/⚠️ per line.
-                  </p>
-                  <div style={{ overflowX:"auto", marginBottom:20 }}>
-                    <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F }}>
-                      <thead>
-                        <tr style={{ background:"#0A1128" }}>
-                          {["P&L Line","Budget","Actual","Variance (auto)","Favourable?"].map((h,i) => (
-                            <th key={i} style={{ padding:"10px 12px", textAlign:i===0?"left":"center",
-                              color:"white", fontWeight:700, fontSize:11, letterSpacing:"0.05em", whiteSpace:"nowrap" }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(reportData.variance || []).map((row, i) => {
-                          const bv = parseFloat(row.budget), av = parseFloat(row.actual);
-                          const varNum = (!row.noCalc && !isNaN(bv) && !isNaN(av)) ? (av-bv).toFixed(1) : "—";
-                          const varPct = (!row.noCalc && !isNaN(bv) && !isNaN(av) && bv!==0)
-                            ? ((av-bv)/Math.abs(bv)*100).toFixed(1)+"%" : "";
-                          const isBold = ["Gross Profit","EBITDA","Net Profit"].some(k => row.metric.includes(k));
-                          return (
-                            <tr key={i} style={{ background:isBold?`${C.blue}06`:i%2===0?"#FFFFFF":C.bg, borderBottom:`1px solid ${C.border}` }}>
-                              <td style={{ padding:"10px 12px", fontWeight:isBold?700:500, fontSize:13, color:C.text }}>{row.metric}</td>
-                              <td style={{ padding:"6px 8px" }}>
-                                <InlineInput value={row.budget}
-                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],budget:v}; setReportData(r=>({...r,variance:arr})); }}
-                                  placeholder="budget"
-                                  style={{ textAlign:"right", color:C.muted, background:C.bg }}/>
-                              </td>
-                              <td style={{ padding:"6px 8px" }}>
-                                <InlineInput value={row.actual}
-                                  onCommit={v => { const arr=[...reportData.variance]; arr[i]={...arr[i],actual:v}; setReportData(r=>({...r,variance:arr})); }}
-                                  placeholder="actual"
-                                  style={{ textAlign:"right", fontWeight:700, color:C.text, background:"#F0F4FF" }}/>
-                              </td>
-                              <td style={{ padding:"10px 12px", textAlign:"center", fontFamily:FM, fontSize:12, fontWeight:600,
-                                color:varNum==="—"?C.dim:row.fav?C.green:C.red }}>
-                                {varNum!=="—"?(row.fav?"+":"")+varNum:"—"}
-                                {varPct && <div style={{ fontSize:10, opacity:0.7 }}>{row.fav?"+":""}{varPct}</div>}
-                              </td>
-                              <td style={{ padding:"8px", textAlign:"center" }}>
-                                <button onClick={() => { const v=[...reportData.variance]; v[i]={...v[i],fav:!v[i].fav}; setReportData(r=>({...r,variance:v})); }}
-                                  style={{ padding:"5px 12px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:F, fontSize:12, fontWeight:700,
-                                    background:row.fav?`${C.green}15`:`${C.red}15`, color:row.fav?C.green:C.red }}>
-                                  {row.fav?"✅ Fav":"⚠️ Unfav"}
-                                </button>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-                  {/* Commentary */}
-                  <div style={{ borderTop:`1px solid ${C.border}`, paddingTop:16 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>
-                      📝 Variance Commentary — 3 key points shown in client report
-                    </div>
-                    {(reportData.varianceCommentary || []).map((row, i) => (
-                      <div key={i} style={{ display:"grid", gridTemplateColumns:"20px 1fr 2fr 38px", gap:10, marginBottom:12, alignItems:"flex-start" }}>
-                        <div style={{ fontFamily:F, fontSize:13, color:C.muted, fontWeight:700, paddingTop:24 }}>{i+1}.</div>
-                        <div>
-                          <label style={{ fontSize:10, fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:5, fontFamily:F }}>Heading</label>
-                          <InlineInput value={row.item}
-                            onCommit={v => { const arr=[...reportData.varianceCommentary]; arr[i]={...arr[i],item:v}; setReportData(r=>({...r,varianceCommentary:arr})); }}
-                            placeholder="e.g. Revenue beat"
-                            style={{ fontSize:13, fontFamily:F, color:C.text, background:C.bg }}/>
-                        </div>
-                        <div>
-                          <label style={{ fontSize:10, fontWeight:700, color:C.dim, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:5, fontFamily:F }}>Commentary</label>
-                          <InlineInput value={row.note}
-                            onCommit={v => { const arr=[...reportData.varianceCommentary]; arr[i]={...arr[i],note:v}; setReportData(r=>({...r,varianceCommentary:arr})); }}
-                            placeholder="e.g. New contracts signed in Feb drove +6.1% MoM"
-                            style={{ fontSize:13, fontFamily:F, color:C.text, background:C.bg }}/>
-                        </div>
-                        <div style={{ paddingTop:22 }}>
-                          <button onClick={() => { const v=[...reportData.varianceCommentary]; v[i]={...v[i],favorable:!v[i].favorable}; setReportData(r=>({...r,varianceCommentary:v})); }}
-                            style={{ padding:"8px 10px", borderRadius:8, border:"none", cursor:"pointer", fontSize:14, fontWeight:700,
-                              background:row.favorable?`${C.green}15`:`${C.red}15`, color:row.favorable?C.green:C.red }}>
-                            {row.favorable?"✅":"⚠️"}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-
-                {/* ══ EXISTING: CASH FLOW DATA ══════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    💰 Cash Flow Chart Data
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Enter values in ₹L (lakhs). Actual = past months. Forecast = future. Leave blank to skip.{" "}
-                    {selected.client_pack === "startup"
-                      ? "For startup clients: cash balance chart shows Actual vs Forecast."
-                      : selected.client_pack === "msme"
-                      ? "For MSME clients: this drives the Inflows vs Outflows chart. Enter monthly inflow in Actual and outflow in Forecast."
-                      : "For corporate clients: enter Operating CF in Actual and Total Net CF in Forecast."}
-                  </p>
-                  <div style={{ overflowX:"auto" }}>
-                    <table style={{ width:"100%", borderCollapse:"collapse", fontFamily:F }}>
-                      <thead>
-                        <tr style={{ borderBottom:`2px solid ${C.border}` }}>
-                          {(selected.client_pack==="msme"
-                          ? ["Month","Inflows (₹L)","Outflows (₹L)"]
-                          : selected.client_pack==="corporate"
-                          ? ["Month","Operating CF (₹L)","Net CF (₹L)"]
-                          : ["Month","Actual (₹L)","Forecast (₹L)"]
-                        ).map((h,i) => (
-                            <th key={i} style={{ padding:"8px 10px", textAlign:"left", fontSize:11,
-                              fontWeight:700, color:C.muted, textTransform:"uppercase" }}>{h}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(reportData.cashflow || []).map((row, i) => (
-                          <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
-                            <td style={{ padding:"8px 10px", fontFamily:FM, fontSize:13, fontWeight:700, color:C.text, width:80 }}>{row.month}</td>
-                            <td style={{ padding:"6px 10px" }}>
-                              <InlineInput value={row.actual}
-                                onCommit={v => { const cf=[...reportData.cashflow]; cf[i]={...cf[i],actual:v}; setReportData(r=>({...r,cashflow:cf})); }}
-                                placeholder="e.g. 220"
-                                style={{ color:C.blue, background:"#EFF6FF" }}/>
-                            </td>
-                            <td style={{ padding:"6px 10px" }}>
-                              <InlineInput value={row.forecast}
-                                onCommit={v => { const cf=[...reportData.cashflow]; cf[i]={...cf[i],forecast:v}; setReportData(r=>({...r,cashflow:cf})); }}
-                                placeholder="e.g. 195"
-                                style={{ color:C.purple, background:"#F5F0FF" }}/>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </Card>
-
-                {/* ══ EXISTING: PACK SCORE ══════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    🎯 {selected.client_pack==="startup"?"Fundraise":selected.client_pack==="msme"?"Cash Health":"IPO Readiness"} Score
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Overall score (0–100) shown as the big gauge on the client's report page.
-                  </p>
-                  <AdminInput C={C} F={F} FM={FM} label="Overall Score (0-100)" val={reportData.score || ""}
-                    onChange={v => setReportData(r=>({...r,score:v}))} placeholder="e.g. 72" mono/>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10, marginTop:4 }}>Score Breakdown</div>
-                  {(reportData.scoreBreakdown || []).map((item, i) => (
-                    <div key={i} style={{ marginBottom:12, padding:"12px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
-                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{item.label}</div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10 }}>
-                        <InlineInput value={item.score}
-                          onCommit={v => { const sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],score:v}; setReportData(r=>({...r,scoreBreakdown:sb})); }}
-                          placeholder="Score 0-100" style={{ fontFamily:FM, color:C.blue, background:"#F0F4FF" }}/>
-                        <InlineInput value={item.comment}
-                          onCommit={v => { const sb=[...reportData.scoreBreakdown]; sb[i]={...sb[i],comment:v}; setReportData(r=>({...r,scoreBreakdown:sb})); }}
-                          placeholder="Comment shown to client..." style={{ fontFamily:F, color:C.text, background:C.bg }}/>
-                      </div>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* ══ LOAN READINESS SCORE (startup only) ══════════════════════ */}
-                {selected.client_pack === "startup" && (
-                  <Card style={{ marginBottom:20, border:`1px solid ${C.blue}25`, background:`${C.blue}04` }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:4 }}>
-                      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>Loan Readiness Score</div>
-                      {reportData?.loanScore && (
-                        <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue,
-                          background:`${C.blue}12`, padding:"3px 12px", borderRadius:100 }}>
-                          Currently: {reportData.loanScore}/100
-                        </span>
-                      )}
-                    </div>
-                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                      Score shown on the client's <strong>Loan Readiness tab</strong>. Set this manually after reviewing the client's loan eligibility. 
-                      0–54 = Early Stage · 55–74 = Moderate · 75–100 = Strong Profile.
-                    </p>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:12 }}>
-                      <AdminInput C={C} F={F} FM={FM} label="Loan Readiness Score (0-100)"
-                        val={reportData.loanScore || ""}
-                        onChange={v => setReportData(r => ({...r, loanScore: v}))}
-                        placeholder="e.g. 68" mono/>
-                      <div style={{ padding:"12px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
-                        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.06em" }}>Score Guide</div>
-                        <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.8 }}>
-                          <span style={{ color:C.red }}>0–54</span> Early Stage<br/>
-                          <span style={{ color:C.amber }}>55–74</span> Moderate — eligible with prep<br/>
-                          <span style={{ color:C.green }}>75–100</span> Strong — eligible for most schemes
-                        </div>
-                      </div>
-                    </div>
-                    <AdminInput C={C} F={F} FM={FM} label="Garima's Loan Note (shown to client)"
-                      val={reportData.loanNote || ""}
-                      onChange={v => setReportData(r => ({...r, loanNote: v}))}
-                      placeholder="e.g. Your profile is strong for CGTMSE. We recommend completing the financial projections before applying to SBI Startup Branch."/>
-                  </Card>
-                )}
-
-                {/* ══ DEBT RATIOS (msme + corporate) ═══════════════════════════ */}
-                {(selected.client_pack === "msme" || selected.client_pack === "corporate") && (
-                  <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}03` }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                      📐 Debt & Financial Ratios
-                    </div>
-                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                      These ratios appear in the client's Cash Health / Board Report and are included in the downloadable PDF report.
-                    </p>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                      <div>
-                        <AdminInput C={C} F={F} FM={FM} label="DSCR (Debt Service Coverage)"
-                          val={reportData.dscr || ""}
-                          onChange={v => setReportData(r => ({...r, dscr:v}))}
-                          placeholder="e.g. 2.1x" mono/>
-                      </div>
-                      <div>
-                        <AdminInput C={C} F={F} FM={FM} label="Interest Coverage Ratio"
-                          val={reportData.interestCoverage || ""}
-                          onChange={v => setReportData(r => ({...r, interestCoverage:v}))}
-                          placeholder="e.g. 4.2x" mono/>
-                      </div>
-                      <AdminInput C={C} F={F} FM={FM} label="Interest Margin / Net Interest"
-                        val={reportData.interestMargin || ""}
-                        onChange={v => setReportData(r => ({...r, interestMargin:v}))}
-                        placeholder="e.g. 3.8%" mono/>
-                      <AdminInput C={C} F={F} FM={FM} label="ROE (Return on Equity)"
-                        val={reportData.roe || ""}
-                        onChange={v => setReportData(r => ({...r, roe:v}))}
-                        placeholder="e.g. 18.4%" mono/>
-                      <AdminInput C={C} F={F} FM={FM} label="Current Ratio"
-                        val={reportData.currentRatio || ""}
-                        onChange={v => setReportData(r => ({...r, currentRatio:v}))}
-                        placeholder="e.g. 1.8x" mono/>
-                      <AdminInput C={C} F={F} FM={FM} label="Debt / Equity Ratio"
-                        val={reportData.debtEquity || ""}
-                        onChange={v => setReportData(r => ({...r, debtEquity:v}))}
-                        placeholder="e.g. 0.6:1" mono/>
-                      <AdminInput C={C} F={F} FM={FM} label="Cash Conversion Cycle"
-                        val={reportData.ccc || ""}
-                        onChange={v => setReportData(r => ({...r, ccc:v}))}
-                        placeholder="e.g. 37 days" mono/>
-                      <div>
-                        <AdminInput C={C} F={F} FM={FM} label="Debt / EBITDA"
-                          val={reportData.debtEbitda || ""}
-                          onChange={v => setReportData(r => ({...r, debtEbitda:v}))}
-                          placeholder="e.g. 2.4x" mono/>
-                      </div>
-                      <AdminInput C={C} F={F} FM={FM} label="Working Capital"
-                        val={reportData.workingCapital || ""}
-                        onChange={v => setReportData(r => ({...r, workingCapital:v}))}
-                        placeholder="e.g. Rs.32.4L" mono/>
-                    </div>
-                  </Card>
-                )}
-
-                {/* ══ UNIT ECONOMICS (startup only) ══════════════════════════════ */}
-                {selected.client_pack === "startup" && (
-                  <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}04` }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Unit Economics"}</div>
-                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                      {"Shown on the client's Unit Economics tab. Fill in after reviewing their data. Leave blank to show — (not yet assessed)."}
-                    </p>
-
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Core Metrics"}</div>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
-                      {[
-                        { key:"cac",           label:"CAC",                   placeholder:"e.g. ₹12,000" },
-                        { key:"ltv",           label:"LTV",                   placeholder:"e.g. ₹85,000" },
-                        { key:"ltvCac",        label:"LTV:CAC Ratio",         placeholder:"e.g. 7.1x" },
-                        { key:"cacPayback",    label:"CAC Payback Period",    placeholder:"e.g. 8 months" },
-                        { key:"arr",           label:"ARR",                   placeholder:"e.g. ₹6.2 Cr" },
-                        { key:"burnMultiple",  label:"Burn Multiple",         placeholder:"e.g. 1.4x" },
-                      ].map(f => (
-                        <div key={f.key}>
-                          <AdminInput C={C} F={F} FM={FM} label={f.label}
-                            val={reportData[f.key] || ""}
-                            onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                            placeholder={f.placeholder} mono/>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Growth & Retention"}</div>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
-                      {[
-                        { key:"momGrowth",    label:"MoM Revenue Growth",    placeholder:"e.g. 6%" },
-                        { key:"nrr",          label:"Net Revenue Retention", placeholder:"e.g. 108%" },
-                        { key:"churnRate",    label:"Gross Churn (Monthly)", placeholder:"e.g. 1.8%" },
-                        { key:"magicNumber",  label:"Magic Number",          placeholder:"e.g. 0.82" },
-                      ].map(f => (
-                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
-                          val={reportData[f.key] || ""}
-                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                          placeholder={f.placeholder} mono/>
-                      ))}
-                    </div>
-
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Benchmarks (override defaults)"}</div>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
-                      {[
-                        { key:"cacBenchmark",        label:"CAC Benchmark",        placeholder:"e.g. Sector avg: ₹8,000–15,000" },
-                        { key:"ltvCacBenchmark",      label:"LTV:CAC Benchmark",    placeholder:"e.g. Series A min: 3x" },
-                        { key:"cacPaybackBenchmark",  label:"Payback Benchmark",    placeholder:"e.g. Investors prefer <12 months" },
-                        { key:"nrrBenchmark",         label:"NRR Benchmark",        placeholder:"e.g. Good: >100% · Great: >120%" },
-                        { key:"churnBenchmark",       label:"Churn Benchmark",      placeholder:"e.g. SaaS target: <2%/mo" },
-                        { key:"arrBenchmark",         label:"ARR Benchmark",        placeholder:"e.g. Series A: ₹3–10 Cr" },
-                      ].map(f => (
-                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
-                          val={reportData[f.key] || ""}
-                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                          placeholder={f.placeholder}/>
-                      ))}
-                    </div>
-
-                    <AdminInput C={C} F={F} FM={FM} label="Garima's UE Assessment (shown to client)"
-                      val={reportData.ueNote || ""}
-                      onChange={v => setReportData(r => ({...r, ueNote:v}))}
-                      placeholder="e.g. LTV:CAC of 7.1x is strong — well above Series A threshold. Focus on reducing CAC from ₹12K to ₹8K before next raise."/>
-                  </Card>
-                )}
-
-                {/* ══ KPI BENCHMARKS ═══════════════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"KPI Benchmarks"}</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                    {"Override the default sector benchmarks shown under each KPI card. Leave blank to use the built-in defaults."}
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    {[
-                      { key:"benchRevenue",      label:"Revenue Benchmark",       placeholder:"e.g. Series A: ₹10 Cr ARR" },
-                      { key:"benchMargin",       label:"Margin Benchmark",        placeholder:"e.g. Target: 45%+ gross margin" },
-                      { key:"benchCash",         label:"Cash Benchmark",          placeholder:"e.g. Maintain 9–12 months runway" },
-                      { key:"benchBurn",         label:"Burn Benchmark",          placeholder:"e.g. Efficient: <₹40L/mo" },
-                      { key:"benchRunway",       label:"Runway Benchmark",        placeholder:"e.g. Fundraise trigger: <9 months" },
-                      { key:"benchArr",          label:"ARR Benchmark",           placeholder:"e.g. Series A: ₹3–10 Cr" },
-                      { key:"benchEbitda",       label:"EBITDA Benchmark",        placeholder:"e.g. Sector avg: 15–18% margin" },
-                      { key:"benchDebtorDays",   label:"Debtor Days Benchmark",   placeholder:"e.g. Target: <30 days" },
-                    ].map(f => (
-                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
-                        val={reportData[f.key] || ""}
-                        onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                        placeholder={f.placeholder}/>
-                    ))}
-                  </div>
-                </Card>
-
-                {/* ══ MSME: WORKING CAPITAL FIELDS ══════════════════════════════ */}
-                {selected.client_pack === "msme" && (
-                  <Card style={{ marginBottom:20 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"⚙️ Working Capital Data"}</div>
-                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                      {"Shown on Working Capital tab — AR aging, CCC components, ratios."}
-                    </p>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                      {[
-                        { key:"debtorDays",    label:"Debtor Days",        placeholder:"e.g. 46 days" },
-                        { key:"creditorDays",  label:"Creditor Days",      placeholder:"e.g. 31 days" },
-                        { key:"inventoryDays", label:"Inventory Days",     placeholder:"e.g. 22 days" },
-                        { key:"ccc",           label:"Cash Conversion Cycle (auto)", placeholder:"e.g. 37 days" },
-                        { key:"cccCashImpact", label:"Cash per Day CCC",   placeholder:"e.g. ₹2.8L" },
-                        { key:"quickRatio",    label:"Quick Ratio",        placeholder:"e.g. 1.18x" },
-                        { key:"invTurnover",   label:"Inventory Turnover", placeholder:"e.g. 6.2x" },
-                        { key:"debtorTurn",    label:"Debtor Turnover",    placeholder:"e.g. 7.8x" },
-                        { key:"ar0to30",       label:"AR 0–30 days",       placeholder:"e.g. ₹18.2L" },
-                        { key:"ar31to60",      label:"AR 31–60 days",      placeholder:"e.g. ₹12.4L" },
-                        { key:"ar61to90",      label:"AR 61–90 days",      placeholder:"e.g. ₹4.8L" },
-                        { key:"ar90plus",      label:"AR 90+ days",        placeholder:"e.g. ₹2.9L" },
-                      ].map(f => (
-                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
-                          val={reportData[f.key] || ""}
-                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                          placeholder={f.placeholder} mono/>
-                      ))}
-                    </div>
-                    <AdminInput C={C} F={F} FM={FM} label="AR Collections Note"
-                      val={reportData.arNote || ""}
-                      onChange={v => setReportData(r => ({...r, arNote:v}))}
-                      placeholder="e.g. Client B (₹4.8L) overdue 90+ days — legal notice issued 12 Mar."/>
-                    <AdminInput C={C} F={F} FM={FM} label="Working Capital Assessment"
-                      val={reportData.wcNote || ""}
-                      onChange={v => setReportData(r => ({...r, wcNote:v}))}
-                      placeholder="e.g. CCC improved to 37 days but still above target. Debtor concentration in top 3 clients (64% of AR) is the primary risk — diversify collections."/>
-                  </Card>
-                )}
-
-                {/* ══ CORPORATE: GOVERNANCE FIELDS ═══════════════════════════════ */}
-                {selected.client_pack === "corporate" && (
-                  <Card style={{ marginBottom:20 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"⚖️ Board Governance Data"}</div>
-                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                      {"Shown on Board Governance tab — compliance statuses, director counts, Ind AS health."}
-                    </p>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
-                      {[
-                        { key:"execDirectors",   label:"Executive Directors",      placeholder:"e.g. 2" },
-                        { key:"indepDirectors",  label:"Independent Directors",    placeholder:"e.g. 1" },
-                        { key:"boardMeetings",   label:"Board Meetings YTD",       placeholder:"e.g. 3" },
-                      ].map(f => (
-                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
-                          val={reportData[f.key] || ""}
-                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                          placeholder={f.placeholder} mono/>
-                      ))}
-                    </div>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Compliance Statuses (done / pending / na)"}</div>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
-                      {[
-                        { key:"rocStatus",    label:"ROC Annual Return"    },
-                        { key:"aocStatus",    label:"AOC-4 Filing"         },
-                        { key:"agmStatus",    label:"AGM Board Resolution" },
-                        { key:"dirKycStatus", label:"Director KYC"         },
-                        { key:"auditStatus",  label:"Statutory Audit"      },
-                        { key:"rptStatus",    label:"RPT Approval"         },
-                        { key:"csrStatus",    label:"CSR Compliance"       },
-                        { key:"indAsStatus",  label:"Ind AS Statements"    },
-                      ].map(f => (
-                        <div key={f.key}>
-                          <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
-                          <select value={reportData[f.key] || "pending"}
-                            onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
-                            style={{ width:"100%", padding:"8px 10px", borderRadius:8,
-                              border:`1px solid ${C.border}`, background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
-                            <option value="done">Done</option>
-                            <option value="pending">⏳ Pending</option>
-                            <option value="na">➖ N/A</option>
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>{"Ind AS Status"}</div>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:14 }}>
-                      {[
-                        { key:"indAs116", label:"Ind AS 116 — Leases"      },
-                        { key:"indAs109", label:"Ind AS 109 — Fin Instruments" },
-                        { key:"indAs115", label:"Ind AS 115 — Revenue"      },
-                        { key:"indAs36",  label:"Ind AS 36 — Impairment"    },
-                        { key:"indAs12",  label:"Ind AS 12 — Deferred Tax"  },
-                        { key:"indAsRpt", label:"RPT Disclosures"           },
-                      ].map(f => (
-                        <div key={f.key}>
-                          <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
-                          <select value={reportData[f.key] || "review"}
-                            onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
-                            style={{ width:"100%", padding:"8px 10px", borderRadius:8,
-                              border:`1px solid ${C.border}`, background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
-                            <option value="done">Compliant</option>
-                            <option value="review">Needs Review</option>
-                            <option value="na">➖ Not Applicable</option>
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                    <AdminInput C={C} F={F} FM={FM} label="Governance Assessment"
-                      val={reportData.governanceNote || ""}
-                      onChange={v => setReportData(r => ({...r, governanceNote:v}))}
-                      placeholder="e.g. Company is broadly compliant. Key gaps: independent director appointment pending (required before next funding round) and Ind AS 116 lease capitalisation needs to be completed before audit sign-off."/>
-                  </Card>
-                )}
-
-                {/* ══ CORPORATE: BOARD HIGHLIGHTS + IPO GAPS ══════════════════ */}
-                {selected.client_pack === "corporate" && (
-                  <Card style={{ marginBottom:20 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"📋 Board Monthly Highlights"}</div>
-                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                      {"3 things the board should focus on this month — shown on Monthly Report tab."}
-                    </p>
-                    {[
-                      { key:"boardHighlight1", placeholder:"e.g. EBITDA margin at 17.5% — highest in 4 quarters. Driven by opex discipline and revenue scale." },
-                      { key:"boardHighlight2", placeholder:"e.g. PAT at ₹81L vs budget ₹56L — 44.6% ahead. Full year PAT likely to exceed plan by ₹180L." },
-                      { key:"boardHighlight3", placeholder:"e.g. Finance costs stable at ₹22L despite rate environment — fixed rate loan hedging paying off." },
-                    ].map((f, i) => (
-                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={`Board Highlight ${i+1}`}
-                        val={reportData[f.key] || ""}
-                        onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                        placeholder={f.placeholder}/>
-                    ))}
-
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, margin:"16px 0 10px" }}>{"IPO Gap Statuses"}</div>
-                    <p style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:12, lineHeight:1.6 }}>{"Track progress on the 6 critical IPO readiness gaps."}</p>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
-                      {[
-                        { key:"ipoGap1", label:"3-year PAT profitability" },
-                        { key:"ipoGap2", label:"Independent director" },
-                        { key:"ipoGap3", label:"Auditor upgrade" },
-                        { key:"ipoGap4", label:"Ind AS restatement" },
-                        { key:"ipoGap5", label:"Legal & IP clean-up" },
-                        { key:"ipoGap6", label:"ESOP formalised" },
-                      ].map(f => (
-                        <div key={f.key}>
-                          <div style={{ fontFamily:F, fontSize:11, color:C.muted, fontWeight:600, marginBottom:4 }}>{f.label}</div>
-                          <select value={reportData[f.key] || "pending"}
-                            onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
-                            style={{ width:"100%", padding:"8px 10px", borderRadius:8,
-                              border:`1px solid ${C.border}`, background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
-                            <option value="done">Done</option>
-                            <option value="pending">⭕ Pending</option>
-                          </select>
-                        </div>
-                      ))}
-                    </div>
-                    <AdminInput C={C} F={F} FM={FM} label="Garima's IPO Note"
-                      val={reportData.ipoNote || ""}
-                      onChange={v => setReportData(r => ({...r, ipoNote:v}))}
-                      placeholder="e.g. IPO readiness score at 65/100. Key focus for next 6 months: appoint independent director and initiate Ind AS restatement with auditors. Revenue scale is strong — the financial story is compelling once governance gaps are closed."/>
-                  </Card>
-                )}
-
-                {/* ══ EXISTING: KEY METRICS ═════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>📋 Key Metrics Table</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Investor metrics / working capital ratios shown in the client's pack.
-                  </p>
-                  {(reportData.metrics || []).map((m, i) => (
-                    <div key={i} style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr auto", gap:8,
-                      alignItems:"center", marginBottom:8, padding:"8px 12px", borderRadius:10,
-                      background:C.bg, border:`1px solid ${C.border}` }}>
-                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.muted }}>{m.label}</div>
-                      <InlineInput value={m.value}
-                        onCommit={v => { const ms=[...reportData.metrics]; ms[i]={...ms[i],value:v}; setReportData(r=>({...r,metrics:ms})); }}
-                        placeholder="Value" style={{ fontFamily:FM, color:C.blue, background:"#F0F4FF" }}/>
-                      <InlineInput value={m.note}
-                        onCommit={v => { const ms=[...reportData.metrics]; ms[i]={...ms[i],note:v}; setReportData(r=>({...r,metrics:ms})); }}
-                        placeholder="Note..." style={{ fontFamily:F, color:C.text, background:C.bg }}/>
-                      <button onClick={() => {
-                        const ms=[...reportData.metrics]; ms[i]={...ms[i],flag:!ms[i].flag};
-                        setReportData(r=>({...r,metrics:ms}));
-                      }} style={{ padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
-                        background:m.flag?`${C.red}15`:`${C.green}15`,
-                        color:m.flag?C.red:C.green, fontSize:12, fontWeight:700, fontFamily:F, whiteSpace:"nowrap" }}>
-                        {m.flag?"⚠️ Flag":"✅ OK"}
-                      </button>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* ══ EXISTING: CHECKLIST ═══════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    ✅ {selected.client_pack==="corporate"?"Compliance Checklist":"Due Diligence Checklist"}
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Tick items as the client completes/provides them. Shown on their report page.
-                  </p>
-                  {(reportData.checklist || []).map((item, i) => (
-                    <div key={i} onClick={() => {
-                      const cl=[...reportData.checklist]; cl[i]={...cl[i],done:!cl[i].done};
-                      setReportData(r=>({...r,checklist:cl}));
-                    }} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
-                      borderRadius:10, marginBottom:8, cursor:"pointer",
-                      background:item.done?`${C.green}06`:C.bg,
-                      border:`1px solid ${item.done?C.green+"25":C.border}` }}>
-                      <div style={{ width:22, height:22, borderRadius:6, flexShrink:0,
-                        background:item.done?C.green:C.bg3, border:`2px solid ${item.done?C.green:C.border}`,
-                        display:"flex", alignItems:"center", justifyContent:"center" }}>
-                        {item.done && <span style={{ color:"white", fontSize:11, fontWeight:900 }}>✓</span>}
-                      </div>
-                      <div style={{ fontFamily:F, fontSize:13, color:item.done?C.dim:C.text,
-                        textDecoration:item.done?"line-through":"none" }}>{item.item}</div>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* ══ EXISTING: MARKET BENCHMARKS ══════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Market Benchmarks</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Shown in the market benchmarks table on the client's dashboard.
-                  </p>
-                  {(reportData.benchmarks || []).map((b, i) => (
-                    <div key={i} style={{ marginBottom:10, padding:"10px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
-                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{b.metric}</div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr auto", gap:8 }}>
-                        {[
-                          { key:"yours",  placeholder:"Your value",    color:"#F0F4FF", fc:C.blue },
-                          { key:"median", placeholder:"Sector median",  color:C.bg,     fc:C.text },
-                          { key:"bench",  placeholder:"Benchmark",      color:C.bg,     fc:C.text },
-                        ].map(col => (
-                          <InlineInput key={col.key} value={b[col.key]}
-                            onCommit={v => { const bm=[...reportData.benchmarks]; bm[i]={...bm[i],[col.key]:v}; setReportData(r=>({...r,benchmarks:bm})); }}
-                            placeholder={col.placeholder}
-                            style={{ fontFamily:FM, color:col.fc, background:col.color }}/>
-                        ))}
-                        <button onClick={() => {
-                          const bm=[...reportData.benchmarks]; bm[i]={...bm[i],ok:!bm[i].ok};
-                          setReportData(r=>({...r,benchmarks:bm}));
-                        }} style={{ padding:"7px 10px", borderRadius:8, border:"none", cursor:"pointer",
-                          background:b.ok?`${C.green}15`:`${C.amber}15`,
-                          color:b.ok?C.green:C.amber, fontSize:11, fontWeight:700, fontFamily:F }}>
-                          {b.ok?"✅ Ahead":"⚠️ Gap"}
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* ══ NOTES ═══════════════════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Garima's Monthly Note</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:10, lineHeight:1.6 }}>
-                    Shown at the top of the client's <strong>My Report</strong> page and dashboard.
-                  </p>
-                  <textarea value={reportData.reportNote || reportData.packNote || ""} rows={4}
-                    onChange={e => setReportData(r=>({...r,reportNote:e.target.value,packNote:e.target.value}))}
-                    placeholder="e.g. Strong month — revenue up 6.1%, EBITDA margin at 17.5%..."
-                    style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-                      border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                      background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
-                    onFocus={e=>e.target.style.borderColor=C.amber}
-                    onBlur={e=>e.target.style.borderColor=C.border}/>
-                </Card>
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>💰 Cash Flow Forecast Note (from Garima)</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:10, lineHeight:1.6 }}>
-                    Shown <strong>at the very top</strong> of the client's <strong>Cash Flow Forecast</strong> page — this is Garima's forward-looking insight. Write about upcoming projections, not past performance.
-                  </p>
-                  <textarea value={reportData.cashflowNote || ""} rows={4}
-                    onChange={e => setReportData(r=>({...r,cashflowNote:e.target.value}))}
-                    placeholder="e.g. March forecast dips due to advance tax + delayed collection from Client B..."
-                    style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
-                      border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                      background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
-                    onFocus={e=>e.target.style.borderColor=C.amber}
-                    onBlur={e=>e.target.style.borderColor=C.border}/>
-                </Card>
-
-                {/* ══ 3-MONTH FORECAST ════════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"🔭 3-Month Forward View"}</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                    {"Shown on the client's Dashboard. Write your outlook and optionally add 3 forward data points (e.g. projected revenue)."}
-                  </p>
-                  <AdminInput C={C} F={F} FM={FM} label="Garima's Forward Outlook"
-                    val={reportData.forecastNote || ""}
-                    onChange={v => setReportData(r => ({...r, forecastNote:v}))}
-                    placeholder="e.g. Revenue trajectory is strong for Q1. March may dip slightly due to advance tax outflow but April–May looks positive. Focus: close 2 enterprise deals before quarter end."/>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, margin:"14px 0 10px" }}>{"Forward Data Points (optional)"}</div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
-                    {[
-                      { lkey:"forecast1Label", vkey:"forecast1Value", tkey:"forecast1Trend", num:"1" },
-                      { lkey:"forecast2Label", vkey:"forecast2Value", tkey:"forecast2Trend", num:"2" },
-                      { lkey:"forecast3Label", vkey:"forecast3Value", tkey:"forecast3Trend", num:"3" },
-                    ].map(f => (
-                      <div key={f.num} style={{ display:"flex", flexDirection:"column", gap:6 }}>
-                        <AdminInput C={C} F={F} FM={FM} label={`Month ${f.num} Label`}
-                          val={reportData[f.lkey] || ""}
-                          onChange={v => setReportData(r => ({...r, [f.lkey]:v}))}
-                          placeholder="e.g. April 2026"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Value"
-                          val={reportData[f.vkey] || ""}
-                          onChange={v => setReportData(r => ({...r, [f.vkey]:v}))}
-                          placeholder="e.g. ₹92L" mono/>
-                        <select value={reportData[f.tkey] || "stable"}
-                          onChange={e => setReportData(r => ({...r, [f.tkey]:e.target.value}))}
-                          style={{ padding:"8px 10px", borderRadius:8, border:`1px solid ${C.border}`,
-                            background:C.bg, color:C.text, fontFamily:F, fontSize:12 }}>
-                          <option value="up">▲ Improving</option>
-                          <option value="stable">→ Stable</option>
-                          <option value="down">▼ Watch</option>
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-
-                {/* ══ EXECUTIVE SUMMARY ════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"📋 Board Executive Summary"}</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                    {"One paragraph each — shown in the downloadable Board Executive Summary PDF. Write in plain English as if briefing a board member."}
-                  </p>
-                  {[
-                    { key:"execPerformance",   label:"📈 Performance",      placeholder:"e.g. Revenue grew 6% MoM to ₹84L — tracking ahead of Q4 plan. Gross margin improved to 41% as COGS optimisation begins to reflect. EBITDA positive for second consecutive month." },
-                    { key:"execCash",          label:"💰 Cash & Liquidity",  placeholder:"e.g. Cash position at ₹2.1 Cr with 4.4 months runway. March will see pressure from advance tax (₹22L) and delayed Client B collection. April outlook is positive." },
-                    { key:"execRisks",         label:"⚠️ Key Risks",         placeholder:"e.g. (1) Runway below 6 months — fundraise urgently. (2) Client B overdue ₹4.8L at 90+ days. (3) Burn multiple at 1.8x — above Series A benchmark." },
-                    { key:"execOpportunities", label:"🚀 Opportunities",     placeholder:"e.g. (1) SBI Startup Branch intro secured — loan application ready. (2) SIES Incubator partnership in progress — 5 potential clients. (3) EBITDA margin improving — profitability within reach." },
-                    { key:"execNextSteps",     label:"✅ Next Steps",        placeholder:"e.g. (1) Close Client B collection by 15 Mar. (2) File GSTR-3B by 20 Mar. (3) Submit SBI loan application by 31 Mar. (4) Begin Series A deck preparation." },
-                  ].map(f => (
-                    <div key={f.key} style={{ marginBottom:12 }}>
-                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:6 }}>{f.label}</div>
-                      <textarea value={reportData[f.key] || ""} rows={3}
-                        onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
-                        placeholder={f.placeholder}
-                        style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
-                          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                          background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
-                        onFocus={e=>e.target.style.borderColor=C.blue}
-                        onBlur={e=>e.target.style.borderColor=C.border}/>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* Cash Pressure Points — startup only */}
-                {selected.client_pack === "startup" && (
-                  <Card style={{ marginBottom:20, border:`1px solid ${C.red}20`, background:`${C.red}04` }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>{"Upcoming Cash Pressure Points"}</div>
-                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-                      {"Shown as red warning cards on the startup cash flow page — helps client flag upcoming cash stress."}
-                    </p>
-                    {[
-                      { key:"cashPressure1", label:"Pressure Point 1", placeholder:"e.g. Advance tax Q4 — Rs.22L due 15 Mar" },
-                      { key:"cashPressure2", label:"Pressure Point 2", placeholder:"e.g. Client B collection overdue — Rs.4.8L at risk" },
-                      { key:"cashPressure3", label:"Pressure Point 3", placeholder:"e.g. Payroll + benefits — Rs.28L due 1 Apr" },
-                    ].map(f => (
-                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
-                        val={reportData[f.key] || ""}
-                        onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                        placeholder={f.placeholder}/>
-                    ))}
-                  </Card>
-                )}
-
-                {/* ══ RAW INPUTS → AUTO RATIOS ═══════════════════════════════ */}
-                {reportData && <Card style={{ marginBottom:20, border:`1px solid ${C.teal}20`, background:`${C.teal}04` }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    {"⚡ Raw Inputs — Ratios Auto-Calculate"}
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    {"Enter these from the client's books (Tally / bank statement). All ratios — DSCR, Interest Coverage, Debt/EBITDA, CCC, LTV:CAC, Burn Multiple — calculate automatically when you click Generate Analysis."}
-                  </p>
-
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
-                    {"Balance Sheet Inputs"}
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
-                    {[
-                      { key:"debtors",      label:"Trade Debtors (AR)",           placeholder:"e.g. ₹38.4L" },
-                      { key:"creditors",    label:"Trade Creditors (AP)",          placeholder:"e.g. ₹22.1L" },
-                      { key:"inventory",    label:"Inventory / Stock",             placeholder:"e.g. ₹15.8L or Nil" },
-                      { key:"existingDebt", label:"Total Existing Debt / Loans",   placeholder:"e.g. ₹45L or Nil" },
-                      { key:"interestCost", label:"Annual Interest Cost",          placeholder:"e.g. ₹5.2L or Nil" },
-                      { key:"operatingCF",  label:"Operating Cash Flow",           placeholder:"e.g. ₹18.4L" },
-                    ].map(f => (
-                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
-                        val={reportData[f.key] || ""}
-                        onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                        placeholder={f.placeholder} mono/>
-                    ))}
-                  </div>
-
-                  {selected.client_pack === "startup" && (<>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
-                      {"Unit Economics Inputs"}
-                    </div>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12, marginBottom:16 }}>
-                      {[
-                        { key:"totalMktgSpend",  label:"Total Sales + Mktg Spend (month)", placeholder:"e.g. ₹8.4L" },
-                        { key:"newCustomers",    label:"New Customers Acquired",            placeholder:"e.g. 70" },
-                        { key:"avgRevPerCust",   label:"Avg Revenue per Customer",          placeholder:"e.g. ₹12,000/yr" },
-                        { key:"avgRetentionMos", label:"Avg Customer Lifetime (months)",    placeholder:"e.g. 24" },
-                        { key:"churnRate",       label:"Monthly Churn Rate",                placeholder:"e.g. 2.1%" },
-                        { key:"nrr",             label:"Net Revenue Retention",             placeholder:"e.g. 108%" },
-                      ].map(f => (
-                        <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label}
-                          val={reportData[f.key] || ""}
-                          onChange={v => setReportData(r => ({...r, [f.key]:v}))}
-                          placeholder={f.placeholder} mono/>
-                      ))}
-                    </div>
-                  </>)}
-
-                                    <div style={{ padding:"10px 14px", borderRadius:8,
-                    background:`${C.teal}08`, border:`1px solid ${C.teal}20`,
-                    fontFamily:F, fontSize:12, color:C.teal }}>
-                    {"⚡ Ratios auto-calculate when you click Generate Analysis below"}
-                  </div>
-                </Card>}
-
-                {/* ══ AI ANALYSIS GENERATOR ══════════════════════════════════ */}
-                {reportData && <Card style={{ marginBottom:20, border:`1.5px solid ${C.purple}30`,
-                  background:`linear-gradient(135deg,${C.purple}06,${C.blue}04)` }}>
-                  <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8 }}>
-                    <div style={{ width:36, height:36, borderRadius:10,
-                      background:`linear-gradient(135deg,${C.purple},${C.blue})`,
-                      display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>
-                      {"✨"}
-                    </div>
-                    <div>
-                      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
-                        {"Generate Analysis with AI"}
-                      </div>
-                      <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>
-                        {"Reads all the numbers you've entered and drafts Garima's commentary — you review and approve"}
-                      </div>
-                    </div>
-                  </div>
-
-                  <button onClick={generateAnalysis} disabled={aiGenerating}
-                    style={{ width:"100%", padding:"12px", borderRadius:10, border:"none",
-                      background: aiGenerating
-                        ? C.bg3
-                        : `linear-gradient(135deg,${C.purple},${C.blue})`,
-                      color: aiGenerating ? C.muted : "white",
-                      fontFamily:F, fontWeight:700, fontSize:14, cursor: aiGenerating ? "not-allowed" : "pointer",
-                      display:"flex", alignItems:"center", justifyContent:"center", gap:10,
-                      marginBottom: aiDraft || aiError ? 16 : 0 }}>
-                    {aiGenerating
-                      ? <><span>⟳</span>{" Analysing numbers..."}</>
-                      : "✨ Generate Analysis Draft"
-                    }
-                  </button>
-
-                  {aiError && (
-                    <div style={{ padding:"10px 14px", borderRadius:8, background:`${C.red}10`,
-                      border:`1px solid ${C.red}20`, fontFamily:F, fontSize:12, color:C.red }}>
-                      {aiError}
-                    </div>
-                  )}
-
-                  {aiDraft && (
-                    <div>
-                      <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text,
-                        marginBottom:12 }}>
-                        {"📋 Draft ready — review and apply"}
-                      </div>
-
-                      {/* Show each generated field with apply button */}
-                      {[
-                        { key:"garimaNote",        label:"Dashboard Note",           field:"garimaNote"        },
-                        { key:"cashflowNote",       label:"Cash Flow Analysis",       field:"cashflowNote"       },
-                        { key:"packNote",           label:"CFO Pack Commentary",      field:"packNote"           },
-                        { key:"varianceCommentary", label:"Variance Commentary",      field:"varianceCommentary" },
-                        { key:"forecastNote",       label:"3-Month Forward Outlook",  field:"forecastNote"       },
-                        { key:"loanNote",           label:"Loan Readiness Note",      field:"loanNote"           },
-                        ...(selected?.client_pack==="startup" ? [{ key:"ueNote", label:"Unit Economics Note", field:"ueNote" }] : []),
-                        ...(selected?.client_pack==="msme"    ? [{ key:"wcNote", label:"Working Capital Note", field:"wcNote" }] : []),
-                        { key:"execPerformance",    label:"Board: Performance",       field:"execPerformance"    },
-                        { key:"execCash",           label:"Board: Cash & Liquidity",  field:"execCash"           },
-                        { key:"execRisks",          label:"Board: Key Risks",         field:"execRisks"          },
-                        { key:"execOpportunities",  label:"Board: Opportunities",     field:"execOpportunities"  },
-                        { key:"execNextSteps",       label:"Board: Next Steps",        field:"execNextSteps"       },
-                      ].filter(f => aiDraft[f.key]).map((f, i) => (
-                        <div key={i} style={{ marginBottom:10, padding:"12px 14px", borderRadius:10,
-                          background:C.bg, border:`1px solid ${C.border}` }}>
-                          <div style={{ display:"flex", alignItems:"center",
-                            justifyContent:"space-between", marginBottom:6 }}>
-                            <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
-                              color:C.purple, textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                              {f.label}
-                            </span>
-                            <button onClick={() => applyDraft(f.field)}
-                              style={{ padding:"3px 12px", borderRadius:100, border:"none",
-                                background:`${C.purple}15`, color:C.purple,
-                                fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>
-                              {"Apply"}
-                            </button>
-                          </div>
-                          <div style={{ fontFamily:F, fontSize:12, color:C.text,
-                            lineHeight:1.7, whiteSpace:"pre-wrap" }}>
-                            {aiDraft[f.key]}
-                          </div>
-                        </div>
-                      ))}
-
-                      {/* Apply All button */}
-                      <div style={{ display:"flex", gap:10, marginTop:4 }}>
-                        <button onClick={applyAllDraft}
-                          style={{ flex:1, padding:"11px", borderRadius:10, border:"none",
-                            background:`linear-gradient(135deg,${C.purple},${C.blue})`,
-                            color:"white", fontFamily:F, fontWeight:700, fontSize:13,
-                            cursor:"pointer" }}>
-                          {"Apply All & Save"}
-                        </button>
-                        <button onClick={() => setAiDraft(null)}
-                          style={{ padding:"11px 16px", borderRadius:10,
-                            border:`1px solid ${C.border}`, background:C.bg,
-                            color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer" }}>
-                          {"Discard"}
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </Card>}
-
-                {reportData && <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
-              </>)}
-            </div>
-          )}
-
-          {/* ── UAE / TAX ── */}
-          {tab === "uae" && (
-            <div style={{ maxWidth:700 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a UAE client from the sidebar first</div>
-                </Card>
-              ) : !isUAE(selected) ? (
-                <Card style={{ textAlign:"center", padding:40, background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>🇮🇳</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:"#92400E", fontWeight:600 }}>
-                    Selected client is an India client
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:8 }}>
-                    Switch to a UAE or Cross-Border client to edit UAE/Tax data.
-                  </p>
-                </Card>
-              ) : (<>
-
-                {/* Client UAE Profile */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🇦🇪 UAE Client Profile</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Update jurisdiction settings and tax registration details.
-                  </p>
-                  <AdminSelect C={C} F={F} label="Free Zone" val={selected.freezone||"DMCC"}
-                    onChange={async v => {
-                      await supabase.from("clients").update({ freezone:v }).eq("id", selected.id);
-                      setSelected(s=>({...s,freezone:v}));
-                    }}
-                    options={[
-                      {value:"DMCC",  label:"DMCC — Dubai Multi Commodities Centre"},
-                      {value:"JAFZA", label:"JAFZA — Jebel Ali Free Zone"},
-                      {value:"ADGM",  label:"ADGM — Abu Dhabi Global Market"},
-                      {value:"DIFC",  label:"DIFC — Dubai Int'l Financial Centre"},
-                      {value:"RAK",   label:"RAKEZ — RAK Economic Zone"},
-                      {value:"Other", label:"Other / Mainland"},
-                    ]}/>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="VAT TRN"
-                      val={selected.trnVAT||""} placeholder="e.g. 100345678900003" mono
-                      onChange={async v => {
-                        await supabase.from("clients").update({ trnVAT:v }).eq("id", selected.id);
-                        setSelected(s=>({...s,trnVAT:v}));
-                      }}/>
-                    <AdminInput C={C} F={F} FM={FM} label="CT TRN"
-                      val={selected.trnCT||""} placeholder="e.g. 900012345678901" mono
-                      onChange={async v => {
-                        await supabase.from("clients").update({ trnCT:v }).eq("id", selected.id);
-                        setSelected(s=>({...s,trnCT:v}));
-                      }}/>
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-                    <AdminSelect C={C} F={F} label="VAT Registered?"
-                      val={selected.vatRegistered?"yes":"no"}
-                      onChange={async v => {
-                        const val = v==="yes";
-                        await supabase.from("clients").update({ vatRegistered:val }).eq("id", selected.id);
-                        setSelected(s=>({...s,vatRegistered:val}));
-                      }}
-                      options={[{value:"yes",label:"✅ Yes"},{value:"no",label:"❌ No"}]}/>
-                    <AdminSelect C={C} F={F} label="QFZP Status?"
-                      val={selected.qfzpStatus?"yes":"no"}
-                      onChange={async v => {
-                        const val = v==="yes";
-                        await supabase.from("clients").update({ qfzpStatus:val }).eq("id", selected.id);
-                        setSelected(s=>({...s,qfzpStatus:val}));
-                      }}
-                      options={[{value:"yes",label:"✅ Active"},{value:"no",label:"❌ No"}]}/>
-                    <AdminSelect C={C} F={F} label="SBR Eligible?"
-                      val={selected.sbrEligible?"yes":"no"}
-                      onChange={async v => {
-                        const val = v==="yes";
-                        await supabase.from("clients").update({ sbrEligible:val }).eq("id", selected.id);
-                        setSelected(s=>({...s,sbrEligible:val}));
-                      }}
-                      options={[{value:"yes",label:"✅ Eligible"},{value:"no",label:"❌ No"}]}/>
-                  </div>
-                  <AdminSelect C={C} F={F} label="Financial Year End"
-                    val={selected.financialYearEnd||"31 Dec"}
-                    onChange={async v => {
-                      await supabase.from("clients").update({ financialYearEnd:v }).eq("id", selected.id);
-                      setSelected(s=>({...s,financialYearEnd:v}));
-                    }}
-                    options={[
-                      {value:"31 Dec", label:"31 December (Calendar Year)"},
-                      {value:"31 Mar", label:"31 March (India-aligned)"},
-                    ]}/>
-                </Card>
-
-                {/* VAT Data */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🧾 VAT Dashboard Data</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Shown on the client's VAT Dashboard tab.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Output VAT (AED)" lakh val={reportData?.vat?.outputVAT||""}
-                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),outputVAT:Number(v)||v}}))} placeholder="e.g. 185000" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Input VAT (AED)" lakh val={reportData?.vat?.inputVAT||""}
-                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),inputVAT:Number(v)||v}}))} placeholder="e.g. 92500" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="VAT Payable (AED)" lakh val={reportData?.vat?.vatPayable||""}
-                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),vatPayable:Number(v)||v}}))} placeholder="e.g. 92500" mono/>
-                  </div>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Filing Period" val={reportData?.vat?.filingPeriod||""}
-                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),filingPeriod:v}}))} placeholder="e.g. Q1 2026 (Jan–Mar)"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Next Deadline" val={reportData?.vat?.nextDeadline||""}
-                      onChange={v=>setReportData(r=>({...r,vat:{...(r.vat||{}),nextDeadline:v}}))} placeholder="e.g. 28 Apr 2026"/>
-                  </div>
-                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima — VAT (shown on client VAT tab)"
-                    val={reportData?.vatGarimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,vatGarimaNote:v}))}
-                    placeholder="e.g. Your Q1 VAT return of AED 92.5K is due 28 April. Ensure funds are ring-fenced now."
-                    multiline/>
-                </Card>
-
-                {/* CT Data */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏛️ Corporate Tax Data</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Shown on the client's Corporate Tax tab.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Revenue (AED)" lakh val={reportData?.ct?.revenue||""}
-                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),revenue:Number(v)||v}}))} placeholder="e.g. 1850000" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Accounting Profit (AED)" lakh val={reportData?.ct?.taxableIncome||""}
-                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),taxableIncome:Number(v)||v}}))} placeholder="e.g. 271000" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Qualifying Income %" val={reportData?.ct?.qualifyingPct||""}
-                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),qualifyingPct:Number(v)||v}}))} placeholder="e.g. 92" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Non-Qualifying Income %" val={reportData?.ct?.nonQualifyingPct||""}
-                      onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),nonQualifyingPct:Number(v)||v}}))} placeholder="e.g. 8" mono/>
-                  </div>
-                  <div style={{ marginTop:16, marginBottom:4, fontFamily:"system-ui", fontWeight:700, fontSize:12, color:"#6B7280" }}>CT Substance Checklist (shown on CT Overview)</div>
-                  {[
-                    { key:"employees",   label:"Adequate employees in free zone" },
-                    { key:"opex",        label:"Adequate operating expenditure" },
-                    { key:"presence",    label:"Physical presence in free zone" },
-                    { key:"ciga",        label:"Core income-generating activities" },
-                    { key:"auditedFS",   label:"Audited financial statements" },
-                  ].map(item => (
-                    <div key={item.key} style={{ display:"flex", alignItems:"center", gap:12, padding:"8px 0", borderBottom:`1px solid ${C.border}` }}>
-                      <span style={{ fontFamily:"system-ui", fontSize:13, color:C.text, flex:1 }}>{item.label}</span>
-                      <AdminSelect C={C} F={F} label=""
-                        val={String(reportData?.ct?.substanceItems?.[item.key] ?? "false")}
-                        onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),substanceItems:{...(r.ct?.substanceItems||{}), [item.key]:v==="true"}}}))}
-                        options={[{val:"true",label:"✅ Done"},{val:"false",label:"⬜ Pending"}]}/>
-                    </div>
-                  ))}
-                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima — CT (shown on client CT tab)"
-                    val={reportData?.ctGarimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,ctGarimaNote:v}))}
-                    placeholder="e.g. With QFZP status, your effective CT rate is 0%. Ensure audited FS are submitted to DMCC by 30 April."
-                    multiline/>
-                </Card>
-
-                {/* QFZP Score */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏙️ QFZP Compliance Score</div>
-                  <AdminInput C={C} F={F} FM={FM} label="QFZP Score (0–100)" val={reportData?.qfzp?.qfzpScore||""}
-                    onChange={v=>setReportData(r=>({...r,qfzp:{...(r.qfzp||{}),qfzpScore:Number(v)||v}}))} placeholder="e.g. 82" mono/>
-                  <AdminInput C={C} F={F} FM={FM} label="Audit Readiness Score (0–100)" val={reportData?.auditReadiness?.auditScore||""}
-                    onChange={v=>setReportData(r=>({...r,auditReadiness:{...(r.auditReadiness||{}),auditScore:Number(v)||v}}))} placeholder="e.g. 65" mono/>
-                </Card>
-
-                {/* ── NEW: QFZP SUBSTANCE ADMIN ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    🏙️ QFZP Substance Tracker
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Track all 5 substance pillars for QFZP compliance. Used in the Substance Tracker page and downloadable PDF.
-                  </p>
-
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Period"
-                      val={reportData?.qfzpSubstance?.period||""}
-                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),period:v}}))}
-                      placeholder="e.g. FY 2025"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Overall Score (0–100)" mono
-                      val={reportData?.qfzpSubstance?.overallScore||""}
-                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),overallScore:Number(v)||v}}))}
-                      placeholder="e.g. 82"/>
-                    <AdminSelect C={C} F={F} label="Audited FS Submitted?"
-                      val={reportData?.qfzpSubstance?.auditSubmitted?"yes":"no"}
-                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),auditSubmitted:v==="yes"}}))}
-                      options={[{value:"no",label:"❌ No — Action Required"},{value:"yes",label:"✅ Yes — Submitted"}]}/>
-                  </div>
-
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Employee Count" mono
-                      val={reportData?.qfzpSubstance?.employeeCount||""}
-                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),employeeCount:v}}))}
-                      placeholder="e.g. 5"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Annual OpEx (AED)" mono lakh
-                      val={reportData?.qfzpSubstance?.opexAED||""}
-                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),opexAED:v}}))}
-                      placeholder="e.g. 412000"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Office Size (sq ft)" mono
-                      val={reportData?.qfzpSubstance?.officeSqft||""}
-                      onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),officeSqft:v}}))}
-                      placeholder="e.g. 1200"/>
-                  </div>
-
-                  {/* CIGA rows */}
-                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text,
-                    margin:"14px 0 10px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                    CIGA — Income Activities (qualifying vs non-qualifying)
-                  </div>
-                  {[0,1,2,3].map(i => (
-                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
-                      borderRadius:8, padding:10, marginBottom:8 }}>
-                      <div style={{ display:"grid", gridTemplateColumns:"3fr 1fr 1fr", gap:8 }}>
-                        <AdminInput C={C} F={F} FM={FM} label={`Activity ${i+1}`}
-                          val={reportData?.qfzpSubstance?.cigas?.[i]?.activity||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.qfzpSubstance?.cigas)||[{},{},{},{}])];
-                            arr[i]={...arr[i],activity:v};
-                            return {...r,qfzpSubstance:{...(r.qfzpSubstance||{}),cigas:arr}};
-                          })}
-                          placeholder="e.g. Trading — sourcing & distribution"/>
-                        <AdminInput C={C} F={F} FM={FM} label="% of Revenue" mono
-                          val={reportData?.qfzpSubstance?.cigas?.[i]?.pct||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.qfzpSubstance?.cigas)||[{},{},{},{}])];
-                            arr[i]={...arr[i],pct:Number(v)||0};
-                            return {...r,qfzpSubstance:{...(r.qfzpSubstance||{}),cigas:arr}};
-                          })}
-                          placeholder="e.g. 57"/>
-                        <AdminSelect C={C} F={F} label="Qualifying?"
-                          val={reportData?.qfzpSubstance?.cigas?.[i]?.qualified===false?"no":"yes"}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.qfzpSubstance?.cigas)||[{},{},{},{}])];
-                            arr[i]={...arr[i],qualified:v==="yes"};
-                            return {...r,qfzpSubstance:{...(r.qfzpSubstance||{}),cigas:arr}};
-                          })}
-                          options={[{value:"yes",label:"✅ Qualifying (0% CT)"},{value:"no",label:"❌ Non-Qualifying (9%)"}]}/>
-                      </div>
-                      <AdminInput C={C} F={F} FM={FM} label="Notes"
-                        val={reportData?.qfzpSubstance?.cigas?.[i]?.note||""}
-                        onChange={v=>setReportData(r=>{
-                          const arr=[...((r.qfzpSubstance?.cigas)||[{},{},{},{}])];
-                          arr[i]={...arr[i],note:v};
-                          return {...r,qfzpSubstance:{...(r.qfzpSubstance||{}),cigas:arr}};
-                        })}
-                        placeholder="e.g. Core activity — conducted from DMCC office"/>
-                    </div>
-                  ))}
-
-                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
-                    val={reportData?.qfzpSubstance?.garimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,qfzpSubstance:{...(r.qfzpSubstance||{}),garimaNote:v}}))}
-                    placeholder="QFZP substance analysis — gaps, audit risks, de-minimis watch, action items..."/>
-                </Card>
-
-                {/* ── NEW: VERTICAL ANALYSIS ADMIN ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    📊 Vertical Analysis — P&L Lines
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Enter P&L line items with current and prior period amounts. % of revenue and change (pp) are calculated automatically. Minimum 5 rows required to override demo data.
-                  </p>
-                  <AdminInput C={C} F={F} FM={FM} label="Period"
-                    val={reportData?.verticalAnalysis?.period||""}
-                    onChange={v=>setReportData(r=>({...r,verticalAnalysis:{...(r.verticalAnalysis||{}),period:v}}))}
-                    placeholder="e.g. Q1 2026 (Jan–Mar)"/>
-
-                  {[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15].map(i => (
-                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
-                      borderRadius:8, padding:10, marginBottom:8 }}>
-                      <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr", gap:8 }}>
-                        <AdminInput C={C} F={F} FM={FM} label={`Row ${i+1} — Label`}
-                          val={reportData?.verticalAnalysis?.rows?.[i]?.label||""}
-                          onChange={v=>setReportData(r=>{
-                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
-                            rows[i]={...rows[i],label:v};
-                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
-                          })}
-                          placeholder={["Revenue","Cost of Goods Sold","Gross Profit","Salaries & Benefits","EBITDA","Net Profit (PAT)"][i]||"Line item"}/>
-                        <AdminInput C={C} F={F} FM={FM} label="Current (AED)" mono
-                          val={reportData?.verticalAnalysis?.rows?.[i]?.ifrs||""}
-                          onChange={v=>setReportData(r=>{
-                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
-                            rows[i]={...rows[i],ifrs:Number(v)||0};
-                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
-                          })}
-                          placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Prior Period (AED)" mono
-                          val={reportData?.verticalAnalysis?.rows?.[i]?.prev||""}
-                          onChange={v=>setReportData(r=>{
-                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
-                            rows[i]={...rows[i],prev:Number(v)||0};
-                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
-                          })}
-                          placeholder="0"/>
-                      </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginTop:6 }}>
-                        <AdminSelect C={C} F={F} label="Section"
-                          val={reportData?.verticalAnalysis?.rows?.[i]?.section||"opex"}
-                          onChange={v=>setReportData(r=>{
-                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
-                            rows[i]={...rows[i],section:v};
-                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
-                          })}
-                          options={[
-                            {value:"revenue",label:"Revenue"},
-                            {value:"cogs",   label:"COGS / Direct Costs"},
-                            {value:"gp",     label:"Gross Profit"},
-                            {value:"opex",   label:"Operating Expenses"},
-                            {value:"ebitda", label:"EBITDA"},
-                            {value:"below",  label:"Below EBITDA (D&A, Finance)"},
-                            {value:"pat",    label:"Net Profit (PAT)"},
-                          ]}/>
-                        <AdminSelect C={C} F={F} label="Row Type"
-                          val={reportData?.verticalAnalysis?.rows?.[i]?.subtotal?"subtotal":reportData?.verticalAnalysis?.rows?.[i]?.total?"total":"normal"}
-                          onChange={v=>setReportData(r=>{
-                            const rows=[...((r.verticalAnalysis?.rows)||Array(16).fill({}))];
-                            rows[i]={...rows[i],subtotal:v==="subtotal",total:v==="total"};
-                            return {...r,verticalAnalysis:{...(r.verticalAnalysis||{}),rows}};
-                          })}
-                          options={[
-                            {value:"normal",   label:"Normal line item"},
-                            {value:"subtotal", label:"Subtotal / Key metric (bold)"},
-                            {value:"total",    label:"Grand total (Net Profit)"},
-                          ]}/>
-                      </div>
-                    </div>
-                  ))}
-
-                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
-                    val={reportData?.verticalAnalysis?.garimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,verticalAnalysis:{...(r.verticalAnalysis||{}),garimaNote:v}}))}
-                    placeholder="Your margin analysis — GP trend, cost structure insights, benchmark vs industry..."/>
-                </Card>
-
-                {/* ── NEW: WORKING CAPITAL ADMIN ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    💧 Working Capital — CCC & AR Aging
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Enter DSO/DIO/DPO and AR aging by customer. Shown on Working Capital page and in downloadable PDF report.
-                  </p>
-
-                  {/* Period + CCC inputs */}
-                  <AdminInput C={C} F={F} FM={FM} label="Period (e.g. Q1 2026)"
-                    val={reportData?.workingCapital?.period||""}
-                    onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),period:v}}))}
-                    placeholder="e.g. Q1 2026 (Jan–Mar)"/>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="DSO (Days)" mono
-                      val={reportData?.workingCapital?.dso||""}
-                      onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),dso:Number(v)||v}}))}
-                      placeholder="e.g. 38"/>
-                    <AdminInput C={C} F={F} FM={FM} label="DIO (Days)" mono
-                      val={reportData?.workingCapital?.dio||""}
-                      onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),dio:Number(v)||v}}))}
-                      placeholder="e.g. 15"/>
-                    <AdminInput C={C} F={F} FM={FM} label="DPO (Days)" mono
-                      val={reportData?.workingCapital?.dpo||""}
-                      onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),dpo:Number(v)||v}}))}
-                      placeholder="e.g. 28"/>
-                  </div>
-
-                  {/* AR Aging rows */}
-                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text,
-                    margin:"16px 0 10px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                    AR Aging by Customer
-                  </div>
-                  {[0,1,2,3,4].map(i => (
-                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
-                      borderRadius:10, padding:12, marginBottom:10 }}>
-                      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
-                        marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                        Customer {i+1}
-                      </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="Customer Name"
-                          val={reportData?.workingCapital?.arAging?.[i]?.customer||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],customer:v};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
-                          })}
-                          placeholder="e.g. Gulf Fresh Foods LLC"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Action Required"
-                          val={reportData?.workingCapital?.arAging?.[i]?.action||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],action:v};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
-                          })}
-                          placeholder="e.g. On schedule / Send reminder / Demand letter"/>
-                      </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="Current 0–30d (AED)" mono lakh
-                          val={reportData?.workingCapital?.arAging?.[i]?.current||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],current:Number(v)||0};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
-                          })}
-                          placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="31–60 days (AED)" mono lakh
-                          val={reportData?.workingCapital?.arAging?.[i]?.d30||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],d30:Number(v)||0};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
-                          })}
-                          placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="61–90 days (AED)" mono lakh
-                          val={reportData?.workingCapital?.arAging?.[i]?.d60||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],d60:Number(v)||0};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
-                          })}
-                          placeholder="0"/>
-                        <AdminInput C={C} F={F} FM={FM} label="90+ days (AED)" mono lakh
-                          val={reportData?.workingCapital?.arAging?.[i]?.d90||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],d90:Number(v)||0};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
-                          })}
-                          placeholder="0"/>
-                      </div>
-                      <div style={{ marginTop:8 }}>
-                        <AdminSelect C={C} F={F} label="Risk Level"
-                          val={reportData?.workingCapital?.arAging?.[i]?.risk||"Low"}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],risk:v};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),arAging:arr}};
-                          })}
-                          options={[
-                            {value:"Low",    label:"🟢 Low — current, on schedule"},
-                            {value:"Medium", label:"🟡 Medium — 30–60 days, follow up"},
-                            {value:"High",   label:"🔴 High — 90+ days, escalate"},
-                          ]}/>
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* AP Schedule rows */}
-                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text,
-                    margin:"16px 0 10px", textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                    AP Schedule (Outstanding Payables)
-                  </div>
-                  {[0,1,2,3,4].map(i => (
-                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
-                      borderRadius:10, padding:12, marginBottom:10 }}>
-                      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
-                        marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                        Supplier {i+1}
-                      </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="Supplier Name"
-                          val={reportData?.workingCapital?.apSchedule?.[i]?.supplier||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],supplier:v};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
-                          })}
-                          placeholder="e.g. Emirates Paper & Packaging"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Amount (AED)" mono
-                          val={reportData?.workingCapital?.apSchedule?.[i]?.amount||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],amount:Number(v)||0};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
-                          })}
-                          placeholder="e.g. 48000"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Payment Terms"
-                          val={reportData?.workingCapital?.apSchedule?.[i]?.terms||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],terms:v};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
-                          })}
-                          placeholder="e.g. Net 30"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Due Date"
-                          val={reportData?.workingCapital?.apSchedule?.[i]?.due||""}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],due:v};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
-                          })}
-                          placeholder="e.g. 20 Apr 2026"/>
-                      </div>
-                      <div style={{ marginTop:8 }}>
-                        <AdminSelect C={C} F={F} label="Status"
-                          val={reportData?.workingCapital?.apSchedule?.[i]?.priority||"On Track"}
-                          onChange={v=>setReportData(r=>{
-                            const arr=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];
-                            arr[i]={...arr[i],priority:v};
-                            return {...r,workingCapital:{...(r.workingCapital||{}),apSchedule:arr}};
-                          })}
-                          options={[
-                            {value:"On Track", label:"🟢 On Track"},
-                            {value:"Upcoming", label:"🟡 Upcoming — pay soon"},
-                            {value:"Overdue",  label:"🔴 Overdue — pay now"},
-                          ]}/>
-                      </div>
-                    </div>
-                  ))}
-
-                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
-                    val={reportData?.workingCapital?.garimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),garimaNote:v}}))}
-                    placeholder="Your working capital analysis — DSO trends, collection priorities, AP optimisation..."/>
-                </Card>
-
-                {/* ── NEW: REVENUE RECONCILIATION ADMIN ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    ⚖️ Revenue Reconciliation (IFRS vs VAT)
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Enter each reconciling line. IFRS Amount = per audited books. VAT Amount = per VAT return. Difference is auto-calculated. Shown on client's Revenue Reconciliation page and in downloadable PDF.
-                  </p>
-                  <AdminInput C={C} F={F} FM={FM} label="Period (e.g. Q1 2026)"
-                    val={reportData?.revRecon?.period||""}
-                    onChange={v=>setReportData(r=>({...r,revRecon:{...(r.revRecon||{}),period:v}}))}
-                    placeholder="e.g. Q1 2026 (Jan–Mar)"/>
-                  {[0,1,2,3,4,5].map(i => (
-                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`,
-                      borderRadius:10, padding:12, marginBottom:10 }}>
-                      <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
-                        marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                        Row {i+1}
-                      </div>
-                      <AdminInput C={C} F={F} FM={FM} label="Description"
-                        val={reportData?.revRecon?.rows?.[i]?.desc||""}
-                        onChange={v=>setReportData(r=>{
-                          const rows=[...((r.revRecon?.rows)||[{},{},{},{},{},{}])];
-                          rows[i]={...rows[i],desc:v};
-                          return {...r,revRecon:{...(r.revRecon||{}),rows}};
-                        })}
-                        placeholder="e.g. Standard-rated UAE sales (5% VAT)"/>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="IFRS Amount (AED)" mono
-                          val={reportData?.revRecon?.rows?.[i]?.ifrs||""}
-                          onChange={v=>setReportData(r=>{
-                            const rows=[...((r.revRecon?.rows)||[{},{},{},{},{},{}])];
-                            rows[i]={...rows[i],ifrs:Number(v)||0};
-                            return {...r,revRecon:{...(r.revRecon||{}),rows}};
-                          })}
-                          placeholder="e.g. 1500000"/>
-                        <AdminInput C={C} F={F} FM={FM} label="VAT Return Amount (AED)" mono
-                          val={reportData?.revRecon?.rows?.[i]?.vat||""}
-                          onChange={v=>setReportData(r=>{
-                            const rows=[...((r.revRecon?.rows)||[{},{},{},{},{},{}])];
-                            rows[i]={...rows[i],vat:Number(v)||0};
-                            return {...r,revRecon:{...(r.revRecon||{}),rows}};
-                          })}
-                          placeholder="e.g. 1500000"/>
-                      </div>
-                      <AdminInput C={C} F={F} FM={FM} label="Explanation (shown in report)"
-                        val={reportData?.revRecon?.rows?.[i]?.explanation||""}
-                        onChange={v=>setReportData(r=>{
-                          const rows=[...((r.revRecon?.rows)||[{},{},{},{},{},{}])];
-                          rows[i]={...rows[i],explanation:v};
-                          return {...r,revRecon:{...(r.revRecon||{}),rows}};
-                        })}
-                        placeholder="e.g. VAT point triggered on receipt; IFRS defers to delivery"/>
-                    </div>
-                  ))}
-                  <AdminInput C={C} F={F} FM={FM} label="Note from Garima (shown on client page & PDF)"
-                    val={reportData?.revRecon?.garimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,revRecon:{...(r.revRecon||{}),garimaNote:v}}))}
-                    placeholder="Your analysis — key timing differences, FTA audit risks, action items..."/>
-                </Card>
-
-                {/* ── RELATED PARTY TRANSACTIONS ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>🏢 Related Party Transactions (Art. 35 & 34)</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Enter each related party entity and transaction. Used to generate the RPT & Connected Persons Report for CT Return filing.
-                  </p>
-                  {[0,1,2].map(i => (
-                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`, borderRadius:10, padding:14, marginBottom:12 }}>
-                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10 }}>
-                        Related Party {i+1}
-                      </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="Entity Name"
-                          val={reportData?.rptEntities?.[i]?.name||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],name:v}; return {...r,rptEntities:arr}; })}
-                          placeholder="e.g. Rashidi Holdings Ltd"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Jurisdiction"
-                          val={reportData?.rptEntities?.[i]?.jurisdiction||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],jurisdiction:v}; return {...r,rptEntities:arr}; })}
-                          placeholder="e.g. UAE (Abu Dhabi)"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Relationship"
-                          val={reportData?.rptEntities?.[i]?.relationship||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],relationship:v}; return {...r,rptEntities:arr}; })}
-                          placeholder="e.g. Common shareholder >50%"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Transaction Type"
-                          val={reportData?.rptEntities?.[i]?.txnType||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],txnType:v}; return {...r,rptEntities:arr}; })}
-                          placeholder="e.g. Intercompany loan — interest"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Amount (AED)" mono
-                          val={reportData?.rptEntities?.[i]?.amount||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],amount:v}; return {...r,rptEntities:arr}; })}
-                          placeholder="e.g. 63750"/>
-                        <AdminInput C={C} F={F} FM={FM} label="TP Method"
-                          val={reportData?.rptEntities?.[i]?.tpMethod||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],tpMethod:v}; return {...r,rptEntities:arr}; })}
-                          placeholder="e.g. CUP — EIBOR + 2.5%"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Market Range"
-                          val={reportData?.rptEntities?.[i]?.marketRange||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],marketRange:v}; return {...r,rptEntities:arr}; })}
-                          placeholder="e.g. AED 160,000–200,000"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Action / Risk Note"
-                          val={reportData?.rptEntities?.[i]?.action||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],action:v}; return {...r,rptEntities:arr}; })}
-                          placeholder="e.g. Obtain signed loan agreement"/>
-                      </div>
-                      <div style={{ marginTop:10 }}>
-                        <AdminSelect C={C} F={F} label="Arm's Length?"
-                          val={reportData?.rptEntities?.[i]?.compliant||"yes"}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.rptEntities||[{},{},{}])]; arr[i]={...arr[i],compliant:v}; return {...r,rptEntities:arr}; })}
-                          options={[{value:"yes",label:"✅ Yes — Arm's Length"},{value:"no",label:"❌ No — Adjustment Required"},{value:"partial",label:"⚠️ Partially Compliant"}]}/>
-                      </div>
-                    </div>
-                  ))}
-                  <AdminInput C={C} F={F} FM={FM} label="RPT Garima Note (shown in report)"
-                    val={reportData?.rptGarimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,rptGarimaNote:v}))}
-                    placeholder="Your analysis and action items for related party transactions..."/>
-                </Card>
-
-                {/* ── CONNECTED PERSONS ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>👤 Connected Persons (Art. 36 + CTP010)</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Enter each individual connected person. Per CTP010: only natural persons. Director = board seat in constitutional docs. Officer = actual strategic authority.
-                  </p>
-                  {[0,1,2].map(i => (
-                    <div key={i} style={{ background:C.bg2, border:`1px solid ${C.border}`, borderRadius:10, padding:14, marginBottom:12 }}>
-                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:10 }}>
-                        Connected Person {i+1}
-                      </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="Full Name"
-                          val={reportData?.connectedPersonsAdmin?.[i]?.name||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],name:v}; return {...r,connectedPersonsAdmin:arr}; })}
-                          placeholder="e.g. Ahmed Al Rashidi"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Role / Title"
-                          val={reportData?.connectedPersonsAdmin?.[i]?.role||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],role:v}; return {...r,connectedPersonsAdmin:arr}; })}
-                          placeholder="e.g. Managing Director & Shareholder"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Art. 36(2) Reference"
-                          val={reportData?.connectedPersonsAdmin?.[i]?.artRef||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],artRef:v}; return {...r,connectedPersonsAdmin:arr}; })}
-                          placeholder="e.g. Art. 36(2)(a) Owner + 36(2)(b) Director"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Total Payments (AED)" mono
-                          val={reportData?.connectedPersonsAdmin?.[i]?.totalPayments||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],totalPayments:v}; return {...r,connectedPersonsAdmin:arr}; })}
-                          placeholder="e.g. 262000"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Market Range (AED)"
-                          val={reportData?.connectedPersonsAdmin?.[i]?.marketRange||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],marketRange:v}; return {...r,connectedPersonsAdmin:arr}; })}
-                          placeholder="e.g. AED 200,000 – AED 300,000"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Payment Breakdown (summary)"
-                          val={reportData?.connectedPersonsAdmin?.[i]?.paymentBreakdown||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],paymentBreakdown:v}; return {...r,connectedPersonsAdmin:arr}; })}
-                          placeholder="e.g. Salary 200K + Bonus 30K + Benefits 32K"/>
-                      </div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginTop:10 }}>
-                        <AdminSelect C={C} F={F} label="Test 1 — Arm's Length?"
-                          val={reportData?.connectedPersonsAdmin?.[i]?.armsLength||"pass"}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],armsLength:v}; return {...r,connectedPersonsAdmin:arr}; })}
-                          options={[{value:"pass",label:"✅ Pass — within market range"},{value:"fail",label:"❌ Fail — above market value"},{value:"pending",label:"⚠️ Pending benchmarking"}]}/>
-                        <AdminSelect C={C} F={F} label="Test 2 — Business Purpose?"
-                          val={reportData?.connectedPersonsAdmin?.[i]?.businessPurpose||"pass"}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],businessPurpose:v}; return {...r,connectedPersonsAdmin:arr}; })}
-                          options={[{value:"pass",label:"✅ Pass — business purpose confirmed"},{value:"fail",label:"❌ Fail — personal element"},{value:"evidence",label:"⚠️ Evidence required"}]}/>
-                      </div>
-                      <div style={{ marginTop:10 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="Action / Risk Note"
-                          val={reportData?.connectedPersonsAdmin?.[i]?.action||""}
-                          onChange={v=>setReportData(r=>{ const arr=[...(r.connectedPersonsAdmin||[{},{},{}])]; arr[i]={...arr[i],action:v}; return {...r,connectedPersonsAdmin:arr}; })}
-                          placeholder="e.g. Collect Q1 deliverables evidence by 20 April"/>
-                      </div>
-                    </div>
-                  ))}
-                  <AdminInput C={C} F={F} FM={FM} label="Connected Persons Garima Note"
-                    val={reportData?.cpGarimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,cpGarimaNote:v}))}
-                    placeholder="Your analysis of connected person payments and compliance risks..."/>
-                </Card>
-
-                {/* ── ARM'S LENGTH TESTS ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>⚖️ Arm's Length Tests</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Enter each related-party transaction tested for arm's length compliance. Shown on the client's Arm's Length tab.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Total Transactions Tested" mono
-                      val={reportData?.armsLength?.totalTransactions||""}
-                      onChange={v=>setReportData(r=>({...r,armsLength:{...(r.armsLength||{}),totalTransactions:Number(v)||v}}))}
-                      placeholder="e.g. 4"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Compliant Transactions" mono
-                      val={reportData?.armsLength?.compliant||""}
-                      onChange={v=>setReportData(r=>({...r,armsLength:{...(r.armsLength||{}),compliant:Number(v)||v}}))}
-                      placeholder="e.g. 3"/>
-                  </div>
-                  {[0,1,2,3].map(i => (
-                    <div key={i} style={{ border:`1px solid ${C.border}`, borderRadius:10, padding:14, marginBottom:12, background:"#FAFAFA" }}>
-                      <div style={{ fontFamily:F, fontWeight:700, fontSize:12, color:C.muted, marginBottom:10 }}>Transaction {i+1}</div>
-                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
-                        <AdminInput C={C} F={F} FM={FM} label="Category"
-                          val={reportData?.armsLength?.tests?.[i]?.category||""}
-                          onChange={v=>setReportData(r=>{ const t=[...(r.armsLength?.tests||[{},{},{},{}])]; t[i]={...t[i],category:v}; return {...r,armsLength:{...(r.armsLength||{}),tests:t}}; })}
-                          placeholder="e.g. Director Salary"/>
-                        <AdminInput C={C} F={F} FM={FM} label="TP Method"
-                          val={reportData?.armsLength?.tests?.[i]?.method||""}
-                          onChange={v=>setReportData(r=>{ const t=[...(r.armsLength?.tests||[{},{},{},{}])]; t[i]={...t[i],method:v}; return {...r,armsLength:{...(r.armsLength||{}),tests:t}}; })}
-                          placeholder="e.g. CUP"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Transaction Description"
-                          val={reportData?.armsLength?.tests?.[i]?.transaction||""}
-                          onChange={v=>setReportData(r=>{ const t=[...(r.armsLength?.tests||[{},{},{},{}])]; t[i]={...t[i],transaction:v}; return {...r,armsLength:{...(r.armsLength||{}),tests:t}}; })}
-                          placeholder="e.g. Ahmed Al Rashidi — AED 240,000 salary"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Market Range"
-                          val={reportData?.armsLength?.tests?.[i]?.marketRange||""}
-                          onChange={v=>setReportData(r=>{ const t=[...(r.armsLength?.tests||[{},{},{},{}])]; t[i]={...t[i],marketRange:v}; return {...r,armsLength:{...(r.armsLength||{}),tests:t}}; })}
-                          placeholder="e.g. AED 180,000 – AED 280,000"/>
-                        <AdminInput C={C} F={F} FM={FM} label="Actual Amount (AED)" mono
-                          val={reportData?.armsLength?.tests?.[i]?.actual||""}
-                          onChange={v=>setReportData(r=>{ const t=[...(r.armsLength?.tests||[{},{},{},{}])]; t[i]={...t[i],actual:Number(v)||v}; return {...r,armsLength:{...(r.armsLength||{}),tests:t}}; })}
-                          placeholder="e.g. 240000"/>
-                        <AdminSelect C={C} F={F} label="Compliant?"
-                          val={reportData?.armsLength?.tests?.[i]?.compliant ?? "true"}
-                          onChange={v=>setReportData(r=>{ const t=[...(r.armsLength?.tests||[{},{},{},{}])]; t[i]={...t[i],compliant:v==="true"}; return {...r,armsLength:{...(r.armsLength||{}),tests:t}}; })}
-                          options={[{val:"true",label:"✅ Compliant"},{val:"false",label:"❌ Non-Compliant"}]}/>
-                      </div>
-                      <AdminInput C={C} F={F} FM={FM} label="Notes / Analysis"
-                        val={reportData?.armsLength?.tests?.[i]?.notes||""}
-                        onChange={v=>setReportData(r=>{ const t=[...(r.armsLength?.tests||[{},{},{},{}])]; t[i]={...t[i],notes:v}; return {...r,armsLength:{...(r.armsLength||{}),tests:t}}; })}
-                        placeholder="Analysis of arm's length compliance..." multiline/>
-                    </div>
-                  ))}
-                </Card>
-
-                <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData}
-                  label="Save UAE Data →"/>
-              </>)}
-            </div>
-          )}
-
-          {/* ── UAE CASH & NOTES ── (new tab - synced with UAE CFO Report) */}
-          {tab === "uaecashflow" && (
-            <div style={{ maxWidth:700 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a UAE client from the sidebar first</div>
-                </Card>
-              ) : !isUAE(selected) ? (
-                <Card style={{ textAlign:"center", padding:40, background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>🇮🇳</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:"#92400E", fontWeight:600 }}>India client selected</div>
-                  <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:8 }}>Switch to a UAE client to edit UAE cash data.</p>
-                </Card>
-              ) : !reportData ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Loading report data...</div>
-                </Card>
-              ) : (<>
-
-                {/* ── Garima Notes for each UAE section ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    💬 Garima Notes — UAE Sections
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    These notes appear prominently at the top of each UAE client section. Write in first person — e.g. "Your Q1 VAT is due...". Shown in both the portal view and downloadable PDFs.
-                  </p>
-
-                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, margin:"0 0 6px",
-                    textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                    Overall UAE Note (Overview page)
-                  </div>
-                  <AdminInput C={C} F={F} FM={FM}
-                    label="Note shown on Overview and UAE CFO Report header"
-                    val={reportData?.uaeGarimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,uaeGarimaNote:v}))}
-                    placeholder="Q1 2026 closed strongly — revenue at AED 1.85M... (2–3 sentences max for Overview)"/>
-
-                  <div style={{ height:1, background:C.border, margin:"16px 0" }}/>
-
-                  <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, margin:"0 0 6px",
-                    textTransform:"uppercase", letterSpacing:"0.06em" }}>
-                    Cash Flow Forecast Note
-                  </div>
-                  <AdminInput C={C} F={F} FM={FM}
-                    label="Shown at top of Cash Flow Forecast tab in UAE CFO Report"
-                    val={reportData?.cashflowGarimaNote||""}
-                    onChange={v=>setReportData(r=>({...r,cashflowGarimaNote:v}))}
-                    placeholder="Cash flow forecast for next 3–6 months. VAT payment of AED 92.5K due 28 April — ensure Emirates NBD current account is funded..."/>
-                </Card>
-
-                {/* ── Cash Projection KPIs ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    💰 Cash Position — Projected (shown on UAE CFO Report → Cash tab)
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    These 3 figures appear as KPI cards on the Cash Flow Forecast tab. Format: AED 580K or AED 487,000.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Projected Cash — End of Quarter" mono lakh
-                      val={reportData?.projectedCash||""}
-                      onChange={v=>setReportData(r=>({...r,projectedCash:v}))}
-                      placeholder="e.g. AED 580K"/>
-                    <AdminInput C={C} F={F} FM={FM} label="VAT Reserve Required" mono lakh
-                      val={reportData?.vatReserve||""}
-                      onChange={v=>setReportData(r=>({...r,vatReserve:v}))}
-                      placeholder="e.g. AED 92.5K"/>
-                    <AdminInput C={C} F={F} FM={FM} label="Net Cash After Obligations" mono lakh
-                      val={reportData?.netCashAfterObl||""}
-                      onChange={v=>setReportData(r=>({...r,netCashAfterObl:v}))}
-                      placeholder="e.g. AED 487K"/>
-                  </div>
-                </Card>
-
-                {/* ── Forward Forecast (also used by Overview 3-Month View) ── */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-                    🔭 3-Month Forward View (appears on Overview page)
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    If filled, this appears as a forward-looking panel on the Overview page. Leave blank to hide.
-                  </p>
-                  <AdminInput C={C} F={F} FM={FM} label="Forward View Note"
-                    val={reportData?.forecastNote||""}
-                    onChange={v=>setReportData(r=>({...r,forecastNote:v}))}
-                    placeholder="Q2 outlook: revenue expected AED 1.9–2.1M. Two new contracts in pipeline..."/>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10 }}>
-                    {[
-                      { lbl:"Forecast 1 — Label", key:"forecast1Label", ph:"e.g. Q2 Revenue Forecast" },
-                      { lbl:"Value",               key:"forecast1Value", ph:"e.g. AED 1.9M" },
-                      { lbl:"Trend",               key:"forecast1Trend", ph:"up / down / stable" },
-                      { lbl:"Forecast 2 — Label", key:"forecast2Label", ph:"e.g. Q2 Gross Margin" },
-                      { lbl:"Value",               key:"forecast2Value", ph:"e.g. 44%" },
-                      { lbl:"Trend",               key:"forecast2Trend", ph:"up / down / stable" },
-                      { lbl:"Forecast 3 — Label", key:"forecast3Label", ph:"e.g. VAT Payable Q2" },
-                      { lbl:"Value",               key:"forecast3Value", ph:"e.g. AED 88K" },
-                      { lbl:"Trend",               key:"forecast3Trend", ph:"up / down / stable" },
-                    ].map(f=>(
-                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.lbl}
-                        val={reportData?.[f.key]||""}
-                        onChange={v=>setReportData(r=>({...r,[f.key]:v}))}
-                        placeholder={f.ph}/>
-                    ))}
-                  </div>
-                </Card>
-
-                <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save UAE Cash & Notes →"/>
-              </>)}
-            </div>
-          )}
-
-          {/* ── BI & SCENARIOS ── */}
-          {tab === "analytics" && (
-            <div style={{ maxWidth:700 }}>
-              {!selected || !reportData ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (<>
-
-                {/* ══ GEOGRAPHY — INDIA REGIONS ══════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>India Regions — Revenue & Cost</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Populates the <strong>BI Analysis → Geography</strong> tab. Enter monthly figures in ₹.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 1fr", gap:8, marginBottom:8 }}>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase" }}>Region</div>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase" }}>Revenue (₹)</div>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase" }}>Cost (₹)</div>
-                  </div>
-                  {["North","South","West","East","Metro"].map(region => (
-                    <div key={region} style={{ display:"grid", gridTemplateColumns:"120px 1fr 1fr", gap:8, marginBottom:8 }}>
-                      <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text, display:"flex", alignItems:"center" }}>{region}</div>
-                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.geoIndia?.[region]?.revenue || ""}
-                        onChange={v => setReportData(r => ({...r, geoIndia:{...(r.geoIndia||{}), [region]:{...(r.geoIndia?.[region]||{}), revenue:v}}}))}
-                        placeholder="₹0" mono/>
-                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.geoIndia?.[region]?.cost || ""}
-                        onChange={v => setReportData(r => ({...r, geoIndia:{...(r.geoIndia||{}), [region]:{...(r.geoIndia?.[region]||{}), cost:v}}}))}
-                        placeholder="₹0" mono/>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* ══ GEOGRAPHY — GLOBAL REGIONS ══════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Global Regions — Revenue & Cost</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Cross-border split — especially useful for Gulf and India clients.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"120px 1fr 1fr", gap:8, marginBottom:8 }}>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase" }}>Region</div>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase" }}>Revenue (₹)</div>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase" }}>Cost (₹)</div>
-                  </div>
-                  {[
-                    { name:"India",  icon:"🇮🇳" },
-                    { name:"GCC",    icon:"🌙"  },
-                    { name:"USA",    icon:"🇺🇸" },
-                    { name:"Europe", icon:"🇪🇺" },
-                    { name:"Other",  icon:"🌍"  },
-                  ].map(r => (
-                    <div key={r.name} style={{ display:"grid", gridTemplateColumns:"120px 1fr 1fr", gap:8, marginBottom:8 }}>
-                      <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text, display:"flex", alignItems:"center" }}>{r.icon} {r.name}</div>
-                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.geoGlobal?.[r.name]?.revenue || ""}
-                        onChange={v => setReportData(rd => ({...rd, geoGlobal:{...(rd.geoGlobal||{}), [r.name]:{...(rd.geoGlobal?.[r.name]||{}), revenue:v}}}))}
-                        placeholder="₹0" mono/>
-                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.geoGlobal?.[r.name]?.cost || ""}
-                        onChange={v => setReportData(rd => ({...rd, geoGlobal:{...(rd.geoGlobal||{}), [r.name]:{...(rd.geoGlobal?.[r.name]||{}), cost:v}}}))}
-                        placeholder="₹0" mono/>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* ══ DEPARTMENT ANALYSIS ═══════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Department — Revenue & Cost</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Populates the <strong>BI Analysis → Department</strong> tab. Enter monthly figures.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr 1fr", gap:8, marginBottom:8 }}>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase" }}>Department</div>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase" }}>Revenue (₹)</div>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase" }}>Cost (₹)</div>
-                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase" }}>Budget (₹)</div>
-                  </div>
-                  {[
-                    { name:"Sales",       icon:"💼" },
-                    { name:"Marketing",   icon:"📣" },
-                    { name:"Technology",  icon:"💻" },
-                    { name:"Operations",  icon:"settings" },
-                    { name:"HR & Admin",  icon:"👥" },
-                    { name:"Finance",     emoji:"📊" },
-                  ].map(d => (
-                    <div key={d.name} style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr 1fr", gap:8, marginBottom:8 }}>
-                      <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, display:"flex", alignItems:"center" }}>{d.icon} {d.name}</div>
-                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.depts?.[d.name]?.revenue || ""}
-                        onChange={v => setReportData(r => ({...r, depts:{...(r.depts||{}), [d.name]:{...(r.depts?.[d.name]||{}), revenue:v}}}))}
-                        placeholder="₹0" mono/>
-                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.depts?.[d.name]?.cost || ""}
-                        onChange={v => setReportData(r => ({...r, depts:{...(r.depts||{}), [d.name]:{...(r.depts?.[d.name]||{}), cost:v}}}))}
-                        placeholder="₹0" mono/>
-                      <AdminInput C={C} F={F} FM={FM} label="" val={reportData?.depts?.[d.name]?.budget || ""}
-                        onChange={v => setReportData(r => ({...r, depts:{...(r.depts||{}), [d.name]:{...(r.depts?.[d.name]||{}), budget:v}}}))}
-                        placeholder="₹0" mono/>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* ══ SCENARIO MODELLING BASE ═══════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Scenario Modelling — Base Figures</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Pre-fills the base inputs for the <strong>Scenarios tab</strong>. Client can then adjust sliders.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Base Revenue (₹)"
-                      val={reportData?.scenarioBase?.revenue || ""}
-                      onChange={v => setReportData(r => ({...r, scenarioBase:{...(r.scenarioBase||{}), revenue:v}}))}
-                      placeholder="e.g. 5000000" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Base COGS (₹)"
-                      val={reportData?.scenarioBase?.cogs || ""}
-                      onChange={v => setReportData(r => ({...r, scenarioBase:{...(r.scenarioBase||{}), cogs:v}}))}
-                      placeholder="e.g. 2000000" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Base OpEx (₹)"
-                      val={reportData?.scenarioBase?.opex || ""}
-                      onChange={v => setReportData(r => ({...r, scenarioBase:{...(r.scenarioBase||{}), opex:v}}))}
-                      placeholder="e.g. 1500000" mono/>
-                  </div>
-                </Card>
-
-                {/* ══ SPEND INTELLIGENCE ════════════════════════════════════════ */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Spend Intelligence — Department Budgets</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Pre-fills the <strong>Spend Intel tab</strong> with actual vs budget data for AI analysis.
-                  </p>
-                  <AdminInput C={C} F={F} FM={FM} label="Monthly Revenue (₹) — for % benchmarks"
-                    val={reportData?.spendRevenue || ""}
-                    onChange={v => setReportData(r => ({...r, spendRevenue:v}))}
-                    placeholder="e.g. 5000000" mono/>
-                  <div style={{ marginTop:12 }}>
-                    {[
-                      { name:"Marketing & Sales",   bench:15 },
-                      { name:"Technology / Product",bench:20 },
-                      { name:"Operations",          bench:25 },
-                      { name:"HR & People",         bench:20 },
-                      { name:"Admin & G&A",         bench:10 },
-                      { name:"Finance & Legal",     bench:5  },
-                    ].map(d => (
-                      <div key={d.name} style={{ display:"grid", gridTemplateColumns:"160px 1fr 1fr", gap:8, marginBottom:8, alignItems:"center" }}>
-                        <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text }}>{d.name}</div>
-                        <AdminInput C={C} F={F} FM={FM} label="Actual (₹)"
-                          val={reportData?.spendDepts?.[d.name]?.actual || ""}
-                          onChange={v => setReportData(r => ({...r, spendDepts:{...(r.spendDepts||{}), [d.name]:{...(r.spendDepts?.[d.name]||{}), actual:v}}}))}
-                          placeholder="₹0" mono/>
-                        <AdminInput C={C} F={F} FM={FM} label="Budget (₹)"
-                          val={reportData?.spendDepts?.[d.name]?.budget || ""}
-                          onChange={v => setReportData(r => ({...r, spendDepts:{...(r.spendDepts||{}), [d.name]:{...(r.spendDepts?.[d.name]||{}), budget:v}}}))}
-                          placeholder="₹0" mono/>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-
-                <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save Analytics Data"/>
-              </>)}
-            </div>
-          )}
-
-          {/* ── TREASURY ── */}
-          {tab === "treasury" && (
-            <div style={{ maxWidth:700 }}>
-              {!selected || !reportData ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (<>
-                {/* Summary KPIs */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>💎 Treasury Summary</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Shown on the client's Treasury overview tab.
-                  </p>
-                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12 }}>
-                    <AdminInput C={C} F={F} FM={FM} label="Total Cash" val={reportData.treasury?.totalCash||""}
-                      onChange={v=>setReportData(r=>({...r,treasury:{...(r.treasury||{}),totalCash:v}}))} placeholder="e.g. ₹50.4L" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="% Invested in FDs" val={reportData.treasury?.investedPct||""}
-                      onChange={v=>setReportData(r=>({...r,treasury:{...(r.treasury||{}),investedPct:v}}))} placeholder="e.g. 65" mono/>
-                    <AdminInput C={C} F={F} FM={FM} label="Annual Yield" val={reportData.treasury?.yieldPA||""}
-                      onChange={v=>setReportData(r=>({...r,treasury:{...(r.treasury||{}),yieldPA:v}}))} placeholder="e.g. ₹3.2L" mono/>
-                  </div>
-                </Card>
-
-                {/* Cash Positions */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Cash Positions</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Each row = one bank account or FD shown on the client's Treasury page.
-                  </p>
-                  {(reportData.treasury?.cashPositions || []).map((p,i) => (
-                    <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr auto", gap:8,
-                      marginBottom:10, padding:"10px 12px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
-                      <InlineInput value={p.bank} placeholder="Bank / FD name"
-                        onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],bank:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
-                        style={{ fontFamily:F, color:C.text }}/>
-                      <InlineInput value={p.balance} placeholder="₹ balance"
-                        onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],balance:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
-                        style={{ fontFamily:FM, color:C.blue, background:"#EEF3FE" }}/>
-                      <InlineInput value={p.rate} placeholder="rate p.a."
-                        onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],rate:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
-                        style={{ fontFamily:FM, color:C.green }}/>
-                      <InlineInput value={p.note||""} placeholder="note (optional)"
-                        onCommit={v=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],note:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
-                        style={{ fontFamily:F, color:C.muted }}/>
-                      <button onClick={()=>{ const cp=[...(reportData.treasury?.cashPositions||[])]; cp[i]={...cp[i],flag:!cp[i].flag}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),cashPositions:cp}})); }}
-                        style={{ padding:"6px 10px", borderRadius:8, border:"none", cursor:"pointer", fontFamily:F, fontSize:11, fontWeight:700,
-                          background:p.flag?`${C.amber}15`:`${C.green}15`, color:p.flag?C.amber:C.green }}>
-                        {p.flag?"⚠️":"✅"}
-                      </button>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* Maturity Schedule */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>📅 FD Maturity Schedule</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Shown on the Maturity Schedule tab. Enter maturing FDs and recommended action.
-                  </p>
-                  {(reportData.treasury?.maturitySchedule || []).map((m,i) => (
-                    <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:8,
-                      marginBottom:10, padding:"10px 12px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
-                      <InlineInput value={m.item} placeholder="FD / instrument name"
-                        onCommit={v=>{ const ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],item:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
-                        style={{ fontFamily:F, color:C.text }}/>
-                      <InlineInput value={m.maturity} placeholder="Maturity date"
-                        onCommit={v=>{ const ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],maturity:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
-                        style={{ fontFamily:FM, color:C.muted }}/>
-                      <InlineInput value={m.amount} placeholder="Amount"
-                        onCommit={v=>{ const ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],amount:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
-                        style={{ fontFamily:FM, color:C.blue, background:"#EEF3FE" }}/>
-                      <AdminSelect C={C} F={F} label="" val={m.action||"Renew"}
-                        onChange={v=>{ const ms=[...(reportData.treasury?.maturitySchedule||[])]; ms[i]={...ms[i],action:v}; setReportData(r=>({...r,treasury:{...(r.treasury||{}),maturitySchedule:ms}})); }}
-                        options={[{value:"Renew",label:"Renew"},{value:"Redeem",label:"Redeem"},{value:"Auto-renew",label:"Auto-renew"},{value:"Partial",label:"Partial"}]}/>
-                    </div>
-                  ))}
-                </Card>
-
-                {/* Recommendations */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Recommendations</div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Shown on the client's Recommendations tab. Write specific, actionable advice.
-                  </p>
-                  {(reportData.treasury?.recommendations || []).map((r,i) => (
-                    <div key={i} style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:10,
-                      marginBottom:10, padding:"10px 12px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}`, alignItems:"center" }}>
-                      <AdminSelect C={C} F={F} label="" val={r.priority||"Medium"}
-                        onChange={v=>{ const rs=[...(reportData.treasury?.recommendations||[])]; rs[i]={...rs[i],priority:v}; setReportData(rd=>({...rd,treasury:{...(rd.treasury||{}),recommendations:rs}})); }}
-                        options={[{value:"High",label:"🔴 High"},{value:"Medium",label:"🟡 Medium"},{value:"Low",label:"🟢 Low"}]}/>
-                      <InlineInput value={r.text} placeholder="e.g. Renew SBI FD Tranche 1 — lock in 7.1% before April RBI review"
-                        onCommit={v=>{ const rs=[...(reportData.treasury?.recommendations||[])]; rs[i]={...rs[i],text:v}; setReportData(rd=>({...rd,treasury:{...(rd.treasury||{}),recommendations:rs}})); }}
-                        style={{ fontFamily:F, color:C.text }}/>
-                    </div>
-                  ))}
-                </Card>
-
-                <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save Treasury Data"/>
-              </>)}
-            </div>
-          )}
-
-          {/* ── DOCUMENTS ── */}
-          {tab === "documents" && (
-            <div style={{ maxWidth:600 }}>
-              {!selected ? (
-                <Card style={{ textAlign:"center", padding:40 }}>
-                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
-                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-                </Card>
-              ) : (<>
-                {/* Upload area */}
-                <Card style={{ marginBottom:20 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
-                      Upload Document for {selected.name}
-                    </div>
-                    <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.amber,
-                      background:`${C.amber}15`, padding:"3px 10px", borderRadius:100 }}>
-                      {selected.client_pack?.toUpperCase()} · {selected.company?.split(" ")[0]}
-                    </span>
-                  </div>
-                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
-                    Upload board packs, valuation reports, or any client document. Max 10MB per file.
-                  </p>
-                  {/* Doc type selector */}
-                  <div style={{ marginBottom:12 }}>
-                    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>
-                      Document Type
-                    </label>
-                    <select id="doc-type-select" defaultValue="general"
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
-                        border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                        background:C.bg, outline:"none" }}>
-                      <option value="general">General Document</option>
-                      <option value="board_pack">Board Pack / Monthly Report</option>
-                      <option value="valuation">Valuation Report</option>
-                      <option value="mis">MIS / P&L Pack</option>
-                      <option value="invoice">Invoice</option>
-                      <option value="legal">Legal / Compliance</option>
-                    </select>
-                  </div>
-                  <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
-                    border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
-                    background:C.bg, transition:"border-color 0.2s" }}
-                    onMouseEnter={e => e.currentTarget.style.borderColor = C.blue}
-                    onMouseLeave={e => e.currentTarget.style.borderColor = C.border}>
-                    <input type="file" style={{ display:"none" }}
-                      onChange={async (e) => {
-                        const file = e.target.files[0];
-                        if (!file || !selected) return;
-                        if (file.size > 10 * 1024 * 1024) {
-                          alert("File too large — max 10MB per upload.");
-                          e.target.value = "";
-                          return;
-                        }
-                        setDocLoading(true);
-                        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
-                        const path = `${selected.id}/${Date.now()}-${safeName}`;
-                        const { error: upErr } = await supabase.storage
-                          .from("client-docs").upload(path, file);
-                        if (upErr) { alert("Upload failed: " + upErr.message); setDocLoading(false); return; }
-                        const { data: urlData } = supabase.storage
-                          .from("client-docs").getPublicUrl(path);
-                        const docTypeEl = document.getElementById("doc-type-select");
-                        const docType = docTypeEl ? docTypeEl.value : "general";
-                        const { data: docRow, error: insertErr } = await supabase.from("documents").insert({
-                          client_id: selected.id,
-                          name: file.name,
-                          file_url: urlData.publicUrl,
-                          file_size: (file.size/1024/1024).toFixed(2) + " MB",
-                          uploaded_by: "garima",
-                          doc_type: docType,
-                          created_at: new Date().toISOString(),
-                        }).select().single();
-                        if (insertErr) { alert("Saved to storage but DB record failed: " + insertErr.message); }
-                        if (docRow) setDocs(prev => [docRow, ...prev]);
-                        setDocLoading(false);
-                        e.target.value = "";
-                      }}
-                    />
-                    {docLoading ? (
-                      <div style={{ fontFamily:F, fontSize:14, color:C.blue }}>Uploading…</div>
-                    ) : (<>
-                      <div style={{ fontSize:32, marginBottom:8 }}>📤</div>
-                      <div style={{ fontFamily:F, fontSize:14, fontWeight:600, color:C.text }}>
-                        Click to upload a file
-                      </div>
-                      <div style={{ fontFamily:F, fontSize:12, color:C.dim, marginTop:4 }}>
-                        PDF, Excel, Word — max 10MB
-                      </div>
-                    </>)}
-                  </label>
-                </Card>
-
-                {/* Document list */}
-                <Card>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:16 }}>
-                    Uploaded Documents ({docs.length})
-                  </div>
-                  {docs.length === 0 && (
-                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No documents uploaded yet.</p>
-                  )}
-                  <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                    {docs.map((d,i) => (
-                      <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                        padding:"12px 14px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}`,
-                        flexWrap:"wrap", gap:10 }}>
-                        <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-                          <div style={{ width:36, height:36, borderRadius:9, background:`${C.blue}12`,
-                            display:"flex", alignItems:"center", justifyContent:"center", fontSize:18 }}>📄</div>
-                          <div>
-                            <div style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text }}>{d.name}</div>
-                            <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2, display:"flex", gap:8, flexWrap:"wrap" }}>
-                              <span>{d.file_size}</span>
-                              <span>·</span>
-                              <span>{d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN") : "—"}</span>
-                              {d.doc_type && d.doc_type !== "general" && (
-                                <span style={{ color:C.blue, fontWeight:700, textTransform:"uppercase", fontSize:10,
-                                  background:`${C.blue}12`, padding:"1px 7px", borderRadius:100 }}>
-                                  {d.doc_type.replace("_"," ")}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div style={{ display:"flex", gap:8 }}>
-                          <a href={d.file_url} target="_blank" rel="noopener"
-                            style={{ padding:"7px 14px", borderRadius:8, border:`1px solid ${C.blue}`,
-                              color:C.blue, fontFamily:F, fontWeight:600, fontSize:12, textDecoration:"none" }}>
-                            View
-                          </a>
-                          <button onClick={async () => {
-                            await supabase.from("documents").delete().eq("id", d.id);
-                            setDocs(prev => prev.filter(x => x.id!==d.id));
-                          }} style={{ padding:"7px 12px", borderRadius:8, border:`1px solid ${C.border}`,
-                            background:"none", color:C.red, cursor:"pointer", fontSize:13 }}>🗑</button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </Card>
-              </>)}
-            </div>
-          )}
-
-          {/* ── REQUESTS ── */}
-          {tab === "requests" && (
-            <div style={{ padding:28 }}>
-              <div style={{ fontFamily:F, fontWeight:800, fontSize:20, color:C.text, marginBottom:4 }}>
-                📩 Client Requests
-              </div>
-              <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:24 }}>
-                Service requests submitted by clients through the portal.
-              </p>
-              {reqLoading ? (
-                <Card>
-                  <p style={{ fontFamily:F, fontSize:13, color:C.dim, textAlign:"center", padding:"24px 0" }}>
-                    Loading requests…
-                  </p>
-                </Card>
-              ) : requests.length === 0 ? (
-                <Card>
-                  <div style={{ textAlign:"center", padding:"32px 0" }}>
-                    <div style={{ fontSize:36, marginBottom:10 }}>📭</div>
-                    <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
-                      No requests from {selected.name} yet.
-                    </div>
-                  </div>
-                </Card>
-              ) : (
-                <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
-                  {requests.map((r, i) => (
-                    <Card key={r.id || i} style={{ padding:20 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", flexWrap:"wrap", gap:10 }}>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:8, flexWrap:"wrap" }}>
-                            <span style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
-                              {r.service_name || r.service_id || "Service Request"}
-                            </span>
-                            <span style={{ padding:"3px 10px", borderRadius:100, fontSize:11, fontWeight:700,
-                              background: r.status==="new" ? `${C.amber}18` : r.status==="in_progress" ? `${C.blue}18` : `${C.green}18`,
-                              color: r.status==="new" ? C.amber : r.status==="in_progress" ? C.blue : C.green,
-                              fontFamily:F, textTransform:"uppercase", letterSpacing:"0.05em" }}>
-                              {r.status || "new"}
-                            </span>
-                          </div>
-                          <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:6 }}>
-                            <strong>{r.client_name}</strong> · {r.company} · {r.email}
-                            {r.phone && <span> · {r.phone}</span>}
-                          </div>
-                          {r.notes && (
-                            <div style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.6,
-                              padding:"10px 14px", borderRadius:8, background:C.bg3, marginTop:8 }}>
-                              {r.notes}
-                            </div>
-                          )}
-                          <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:8 }}>
-                            Submitted: {r.created_at ? new Date(r.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" }) : "—"}
-                          </div>
-                        </div>
-                        <div style={{ display:"flex", gap:8, flexShrink:0 }}>
-                          <select
-                            value={r.status || "new"}
-                            onChange={async (e) => {
-                              const newStatus = e.target.value;
-                              await supabase.from("requests").update({ status: newStatus }).eq("id", r.id);
-                              setRequests(prev => prev.map(x => x.id===r.id ? {...x, status:newStatus} : x));
-                            }}
-                            style={{ padding:"7px 12px", borderRadius:8, border:`1px solid ${C.border}`,
-                              fontFamily:F, fontSize:12, color:C.text, background:C.bg, cursor:"pointer" }}>
-                            <option value="new">New</option>
-                            <option value="in_progress">In Progress</option>
-                            <option value="proposal_sent">Proposal Sent</option>
-                            <option value="completed">Completed</option>
-                            <option value="declined">Declined</option>
-                          </select>
-                          <button onClick={async () => {
-                            if (!window.confirm("Delete this request?")) return;
-                            await supabase.from("requests").delete().eq("id", r.id);
-                            setRequests(prev => prev.filter(x => x.id !== r.id));
-                          }} style={{ padding:"7px 10px", borderRadius:8, border:`1px solid ${C.border}`,
-                            background:"none", color:C.red, cursor:"pointer", fontSize:14 }}>🗑</button>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {tab === "market" && (
-            <div style={{ maxWidth:900 }}>
-              <MarketIntel client={selected || {client_pack:"startup"}}/>
-            </div>
-          )}
-
-        </div>
-      </div>
-    </div>
-  );
-}
+// ─── LAZY-LOADED ADMIN (keeps main bundle under 900KB) ────────────────────────
+const AdminPanel = React.lazy(() => import("./AdminPanel.jsx").then(m => ({ default: m.AdminPanel })));
+const AdminLogin = React.lazy(() => import("./AdminPanel.jsx").then(m => ({ default: m.AdminLogin })));
 
 export default function App() {
   const [client,  setClient]  = useState(null);
@@ -17695,8 +14008,16 @@ export default function App() {
 
   // Admin route
   if (isAdminRoute) {
-    if (!admin) return <AdminLogin onLogin={setAdmin}/>;
-    return <AdminPanel admin={admin} onLogout={handleLogout}/>;
+    if (!admin) return (
+      <React.Suspense fallback={<Loader/>}>
+        <AdminLogin onLogin={setAdmin}/>
+      </React.Suspense>
+    );
+    return (
+      <React.Suspense fallback={<Loader/>}>
+        <AdminPanel admin={admin} onLogout={handleLogout}/>
+      </React.Suspense>
+    );
   }
 
   // Client route
