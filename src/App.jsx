@@ -384,6 +384,7 @@ function LoginInput({ label, value, onChange, type="text", placeholder="" }) {
 // ─── LOGIN PAGE ───────────────────────────────────────────────────────────────
 function Login({ onLogin }) {
   const [step, setStep]     = useState("code"); // "code" | "register" | "signin"
+  const isMobile            = useMobile();
   const [code, setCode]     = useState("");
   const [client, setClient] = useState(null);
   const [form, setForm]     = useState({ email:"", password:"", confirm:"" });
@@ -470,7 +471,8 @@ function Login({ onLogin }) {
  
   return (
     <div style={{ minHeight:"100vh", display:"flex", fontFamily:F }}>
-      {/* ── Left branding panel ── */}
+      {/* ── Left branding panel — hidden on mobile ── */}
+      {!isMobile && (
       <div className="login-left-panel" style={{ width:420, flexShrink:0, background:"linear-gradient(160deg,#0A1128 0%,#1a2a5e 100%)",
         display:"flex", flexDirection:"column", justifyContent:"space-between",
         padding:"48px 44px", position:"relative", overflow:"hidden" }}>
@@ -517,14 +519,26 @@ function Login({ onLogin }) {
           © {new Date().getFullYear()} Finzzup Advisory LLP
         </div>
       </div>
+      )}
 
       {/* ── Right form panel ── */}
       <div className="login-right-panel" style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-        background:"#F8FAFC", padding:"40px 24px" }}>
+        background: isMobile ? "#fff" : "#F8FAFC", padding: isMobile ? "32px 20px" : "40px 24px",
+        minHeight:"100vh" }}>
         <div style={{ position:"fixed", inset:0, pointerEvents:"none",
           background:`radial-gradient(ellipse 50% 40% at 75% 30%, rgba(59,111,247,0.05) 0%, transparent 60%)` }}/>
 
         <div style={{ width:"100%", maxWidth:400, position:"relative" }}>
+          {isMobile && (
+            <div style={{ textAlign:"center", marginBottom:28 }}>
+              <div style={{ fontFamily:F, fontWeight:900, fontSize:22, color:C.blue, letterSpacing:"-0.03em" }}>
+                Finzzup
+              </div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2, letterSpacing:"0.08em", textTransform:"uppercase" }}>
+                CFO · On Demand
+              </div>
+            </div>
+          )}
           <div style={{ marginBottom:32 }}>
             <div style={{ fontFamily:F, fontSize:22, fontWeight:800, color:C.text,
               letterSpacing:"-0.02em", marginBottom:6 }}>
