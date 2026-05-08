@@ -1,24 +1,15 @@
-const CACHE = "finzzup-v1";
-const STATIC = [
-  "/",
-  "/index.html",
-  "/src/main.jsx",
-  "/src/App.jsx",
-  "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap",
-  "https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css",
-];
+const CACHE = "finzzup-v3";
 
 self.addEventListener("install", e => {
+  // Pre-cache just the shell — hashed JS/CSS bundles are auto-cached on first fetch
   e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(STATIC.map(u => {
-      // Skip cross-origin resources that might fail
-      try { return new Request(u, { mode: "no-cors" }); } catch { return u; }
-    }))).catch(() => {})
+    caches.open(CACHE).then(c => c.addAll(["/", "/index.html"]).catch(() => {}))
   );
   self.skipWaiting();
 });
 
 self.addEventListener("activate", e => {
+  // Delete all old caches to force users off stale JS
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
@@ -28,27 +19,26 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-  // Only cache GET requests; skip Supabase API calls (always fetch live)
+  // Only cache GET requests; never intercept Supabase or API calls
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   if (url.hostname.includes("supabase") || url.pathname.startsWith("/api/")) return;
+  // Let fonts/CDN be network-first (they have their own max-age headers)
+  if (url.hostname !== self.location.hostname) return;
 
   e.respondWith(
     caches.match(e.request).then(cached => {
       const networkFetch = fetch(e.request).then(res => {
-        if (res && res.status === 200 && res.type !== "opaque") {
-          const clone = res.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
+        if (res && res.status === 200) {
+          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
         }
         return res;
       }).catch(() => cached);
-      // Return cached immediately if available, update in background
       return cached || networkFetch;
     })
   );
 });
 
-// Push notifications
 self.addEventListener("push", e => {
   const data = e.data?.json() || {};
   e.waitUntil(
