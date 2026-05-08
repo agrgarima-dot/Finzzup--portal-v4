@@ -625,6 +625,14 @@ function Login({ onLogin }) {
  
   return (
     <div style={{ minHeight:"100vh", display:"flex", fontFamily:F }}>
+      <style>{`
+        @media(max-width:700px){
+          .login-left-panel{ display:none!important; }
+          .login-right-panel{ padding:24px 16px!important; }
+          .login-mobile-logo{ display:flex!important; }
+        }
+        .login-mobile-logo{ display:none; justify-content:center; margin-bottom:24px; }
+      `}</style>
       {/* ── Left branding panel ── */}
       <div className="login-left-panel" style={{ width:420, flexShrink:0, background:"linear-gradient(160deg,#0A1128 0%,#1a2a5e 100%)",
         display:"flex", flexDirection:"column", justifyContent:"space-between",
@@ -680,7 +688,9 @@ function Login({ onLogin }) {
           background:`radial-gradient(ellipse 50% 40% at 75% 30%, rgba(59,111,247,0.05) 0%, transparent 60%)` }}/>
 
         <div style={{ width:"100%", maxWidth:400, position:"relative" }}>
-          <div style={{ marginBottom:32 }}>
+          {/* Mobile-only logo */}
+          <div className="login-mobile-logo"><Logo size={28} darkText={true}/></div>
+          <div style={{ marginBottom:24 }}>
             <div style={{ fontFamily:F, fontSize:22, fontWeight:800, color:C.text,
               letterSpacing:"-0.02em", marginBottom:6 }}>
               {step==="code" ? "Sign in to your portal" : step==="signin" ? "Welcome back" : "Set your password"}
