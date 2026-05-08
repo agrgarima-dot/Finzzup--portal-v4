@@ -2,7 +2,9 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import { C, F, FM, fmtINR, fmtAED, fmtAED2, fmtDual, AED_TO_INR, isUAE, sym } from './tokens';
 import { Card, Skeleton, EmptyState, Logo, Badge, PriBadge } from './components';
-import { generateExecSummaryPDF, generateCashPDF, generateLoanPDF, generateCTSummaryPDF, generateRevReconPDF, generateWorkingCapitalPDF, generateVerticalAnalysisPDF, generateQFZPSubstancePDF, generateRPTPDF, generateVATPDF, generateQFZPPDF, generateReportPDF, downloadInvoicePDF } from './pdf';
+// PDF module loaded lazily — only fetched when a user first clicks a PDF button.
+// window.open() must always be called BEFORE the await to avoid popup blockers.
+const _pdfMod = import('./pdf'); // prefetch in background immediately, no bundle impact
 import { AdminLogin, AdminPanel } from './admin';
 // ─── CHART STUBS (no recharts dependency) ─────────────────────────────────────
 const ResponsiveContainer = ({ children, width, height }) => (
@@ -1812,11 +1814,11 @@ function CashFlow({ reportData, client, kpis }) {
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
           <SectionTitle sub="Projected runway, burn rate and 6-month cash forecast — forward-looking only">Cash Flow Forecast</SectionTitle>
           <button
-            onClick={() => {
-              const html = generateCashPDF({ client, reportData, kpis });
+            onClick={async () => {
               const w = window.open("","_blank");
-              w.document.write(html);
-              w.document.close();
+              const { generateCashPDF } = await _pdfMod;
+              const html = generateCashPDF({ client, reportData, kpis });
+              w.document.write(html); w.document.close();
               setTimeout(() => w.print(), 600);
             }}
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
@@ -2041,11 +2043,11 @@ function CashFlow({ reportData, client, kpis }) {
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
           <SectionTitle sub="Projected collections, payments and 6-month cash outlook — forward-looking only">Cash Flow Forecast</SectionTitle>
           <button
-            onClick={() => {
-              const html = generateCashPDF({ client, reportData, kpis });
+            onClick={async () => {
               const w = window.open("","_blank");
-              w.document.write(html);
-              w.document.close();
+              const { generateCashPDF } = await _pdfMod;
+              const html = generateCashPDF({ client, reportData, kpis });
+              w.document.write(html); w.document.close();
               setTimeout(() => w.print(), 600);
             }}
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
@@ -2163,11 +2165,11 @@ function CashFlow({ reportData, client, kpis }) {
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:20 }}>
           <SectionTitle sub="Projected operating, investing and financing cash flows — forward-looking">Cash Flow Forecast</SectionTitle>
           <button
-            onClick={() => {
-              const html = generateCashPDF({ client, reportData, kpis });
+            onClick={async () => {
               const w = window.open("","_blank");
-              w.document.write(html);
-              w.document.close();
+              const { generateCashPDF } = await _pdfMod;
+              const html = generateCashPDF({ client, reportData, kpis });
+              w.document.write(html); w.document.close();
               setTimeout(() => w.print(), 600);
             }}
             style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
@@ -4149,7 +4151,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
                   color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>
                 {"WhatsApp Garima"}
               </a>
-              <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
+              <button onClick={async () => { const w=window.open("","_blank"); const { generateLoanPDF } = await _pdfMod; const html = generateLoanPDF({ client, reportData, kpis }); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
                 style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"10px 18px",
                   borderRadius:16, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`,
                   color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
@@ -7229,9 +7231,20 @@ function NewRequest({ client, setPage }) {
         created_at:  new Date().toISOString(),
       });
     } catch(e) {
-      // If table doesn't exist yet, still complete UX flow
       console.warn("Requests table not found — request not saved to DB:", e.message);
     }
+    // Notify Garima — fire and forget, never blocks UX
+    fetch("/api/notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        clientName: form.name || client?.name || "Unknown",
+        company:    form.company || client?.company || "",
+        service:    SERVICES.find(s=>s.id===selected)?.name || selected,
+        email:      form.email || client?.email || "",
+        notes:      form.notes || "",
+      }),
+    }).catch(() => {});
     setLoading(false);
     setSubmitted(true);
   };
@@ -7592,8 +7605,8 @@ function Invoices({ client, liveInvoices }) {
       )}
  
       <button
-        onClick={() => {
-          // Build a minimal invoice object if coming from live data
+        onClick={async () => {
+          const { downloadInvoicePDF } = await _pdfMod;
           downloadInvoicePDF(selected, client);
         }}
         style={{ width:"100%", padding:"13px 0", borderRadius:16, border:`1.5px solid ${C.blue}`,
@@ -8329,7 +8342,9 @@ function CorporateTax({ client, reportData, initialTab }) {
   ];
  
   // Download handlers per CT section
-  const downloadCT = (section) => {
+  const downloadCT = async (section) => {
+    const w = window.open("","_blank");
+    const { generateRPTPDF, generateRevReconPDF, generateQFZPPDF, generateCTSummaryPDF } = await _pdfMod;
     let html = "";
     if (section === "rpt" || section === "connected" || section === "armslength") {
       html = generateRPTPDF({client, reportData});
@@ -8338,10 +8353,8 @@ function CorporateTax({ client, reportData, initialTab }) {
     } else if (section === "qfzp") {
       html = generateQFZPPDF({client, reportData});
     } else {
-      // overview / sbr — generate a simple CT summary
       html = generateCTSummaryPDF({client, reportData, ctData});
     }
-    const w = window.open("","_blank");
     w.document.write(html);
     w.document.close();
     setTimeout(() => w.print(), 600);
@@ -9556,11 +9569,11 @@ function RevenueReconciliation({ client, reportData }) {
       : `−${fmtAED(Math.abs(d))}`;
   };
  
-  const handlePrint = () => {
-    const html = generateRevReconPDF({ client, reportData });
+  const handlePrint = async () => {
     const w = window.open("","_blank");
-    w.document.write(html);
-    w.document.close();
+    const { generateRevReconPDF } = await _pdfMod;
+    const html = generateRevReconPDF({ client, reportData });
+    w.document.write(html); w.document.close();
     setTimeout(() => w.print(), 600);
   };
  
@@ -9816,11 +9829,11 @@ function WorkingCapital({ client, reportData }) {
   const riskColor = r => r==="High"?C.red:r==="Medium"?C.amber:C.green;
   const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#ECFDF5";
  
-  const handlePrint = () => {
-    const html = generateWorkingCapitalPDF({ client, reportData });
+  const handlePrint = async () => {
     const w = window.open("","_blank");
-    w.document.write(html);
-    w.document.close();
+    const { generateWorkingCapitalPDF } = await _pdfMod;
+    const html = generateWorkingCapitalPDF({ client, reportData });
+    w.document.write(html); w.document.close();
     setTimeout(()=>w.print(),600);
   };
  
@@ -10283,7 +10296,7 @@ function VerticalAnalysis({ client, reportData }) {
           <Card>
             <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16,flexWrap:"wrap",gap:8}}>
               <div style={{fontFamily:F,fontWeight:700,fontSize:15,color:C.text}}>Common-Size P&L — {period}</div>
-              <button onClick={()=>{const html=generateVerticalAnalysisPDF({client,reportData});const w=window.open("","_blank");w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);}}
+              <button onClick={async()=>{const w=window.open("","_blank");const{generateVerticalAnalysisPDF}=await _pdfMod;const html=generateVerticalAnalysisPDF({client,reportData});w.document.write(html);w.document.close();setTimeout(()=>w.print(),600);}}
                 style={{padding:"7px 14px",borderRadius:16,border:"none",cursor:"pointer",background:acc,color:"white",fontFamily:F,fontWeight:700,fontSize:12}}>
                 Download PDF
               </button>
@@ -10629,11 +10642,11 @@ function QFZPModule({ client, reportData }) {
   const statusBg    = s => s==="met"?"#ECFDF5":s==="watch"?"#FFFBEB":"#FEF2F2";
   const statusLabel = s => s==="met"?"✓ Met":s==="watch"?"⚠ Watch":"✗ Action Required";
  
-  const handlePrint = () => {
-    const html = generateQFZPSubstancePDF({ client, reportData });
+  const handlePrint = async () => {
     const w = window.open("","_blank");
-    w.document.write(html);
-    w.document.close();
+    const { generateQFZPSubstancePDF } = await _pdfMod;
+    const html = generateQFZPSubstancePDF({ client, reportData });
+    w.document.write(html); w.document.close();
     setTimeout(()=>w.print(),600);
   };
  
@@ -11278,7 +11291,7 @@ function UAECFOReport({ client, reportData, kpis }) {
  
               {/* Download */}
               <div style={{ display:"flex", gap:10 }}>
-                <button onClick={() => { const html = generateVATPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
+                <button onClick={async() => { const w=window.open("","_blank"); const{generateVATPDF}=await _pdfMod; const html=generateVATPDF({client,reportData}); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
                   style={{ padding:"10px 20px", borderRadius:16, border:"none", cursor:"pointer",
                     background:C.teal, color:"white", fontFamily:F, fontWeight:700, fontSize:13 }}>
                   Download Cash Report
@@ -11396,19 +11409,20 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
   const [saved,    setSavedMsg] = React.useState(false);
   const [error,    setError]    = React.useState("");
  
-  const handleExecSummary = () => {
-    const html = generateExecSummaryPDF({ client, reportData, kpis });
+  const handleExecSummary = async () => {
     const w = window.open("","_blank");
-    w.document.write(html);
-    w.document.close();
+    const { generateExecSummaryPDF } = await _pdfMod;
+    const html = generateExecSummaryPDF({ client, reportData, kpis });
+    w.document.write(html); w.document.close();
     setTimeout(() => w.print(), 600);
   };
-  const handlePreview = () => {
+  const handlePreview = async () => {
+    const win = window.open("","_blank");
+    const { generateReportPDF } = await _pdfMod;
     const html = generateReportPDF({ client, kpis, garimaNote, reportData, actions });
     const blob = new Blob([html], { type:"text/html" });
     const url  = URL.createObjectURL(blob);
-    const win  = window.open(url, "_blank");
-    if (win) win.onload = () => setTimeout(() => win.print(), 500);
+    win.location.href = url;
     setTimeout(() => URL.revokeObjectURL(url), 15000);
   };
  

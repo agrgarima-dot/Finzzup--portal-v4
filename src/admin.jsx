@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { C, F, FM, isUAE } from './tokens';
 import { supabase } from './supabase';
 import { Card, Skeleton, EmptyState, Logo, Badge, PriBadge } from './components';
-import { normalizePack, getPackLabel } from './pdf';
+import { normalizePack, getPackLabel } from './tokens';
 
 // MarketIntel is passed as a prop from App.jsx to avoid circular imports
 // (MarketIntel is defined in App.jsx scope)

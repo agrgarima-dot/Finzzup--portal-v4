@@ -1,13 +1,10 @@
-import { isUAE, fmtINR, fmtAED, fmtAED2, fmtDual, AED_TO_INR, sym } from './tokens';
+import { isUAE, fmtINR, fmtAED, fmtAED2, fmtDual, AED_TO_INR, sym, normalizePack, getPackLabel } from './tokens';
 
-// ─── PACK TIER HELPERS (copied here for PDF generators) ──────────────────────
-export function normalizePack(p) {
-  if (p === "growth")   return "msme";
-  if (p === "premium")  return "corporate";
-  return p || "startup";
-}
+// Re-export for any callers that import these from pdf.js directly
+export { normalizePack, getPackLabel };
 
-export function getPackLabel(p) {
+// Pack label for PDF headers (uses getPackLabel from tokens)
+function pdfPackLabel(p) {
   const n = normalizePack(p);
   if (n === "corporate") return "Corporate Pack";
   if (n === "msme")      return "MSME Pack";

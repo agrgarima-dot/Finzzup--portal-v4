@@ -71,3 +71,17 @@ export const fmtAED        = (v, showSym=true) => {
 };
 export const AED_TO_INR  = 22.8;
 export const fmtDual     = (aed) => `AED ${Number(aed).toLocaleString()} (≈ ₹${(Number(aed)*AED_TO_INR).toLocaleString()})`;
+
+// ─── PACK HELPERS ─────────────────────────────────────────────────────────────
+export function normalizePack(p) {
+  if (!p) return "startup";
+  const s = String(p).toLowerCase().trim();
+  if (s === "growth" || s.includes("msme") || s.includes("sme")) return "msme";
+  if (s === "premium" || s.includes("corp")) return "corporate";
+  if (s.includes("uae")) return "uae";
+  return "startup";
+}
+export function getPackLabel(p) {
+  const m = { startup:"Startup CFO", msme:"MSME CFO", corporate:"Corporate CFO", uae:"UAE CFO" };
+  return m[normalizePack(p)] || "Startup CFO";
+}
