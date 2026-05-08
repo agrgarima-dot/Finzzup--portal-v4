@@ -769,6 +769,10 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
   const [saved, setSaved]           = useState(false);
   const [markingReview, setMarkingReview] = useState(false);
   const [reviewedAt, setReviewedAt]       = useState(null);
+  const [staleness,   setStaleness]       = useState({});
+  const [quickUpdate, setQuickUpdate]     = useState(null);
+  const [quickForm,   setQuickForm]       = useState({ garima_note:"", revenue:"", cash_balance:"" });
+  const [quickSaving, setQuickSaving]     = useState(false);
   const [aiGenerating, setAiGen]    = useState(false);
   const [aiDraft, setAiDraft]       = useState(null);
   const [aiError, setAiError]       = useState("");
@@ -979,6 +983,15 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
     const live = data || [];
     const liveIds = new Set(live.map(c => c.invite_code));
     setClients([...live, ...DEMO_CLIENTS.filter(d => !liveIds.has(d.invite_code))]);
+    // Build staleness map from bulk KPI + report_data timestamps
+    const [{ data: kpiMeta }, { data: rdMeta }] = await Promise.all([
+      supabase.from("kpis").select("client_id, updated_at").order("updated_at", { ascending:false }),
+      supabase.from("report_data").select("client_id, updated_at"),
+    ]);
+    const sm = {};
+    (kpiMeta || []).forEach(r => { if (!sm[r.client_id]) sm[r.client_id] = {}; sm[r.client_id].kpiAt = r.updated_at; });
+    (rdMeta  || []).forEach(r => { if (!sm[r.client_id]) sm[r.client_id] = {}; sm[r.client_id].rdAt  = r.updated_at; });
+    setStaleness(sm);
     // Pre-load all requests so the Requests tab works without selecting a client
     const { data: allReqs } = await supabase.from("requests").select("*").order("created_at", { ascending:false });
     if (allReqs) setRequests(allReqs);
@@ -1018,7 +1031,7 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
     const defaults = defaultReportData(c.client_pack || "startup");
     if (rdData?.data) {
       try {
-        const parsed = JSON.parse(rdData.data);
+        const parsed = typeof rdData.data === "string" ? JSON.parse(rdData.data) : rdData.data;
         setReportData({
           ...defaults,
           ...parsed,
