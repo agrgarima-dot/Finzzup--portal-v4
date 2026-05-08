@@ -1583,7 +1583,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 }
  
  
-function Dashboard({ client, kpis, garimaNote, reportData }) {
+function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
   const displayKpis = kpis || KPIs;
   const pack    = normalizePack(client?.client_pack || client?.clientPack);
   const accent  = pack==="msme" ? C.blue : pack==="corporate" ? C.purple : C.blue;
@@ -1666,20 +1666,29 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
  
       {/* KPI grid — 6 tiles */}
       <div className="ns-grid-6">
-        {displayKpis.slice(0,6).map((k,i) => (
-          <div key={i} className="ns-kpi-tile" style={{  }}>
-            <div className="label">{k.label}</div>
-            <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
-            {k.prev && k.prev!=="—" && (
-              <div className="trend">
-                <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>
-                  {k.trend==="up"?"↑":"↓"}
-                </span>
-                <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
+        {loading
+          ? Array.from({length:6}).map((_,i) => (
+              <div key={i} className="ns-kpi-tile">
+                <Skeleton width="55%" height={11} style={{ marginBottom:10 }}/>
+                <Skeleton width="70%" height={22} style={{ marginBottom:8 }}/>
+                <Skeleton width="45%" height={10}/>
               </div>
-            )}
-          </div>
-        ))}
+            ))
+          : displayKpis.slice(0,6).map((k,i) => (
+              <div key={i} className="ns-kpi-tile">
+                <div className="label">{k.label}</div>
+                <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
+                {k.prev && k.prev!=="—" && (
+                  <div className="trend">
+                    <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>
+                      {k.trend==="up"?"↑":"↓"}
+                    </span>
+                    <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
+                  </div>
+                )}
+              </div>
+            ))
+        }
       </div>
  
       {/* Variance table */}
@@ -2422,9 +2431,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
         </div>
         <div className="ns-panel-body no-pad">
           {pending.length === 0 ? (
-            <div style={{ padding:"32px 16px", textAlign:"center", color:"#9CA3AF", fontFamily:F, fontSize:13 }}>
-              All actions complete — great work!
-            </div>
+            <EmptyState icon="ti-circle-check" title="All actions complete!" sub="Great work — no pending items right now."/>
           ) : (
             <table className="ns-table">
               <thead>
@@ -7482,10 +7489,7 @@ function CFOPackContent({ reportData, client, kpis }) {
             Monthly packs prepared by Garima — updated by the 20th of each month.
           </div>
           {archiveDocs.length === 0 && !isDemo && (
-            <Card style={{ textAlign:"center", padding:"32px 0", marginBottom:16 }}>
-              <div style={{ marginBottom:8 }}><i className="ti ti-chart-bar" style={{fontSize:28, color:C.blue}}/></div>
-              <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>No packs uploaded yet. Garima will upload your monthly pack here.</div>
-            </Card>
+            <EmptyState icon="ti-chart-bar" title="No packs uploaded yet" sub="Garima will upload your monthly pack here by the 20th of each month."/>
           )}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Starter Pack"/>)}
@@ -8520,17 +8524,22 @@ function MyDocuments({ client }) {
         </div>
  
         {loading && (
-          <div style={{ textAlign:"center", padding:"32px 0", fontFamily:F, fontSize:13, color:C.dim }}>
-            Loading documents…
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {Array.from({length:4}).map((_,i) => (
+              <div key={i} style={{ padding:"16px 18px", borderRadius:10, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:14 }}>
+                <Skeleton width={36} height={36} radius={8}/>
+                <div style={{ flex:1 }}>
+                  <Skeleton width="50%" height={12} style={{ marginBottom:8 }}/>
+                  <Skeleton width="30%" height={10}/>
+                </div>
+                <Skeleton width={70} height={28} radius={14}/>
+              </div>
+            ))}
           </div>
         )}
- 
+
         {!loading && displayDocs.length === 0 && (
-          <div style={{ textAlign:"center", padding:"32px 0" }}>
-            <div style={{ marginBottom:8 }}><i className="ti ti-chart-bar" style={{fontSize:28, color:C.blue}}/></div>
-            <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
-              No documents yet. Garima will upload your reports here.
-            </div>
+          <EmptyState icon="ti-folder-off" title="No documents yet" sub="Garima will upload your reports here."/>
           </div>
         )}
  
@@ -13848,7 +13857,7 @@ function Portal({ client, onLogout }) {
  
   const pages = {
     overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData}/>,
-    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData}/>,
+    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading}/>,
     cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
     actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
     myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
@@ -14059,7 +14068,9 @@ function Portal({ client, onLogout }) {
               onSaved={() => setReportSaveKey(k => k + 1)}
             />
           )}
-          {pages[page]}
+          <div key={page} className="ns-page-enter">
+            {pages[page]}
+          </div>
         </main>
       </div>
       <style>{`@keyframes progress{0%{width:0%;left:0}50%{width:60%;left:20%}100%{width:0%;left:100%}}
@@ -15843,7 +15854,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     All Invoices ({invoices.length})
                   </div>
                   {invoices.length === 0 && (
-                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No invoices yet for this client.</p>
+                    <EmptyState icon="ti-receipt-off" title="No invoices yet" sub="Invoices will appear here once raised."/>
                   )}
                   <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                     {invoices.map(inv => (
