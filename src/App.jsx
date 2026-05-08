@@ -2099,8 +2099,8 @@ function CashFlow({ reportData, client, kpis }) {
                 <YAxis tick={{ fontFamily:FM, fontSize:10, fill:C.dim }} axisLine={false} tickLine={false} tickFormatter={v=>`₹${v}L`} width={50}/>
                 <Tooltip content={<Tip/>}/>
                 <ReferenceLine x="Feb" stroke={C.border} strokeDasharray="4 4" label={{ value:"Today", position:"top", fontSize:10, fill:C.dim, fontFamily:F }}/>
-                <Area type="monotone" dataKey="value"    name="Actual"   stroke={C.blue}   strokeWidth={2.5} fill="url(#gaS)" dot={{ fill:C.blue, r:3 }}/>
-                <Area type="monotone" dataKey="forecast" name="Forecast" stroke={C.purple} strokeWidth={2} fill="url(#gfS)" strokeDasharray="5 5" dot={{ fill:C.purple, r:3 }}/>
+                <Area type="monotone" dataKey="value"    name="Actual"   stroke={C.blue}   strokeWidth={2.5} fill={`${C.blue}18`} dot={{ fill:C.blue, r:3, strokeWidth:0 }} connectNulls={false}/>
+                <Area type="monotone" dataKey="forecast" name="Forecast" stroke={C.purple} strokeWidth={2}   fill={`${C.purple}10`} strokeDasharray="5 5" dot={{ fill:C.purple, r:3, strokeWidth:0 }} connectNulls={false}/>
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -2124,7 +2124,7 @@ function CashFlow({ reportData, client, kpis }) {
               borderBottom:i<6?`1px solid ${C.border}`:"none",
               background:r.bold?`${C.blue}04`:"transparent", margin:r.bold?"0 -4px":"0", padding:r.bold?"9px 4px":"9px 0" }}>
               <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:r.bold?700:400 }}>{r.label}</span>
-              <span style={{ fontFamily:FM, fontSize:18, fontWeight:600, color:r.color }}>{r.value}</span>
+              <span style={{ fontFamily:FM, fontSize:13, fontWeight:600, color:r.color }}>{r.value}</span>
             </div>
           ))}
         </Card>
