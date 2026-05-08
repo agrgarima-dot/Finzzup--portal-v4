@@ -19546,7 +19546,11 @@ export default function App() {
  
   // Restore session on page refresh
   useEffect(() => {
+    // Safety timeout: if Supabase hangs (paused project, network issue), show login after 8s
+    const timeout = setTimeout(() => setLoading(false), 8000);
+
     supabase.auth.getSession().then(async ({ data: { session } }) => {
+      clearTimeout(timeout);
       if (session?.user?.email) {
         if (isAdminRoute) {
           const { data: adminData } = await supabase
@@ -19570,7 +19574,7 @@ export default function App() {
         }
       }
       setLoading(false);
-    });
+    }).catch(() => { clearTimeout(timeout); setLoading(false); });
  
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event) => {
