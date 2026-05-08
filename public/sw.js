@@ -1,15 +1,11 @@
-const CACHE = "finzzup-v3";
+const CACHE = "finzzup-v4";
 
 self.addEventListener("install", e => {
-  // Pre-cache just the shell — hashed JS/CSS bundles are auto-cached on first fetch
-  e.waitUntil(
-    caches.open(CACHE).then(c => c.addAll(["/", "/index.html"]).catch(() => {}))
-  );
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll([]).catch(() => {})));
   self.skipWaiting();
 });
 
 self.addEventListener("activate", e => {
-  // Delete all old caches to force users off stale JS
   e.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
@@ -19,13 +15,25 @@ self.addEventListener("activate", e => {
 });
 
 self.addEventListener("fetch", e => {
-  // Only cache GET requests; never intercept Supabase or API calls
   if (e.request.method !== "GET") return;
   const url = new URL(e.request.url);
   if (url.hostname.includes("supabase") || url.pathname.startsWith("/api/")) return;
-  // Let fonts/CDN be network-first (they have their own max-age headers)
   if (url.hostname !== self.location.hostname) return;
 
+  // HTML (navigation) — network-first so deploys are always picked up immediately
+  if (e.request.mode === "navigate" || url.pathname.endsWith(".html") || url.pathname === "/") {
+    e.respondWith(
+      fetch(e.request).then(res => {
+        if (res && res.status === 200) {
+          caches.open(CACHE).then(c => c.put(e.request, res.clone()));
+        }
+        return res;
+      }).catch(() => caches.match(e.request))
+    );
+    return;
+  }
+
+  // Hashed JS/CSS assets — cache-first (filename changes on every deploy)
   e.respondWith(
     caches.match(e.request).then(cached => {
       const networkFetch = fetch(e.request).then(res => {
