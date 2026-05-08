@@ -773,6 +773,7 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
   const [quickUpdate, setQuickUpdate]     = useState(null);
   const [quickForm,   setQuickForm]       = useState({ garima_note:"", revenue:"", cash_balance:"" });
   const [quickSaving, setQuickSaving]     = useState(false);
+  const [sidebarOpen, setSidebarOpen]     = useState(false);
   const [aiGenerating, setAiGen]    = useState(false);
   const [aiDraft, setAiDraft]       = useState(null);
   const [aiError, setAiError]       = useState("");
@@ -1606,15 +1607,50 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
  
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
+      <style>{`
+        @media(max-width:768px){
+          .admin-sidebar {
+            position: fixed !important;
+            top: 0; left: 0;
+            height: 100vh !important;
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.25s ease;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+          }
+          .admin-sidebar.open { transform: translateX(0) !important; }
+          .admin-backdrop { display: block !important; }
+          .admin-hamburger { display: flex !important; }
+        }
+        .admin-backdrop { display: none; position: fixed; inset: 0;
+          background: rgba(0,0,0,0.4); z-index: 999; }
+        .admin-hamburger { display: none; }
+      `}</style>
+
+      {/* Mobile backdrop */}
+      {sidebarOpen && (
+        <div className="admin-backdrop" onClick={() => setSidebarOpen(false)}/>
+      )}
+
       {/* Admin Sidebar */}
-      <aside style={{ width:220, minHeight:"100vh", background:"#F3F4F6", flexShrink:0,
+      <aside className={`admin-sidebar${sidebarOpen ? " open" : ""}`}
+        style={{ width:220, minHeight:"100vh", background:"#F3F4F6", flexShrink:0,
         display:"flex", flexDirection:"column", borderRight:`1px solid ${C.border}` }}>
-        <div style={{ padding:"22px 20px", borderBottom:`1px solid ${C.border}` }}>
-          <Logo size={28} dark={false} showTagline={false}/>
-          <div style={{ marginTop:10, padding:"4px 10px", borderRadius:60, display:"inline-block",
-            background:`${C.amber}15`, border:`1px solid ${C.amber}30` }}>
-            <span style={{ fontSize:10, fontWeight:700, color:C.amber, letterSpacing:"0.1em" }}>ADMIN</span>
+        <div style={{ padding:"16px 20px", borderBottom:`1px solid ${C.border}`,
+          display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <Logo size={28} dark={false} showTagline={false}/>
+            <div style={{ marginTop:8, padding:"3px 10px", borderRadius:60, display:"inline-block",
+              background:`${C.amber}15`, border:`1px solid ${C.amber}30` }}>
+              <span style={{ fontSize:10, fontWeight:700, color:C.amber, letterSpacing:"0.1em" }}>ADMIN</span>
+            </div>
           </div>
+          {/* Close button — only visible on mobile */}
+          <button className="admin-hamburger" onClick={() => setSidebarOpen(false)}
+            style={{ background:"none", border:"none", cursor:"pointer",
+              color:C.muted, fontSize:22, lineHeight:1, padding:4 }}>
+            ✕
+          </button>
         </div>
         <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.border}` }}>
           <div style={{ fontSize:11, color:C.dim, fontFamily:F }}>Logged in as</div>
@@ -1666,7 +1702,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   {group}
                 </div>
                 {groupTabs.map(t => (
-                  <button key={t.id} onClick={() => setTab(t.id)} style={{
+                  <button key={t.id} onClick={() => { setTab(t.id); setSidebarOpen(false); }} style={{
                     display:"flex", alignItems:"center", gap:10, width:"100%",
                     padding:"10px 16px", background:tab===t.id?`${C.amber}12`:"transparent",
                     border:"none", cursor:"pointer",
@@ -1697,7 +1733,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
       <div style={{ flex:1, overflowY:"auto" }}>
         {/* Header */}
         <div style={{ height:58, background:"#fff", borderBottom:`1px solid #EAECF0`,
-          display:"flex", alignItems:"center", padding:"0 24px", gap:20 }}>
+          display:"flex", alignItems:"center", padding:"0 16px", gap:12 }}>
+          {/* Hamburger — mobile only */}
+          <button className="admin-hamburger" onClick={() => setSidebarOpen(true)}
+            style={{ background:"none", border:"none", cursor:"pointer",
+              color:C.text, fontSize:20, lineHeight:1, padding:"4px 6px", flexShrink:0 }}>
+            ☰
+          </button>
           <h1 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", margin:0 }}>
             {ADMIN_TABS.find(t=>t.id===tab)?.label}
           </h1>
