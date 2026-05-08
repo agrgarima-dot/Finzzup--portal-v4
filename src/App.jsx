@@ -13795,8 +13795,28 @@ function UAECFOReport({ client, reportData, kpis }) {
             </div>
           )}
  
-          {/* ── WORKING CAPITAL (redirect to dedicated page) ── */}
-          {tab === "cashflow" && <CashFlow client={client} reportData={reportData} liveInvoices={[]}/>}
+          {/* ── CASH FLOW + VAT REPORT (combined for UAE) ── */}
+          {tab === "cashflow" && (
+            <div>
+              <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginBottom:8, flexWrap:"wrap" }}>
+                <button style={DL_BTN} onClick={() => openPDF(generateCashPDF({ client, reportData, kpis }))}>
+                  <i className="ti ti-download" style={{fontSize:13}}/> Cash Flow PDF
+                </button>
+                <button style={{...DL_BTN, background:"#F0FDF4", color:"#00732F", borderColor:"#00732F22"}}
+                  onClick={() => openPDF(generateVATPDF({ client, reportData }))}>
+                  <i className="ti ti-download" style={{fontSize:13}}/> VAT Report PDF
+                </button>
+              </div>
+              <CashFlow client={client} reportData={reportData} liveInvoices={[]}/>
+              <div style={{ marginTop:24, borderTop:"2px solid #E5E7EB", paddingTop:20 }}>
+                <div style={{ fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:700,
+                  color:"#00732F", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:14 }}>
+                  VAT Compliance — {reportData?.monthLabel || "Current Period"}
+                </div>
+                <VATDashboard client={client} reportData={reportData}/>
+              </div>
+            </div>
+          )}
  
           {tab === "workingcap" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateWorkingCapitalPDF({ client, reportData, kpis }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><WorkingCapital client={client} reportData={reportData}/></div>}
 
