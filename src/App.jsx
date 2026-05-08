@@ -16115,31 +16115,48 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
  
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
+      <style>{`
+        @media(max-width:700px){
+          .admin-sidebar{ position:fixed!important; top:0; left:0; height:100vh; z-index:200;
+            transform:translateX(-100%); transition:transform 0.25s ease; }
+          .admin-sidebar.open{ transform:translateX(0)!important; box-shadow:4px 0 24px rgba(0,0,0,0.15); }
+          .admin-backdrop{ display:block!important; }
+          .admin-hamburger{ display:flex!important; }
+        }
+        .admin-backdrop{ display:none; position:fixed; inset:0; background:rgba(0,0,0,0.35); z-index:199; }
+        .admin-hamburger{ display:none; }
+      `}</style>
+      {sidebarOpen && <div className="admin-backdrop" onClick={() => setSidebarOpen(false)}/>}
       {/* Admin Sidebar */}
-      <aside style={{ width:220, minHeight:"100vh", background:"#F3F4F6", flexShrink:0,
+      <aside className={"admin-sidebar" + (sidebarOpen?" open":"")}
+        style={{ width:220, minHeight:"100vh", background:"#F3F4F6", flexShrink:0,
         display:"flex", flexDirection:"column", borderRight:`1px solid ${C.border}` }}>
-        <div style={{ padding:"22px 20px", borderBottom:`1px solid ${C.border}` }}>
-          <Logo size={28} dark={false} showTagline={false}/>
-          <div style={{ marginTop:10, padding:"4px 10px", borderRadius:60, display:"inline-block",
-            background:`${C.amber}15`, border:`1px solid ${C.amber}30` }}>
-            <span style={{ fontSize:10, fontWeight:700, color:C.amber, letterSpacing:"0.1em" }}>ADMIN</span>
+        <div style={{ padding:"18px 16px", borderBottom:`1px solid ${C.border}`, display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+          <div>
+            <Logo size={24} dark={false} showTagline={false}/>
+            <div style={{ marginTop:8, padding:"3px 8px", borderRadius:60, display:"inline-block",
+              background:`${C.amber}15`, border:`1px solid ${C.amber}30` }}>
+              <span style={{ fontSize:9, fontWeight:700, color:C.amber, letterSpacing:"0.1em" }}>ADMIN</span>
+            </div>
           </div>
+          <button onClick={() => setSidebarOpen(false)} className="admin-hamburger"
+            style={{ background:"none", border:"none", cursor:"pointer", padding:6, borderRadius:6, color:C.muted, fontSize:18, lineHeight:1 }}>&#x2715;</button>
         </div>
-        <div style={{ padding:"12px 16px", borderBottom:`1px solid ${C.border}` }}>
-          <div style={{ fontSize:11, color:C.dim, fontFamily:F }}>Logged in as</div>
-          <div style={{ fontSize:13, fontWeight:700, color:C.text, fontFamily:F, marginTop:2 }}>{admin.name}</div>
+        <div style={{ padding:"10px 14px", borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ fontSize:10, color:C.dim, fontFamily:F }}>Logged in as</div>
+          <div style={{ fontSize:12, fontWeight:700, color:C.text, fontFamily:F, marginTop:1 }}>{admin.name}</div>
         </div>
         {/* Client selector */}
         {clients.length > 0 && (
-          <div style={{ padding:"10px 12px", borderBottom:`1px solid ${C.border}` }}>
-            <div style={{ fontSize:10, fontWeight:700, color:C.muted,
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
+          <div style={{ padding:"8px 10px", borderBottom:`1px solid ${C.border}` }}>
+            <div style={{ fontSize:9, fontWeight:700, color:C.muted,
+              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:5, fontFamily:F }}>
               Active Client
             </div>
             <select value={selected?.id || ""} onChange={e => {
               const c = clients.find(x => x.id===e.target.value);
-              if (c) selectClient(c);
-            }} style={{ width:"100%", padding:"8px 10px", borderRadius:9, fontSize:12,
+              if (c) { selectClient(c); setSidebarOpen(false); }
+            }} style={{ width:"100%", padding:"7px 8px", borderRadius:8, fontSize:11,
               background:"#fff", border:`1.5px solid ${C.border}`,
               color:C.text, fontFamily:F, outline:"none" }}>
               <option value="">— Select client —</option>
@@ -16164,20 +16181,19 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             </select>
           </div>
         )}
-        <nav style={{ flex:1, padding:"8px 0", overflowY:"auto" }}>
+        <nav style={{ flex:1, padding:"6px 0", overflowY:"auto" }}>
           {["Overview","Clients","India","UAE","Shared"].map(group => {
             const groupTabs = ADMIN_TABS.filter(t => t.group === group);
             return (
               <div key={group}>
-                <div style={{ padding:"10px 16px 4px", fontFamily:F, fontSize:9,
-                  fontWeight:700, color:C.muted,
-                  textTransform:"uppercase", letterSpacing:"0.12em" }}>
+                <div style={{ padding:"8px 14px 3px", fontFamily:F, fontSize:9,
+                  fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.12em" }}>
                   {group}
                 </div>
                 {groupTabs.map(t => (
-                  <button key={t.id} onClick={() => setTab(t.id)} style={{
+                  <button key={t.id} onClick={() => { setTab(t.id); setSidebarOpen(false); }} style={{
                     display:"flex", alignItems:"center", gap:10, width:"100%",
-                    padding:"10px 16px", background:tab===t.id?`${C.amber}12`:"transparent",
+                    padding:"9px 14px", background:tab===t.id?`${C.amber}12`:"transparent",
                     border:"none", cursor:"pointer",
                     borderLeft:tab===t.id?`3px solid ${C.amber}`:"3px solid transparent",
                     fontFamily:F }}>
@@ -16191,26 +16207,29 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             );
           })}
         </nav>
-        <div style={{ padding:"10px 12px", borderTop:`1px solid ${C.border}` }}>
+        <div style={{ padding:"8px 10px", borderTop:`1px solid ${C.border}` }}>
           <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
-            width:"100%", padding:"10px 12px", background:"none", border:"none",
-            cursor:"pointer", borderRadius:9, fontFamily:F, fontSize:13,
-            fontWeight:600, color:C.muted }}>
+            width:"100%", padding:"10px 12px", background:"none",
+            border:`1.5px solid ${C.red}40`, borderRadius:9, cursor:"pointer",
+            fontFamily:F, fontSize:12, fontWeight:700, color:C.red }}>
             <i className="ti ti-logout" style={{ fontSize:14 }}/>
             Sign Out
           </button>
         </div>
       </aside>
- 
+
       {/* Main content */}
       <div style={{ flex:1, overflowY:"auto" }}>
         {/* Header */}
-        <div style={{ height:58, background:"#fff", borderBottom:`1px solid #EAECF0`,
-          display:"flex", alignItems:"center", padding:"0 24px", gap:20 }}>
-          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", margin:0 }}>
+        <div style={{ height:52, background:"#fff", borderBottom:`1px solid #EAECF0`,
+          display:"flex", alignItems:"center", padding:"0 16px", gap:12, flexWrap:"wrap" }}>
+          <button className="admin-hamburger" onClick={() => setSidebarOpen(true)}
+            style={{ background:"none", border:"none", cursor:"pointer", padding:6,
+              borderRadius:6, color:C.text, fontSize:20, lineHeight:1, flexShrink:0 }}>&#x2630;</button>
+          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", margin:0, flex:1 }}>
             {ADMIN_TABS.find(t=>t.id===tab)?.label}
           </h1>
-          {selected && tab !== "clients" && tab !== "addclient" && (
+                    {selected && tab !== "clients" && tab !== "addclient" && (
             <div style={{ padding:"4px 12px", borderRadius:60, background:`${C.amber}15`,
               border:`1px solid ${C.amber}30` }}>
               <span style={{ fontSize:12, fontWeight:700, color:C.amber, fontFamily:F }}>
