@@ -767,6 +767,8 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
   const [selected, setSelected] = useState(null); // selected client for editing
   const [loading, setLoading]       = useState(false);
   const [saved, setSaved]           = useState(false);
+  const [markingReview, setMarkingReview] = useState(false);
+  const [reviewedAt, setReviewedAt]       = useState(null);
   const [aiGenerating, setAiGen]    = useState(false);
   const [aiDraft, setAiDraft]       = useState(null);
   const [aiError, setAiError]       = useState("");
@@ -1025,14 +1027,32 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
           varianceCommentary: parsed.varianceCommentary || defaults.varianceCommentary,
           prevKpis:           { ...defaults.prevKpis, ...(parsed.prevKpis          || {}) },
         });
-      } catch(e) { setReportData(defaults); }
+        setReviewedAt(parsed.lastReviewedAt || null);
+      } catch(e) { setReportData(defaults); setReviewedAt(null); }
     }
-    else setReportData(defaults);
+    else { setReportData(defaults); setReviewedAt(null); }
     // Smart tab switch: UAE clients default to UAE tab, India clients to KPIs
     const currentTabIsNeutral = ["clients","addclient"].includes(tab);
     if (currentTabIsNeutral || !tab) {
       setTab(isUAE(c) ? "uae" : "kpis");
     }
+  };
+
+  const markReviewed = async () => {
+    if (!selected) return;
+    setMarkingReview(true);
+    const ts = new Date().toISOString();
+    const { data: rdData } = await supabase.from("report_data")
+      .select("data").eq("client_id", selected.id).maybeSingle();
+    const existing = rdData?.data
+      ? (typeof rdData.data === "string" ? JSON.parse(rdData.data) : rdData.data)
+      : {};
+    const { error } = await supabase.from("report_data").upsert(
+      { client_id: selected.id, data: { ...existing, lastReviewedAt: ts } },
+      { onConflict: "client_id" }
+    );
+    if (!error) setReviewedAt(ts);
+    setMarkingReview(false);
   };
  
   const saveKPIs = async () => {
@@ -1674,6 +1694,24 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
               <span style={{ fontSize:12, fontWeight:700, color:C.amber, fontFamily:F }}>
                 {selected.name} — {selected.company}
               </span>
+            </div>
+          )}
+          {selected && (
+            <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:10 }}>
+              {reviewedAt && (
+                <span style={{ fontFamily:F, fontSize:11, color:C.green }}>
+                  <i className="ti ti-circle-check" style={{ marginRight:4 }}/>
+                  Reviewed {new Date(reviewedAt).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })}
+                </span>
+              )}
+              <button onClick={markReviewed} disabled={markingReview}
+                style={{ padding:"7px 16px", borderRadius:8, border:`1.5px solid ${C.green}`,
+                  background: markingReview ? "#F0FDF4" : C.green, color:"white",
+                  fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer",
+                  display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}>
+                <i className="ti ti-circle-check" style={{ fontSize:14 }}/>
+                {markingReview ? "Marking…" : "Mark Reviewed"}
+              </button>
             </div>
           )}
         </div>

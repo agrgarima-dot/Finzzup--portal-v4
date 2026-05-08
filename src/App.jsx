@@ -1335,6 +1335,14 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div className="ns-panel" style={{ margin:0, borderLeft:`3px solid ${accentColor}` }}>
           <div className="ns-panel-header">
             <h3 style={{ color:accentColor }}>Garima's CFO Note</h3>
+            {reportData?.lastReviewedAt && !isDemo && (
+              <span style={{ display:"flex", alignItems:"center", gap:5,
+                fontSize:11, fontWeight:600, color:C.green }}>
+                <i className="ti ti-circle-check" style={{ fontSize:13 }}/>
+                Reviewed {new Date(reportData.lastReviewedAt).toLocaleDateString("en-GB",
+                  { day:"numeric", month:"short", year:"numeric" })}
+              </span>
+            )}
           </div>
           <div style={{ padding:"0 16px 16px" }}>
             <p style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.8, margin:"0 0 12px" }}>
