@@ -1274,6 +1274,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const displayKpis  = kpis || KPIs;
   const ovPack       = normalizePack(client?.client_pack || client?.clientPack);
   const uaeClient    = isUAE(client);
+  const isMobile     = useMobile();
   const pendingActions = actions.filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
   const displayNote  = uaeClient
@@ -1448,7 +1449,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       </div>
 
       {/* ── Row 2: P&L + Health Score + Garima Note ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 188px 1fr", gap:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 188px 1fr", gap:14 }}>
 
         {/* P&L Summary */}
         <div className="ns-panel" style={{ margin:0 }}>
@@ -1508,7 +1509,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       </div>
 
       {/* ── Row 3: Action Items + AR Aging + Cash Flow ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }}>
+      <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr", gap:14 }}>
 
         {/* Action Items */}
         <div className="ns-panel" style={{ margin:0 }}>
