@@ -934,7 +934,8 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
     { label:"Account",      ids:["calendar","newrequest","documents","invoices","engagement"] },
   ];
   return (
-    <aside style={{ width:collapsed?52:220, minHeight:"100vh", background:"#fff",
+    <aside className={`main-sidebar${collapsed?"":" sidebar-open"}`}
+      style={{ width:collapsed?52:220, minHeight:"100vh", background:"#fff",
       flexShrink:0, display:"flex", flexDirection:"column", transition:"width 0.2s",
       overflow:"hidden", borderRight:`1px solid ${C.border}` }}>
  
@@ -1040,7 +1041,17 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
  
  
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
-function Topbar({ title, client, setPage, notifItems=[] }) {
+function useMobile() {
+  const [mob, setMob] = React.useState(() => typeof window !== "undefined" && window.innerWidth < 768);
+  React.useEffect(() => {
+    const h = () => setMob(window.innerWidth < 768);
+    window.addEventListener("resize", h, { passive:true });
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return mob;
+}
+
+function Topbar({ title, client, setPage, notifItems=[], onMenuToggle }) {
   const now  = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"short",year:"numeric"});
   const uae  = isUAE(client);
   const [open, setOpen] = React.useState(false);
@@ -1049,15 +1060,23 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
   return (
     <header style={{ height:52, background:"#fff", borderBottom:`1px solid #EAECF0`,
       display:"flex", alignItems:"center", justifyContent:"space-between",
-      padding:"0 18px", flexShrink:0, zIndex:50,
+      padding:"0 14px", flexShrink:0, zIndex:50,
       boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
- 
-      {/* Breadcrumb */}
-      <div style={{ display:"flex", alignItems:"center", gap:5,
-        fontFamily:F, fontSize:11 }}>
-        <span style={{ color:C.muted }}>Home</span>
-        <span style={{ color:C.dim }}>›</span>
-        <span style={{ color:C.text, fontWeight:500 }}>{title}</span>
+
+      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        {/* Hamburger — visible on mobile via CSS */}
+        <button onClick={onMenuToggle} className="hamburger-btn"
+          style={{ background:"none", border:"none", cursor:"pointer",
+            width:32, height:32, display:"none", alignItems:"center",
+            justifyContent:"center", borderRadius:8, color:C.muted }}>
+          <i className="ti ti-menu-2" style={{ fontSize:18 }}/>
+        </button>
+        {/* Breadcrumb */}
+        <div style={{ display:"flex", alignItems:"center", gap:5, fontFamily:F, fontSize:11 }}>
+          <span style={{ color:C.muted }} className="bc-home">Home</span>
+          <span style={{ color:C.dim }} className="bc-home">›</span>
+          <span style={{ color:C.text, fontWeight:500 }}>{title}</span>
+        </div>
       </div>
  
       {/* Right */}
@@ -14071,12 +14090,62 @@ function Portal({ client, onLogout }) {
           .ns-grid-3{grid-template-columns:1fr!important}
           .ns-grid-2{grid-template-columns:1fr!important}
         }
-        /* Login responsive — hide left panel on small screens */
+
+        /* ── Mobile (< 768px) ── */
+        @media(max-width:768px){
+          /* Sidebar becomes a fixed overlay */
+          .main-sidebar {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+            width: 260px !important;
+            transform: translateX(-100%) !important;
+            transition: transform 0.25s ease !important;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
+          }
+          .main-sidebar.sidebar-open {
+            transform: translateX(0) !important;
+          }
+          /* Show mobile backdrop when sidebar open */
+          .main-sidebar.sidebar-open ~ * .mobile-backdrop,
+          .mobile-backdrop { display: block !important; }
+
+          /* Hamburger visible on mobile */
+          .hamburger-btn { display: flex !important; }
+
+          /* Hide breadcrumb home on tiny screens */
+          .bc-home { display: none !important; }
+
+          /* Grids stack on mobile */
+          .ns-grid-6 { grid-template-columns: 1fr 1fr !important; }
+          .ns-grid-4 { grid-template-columns: 1fr 1fr !important; }
+          .ns-grid-3 { grid-template-columns: 1fr !important; }
+          .ns-grid-2 { grid-template-columns: 1fr !important; }
+
+          /* Page padding tighter on mobile */
+          .ns-page { padding: 12px !important; gap: 10px !important; }
+
+          /* Tables scroll horizontally on mobile */
+          .ns-panel { overflow-x: auto !important; }
+          .ns-table { min-width: 480px; }
+
+          /* KPI tiles smaller on mobile */
+          .ns-kpi-tile { padding: 12px 12px !important; }
+          .ns-kpi-tile .value { font-size: 15px !important; }
+        }
+
+        @media(max-width:480px){
+          .ns-grid-6 { grid-template-columns: 1fr !important; }
+          .ns-grid-4 { grid-template-columns: 1fr !important; }
+        }
+
+        /* Login responsive */
         @media(max-width:700px){
           .login-left-panel { display:none !important; }
           .login-right-panel { padding:24px 16px !important; }
         }
- 
+
         /* Sidebar hover */
         nav button:hover { background:rgba(255,255,255,0.06)!important; }
  
@@ -14097,10 +14166,17 @@ function Portal({ client, onLogout }) {
         <div style={{ position:"fixed", top:0, left:0, right:0, height:3, zIndex:9999,
           background:C.grad1, animation:"progress 1.5s ease-in-out infinite" }}/>
       )}
+      {/* Mobile sidebar backdrop */}
+      {!collapsed && (
+        <div className="mobile-backdrop" onClick={()=>setCollapsed(true)}
+          style={{ display:"none", position:"fixed", inset:0, background:"rgba(0,0,0,0.4)",
+            zIndex:999, backdropFilter:"blur(2px)" }}/>
+      )}
       <Sidebar page={page} setPage={setPage} client={client}
         onLogout={onLogout} collapsed={collapsed} setCollapsed={setCollapsed}/>
       <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden", background:"#fff" }}>
         <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
+          onMenuToggle={()=>setCollapsed(c=>!c)}
           notifItems={(() => {
             const items = [];
             // Unpaid invoices
@@ -14549,271 +14625,579 @@ function InlineInput({ value, onCommit, placeholder="", style={} }) {
 }
  
 // ─── CSV IMPORT COMPONENT ─────────────────────────────────────────────────────
-function parseIndianNumber(s) {
-  if (!s && s !== 0) return null;
-  const n = parseFloat(String(s).replace(/[₹,\s]/g,"").replace(/[^0-9.-]/g,""));
+// ─── CSV IMPORT — PARSERS & COMPONENT ────────────────────────────────────────
+
+function parseNum(s) {
+  if (s === null || s === undefined || s === "") return null;
+  const n = parseFloat(String(s).replace(/[₹,AED\s]/g,"").replace(/[^0-9.-]/g,""));
   return isNaN(n) ? null : n;
 }
 
-function parseTallyCSV(text) {
-  // Normalise line endings
-  const lines = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n");
-  const result = { revenue:null, cogs:null, grossProfit:null, ebitda:null, pat:null,
-    cashBalance:null, gpMargin:null, ebitdaMargin:null, netMargin:null,
-    prevRevenue:null, prevPAT:null };
-
-  // Helper: find a row containing keyword and extract the first number
-  const extract = (keywords, colIdx=1) => {
-    const kws = Array.isArray(keywords) ? keywords : [keywords];
-    for (const line of lines) {
-      const low = line.toLowerCase();
-      if (kws.some(k => low.includes(k.toLowerCase()))) {
-        const cols = line.split(",").map(c => c.replace(/"/g,"").trim());
-        const val = parseIndianNumber(cols[colIdx] || cols[colIdx-1] || "");
-        if (val !== null) return val;
-      }
+function extractField(lines, keywords, colIdx=1, colIdx2=2) {
+  const kws = Array.isArray(keywords) ? keywords : [keywords];
+  for (const line of lines) {
+    const low = line.toLowerCase();
+    if (kws.some(k => low.includes(k.toLowerCase()))) {
+      const cols = line.split(",").map(c => c.replace(/"/g,"").trim());
+      const v1 = parseNum(cols[colIdx]);
+      const v2 = parseNum(cols[colIdx2]);
+      if (v1 !== null) return { curr: v1, prev: v2 };
     }
-    return null;
-  };
-
-  result.revenue      = extract(["net sales","net revenue","total revenue","gross revenue","sales","turnover","total income"]);
-  result.cogs         = extract(["cost of goods","cost of sales","cogs","cost of production","direct expenses","purchases"]);
-  result.grossProfit  = extract(["gross profit","trading profit"]);
-  result.ebitda       = extract(["ebitda","operating profit","profit before interest"]);
-  result.pat          = extract(["net profit","profit after tax","pat","profit for the year","net income"]);
-  result.cashBalance  = extract(["cash and cash equivalents","cash & cash equivalents","cash balance","closing cash","cash in hand"]);
-  // Previous period (col 2)
-  result.prevRevenue  = extract(["net sales","net revenue","total revenue","gross revenue","sales","turnover","total income"], 2);
-  result.prevPAT      = extract(["net profit","profit after tax","pat","profit for the year"], 2);
-
-  // Derived
-  if (result.revenue && result.grossProfit)
-    result.gpMargin = ((result.grossProfit / result.revenue) * 100).toFixed(1) + "%";
-  if (result.revenue && result.ebitda)
-    result.ebitdaMargin = ((result.ebitda / result.revenue) * 100).toFixed(1) + "%";
-  if (result.revenue && result.pat)
-    result.netMargin = ((result.pat / result.revenue) * 100).toFixed(1) + "%";
-
-  return result;
+  }
+  return { curr: null, prev: null };
 }
 
-function fmtCrL(n) {
+function normaliseLines(text) {
+  return text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n");
+}
+
+function parsePL(text) {
+  const lines = normaliseLines(text);
+  const ex = (kws, col=1, col2=2) => extractField(lines, kws, col, col2);
+  const rev   = ex(["net sales","net revenue","total revenue","gross revenue","revenue from operations","sales","turnover","total income"]);
+  const cogs  = ex(["cost of goods sold","cost of sales","cogs","cost of production","direct expenses","purchases","cost of revenue"]);
+  const gp    = ex(["gross profit","trading profit"]);
+  const ebi   = ex(["ebitda","operating profit","profit before interest and depreciation","pbit"]);
+  const pat   = ex(["net profit after tax","profit after tax","net profit","pat","profit for the year","net income"]);
+  const cash  = ex(["cash and cash equivalents","cash & cash equivalents","cash at bank and in hand","closing cash","cash balance"]);
+
+  const gpMargin  = (rev.curr && gp.curr)  ? ((gp.curr/rev.curr)*100).toFixed(1)+"%" : null;
+  const ebiMargin = (rev.curr && ebi.curr) ? ((ebi.curr/rev.curr)*100).toFixed(1)+"%" : null;
+  const netMargin = (rev.curr && pat.curr) ? ((pat.curr/rev.curr)*100).toFixed(1)+"%" : null;
+
+  return { type:"pl", revenue:rev, cogs:cogs, grossProfit:gp, ebitda:ebi, pat:pat, cash:cash,
+    gpMargin, ebitdaMargin:ebiMargin, netMargin };
+}
+
+function parseBalanceSheet(text) {
+  const lines = normaliseLines(text);
+  const ex = (kws) => extractField(lines, kws);
+
+  return {
+    type: "bs",
+    totalAssets:        ex(["total assets","balance sheet total","net assets"]),
+    fixedAssets:        ex(["fixed assets","property, plant","property plant","non-current assets","tangible assets"]),
+    currentAssets:      ex(["total current assets","current assets"]),
+    inventory:          ex(["inventory","stock-in-trade","closing stock","stock in hand","inventories"]),
+    tradeReceivables:   ex(["trade receivables","sundry debtors","debtors","accounts receivable"]),
+    cashAndBank:        ex(["cash and cash equivalents","cash & bank","cash at bank","cash in hand and at bank","cash and bank"]),
+    totalLiabilities:   ex(["total liabilities"]),
+    currentLiabilities: ex(["total current liabilities","current liabilities"]),
+    tradePayables:      ex(["trade payables","sundry creditors","creditors","accounts payable"]),
+    shortTermDebt:      ex(["short-term borrowings","short term loans","working capital loan","short term debt"]),
+    longTermDebt:       ex(["long-term borrowings","long term debt","term loans","non-current liabilities","long term borrowings"]),
+    equity:             ex(["shareholders equity","net worth","capital & reserves","equity","total equity"]),
+    shareCapital:       ex(["share capital","paid-up capital","equity share capital"]),
+    reserves:           ex(["reserves and surplus","retained earnings","reserves & surplus","other equity"]),
+  };
+}
+
+function parseCashFlow(text) {
+  const lines = normaliseLines(text);
+  const ex = (kws) => extractField(lines, kws);
+
+  return {
+    type: "cf",
+    operatingCF:  ex(["net cash from operating","cash from operating","cash generated from operations","operating activities"]),
+    investingCF:  ex(["net cash from investing","cash used in investing","investing activities"]),
+    financingCF:  ex(["net cash from financing","cash from financing","financing activities"]),
+    netChange:    ex(["net increase in cash","net decrease in cash","net change in cash","net increase/(decrease)"]),
+    openingCash:  ex(["opening cash","cash at beginning","cash at the beginning","opening balance of cash"]),
+    closingCash:  ex(["closing cash","cash at end","cash at the end","closing balance of cash","cash and cash equivalents at end"]),
+  };
+}
+
+function parseBankStatement(text) {
+  const lines = normaliseLines(text).filter(l => l.trim());
+
+  let headerIdx = -1, debitCol = -1, creditCol = -1, balanceCol = -1;
+
+  for (let i = 0; i < Math.min(lines.length, 20); i++) {
+    const cols = lines[i].toLowerCase().split(",").map(c => c.replace(/"/g,"").trim());
+    const di = cols.findIndex(c => /debit|withdrawal|dr\b/.test(c));
+    const ci = cols.findIndex(c => /credit|deposit|cr\b/.test(c));
+    const bi = cols.findIndex(c => /balance/.test(c));
+    if ((di >= 0 || ci >= 0) && bi >= 0) {
+      headerIdx = i; debitCol = di; creditCol = ci; balanceCol = bi;
+      break;
+    }
+  }
+
+  if (headerIdx < 0) {
+    // Fallback: keyword-based lookup for summary-style exports
+    const ex = kws => extractField(lines, kws);
+    return {
+      type: "bank",
+      openingBalance: ex(["opening balance","balance brought forward","b/f"]),
+      closingBalance:  ex(["closing balance","balance carried forward","c/f"]),
+      totalCredits:    ex(["total credits","total deposits","total inflow"]),
+      totalDebits:     ex(["total debits","total withdrawals","total outflow"]),
+      netFlow:         { curr: null, prev: null },
+    };
+  }
+
+  let totalCredits = 0, totalDebits = 0;
+  let openingBalance = null, closingBalance = null;
+
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const cols = lines[i].split(",").map(c => c.replace(/"/g,"").trim());
+    const debit  = debitCol  >= 0 ? parseNum(cols[debitCol])  : null;
+    const credit = creditCol >= 0 ? parseNum(cols[creditCol]) : null;
+    const bal    = balanceCol >= 0 ? parseNum(cols[balanceCol]) : null;
+
+    if (debit  && debit  > 0) totalDebits  += debit;
+    if (credit && credit > 0) totalCredits += credit;
+    if (bal !== null) {
+      if (openingBalance === null) openingBalance = bal;
+      closingBalance = bal;
+    }
+  }
+
+  // Look for explicit opening balance row (B/F row present in some formats)
+  const bfRow = lines.find(l => /opening|b\/f|brought forward/i.test(l));
+  if (bfRow) {
+    const cols = bfRow.split(",").map(c => c.replace(/"/g,"").trim());
+    const v = parseNum(cols[balanceCol >= 0 ? balanceCol : cols.length - 1]);
+    if (v !== null) openingBalance = v;
+  }
+
+  const net = (totalCredits > 0 || totalDebits > 0) ? totalCredits - totalDebits : null;
+
+  return {
+    type: "bank",
+    openingBalance: { curr: openingBalance,              prev: null },
+    closingBalance:  { curr: closingBalance || null,      prev: null },
+    totalCredits:    { curr: totalCredits > 0 ? totalCredits : null, prev: null },
+    totalDebits:     { curr: totalDebits  > 0 ? totalDebits  : null, prev: null },
+    netFlow:         { curr: net,                         prev: null },
+  };
+}
+
+function fmtCrL(n, uae=false) {
   if (n === null || n === undefined) return "—";
+  if (uae) {
+    if (Math.abs(n) >= 1000000) return "AED " + (n/1000000).toFixed(2) + "M";
+    if (Math.abs(n) >= 1000)    return "AED " + (n/1000).toFixed(0) + "K";
+    return "AED " + n.toLocaleString();
+  }
   if (Math.abs(n) >= 10000000) return "₹" + (n/10000000).toFixed(2) + " Cr";
   if (Math.abs(n) >= 100000)   return "₹" + (n/100000).toFixed(2) + " L";
   if (Math.abs(n) >= 1000)     return "₹" + (n/1000).toFixed(1) + "K";
   return "₹" + n.toLocaleString("en-IN");
 }
 
-function CsvImport({ selected, onImport, onKpiImport, kpiMonth, C, F, FM, saved, loading }) {
-  const [dragOver, setDragOver] = React.useState(false);
-  const [fileName, setFileName] = React.useState("");
-  const [parsed, setParsed]     = React.useState(null);
-  const [month, setMonth]       = React.useState(kpiMonth || "");
-  const [err, setErr]           = React.useState("");
-  const [importing, setImporting] = React.useState(false);
-  const [done, setDone]         = React.useState(false);
-  const fileRef                 = React.useRef();
+const REPORT_TYPES = [
+  { id:"pl",   label:"Profit & Loss",    icon:"ti-report-analytics", parser: parsePL },
+  { id:"bs",   label:"Balance Sheet",    icon:"ti-building-bank",    parser: parseBalanceSheet },
+  { id:"cf",   label:"Cash Flow",        icon:"ti-cash",             parser: parseCashFlow },
+  { id:"bank", label:"Bank Statement",   icon:"ti-building-community", parser: parseBankStatement },
+];
 
-  const processFile = (file) => {
+const PL_FIELDS = [
+  { key:"revenue",     label:"Revenue",        curr:d=>d.revenue?.curr,     prev:d=>d.revenue?.prev,     isMargin:false },
+  { key:"cogs",        label:"Cost of Sales",  curr:d=>d.cogs?.curr,        prev:d=>d.cogs?.prev,        isMargin:false },
+  { key:"grossProfit", label:"Gross Profit",   curr:d=>d.grossProfit?.curr, prev:d=>d.grossProfit?.prev, isMargin:false },
+  { key:"gpMargin",    label:"GP Margin",      curr:d=>d.gpMargin,          prev:()=>null,               isMargin:true  },
+  { key:"ebitda",      label:"EBITDA",         curr:d=>d.ebitda?.curr,      prev:d=>d.ebitda?.prev,      isMargin:false },
+  { key:"ebitdaMargin",label:"EBITDA Margin",  curr:d=>d.ebitdaMargin,      prev:()=>null,               isMargin:true  },
+  { key:"pat",         label:"Net Profit",     curr:d=>d.pat?.curr,         prev:d=>d.pat?.prev,         isMargin:false },
+  { key:"netMargin",   label:"Net Margin",     curr:d=>d.netMargin,         prev:()=>null,               isMargin:true  },
+  { key:"cash",        label:"Cash Balance",   curr:d=>d.cash?.curr,        prev:d=>d.cash?.prev,        isMargin:false },
+];
+
+const BS_FIELDS = [
+  { key:"totalAssets",        label:"Total Assets"           },
+  { key:"fixedAssets",        label:"Fixed / Non-Current Assets" },
+  { key:"currentAssets",      label:"Total Current Assets"   },
+  { key:"inventory",          label:"Inventory / Stock"      },
+  { key:"tradeReceivables",   label:"Trade Receivables"      },
+  { key:"cashAndBank",        label:"Cash & Bank"            },
+  { key:"totalLiabilities",   label:"Total Liabilities"      },
+  { key:"currentLiabilities", label:"Current Liabilities"    },
+  { key:"tradePayables",      label:"Trade Payables"         },
+  { key:"shortTermDebt",      label:"Short-term Debt"        },
+  { key:"longTermDebt",       label:"Long-term Debt"         },
+  { key:"equity",             label:"Shareholders' Equity"   },
+  { key:"shareCapital",       label:"Share Capital"          },
+  { key:"reserves",           label:"Reserves & Surplus"     },
+];
+
+const CF_FIELDS = [
+  { key:"operatingCF", label:"Operating Cash Flow" },
+  { key:"investingCF", label:"Investing Cash Flow" },
+  { key:"financingCF", label:"Financing Cash Flow" },
+  { key:"netChange",   label:"Net Change in Cash"  },
+  { key:"openingCash", label:"Opening Cash Balance" },
+  { key:"closingCash", label:"Closing Cash Balance" },
+];
+
+const BANK_FIELDS = [
+  { key:"openingBalance", label:"Opening Balance"           },
+  { key:"closingBalance", label:"Closing Balance"           },
+  { key:"totalCredits",   label:"Total Inflows (Credits)"   },
+  { key:"totalDebits",    label:"Total Outflows (Debits)"   },
+  { key:"netFlow",        label:"Net Cash Flow (Period)"    },
+];
+
+const EXPORT_GUIDES = {
+  pl: {
+    india: [
+      "Open Tally Prime → Gateway of Tally → Display More Reports → Profit & Loss A/c",
+      "Set the period (e.g. 1 Apr 2025 to 31 Mar 2026)",
+      "Press E (Export) → Format: CSV → Export",
+    ],
+    uae: [
+      "Open Zoho Books → Reports → Business Overview → Profit and Loss",
+      "Set date range and click Export → CSV",
+      "Or: FreshBooks / QuickBooks → Reports → P&L → Export CSV",
+    ],
+  },
+  bs: {
+    india: [
+      "Open Tally Prime → Display More Reports → Balance Sheet",
+      "Set the as-at date, then E (Export) → CSV",
+    ],
+    uae: [
+      "Open Zoho Books → Reports → Business Overview → Balance Sheet",
+      "Set date and Export → CSV",
+    ],
+  },
+  cf: {
+    india: [
+      "Open Tally Prime → Display More Reports → Cash Flow",
+      "Set the period, then E (Export) → CSV",
+    ],
+    uae: [
+      "Open Zoho Books → Reports → Business Overview → Cash Flow Statement",
+      "Set date range and Export → CSV",
+    ],
+  },
+  bank: {
+    india: [
+      "Log in to your bank net banking (HDFC / ICICI / SBI / Axis / Kotak)",
+      "Go to Account Statement → set date range → Download as CSV or Excel",
+      "If downloaded as XLS, open in Excel and Save As → CSV before uploading",
+    ],
+    uae: [
+      "Log in to your bank portal (ENBD / ADCB / FAB / Mashreq / DIB)",
+      "Go to Account Statement → set period → Export / Download as CSV",
+      "Standard UAE format: Date, Description, Debit, Credit, Balance",
+    ],
+  },
+};
+
+function DropZone({ onFile, fileName, dragColor, F, C }) {
+  const [dragOver, setDragOver] = React.useState(false);
+  const fileRef = React.useRef();
+
+  const process = file => {
     if (!file) return;
-    if (!file.name.match(/\.(csv|txt)$/i)) { setErr("Please upload a CSV or TXT file."); return; }
-    setErr(""); setFileName(file.name);
+    if (!file.name.match(/\.(csv|txt|xls|xlsx)$/i)) return;
+    onFile(file);
+  };
+
+  return (
+    <div
+      onDragOver={e=>{e.preventDefault();setDragOver(true)}}
+      onDragLeave={()=>setDragOver(false)}
+      onDrop={e=>{e.preventDefault();setDragOver(false);process(e.dataTransfer.files[0])}}
+      onClick={()=>fileRef.current?.click()}
+      style={{ border:`2px dashed ${dragOver?(dragColor||"#3B6FF7"):C.border}`, borderRadius:10,
+        padding:"28px 20px", textAlign:"center", cursor:"pointer",
+        background: dragOver?`${dragColor||"#3B6FF7"}08`:"#FAFAFA", transition:"all 0.2s" }}>
+      <input ref={fileRef} type="file" accept=".csv,.txt" style={{display:"none"}}
+        onChange={e=>process(e.target.files[0])}/>
+      <i className="ti ti-file-upload" style={{ fontSize:28, color:dragOver?(dragColor||"#3B6FF7"):C.dim, marginBottom:8, display:"block"}}/>
+      <div style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text }}>
+        {fileName ? `✓ ${fileName}` : "Drop CSV here or click to browse"}
+      </div>
+      <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:3 }}>
+        Tally, Zoho Books, Bank Statement — CSV or TXT
+      </div>
+    </div>
+  );
+}
+
+function PreviewTable({ fields, data, uae, F, FM, C }) {
+  return (
+    <table className="ns-table">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th className="right">Current Period</th>
+          <th className="right">Previous Period</th>
+          <th style={{textAlign:"center"}}>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {fields.map((f,i) => {
+          // PL fields have accessor functions; BS/CF fields use .curr/.prev on data[key]
+          const currVal = f.curr ? f.curr(data) : data[f.key]?.curr ?? null;
+          const prevVal = f.prev ? f.prev(data) : data[f.key]?.prev ?? null;
+          const isMargin = f.isMargin;
+          const displayCurr = currVal !== null && currVal !== undefined
+            ? (isMargin ? currVal : fmtCrL(currVal, uae)) : "—";
+          const displayPrev = prevVal !== null && prevVal !== undefined
+            ? (isMargin ? prevVal : fmtCrL(prevVal, uae)) : "—";
+          const detected = currVal !== null && currVal !== undefined;
+          return (
+            <tr key={i} className="striped">
+              <td>{f.label}</td>
+              <td className="right mono bold" style={{color:detected?C.text:C.dim}}>{displayCurr}</td>
+              <td className="right mono muted">{displayPrev}</td>
+              <td style={{textAlign:"center"}}>
+                <span className={`ns-badge ${detected?"green":"grey"}`}>{detected?"Detected":"Not found"}</span>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function CsvImport({ selected, onImport, onKpiImport, kpiMonth, isUAEClient, C, F, FM, saved, loading }) {
+  const [activeType, setActiveType] = React.useState("pl");
+  const [month, setMonth]           = React.useState(kpiMonth || "");
+  const [reports, setReports]       = React.useState({ pl:null, bs:null, cf:null, bank:null });
+  const [fileNames, setFileNames]   = React.useState({ pl:"", bs:"", cf:"", bank:"" });
+  const [errs, setErrs]             = React.useState({ pl:"", bs:"", cf:"", bank:"" });
+  const [imported, setImported]     = React.useState({ pl:false, bs:false, cf:false, bank:false });
+  const [importing, setImporting]   = React.useState(false);
+
+  const uae = isUAEClient;
+  const accentColor = uae ? "#00732F" : C.blue;
+
+  const handleFile = (type, file) => {
     const reader = new FileReader();
     reader.onload = e => {
       const text = e.target.result;
-      const p = parseTallyCSV(text);
-      const hasData = Object.values(p).some(v => v !== null);
-      if (!hasData) { setErr("Could not detect financial data in this file. Ensure it is a Tally P&L CSV export."); return; }
-      setParsed(p);
+      const rt = REPORT_TYPES.find(r => r.id === type);
+      const parsed = rt.parser(text);
+      // Check if anything was detected
+      const hasData = Object.values(parsed).some(v =>
+        v !== null && typeof v === "object" && v.curr !== null
+      ) || (typeof parsed.gpMargin === "string");
+      if (!hasData) {
+        setErrs(er => ({...er, [type]:"Could not detect financial data. Check that this is the correct report type."}));
+        return;
+      }
+      setErrs(er => ({...er, [type]:""}));
+      setReports(r => ({...r, [type]: parsed}));
+      setFileNames(fn => ({...fn, [type]: file.name}));
     };
     reader.readAsText(file, "UTF-8");
   };
 
-  const handleDrop = e => {
-    e.preventDefault(); setDragOver(false);
-    processFile(e.dataTransfer.files[0]);
-  };
-
-  const handleImport = async () => {
-    if (!parsed || !selected) return;
+  const handleImportType = async (type) => {
+    const data = reports[type];
+    if (!data || !selected) return;
     setImporting(true);
-    const fmtVal = (n, prev) => n !== null ? {
-      actual: fmtCrL(n), prev: prev !== null ? fmtCrL(prev) : "—"
-    } : undefined;
-    const plBlock = {
-      revenue:      fmtVal(parsed.revenue, parsed.prevRevenue),
-      cogs:         fmtVal(parsed.cogs),
-      grossProfit:  fmtVal(parsed.grossProfit),
-      gpMargin:     parsed.gpMargin ? { actual: parsed.gpMargin, prev:"—" } : undefined,
-      ebitda:       fmtVal(parsed.ebitda),
-      ebitdaMargin: parsed.ebitdaMargin ? { actual: parsed.ebitdaMargin, prev:"—" } : undefined,
-      pat:          fmtVal(parsed.pat, parsed.prevPAT),
-      netMargin:    parsed.netMargin ? { actual: parsed.netMargin, prev:"—" } : undefined,
-    };
-    // Remove undefined keys
-    Object.keys(plBlock).forEach(k => plBlock[k] === undefined && delete plBlock[k]);
 
-    const plInputs = {
-      revenue:   parsed.revenue   !== null ? String(parsed.revenue)   : undefined,
-      cogs:      parsed.cogs      !== null ? String(parsed.cogs)      : undefined,
-      gpMargin:  parsed.gpMargin  || undefined,
-      ebitda:    parsed.ebitda    !== null ? String(parsed.ebitda)    : undefined,
-      pat:       parsed.pat       !== null ? String(parsed.pat)       : undefined,
-    };
-    Object.keys(plInputs).forEach(k => plInputs[k] === undefined && delete plInputs[k]);
+    const fmt = n => fmtCrL(n, uae);
+    const fmtPair = (obj, prevObj) => obj?.curr !== null && obj?.curr !== undefined
+      ? { actual: fmt(obj.curr), prev: prevObj?.curr !== null ? fmt(prevObj?.curr ?? null) : "—" }
+      : undefined;
 
-    await onImport({ pl: plBlock, plInputs, monthLabel: month || undefined });
+    let patch = {};
 
-    // Also push KPI row if month set
-    if (month && onKpiImport) {
-      await onKpiImport({
-        month,
-        revenue:      parsed.revenue   !== null ? fmtCrL(parsed.revenue)   : "",
-        gross_margin: parsed.gpMargin  || "",
-        cash_balance: parsed.cashBalance !== null ? fmtCrL(parsed.cashBalance) : "",
-        burn_rate:    "",
-        runway:       "",
-        arr:          "",
-      });
+    if (type === "pl") {
+      const plBlock = {
+        revenue:      fmtPair(data.revenue, data.revenue),
+        cogs:         fmtPair(data.cogs),
+        grossProfit:  fmtPair(data.grossProfit),
+        gpMargin:     data.gpMargin ? { actual:data.gpMargin, prev:"—" } : undefined,
+        ebitda:       fmtPair(data.ebitda),
+        ebitdaMargin: data.ebitdaMargin ? { actual:data.ebitdaMargin, prev:"—" } : undefined,
+        pat:          fmtPair(data.pat),
+        netMargin:    data.netMargin ? { actual:data.netMargin, prev:"—" } : undefined,
+      };
+      Object.keys(plBlock).forEach(k => plBlock[k]===undefined && delete plBlock[k]);
+      const plInputs = {
+        revenue:  data.revenue?.curr  !== null ? String(data.revenue.curr)  : undefined,
+        cogs:     data.cogs?.curr     !== null ? String(data.cogs.curr)     : undefined,
+        gpMargin: data.gpMargin  || undefined,
+        ebitda:   data.ebitda?.curr   !== null ? String(data.ebitda.curr)   : undefined,
+        pat:      data.pat?.curr      !== null ? String(data.pat.curr)      : undefined,
+      };
+      Object.keys(plInputs).forEach(k => plInputs[k]===undefined && delete plInputs[k]);
+      patch = { pl: plBlock, plInputs, monthLabel: month || undefined };
+
+      // KPI row for India
+      if (!uae && month && onKpiImport) {
+        await onKpiImport({
+          month,
+          revenue:      data.revenue?.curr      !== null ? fmt(data.revenue.curr)      : "",
+          gross_margin: data.gpMargin            || "",
+          cash_balance: data.cash?.curr          !== null ? fmt(data.cash.curr)         : "",
+          burn_rate: "", runway: "", arr: "",
+        });
+      }
     }
-    setImporting(false); setDone(true);
-    setTimeout(() => setDone(false), 3000);
-  };
 
-  const FIELD_MAP = [
-    { key:"revenue",      label:"Revenue"       },
-    { key:"cogs",         label:"Cost of Sales" },
-    { key:"grossProfit",  label:"Gross Profit"  },
-    { key:"gpMargin",     label:"GP Margin"     },
-    { key:"ebitda",       label:"EBITDA"        },
-    { key:"ebitdaMargin", label:"EBITDA Margin" },
-    { key:"pat",          label:"Net Profit"    },
-    { key:"netMargin",    label:"Net Margin"    },
-    { key:"cashBalance",  label:"Cash Balance"  },
-  ];
+    if (type === "bs") {
+      const bs = {};
+      BS_FIELDS.forEach(f => {
+        const v = data[f.key]?.curr;
+        if (v !== null && v !== undefined) bs[f.key] = v;
+      });
+      // Also merge into workingCapital
+      const wc = {};
+      if (data.tradeReceivables?.curr) wc.ar0_30 = data.tradeReceivables.curr;
+      if (data.tradePayables?.curr)    wc.ap      = data.tradePayables.curr;
+      if (data.inventory?.curr)        wc.inventory = data.inventory.curr;
+      patch = { balanceSheet: bs, workingCapital: wc };
+    }
+
+    if (type === "cf") {
+      const cfEntry = {
+        month: month || "Imported",
+        actual: data.closingCash?.curr !== null ? fmt(data.closingCash.curr) : undefined,
+        operatingCF: data.operatingCF?.curr,
+        investingCF: data.investingCF?.curr,
+        financingCF: data.financingCF?.curr,
+      };
+      Object.keys(cfEntry).forEach(k => cfEntry[k]===undefined && delete cfEntry[k]);
+      patch = { cashflow_import: cfEntry,
+        plInputs: { closingCash: data.closingCash?.curr !== null ? fmt(data.closingCash.curr) : undefined } };
+    }
+
+    if (type === "bank") {
+      const bs = {
+        openingBalance: data.openingBalance?.curr,
+        closingBalance:  data.closingBalance?.curr,
+        totalCredits:    data.totalCredits?.curr,
+        totalDebits:     data.totalDebits?.curr,
+        netFlow:         data.netFlow?.curr,
+        month:           month || "Imported",
+      };
+      Object.keys(bs).forEach(k => bs[k] === null || bs[k] === undefined ? delete bs[k] : null);
+      patch = { bankStatement: bs };
+      // Closing balance updates cash KPI
+      if (data.closingBalance?.curr) {
+        patch.plInputs = { closingCash: fmt(data.closingBalance.curr) };
+      }
+      // Inflows feed working capital analysis
+      if (data.totalCredits?.curr) {
+        patch.workingCapital = { cashInflow: data.totalCredits.curr };
+      }
+    }
+
+    await onImport({ type, ...patch });
+    setImporting(false);
+    setImported(im => ({...im, [type]: true}));
+    setTimeout(() => setImported(im => ({...im, [type]: false})), 3000);
+  };
 
   if (!selected) return (
     <div style={{ maxWidth:600 }}>
-      <EmptyState icon="ti-user-search" title="Select a client first" sub="Choose an India client from the left panel to import their CSV data."/>
+      <EmptyState icon="ti-user-search" title="Select a client first"
+        sub="Choose a client from the left panel to import their financial data."/>
     </div>
   );
 
+  const activeRt = REPORT_TYPES.find(r => r.id === activeType);
+  const activeData = reports[activeType];
+  const activeFields = activeType==="pl" ? PL_FIELDS : activeType==="bs" ? BS_FIELDS : activeType==="cf" ? CF_FIELDS : BANK_FIELDS;
+  const guide = EXPORT_GUIDES[activeType]?.[uae?"uae":"india"] || [];
+
   return (
-    <div style={{ maxWidth:700 }}>
-      <Card style={{ marginBottom:16 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-          CSV Import — {selected.company}
-        </div>
-        <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
-          Upload a <strong>Tally P&L export</strong> (CSV or TXT). The importer detects Revenue, COGS,
-          Gross Profit, EBITDA, PAT and Cash Balance automatically and populates the report data and KPI fields.
+    <div style={{ maxWidth:780 }}>
+      {/* Header */}
+      <Card style={{ marginBottom:14 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:16 }}>
+          <div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
+              CSV Import — {selected.company}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>
+              {uae ? "Zoho Books / FreshBooks / Bank Statement CSV" : "Tally ERP 9 / Tally Prime / Bank Statement CSV"}
+            </div>
+          </div>
+          <div style={{ display:"flex", gap:8 }}>
+            <span className={`ns-badge ${uae?"green":"blue"}`}>{uae ? "UAE — AED" : "India — ₹"}</span>
+            {Object.entries(imported).filter(([,v])=>v).map(([k]) => (
+              <span key={k} className="ns-badge green">✓ {REPORT_TYPES.find(r=>r.id===k)?.label}</span>
+            ))}
+          </div>
         </div>
 
         {/* Month picker */}
-        <div style={{ marginBottom:16 }}>
+        <div style={{ marginBottom:0 }}>
           <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
             letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>
-            Reporting Month (optional — populates KPI row)
+            Reporting Period — applies to all reports
           </label>
-          <input value={month} onChange={e=>setMonth(e.target.value)} placeholder="e.g. Mar 2026"
+          <input value={month} onChange={e=>setMonth(e.target.value)}
+            placeholder={uae ? "e.g. Q1 2026 or Mar 2026" : "e.g. Mar 2026"}
             style={{ padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.border}`,
-              fontFamily:FM, fontSize:13, color:C.text, background:C.bg, outline:"none", width:200 }}
-            onFocus={e=>e.target.style.borderColor=C.blue}
+              fontFamily:FM, fontSize:13, color:C.text, background:"#fff", outline:"none", width:220 }}
+            onFocus={e=>e.target.style.borderColor=accentColor}
             onBlur={e=>e.target.style.borderColor=C.border}
           />
         </div>
+      </Card>
 
-        {/* Drop zone */}
-        <div
-          onDragOver={e=>{e.preventDefault();setDragOver(true)}}
-          onDragLeave={()=>setDragOver(false)}
-          onDrop={handleDrop}
-          onClick={()=>fileRef.current?.click()}
-          style={{ border:`2px dashed ${dragOver?C.blue:C.border}`, borderRadius:10,
-            padding:"36px 24px", textAlign:"center", cursor:"pointer",
-            background: dragOver?`${C.blue}06`:"#FAFAFA", transition:"all 0.2s" }}>
-          <input ref={fileRef} type="file" accept=".csv,.txt" style={{display:"none"}}
-            onChange={e=>processFile(e.target.files[0])}/>
-          <i className="ti ti-file-upload" style={{ fontSize:32, color:dragOver?C.blue:C.dim, marginBottom:10, display:"block"}}/>
-          <div style={{ fontFamily:F, fontWeight:600, fontSize:14, color:C.text }}>
-            {fileName ? fileName : "Drop Tally CSV here or click to browse"}
-          </div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4 }}>
-            Supports Tally ERP 9, Tally Prime, and generic Indian accounting CSV exports
-          </div>
+      {/* Report type tabs */}
+      <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+        {REPORT_TYPES.map(rt => (
+          <button key={rt.id} onClick={()=>setActiveType(rt.id)}
+            style={{ padding:"9px 18px", borderRadius:8, border:`1.5px solid ${activeType===rt.id?accentColor:C.border}`,
+              background: activeType===rt.id ? `${accentColor}10` : "#fff",
+              color: activeType===rt.id ? accentColor : C.muted,
+              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer",
+              display:"flex", alignItems:"center", gap:7, transition:"all 0.15s" }}>
+            <i className={"ti " + rt.icon} style={{ fontSize:15 }}/>
+            {rt.label}
+            {reports[rt.id] && <span style={{ width:7, height:7, borderRadius:"50%",
+              background: imported[rt.id] ? C.green : accentColor, display:"inline-block" }}/>}
+          </button>
+        ))}
+      </div>
+
+      {/* Upload area */}
+      <Card style={{ marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text, marginBottom:12 }}>
+          <i className={"ti " + activeRt.icon} style={{ marginRight:8, color:accentColor }}/>{activeRt.label} — Upload
         </div>
-        {err && <div style={{ color:C.red, fontFamily:F, fontSize:12, marginTop:10 }}>{err}</div>}
+        <DropZone onFile={f=>handleFile(activeType,f)} fileName={fileNames[activeType]}
+          dragColor={accentColor} F={F} C={C}/>
+        {errs[activeType] && (
+          <div style={{ color:C.red, fontFamily:F, fontSize:12, marginTop:10 }}>{errs[activeType]}</div>
+        )}
       </Card>
 
       {/* Preview */}
-      {parsed && (
-        <Card style={{ marginBottom:16 }}>
+      {activeData && (
+        <Card style={{ marginBottom:14 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
-            Detected Fields — Preview
+            Detected Fields — {activeRt.label}
           </div>
-          <table className="ns-table" style={{ marginBottom:16 }}>
-            <thead>
-              <tr>
-                <th>Field</th>
-                <th className="right">Detected Value</th>
-                <th className="right">Previous Period</th>
-                <th style={{textAlign:"center"}}>Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {FIELD_MAP.map((f,i) => {
-                const raw = parsed[f.key];
-                const isMargin = f.key.includes("Margin") || f.key === "gpMargin" || f.key === "netMargin" || f.key === "ebitdaMargin";
-                const display = raw !== null && raw !== undefined
-                  ? (isMargin ? raw : fmtCrL(raw))
-                  : "—";
-                const prevKey = f.key === "revenue" ? "prevRevenue" : f.key === "pat" ? "prevPAT" : null;
-                const prevDisplay = prevKey && parsed[prevKey] !== null ? fmtCrL(parsed[prevKey]) : "—";
-                const detected = raw !== null && raw !== undefined;
-                return (
-                  <tr key={i} className="striped">
-                    <td>{f.label}</td>
-                    <td className="right mono bold" style={{color: detected?C.text:C.dim}}>{display}</td>
-                    <td className="right mono muted">{prevDisplay}</td>
-                    <td style={{textAlign:"center"}}>
-                      <span className={`ns-badge ${detected?"green":"grey"}`}>
-                        {detected?"Detected":"Not found"}
-                      </span>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.7 }}>
-            <strong>Review the values above</strong> before importing. Fields marked "Not found" will not overwrite existing data.
-            You can manually enter missing values in the KPIs tab after import.
+          <PreviewTable fields={activeFields} data={activeData} uae={uae} F={F} FM={FM} C={C}/>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, margin:"14px 0", lineHeight:1.7 }}>
+            Fields marked <strong>"Not found"</strong> will not overwrite existing data.
+            You can manually enter missing values in the KPIs or Report Data tabs after import.
           </div>
-          <button onClick={handleImport} disabled={importing || done}
+          <button onClick={()=>handleImportType(activeType)} disabled={importing || imported[activeType]}
             style={{ padding:"11px 24px", borderRadius:8, border:"none",
-              background: done ? C.green : C.blue, color:"white",
-              fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer",
-              opacity: importing?0.75:1, transition:"all 0.2s" }}>
-            {importing ? "Importing…" : done ? "✓ Imported successfully" : "Import into Report Data"}
+              background: imported[activeType] ? C.green : accentColor, color:"white",
+              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer",
+              opacity:importing?0.75:1, transition:"all 0.2s" }}>
+            {importing ? "Importing…"
+              : imported[activeType] ? `✓ ${activeRt.label} imported`
+              : `Import ${activeRt.label}`}
           </button>
         </Card>
       )}
 
-      {/* Format guide */}
-      <Card style={{ background:`${C.blue}04`, borderColor:`${C.blue}20` }}>
+      {/* Export guide */}
+      <Card style={{ background:`${accentColor}04`, borderColor:`${accentColor}20` }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
-          How to export from Tally
+          How to export {activeRt.label} from {uae ? "Zoho Books" : "Tally Prime"}
         </div>
-        <ol style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:2, margin:0, paddingLeft:18 }}>
-          <li>Open Tally Prime → Gateway of Tally → Display More Reports → Profit & Loss A/c</li>
-          <li>Set the period (e.g. 1 Apr 2025 to 31 Mar 2026)</li>
-          <li>Press <strong>E (Export)</strong> → Format: CSV → Export</li>
-          <li>Upload the exported file above</li>
+        <ol style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:2.1, margin:"0 0 0 -4px", paddingLeft:20 }}>
+          {guide.map((step, i) => <li key={i}>{step}</li>)}
         </ol>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:10 }}>
-          Also works with Zoho Books CSV export: Reports → Profit and Loss → Export → CSV
-        </div>
       </Card>
     </div>
   );
@@ -15275,7 +15659,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"clients",    icon:"ti-users", label:"All Clients",    group:"Clients"    },
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
     // ── India Client Data ──
-    { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"India"      },
+    { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"Shared"     },
     { id:"kpis",       icon:"ti-chart-bar", label:"KPIs",           group:"India"      },
     { id:"actions",    icon:"ti-checkbox", label:"Action Items",   group:"India"      },
     { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",    group:"India"      },
@@ -15986,16 +16370,39 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           {tab === "import" && (
             <CsvImport
               selected={selected}
-              onImport={async (parsed) => {
+              isUAEClient={isUAE(selected)}
+              onImport={async (patch) => {
                 if (!selected) return;
-                // Merge parsed data into existing reportData
                 const existing = reportData || {};
-                const merged = {
-                  ...existing,
-                  pl: { ...(existing.pl||{}), ...parsed.pl },
-                  plInputs: { ...(existing.plInputs||{}), ...parsed.plInputs },
-                  monthLabel: parsed.monthLabel || existing.monthLabel,
-                };
+                let merged = { ...existing };
+                if (patch.type === "pl") {
+                  merged = { ...merged,
+                    pl: { ...(existing.pl||{}), ...(patch.pl||{}) },
+                    plInputs: { ...(existing.plInputs||{}), ...(patch.plInputs||{}) },
+                    ...(patch.monthLabel ? { monthLabel: patch.monthLabel } : {}),
+                  };
+                } else if (patch.type === "bs") {
+                  merged = { ...merged,
+                    balanceSheet: { ...(existing.balanceSheet||{}), ...(patch.balanceSheet||{}) },
+                    workingCapital: { ...(existing.workingCapital||{}), ...(patch.workingCapital||{}) },
+                  };
+                } else if (patch.type === "cf") {
+                  const existingCf = existing.cashflow || [];
+                  const entry = patch.cashflow_import;
+                  const cfMerged = entry
+                    ? [...existingCf.filter(c=>c.month !== entry.month), entry]
+                    : existingCf;
+                  merged = { ...merged,
+                    cashflow: cfMerged,
+                    plInputs: { ...(existing.plInputs||{}), ...(patch.plInputs||{}) },
+                  };
+                } else if (patch.type === "bank") {
+                  merged = { ...merged,
+                    bankStatement: { ...(existing.bankStatement||{}), ...(patch.bankStatement||{}) },
+                    ...(patch.workingCapital ? { workingCapital: { ...(existing.workingCapital||{}), ...patch.workingCapital } } : {}),
+                    ...(patch.plInputs ? { plInputs: { ...(existing.plInputs||{}), ...patch.plInputs } } : {}),
+                  };
+                }
                 const { error } = await supabase.from("report_data")
                   .upsert({ client_id: selected.id, data: merged }, { onConflict:"client_id" });
                 if (!error) {
