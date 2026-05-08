@@ -1772,6 +1772,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             letterSpacing:"-0.02em", margin:0, flexShrink:0 }}>
             {ADMIN_TABS.find(t=>t.id===tab)?.label}
           </h1>
+          <span style={{ fontFamily:F, fontSize:9, color:C.muted, background:C.bg3,
+            border:`1px solid ${C.border}`, borderRadius:4, padding:"2px 6px", flexShrink:0 }}>v4.1</span>
           {selected && tab !== "clients" && tab !== "addclient" && (
             <div style={{ padding:"3px 10px", borderRadius:60, background:`${C.amber}15`,
               border:`1px solid ${C.amber}30`, minWidth:0 }}>
