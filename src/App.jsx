@@ -16514,7 +16514,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           )}
  
           {/* ── CSV IMPORT ── */}
-          {tab === "import" && (
+          {tab === "import" && !selected && (
+            <div style={{ textAlign:"center", padding:"48px 24px", color:C.muted, fontFamily:F }}>
+              <i className="ti ti-file-upload" style={{ fontSize:36, display:"block", marginBottom:12, color:C.dim }}/>
+              <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>Select a client first</div>
+              <div style={{ fontSize:12 }}>Choose a client from the dropdown in the sidebar before importing CSV data.</div>
+            </div>
+          )}
+          {tab === "import" && selected && (
             <CsvImport
               selected={selected}
               isUAEClient={isUAE(selected)}
