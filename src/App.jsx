@@ -435,6 +435,20 @@ const SectionTitle = ({ children, sub }) => (
   </div>
 );
  
+const Skeleton = ({ width="100%", height=16, radius=4, style={} }) => (
+  <div style={{ width, height, borderRadius:radius,
+    background:"linear-gradient(90deg,#F1F5F9 25%,#E2E8F0 50%,#F1F5F9 75%)",
+    backgroundSize:"200% 100%", animation:"skeleton-shimmer 1.5s infinite", ...style }}/>
+);
+
+const EmptyState = ({ icon, title, sub }) => (
+  <div style={{ textAlign:"center", padding:"40px 24px", color:C.muted }}>
+    {icon && <i className={"ti " + icon} style={{ fontSize:32, marginBottom:12, display:"block", color:C.dim }}/>}
+    <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>{title}</div>
+    {sub && <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{sub}</div>}
+  </div>
+);
+
 const Badge = ({ children, color=C.blue, bg }) => (
   <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:60,
     background:bg||`${color}18`, fontSize:11, fontWeight:700, color,
