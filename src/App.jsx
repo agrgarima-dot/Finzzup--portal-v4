@@ -1604,6 +1604,67 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
       </div>
 
+      {/* ── Row 3b: Cashflow Trend chart ── */}
+      {cfData.length > 0 && (
+        <Card style={{ marginBottom:14 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>
+            Cash Flow Trend
+          </div>
+          <div style={{ height:180 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={cfData.map(m => {
+                const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
+                return { name: m.month, Actual: parse(m.actual)||null, Forecast: parse(m.forecast)||null };
+              })} margin={{ top:5, right:10, left:0, bottom:0 }}>
+                <defs>
+                  <linearGradient id="ovActGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false}/>
+                <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#94A3B8" }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize:9, fill:"#94A3B8" }} axisLine={false} tickLine={false} width={36}/>
+                <Tooltip/>
+                <Area type="monotone" dataKey="Actual" stroke="#2563EB" strokeWidth={2} fill="url(#ovActGrad)" dot={{ fill:"#2563EB", r:3 }}/>
+                <Area type="monotone" dataKey="Forecast" stroke="#7C3AED" strokeWidth={2} fill="none" strokeDasharray="5 4" dot={{ fill:"#7C3AED", r:3 }}/>
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
+
+      {/* ── Row 3c: P&L Comparison chart ── */}
+      {(() => {
+        const parsePl = v => parseFloat(String(v||"0").replace(/[^0-9.,]/g,"").replace(/,/g,"")) || 0;
+        const plChartData = [
+          { name:"Revenue",  Current: parsePl(pl.revenue?.actual),    Previous: parsePl(pl.revenue?.prev) },
+          { name:"Gross P",  Current: parsePl(pl.grossProfit?.actual), Previous: parsePl(pl.grossProfit?.prev) },
+          { name:"EBITDA",   Current: parsePl(pl.ebitda?.actual),      Previous: parsePl(pl.ebitda?.prev) },
+          { name:"Net P",    Current: parsePl(pl.pat?.actual),         Previous: parsePl(pl.pat?.prev) },
+        ].filter(d => d.Current > 0 || d.Previous > 0);
+        if (!plChartData.length) return null;
+        return (
+          <Card style={{ marginBottom:14 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>
+              P&L — Current vs Prior Period
+            </div>
+            <div style={{ height:180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={plChartData} margin={{ top:5, right:10, left:0, bottom:0 }} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false}/>
+                  <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#94A3B8" }} axisLine={false} tickLine={false}/>
+                  <YAxis tick={{ fontSize:9, fill:"#94A3B8" }} axisLine={false} tickLine={false} width={36}/>
+                  <Tooltip/>
+                  <Bar dataKey="Current" fill="#2563EB" radius={[3,3,0,0]}/>
+                  <Bar dataKey="Previous" fill="#E5E7EB" radius={[3,3,0,0]}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        );
+      })()}
+
       {/* ── Row 4: KPI Variance table ── */}
       {(reportData?.variance||[]).length > 0 && (
         <div className="ns-panel">
