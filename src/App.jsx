@@ -75,6 +75,7 @@ import LOGO_SRC from "./logo.png";
 
 // ─── APP-LOCAL HELPERS ────────────────────────────────────────────────────────
 const WA = "https://wa.me/919833585810";  // Garima's WhatsApp — single source of truth
+const UAE_DISCLAIMER = "UAE figures are prepared by Garima Agarwal (CA, IBBI Registered Valuer) based on data provided by the client. This report is for informational purposes only and does not constitute financial, tax, or legal advice. All amounts in AED unless stated otherwise.";
  
  
  
