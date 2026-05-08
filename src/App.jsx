@@ -3155,6 +3155,255 @@ const COMPLIANCE_DATES = [
  
  
  
+// ─── SHARED PDF HELPERS ───────────────────────────────────────────────────────
+const DL_BTN = { display:"inline-flex", alignItems:"center", gap:6, padding:"7px 14px",
+  borderRadius:8, border:"1.5px solid #2563EB22", background:"#EFF6FF", color:"#2563EB",
+  fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:12, cursor:"pointer" };
+
+function pdfBase(title, company, month, bodyHTML) {
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;color:#111827;background:white;}
+.page{max-width:820px;margin:0 auto;padding:48px;}
+.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:3px solid #2563EB;}
+.logo{font-size:22px;font-weight:900;color:#2563EB;letter-spacing:-0.03em;}
+.logo span{background:linear-gradient(90deg,#2563EB,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.meta{text-align:right;font-size:11px;color:#6B7280;line-height:1.7;}
+.meta strong{font-size:13px;color:#111827;display:block;}
+h1{font-size:22px;font-weight:900;color:#111827;margin-bottom:4px;}
+.sub{font-size:12px;color:#6B7280;margin-bottom:24px;}
+table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;}
+thead tr{background:#0F172A;}
+thead th{padding:9px 12px;color:white;font-weight:700;font-size:11px;text-align:left;}
+thead th.r{text-align:right;}
+tbody tr{border-bottom:1px solid #F3F4F6;}
+tbody tr:nth-child(even){background:#F9FAFB;}
+tbody td{padding:9px 12px;color:#374151;}
+tbody td.r{text-align:right;font-family:monospace;}
+tbody td.b{font-weight:700;color:#111827;}
+.fav{display:inline-block;padding:2px 8px;border-radius:60px;font-size:10px;font-weight:700;background:#DCFCE7;color:#15803D;}
+.unfav{display:inline-block;padding:2px 8px;border-radius:60px;font-size:10px;font-weight:700;background:#FEF2F2;color:#DC2626;}
+.box{padding:16px 18px;border-radius:10px;border:1px solid #E5E7EB;margin-bottom:16px;}
+.box.blue{border-left:3px solid #2563EB;background:#EFF6FF;}
+.box.green{border-left:3px solid #059669;background:#F0FDF4;}
+.box.amber{border-left:3px solid #D97706;background:#FFFBEB;}
+.box.red{border-left:3px solid #EF4444;background:#FEF2F2;}
+.box.purple{border-left:3px solid #7C3AED;background:#F5F3FF;}
+.label{font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.val{font-size:20px;font-weight:900;color:#111827;}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
+.kpi{padding:12px;border-radius:8px;background:#F9FAFB;border:1px solid #E5E7EB;text-align:center;}
+.kpi .label{margin-bottom:4px;}
+.kpi .val{font-size:16px;}
+.disc{margin-top:20px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
+.ftr{margin-top:16px;padding-top:12px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+</style></head><body><div class="page">
+<div class="hdr">
+  <div><div class="logo">Finz<span>zup</span></div><div style="font-size:9px;color:#9CA3AF;letter-spacing:0.1em;text-transform:uppercase;">Your CFO · On Demand</div></div>
+  <div class="meta"><strong>${title}</strong>${company}<br/>${month}</div>
+</div>
+${bodyHTML}
+<div class="disc">This report is prepared by Finzzup Advisory LLP. All figures are based on data provided by the client and reviewed by the CFO. This document is confidential and intended solely for the named client. For queries, contact garima@finzzup.com</div>
+<div class="ftr"><span>Finzzup Advisory LLP · garima@finzzup.com</span><span>Confidential — ${company}</span></div>
+</div></body></html>`;
+}
+function openPDF(html) {
+  const w = window.open("","_blank");
+  if (!w) { alert("Allow pop-ups to download PDF"); return; }
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 700);
+}
+
+function generateVariancePDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const rows = (reportData?.variance || []).filter(r => r.item);
+  const commentary = (reportData?.varianceCommentary || []).filter(v => v.item);
+  const rowsHTML = rows.length ? rows.map(r => `
+    <tr><td class="b">${r.item}</td><td class="r">${r.budget||"—"}</td><td class="r">${r.actual||"—"}</td>
+    <td class="r"><span class="${r.fav?"fav":"unfav"}">${r.fav?"▲ Fav":"▼ Unfav"}</span></td></tr>`).join("") :
+    `<tr><td colspan="4" style="text-align:center;padding:20px;color:#6B7280;">No variance data entered yet.</td></tr>`;
+  const commHTML = commentary.length ? commentary.map(v => `
+    <div class="box ${v.favorable?"green":"red"}" style="margin-bottom:10px">
+      <div class="label">${v.favorable?"▲ Favourable":"▼ Unfavourable"}</div>
+      <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:4px">${v.item}</div>
+      ${v.note?`<div style="font-size:12px;color:#374151;line-height:1.6">${v.note}</div>`:""}
+    </div>`).join("") : "";
+  return pdfBase("Variance Analysis", company, month, `
+    <h1>Variance Analysis</h1><div class="sub">${company} · ${month} · Budget vs Actual</div>
+    <table><thead><tr><th>Item</th><th class="r">Budget</th><th class="r">Actual</th><th class="r">Status</th></tr></thead>
+    <tbody>${rowsHTML}</tbody></table>
+    ${commHTML ? `<div style="margin-top:4px"><div class="label" style="margin-bottom:12px">Variance Commentary</div>${commHTML}</div>` : ""}
+  `);
+}
+
+function generateMonthlyPnLPDF({ client, reportData, kpis }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const pl = reportData?.pl || {};
+  const rows = [
+    ["Revenue",      pl.revenue?.actual||"—",      pl.revenue?.prev||"—"],
+    ["COGS",         pl.cogs?.actual||"—",          pl.cogs?.prev||"—"],
+    ["Gross Profit", pl.grossProfit?.actual||"—",   pl.grossProfit?.prev||"—"],
+    ["EBITDA",       pl.ebitda?.actual||"—",        pl.ebitda?.prev||"—"],
+    ["Net Profit",   pl.pat?.actual||"—",           pl.pat?.prev||"—"],
+    ["GP Margin",    pl.gpMargin?.actual||"—",      pl.gpMargin?.prev||"—"],
+    ["EBITDA Margin",pl.ebitdaMargin?.actual||"—",  pl.ebitdaMargin?.prev||"—"],
+    ["Net Margin",   pl.netMargin?.actual||"—",     pl.netMargin?.prev||"—"],
+  ].filter(r => r[1] !== "—" || r[2] !== "—");
+  const rowsHTML = rows.length ? rows.map(r => `<tr><td class="b">${r[0]}</td><td class="r">${r[1]}</td><td class="r">${r[2]}</td></tr>`).join("") :
+    `<tr><td colspan="3" style="text-align:center;padding:20px;color:#6B7280;">P&L data not yet entered.</td></tr>`;
+  const note = reportData?.varianceSummary || reportData?.packNote || reportData?.garimaNote || "";
+  return pdfBase("Monthly P&L Report", company, month, `
+    <h1>Monthly P&L Report</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Metric</th><th class="r">Current</th><th class="r">Prior Period</th></tr></thead>
+    <tbody>${rowsHTML}</tbody></table>
+    ${note ? `<div class="box blue"><div class="label">CFO Commentary</div><div style="font-size:13px;color:#111827;line-height:1.8;margin-top:4px">${note}</div></div>` : ""}
+  `);
+}
+
+function generateFundraisePDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const score = reportData?.score || reportData?.healthScore || "—";
+  const breakdown = (reportData?.scoreBreakdown || []).filter(s => s.label);
+  const metrics = (reportData?.metrics || []).filter(m => m.label);
+  const rowsHTML = breakdown.map(s => `<tr><td class="b">${s.label}</td><td class="r">${s.score||"—"}/100</td><td>${s.comment||""}</td></tr>`).join("");
+  const metricsHTML = metrics.map(m => `<tr><td class="b">${m.label}</td><td class="r">${m.yours||"—"}</td><td class="r">${m.median||"—"}</td><td class="r">${m.bench||"—"}</td></tr>`).join("");
+  return pdfBase("Fundraise Readiness Report", company, month, `
+    <h1>Fundraise Readiness</h1><div class="sub">${company} · ${month}</div>
+    <div class="kpi-grid"><div class="kpi"><div class="label">Readiness Score</div><div class="val" style="color:#2563EB">${score}/100</div></div></div>
+    ${breakdown.length ? `<div class="label" style="margin-bottom:8px">Score Breakdown</div>
+    <table><thead><tr><th>Dimension</th><th class="r">Score</th><th>Commentary</th></tr></thead><tbody>${rowsHTML}</tbody></table>` : ""}
+    ${metrics.length ? `<div class="label" style="margin:16px 0 8px">Benchmark vs Peers</div>
+    <table><thead><tr><th>Metric</th><th class="r">Yours</th><th class="r">Sector Median</th><th class="r">Target</th></tr></thead><tbody>${metricsHTML}</tbody></table>` : ""}
+  `);
+}
+
+function generateUnitEcoPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const ue = reportData?.unitEconomics || {};
+  const note = reportData?.unitEcoNote || reportData?.packNote || "";
+  const items = [
+    ["CAC (Customer Acq. Cost)", ue.cac||"—"],
+    ["LTV (Lifetime Value)", ue.ltv||"—"],
+    ["LTV : CAC Ratio", ue.ltvCac||"—"],
+    ["Payback Period", ue.payback||"—"],
+    ["Churn Rate", ue.churn||"—"],
+    ["Gross Margin per Customer", ue.gmPerCustomer||"—"],
+    ["MRR / ARR", ue.arr||"—"],
+    ["NRR (Net Revenue Retention)", ue.nrr||"—"],
+  ].filter(i => i[1] !== "—");
+  const rowsHTML = items.length ? items.map(i => `<tr><td class="b">${i[0]}</td><td class="r">${i[1]}</td></tr>`).join("") :
+    `<tr><td colspan="2" style="text-align:center;padding:20px;color:#6B7280;">Unit economics data not yet entered.</td></tr>`;
+  return pdfBase("Unit Economics Report", company, month, `
+    <h1>Unit Economics</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Metric</th><th class="r">Value</th></tr></thead><tbody>${rowsHTML}</tbody></table>
+    ${note ? `<div class="box blue"><div class="label">CFO Note</div><div style="font-size:13px;line-height:1.8;margin-top:4px">${note}</div></div>` : ""}
+  `);
+}
+
+function generateFundUtilPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const depts = reportData?.spendDepts || {};
+  const totalRev = Number(reportData?.spendRevenue || 0);
+  const rows = Object.entries(depts).filter(([,v]) => v.actual || v.budget);
+  const rowsHTML = rows.length ? rows.map(([name, v]) => {
+    const act = Number(v.actual||0), bud = Number(v.budget||0);
+    const pct = totalRev ? ((act/totalRev)*100).toFixed(1)+"%" : "—";
+    const diff = bud ? act - bud : null;
+    return `<tr><td class="b">${name}</td><td class="r">₹${(act/100000).toFixed(1)}L</td><td class="r">₹${bud?(bud/100000).toFixed(1)+"L":"—"}</td><td class="r">${pct}</td><td class="r"><span class="${diff!==null&&diff>0?"unfav":"fav"}">${diff!==null?(diff>0?"Over":"Under"):"—"}</span></td></tr>`;
+  }).join("") : `<tr><td colspan="5" style="text-align:center;padding:20px;color:#6B7280;">Fund utilisation data not yet entered.</td></tr>`;
+  return pdfBase("Fund Utilisation Report", company, month, `
+    <h1>Fund Utilisation</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Department</th><th class="r">Actual</th><th class="r">Budget</th><th class="r">% of Revenue</th><th class="r">Status</th></tr></thead><tbody>${rowsHTML}</tbody></table>
+  `);
+}
+
+function generateScenarioPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const base = reportData?.scenarioBase || {};
+  const rev = Number(base.revenue||0), cogs = Number(base.cogs||0), opex = Number(base.opex||0);
+  const scenarios = [
+    { name:"Base Case",       revMult:1.0, cogsMult:1.0, opexMult:1.0 },
+    { name:"Bull Case (+20%)",revMult:1.2, cogsMult:1.1, opexMult:1.05 },
+    { name:"Bear Case (-20%)",revMult:0.8, cogsMult:0.9, opexMult:0.95 },
+  ];
+  const rowsHTML = scenarios.map(s => {
+    const sRev = (rev*s.revMult/100000).toFixed(1), sCogs = (cogs*s.cogsMult/100000).toFixed(1);
+    const sOpex = (opex*s.opexMult/100000).toFixed(1);
+    const sGP = ((rev*s.revMult - cogs*s.cogsMult)/100000).toFixed(1);
+    const sEBITDA = ((rev*s.revMult - cogs*s.cogsMult - opex*s.opexMult)/100000).toFixed(1);
+    return `<tr><td class="b">${s.name}</td><td class="r">₹${sRev}L</td><td class="r">₹${sCogs}L</td><td class="r">₹${sGP}L</td><td class="r">₹${sOpex}L</td><td class="r">₹${sEBITDA}L</td></tr>`;
+  }).join("");
+  return pdfBase("Scenario Analysis Report", company, month, `
+    <h1>Scenario Modelling</h1><div class="sub">${company} · ${month} · Based on entered financials</div>
+    ${rev ? `<table><thead><tr><th>Scenario</th><th class="r">Revenue</th><th class="r">COGS</th><th class="r">Gross Profit</th><th class="r">Opex</th><th class="r">EBITDA</th></tr></thead><tbody>${rowsHTML}</tbody></table>` : `<div style="text-align:center;padding:30px;color:#6B7280">Base financial data not yet entered.</div>`}
+  `);
+}
+
+function generateBankFinPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  return pdfBase("Bank Finance Report", company, month, `
+    <h1>Bank Finance Assessment</h1><div class="sub">${company} · ${month}</div>
+    <div class="box blue"><div class="label">About this report</div><div style="font-size:13px;line-height:1.8;margin-top:4px">
+    This section covers your working capital credit lines, term loan facilities, and banker relationship management. Detailed credit metrics are maintained by your CFO and updated monthly.</div></div>
+  `);
+}
+
+function generateGovernancePDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const note = reportData?.boardNote || reportData?.packNote || "";
+  const items = (reportData?.boardItems || []).filter(i => i.item);
+  const rowsHTML = items.length ? items.map(i => `<tr><td class="b">${i.item}</td><td>${i.status||"—"}</td><td>${i.owner||"—"}</td><td>${i.date||"—"}</td></tr>`).join("") :
+    `<tr><td colspan="4" style="text-align:center;padding:20px;color:#6B7280">Board governance items will appear here once entered.</td></tr>`;
+  return pdfBase("Board Governance Report", company, month, `
+    <h1>Board Governance</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Action Item</th><th>Status</th><th>Owner</th><th>Target Date</th></tr></thead><tbody>${rowsHTML}</tbody></table>
+    ${note ? `<div class="box blue"><div class="label">Board Note</div><div style="font-size:13px;line-height:1.8;margin-top:4px">${note}</div></div>` : ""}
+  `);
+}
+
+function generateIPOPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const score = reportData?.score || "—";
+  const breakdown = (reportData?.scoreBreakdown || []).filter(s => s.label);
+  const metrics = (reportData?.metrics || []).filter(m => m.label);
+  const rowsHTML = breakdown.map(s => `<tr><td class="b">${s.label}</td><td class="r">${s.score||"—"}/100</td><td>${s.comment||""}</td></tr>`).join("");
+  const metricsHTML = metrics.map(m => `<tr><td class="b">${m.label}</td><td class="r">${m.yours||"—"}</td><td class="r">${m.median||"—"}</td><td class="r">${m.bench||"—"}</td></tr>`).join("");
+  return pdfBase("IPO Readiness Report", company, month, `
+    <h1>IPO Readiness Assessment</h1><div class="sub">${company} · ${month}</div>
+    <div class="kpi-grid"><div class="kpi"><div class="label">IPO Readiness Score</div><div class="val" style="color:#7C3AED">${score}/100</div></div></div>
+    ${breakdown.length ? `<div class="label" style="margin-bottom:8px">Readiness Breakdown</div>
+    <table><thead><tr><th>Dimension</th><th class="r">Score</th><th>Commentary</th></tr></thead><tbody>${rowsHTML}</tbody></table>` : ""}
+    ${metrics.length ? `<div class="label" style="margin:16px 0 8px">IPO Benchmarks</div>
+    <table><thead><tr><th>Metric</th><th class="r">Yours</th><th class="r">IPO Ready</th><th class="r">Sector Median</th></tr></thead><tbody>${metricsHTML}</tbody></table>` : ""}
+  `);
+}
+
+function generateCashHealthPDF({ client, reportData, kpis }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const cf = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+  const rowsHTML = cf.length ? cf.map(m => `<tr><td class="b">${m.month}</td><td class="r">${m.actual||"—"}</td><td class="r">${m.forecast||"—"}</td></tr>`).join("") :
+    `<tr><td colspan="3" style="text-align:center;padding:20px;color:#6B7280">Cash flow data not yet entered.</td></tr>`;
+  const note = reportData?.cashflowNote || reportData?.packNote || "";
+  return pdfBase("Cash Health Report", company, month, `
+    <h1>Cash Health</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Month</th><th class="r">Actual</th><th class="r">Forecast</th></tr></thead><tbody>${rowsHTML}</tbody></table>
+    ${note ? `<div class="box green"><div class="label">CFO Cash Assessment</div><div style="font-size:13px;line-height:1.8;margin-top:4px">${note}</div></div>` : ""}
+  `);
+}
+
 // ─── EXECUTIVE SUMMARY PDF ───────────────────────────────────────────────────
 function generateExecSummaryPDF({ client, reportData, kpis }) {
   const company  = client?.company || "Your Company";
@@ -4434,6 +4683,11 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
       {tab === "monthly" && (
     <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+        <button style={DL_BTN} onClick={() => openPDF(generateMonthlyPnLPDF({ client, reportData, kpis }))}>
+          <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+        </button>
+      </div>
       {(reportData?.reportNote || reportData?.packNote) && (
         <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
@@ -4535,6 +4789,11 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateVariancePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           {reportData?.variance?.some(r => r.item && (r.budget || r.actual)) ? (<>
             <Card>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4594,6 +4853,11 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
       {tab === "cash" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateCashHealthPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <MSMECFOPack data={data} reportData={reportData}/>
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
@@ -4619,7 +4883,12 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
             {tab === "workingcap" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateWorkingCapitalPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           {/* Question this tab answers */}
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.teal}10,${C.blue}06)`,
@@ -4758,7 +5027,12 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
       {tab === "bankfin" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateBankFinPDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           {/* Question this tab answers */}
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.blue}10,${C.purple}06)`,
@@ -4916,9 +5190,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
         </div>
       )}
  
-      {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.teal}/>}
-      {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.teal}/>}
-      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.teal} client={client}/>}
+      {tab === "fundutil" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateFundUtilPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><FundUtilisation reportData={reportData} accentColor={C.teal}/></div>}
+      {tab === "verticalpnl" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVerticalAnalysisPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VerticalPnL reportData={reportData} accentColor={C.teal}/></div>}
+      {tab === "scenario" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateScenarioPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><ScenarioModelling reportData={reportData} accentColor={C.teal} client={client}/></div>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.teal} client={client}/> }
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.teal} client={client}/>}
  
@@ -4994,7 +5268,12 @@ function CorporatePackContent({ reportData, kpis, client }) {
  
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateMonthlyPnLPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
@@ -5123,6 +5402,11 @@ function CorporatePackContent({ reportData, kpis, client }) {
 
       {tab === "workingcap" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateWorkingCapitalPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}20` }}>
@@ -5213,6 +5497,11 @@ function CorporatePackContent({ reportData, kpis, client }) {
 
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateVariancePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           {reportData?.variance?.some(r => r.item && (r.budget || r.actual)) ? (<>
             <Card>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -5272,7 +5561,12 @@ function CorporatePackContent({ reportData, kpis, client }) {
  
             {tab === "governance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateGovernancePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           {/* Question this tab answers */}
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
@@ -5396,7 +5690,12 @@ function CorporatePackContent({ reportData, kpis, client }) {
  
       {tab === "ipo" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateIPOPDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
@@ -5495,9 +5794,9 @@ function CorporatePackContent({ reportData, kpis, client }) {
         </div>
       )}
  
-      {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.purple}/>}
-      {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.purple}/>}
-      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.purple} client={client}/>}
+      {tab === "fundutil" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateFundUtilPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><FundUtilisation reportData={reportData} accentColor={C.purple}/></div>}
+      {tab === "verticalpnl" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVerticalAnalysisPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VerticalPnL reportData={reportData} accentColor={C.purple}/></div>}
+      {tab === "scenario" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateScenarioPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><ScenarioModelling reportData={reportData} accentColor={C.purple} client={client}/></div>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
  
@@ -6896,6 +7195,11 @@ function CFOPackContent({ reportData, client, kpis }) {
           This tab = Vertical P&L + cost analysis + Garima note. */}
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateMonthlyPnLPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           {/* FIXED: Garima Note — prominent at top, unique insight not in Overview */}
           <Card style={{ borderLeft:`3px solid #F59E0B`, background:"#FFFBF0", border:"1px solid #FDE68A" }}>
             <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
@@ -6960,6 +7264,11 @@ function CFOPackContent({ reportData, client, kpis }) {
  
       {tab === "workingcap" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateWorkingCapitalPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.blue}10,${C.teal}06)`,
             border:`1px solid ${C.blue}20` }}>
@@ -7051,6 +7360,11 @@ function CFOPackContent({ reportData, client, kpis }) {
       {/* Fundraise Readiness tab */}
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateVariancePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Budget vs Actual{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : " — Current Month"}</div>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>All figures in ₹L unless stated</div>
@@ -7119,7 +7433,12 @@ function CFOPackContent({ reportData, client, kpis }) {
  
       {tab === "uniteco" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateUnitEcoPDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           {/* Header */}
           <div style={{ padding:"18px 22px", borderRadius:16,
             background:`linear-gradient(135deg,${C.blue}10,${C.teal}08)`,
@@ -7307,6 +7626,11 @@ function CFOPackContent({ reportData, client, kpis }) {
  
       {tab === "fundraise" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateFundraisePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <StartupCFOPack data={data} client={client} reportData={reportData}/>
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
@@ -7578,9 +7902,9 @@ function CFOPackContent({ reportData, client, kpis }) {
         </div>
       )}
  
-      {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.blue}/>}
-      {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.blue}/>}
-      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.blue} client={client}/>}
+      {tab === "fundutil" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateFundUtilPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><FundUtilisation reportData={reportData} accentColor={C.blue}/></div>}
+      {tab === "verticalpnl" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVerticalAnalysisPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VerticalPnL reportData={reportData} accentColor={C.blue}/></div>}
+      {tab === "scenario" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateScenarioPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><ScenarioModelling reportData={reportData} accentColor={C.blue} client={client}/></div>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
  
@@ -9283,6 +9607,11 @@ function CorporateTax({ client, reportData, initialTab }) {
  
       {tab === "qfzp" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateQFZPPDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
             <Card>
               <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Qualifying Income %</div>
@@ -13531,28 +13860,28 @@ function UAECFOReport({ client, reportData, kpis }) {
           {/* ── WORKING CAPITAL (redirect to dedicated page) ── */}
           {tab === "cashflow" && <CashFlow client={client} reportData={reportData} liveInvoices={[]}/>}
  
-          {tab === "workingcap" && <WorkingCapital client={client} reportData={reportData}/>}
- 
+          {tab === "workingcap" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateWorkingCapitalPDF({ client, reportData, kpis }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><WorkingCapital client={client} reportData={reportData}/></div>}
+
           {/* ── AR MANAGEMENT ── */}
           {tab === "ar" && <WorkingCapital client={client} reportData={reportData}/>}
- 
+
           {/* ── VAT REPORT ── */}
-          {tab === "vatreport" && <VATDashboard client={client} reportData={reportData}/>}
- 
+          {tab === "vatreport" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVATPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VATDashboard client={client} reportData={reportData}/></div>}
+
           {/* ── REVENUE RECONCILIATION ── */}
-          {tab === "revrecon" && <RevenueReconciliation client={client} reportData={reportData}/>}
- 
+          {tab === "revrecon" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateRevReconPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><RevenueReconciliation client={client} reportData={reportData}/></div>}
+
           {/* ── RELATED PARTY REPORT ── */}
           {tab === "rpt" && <CorporateTax client={client} reportData={reportData} initialTab="rpt"/>}
- 
+
           {/* ── CONNECTED PERSONS ── */}
           {tab === "connected" && <CorporateTax client={client} reportData={reportData} initialTab="connected"/>}
- 
+
           {/* ── QFZP ── */}
-          {tab === "qfzp" && <QFZPModule client={client} reportData={reportData}/>}
- 
+          {tab === "qfzp" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateQFZPPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><QFZPModule client={client} reportData={reportData}/></div>}
+
           {/* ── VERTICAL ANALYSIS ── */}
-          {tab === "vertical" && <VerticalAnalysis client={client} reportData={reportData}/>}
+          {tab === "vertical" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVerticalAnalysisPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VerticalAnalysis client={client} reportData={reportData}/></div>}
  
         </div>
       </PackLayout>
