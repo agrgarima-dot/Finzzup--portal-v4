@@ -15556,7 +15556,7 @@ function AdminPanel({ admin, onLogout }) {
     const defaults = defaultReportData(c.client_pack || "startup");
     if (rdData?.data) {
       try {
-        const parsed = JSON.parse(rdData.data);
+        const parsed = typeof rdData.data === "string" ? JSON.parse(rdData.data) : rdData.data;
         setReportData({
           ...defaults,
           ...parsed,
@@ -15568,8 +15568,8 @@ function AdminPanel({ admin, onLogout }) {
       } catch(e) { setReportData(defaults); }
     }
     else setReportData(defaults);
-    // Smart tab switch: UAE clients default to UAE tab, India clients to KPIs
-    const currentTabIsNeutral = ["clients","addclient"].includes(tab);
+    // Switch to data tab after selecting a client (from home/clients/addclient)
+    const currentTabIsNeutral = ["home","clients","addclient"].includes(tab);
     if (currentTabIsNeutral || !tab) {
       setTab(isUAE(c) ? "uae" : "kpis");
     }
