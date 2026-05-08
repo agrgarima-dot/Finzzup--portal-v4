@@ -1680,6 +1680,109 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
  
         <div className="ns-page">
  
+          {/* ── HOME DASHBOARD ── */}
+          {tab === "home" && (() => {
+            const now = Date.now();
+            const daysSince = iso => iso ? Math.floor((now - new Date(iso).getTime()) / 86400000) : 999;
+            const stalenessColor = days => days < 7 ? C.green : days < 30 ? C.amber : C.red;
+            const stalenessLabel = days => days < 7 ? "Updated recently" : days < 30 ? `${days}d ago` : days > 200 ? "Never updated" : `${days}d ago — stale`;
+
+            const activeClients = clients.filter(c => c.active !== false && !c.id?.startsWith("DEMO"));
+            const demoClients   = clients.filter(c => c.id?.startsWith("DEMO"));
+
+            const sorted = [...activeClients].sort((a, b) => {
+              const dA = daysSince((staleness[a.id]?.kpiAt || staleness[a.id]?.rdAt));
+              const dB = daysSince((staleness[b.id]?.kpiAt || staleness[b.id]?.rdAt));
+              return dB - dA; // most stale first
+            });
+
+            const staleCount   = sorted.filter(c => daysSince(staleness[c.id]?.kpiAt || staleness[c.id]?.rdAt) >= 30).length;
+            const freshCount   = sorted.filter(c => daysSince(staleness[c.id]?.kpiAt || staleness[c.id]?.rdAt) < 7).length;
+
+            return (
+              <div>
+                {/* Summary strip */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:20 }}>
+                  {[
+                    { icon:"ti-users",         label:"Active Clients", value:activeClients.length, color:C.blue  },
+                    { icon:"ti-circle-check",  label:"Up to date",     value:freshCount,            color:C.green },
+                    { icon:"ti-alert-triangle",label:"Needs update",   value:staleCount,            color:C.red   },
+                    { icon:"ti-clock",         label:"Demo clients",   value:demoClients.length,    color:C.muted },
+                  ].map((s,i) => (
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12,
+                      padding:"16px 18px", display:"flex", alignItems:"center", gap:14 }}>
+                      <i className={"ti " + s.icon} style={{ fontSize:22, color:s.color }}/>
+                      <div>
+                        <div style={{ fontFamily:F, fontWeight:800, fontSize:22, color:s.color, lineHeight:1 }}>{s.value}</div>
+                        <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:3 }}>{s.label}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Client cards — sorted by most stale first */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px,1fr))", gap:12 }}>
+                  {sorted.map(c => {
+                    const kpiAt = staleness[c.id]?.kpiAt;
+                    const rdAt  = staleness[c.id]?.rdAt;
+                    const lastAt = kpiAt || rdAt;
+                    const days   = daysSince(lastAt);
+                    const sc     = stalenessColor(days);
+                    const sl     = stalenessLabel(days);
+                    const uae    = isUAE(c);
+                    return (
+                      <div key={c.id} style={{ background:"#fff", border:`1px solid ${C.border}`,
+                        borderRadius:12, padding:"16px 18px", borderTop:`3px solid ${sc}`,
+                        display:"flex", flexDirection:"column", gap:10 }}>
+                        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:8 }}>
+                          <div>
+                            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{c.name}</div>
+                            <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:1 }}>{c.company}</div>
+                          </div>
+                          <span style={{ padding:"3px 10px", borderRadius:60, fontSize:10, fontWeight:700,
+                            background: uae ? "#E8F5EE" : `${C.blue}12`,
+                            color: uae ? "#00732F" : C.blue, whiteSpace:"nowrap", flexShrink:0 }}>
+                            {uae ? "UAE" : "India"} · {getPackLabel(c.client_pack)}
+                          </span>
+                        </div>
+
+                        <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                          <div style={{ width:8, height:8, borderRadius:"50%", background:sc, flexShrink:0 }}/>
+                          <div style={{ fontFamily:F, fontSize:11, color:sc, fontWeight:600 }}>{sl}</div>
+                        </div>
+
+                        <div style={{ display:"flex", gap:8 }}>
+                          <button onClick={() => { selectClient(c); setTab(uae?"uae":"kpis"); }}
+                            style={{ flex:1, padding:"8px 0", borderRadius:8, border:`1.5px solid ${C.amber}`,
+                              background:"transparent", color:C.amber, fontFamily:F, fontSize:11,
+                              fontWeight:700, cursor:"pointer" }}>
+                            <i className="ti ti-edit" style={{ marginRight:5 }}/>Update Data
+                          </button>
+                          <button onClick={() => {
+                            setQuickUpdate(c);
+                            setQuickForm({ garima_note:"", revenue:"", cash_balance:"" });
+                          }}
+                            style={{ padding:"8px 14px", borderRadius:8, border:`1.5px solid ${C.border}`,
+                              background:`${C.blue}08`, color:C.blue, fontFamily:F, fontSize:11,
+                              fontWeight:700, cursor:"pointer" }}>
+                            <i className="ti ti-bolt" style={{ marginRight:4 }}/>Quick
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {demoClients.length > 0 && (
+                  <div style={{ marginTop:24, padding:"12px 16px", borderRadius:10, background:"#F8FAFC",
+                    border:`1px dashed ${C.border}`, fontFamily:F, fontSize:12, color:C.muted }}>
+                    <strong>{demoClients.length} demo client{demoClients.length!==1?"s":""}</strong> — read-only, not shown here
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
           {/* ── ALL CLIENTS ── */}
           {tab === "clients" && (
             <div>
@@ -4868,6 +4971,108 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
  
         </div>
       </div>
+
+      {/* ── QUICK-UPDATE BOTTOM SHEET ── */}
+      {quickUpdate && (
+        <div style={{ position:"fixed", inset:0, zIndex:2000, display:"flex", flexDirection:"column",
+          justifyContent:"flex-end", background:"rgba(0,0,0,0.45)", backdropFilter:"blur(3px)" }}
+          onClick={e => { if (e.target === e.currentTarget) setQuickUpdate(null); }}>
+          <div style={{ background:"#fff", borderRadius:"20px 20px 0 0", padding:"24px 20px 32px",
+            maxWidth:520, width:"100%", margin:"0 auto", boxShadow:"0 -8px 40px rgba(0,0,0,0.18)" }}>
+            {/* Handle */}
+            <div style={{ width:40, height:4, borderRadius:2, background:C.border,
+              margin:"0 auto 20px" }}/>
+
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:18 }}>
+              <div>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
+                  Quick Update — {quickUpdate.name}
+                </div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>
+                  {quickUpdate.company}
+                </div>
+              </div>
+              <button onClick={() => setQuickUpdate(null)}
+                style={{ background:"none", border:"none", fontSize:20, color:C.muted, cursor:"pointer", padding:"4px 8px" }}>
+                ×
+              </button>
+            </div>
+
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              <div>
+                <label style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+                  textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:6 }}>
+                  Garima's CFO Note
+                </label>
+                <textarea value={quickForm.garima_note}
+                  onChange={e => setQuickForm(f => ({...f, garima_note: e.target.value}))}
+                  placeholder="Forward-looking insight for this client…"
+                  rows={3}
+                  style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.border}`,
+                    fontFamily:F, fontSize:13, color:C.text, resize:"vertical", outline:"none",
+                    boxSizing:"border-box", lineHeight:1.6 }}
+                  onFocus={e => e.target.style.borderColor = C.amber}
+                  onBlur={e  => e.target.style.borderColor = C.border}
+                />
+              </div>
+
+              <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                {[
+                  { key:"revenue",      label:"Revenue",       ph: isUAE(quickUpdate) ? "AED 850K" : "₹42L" },
+                  { key:"cash_balance", label:"Cash Balance",  ph: isUAE(quickUpdate) ? "AED 210K" : "₹18L" },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+                      textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:6 }}>
+                      {f.label}
+                    </label>
+                    <input value={quickForm[f.key]}
+                      onChange={e => setQuickForm(q => ({...q, [f.key]: e.target.value}))}
+                      placeholder={f.ph}
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:8, border:`1.5px solid ${C.border}`,
+                        fontFamily:F, fontSize:13, color:C.text, outline:"none", boxSizing:"border-box" }}
+                      onFocus={e => e.target.style.borderColor = C.amber}
+                      onBlur={e  => e.target.style.borderColor = C.border}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <button disabled={quickSaving}
+              onClick={async () => {
+                if (!quickForm.garima_note && !quickForm.revenue && !quickForm.cash_balance) return;
+                setQuickSaving(true);
+                const month = new Date().toLocaleString("en-IN", { month:"short", year:"numeric" });
+                const payload = { client_id: quickUpdate.id, month };
+                if (quickForm.revenue)      payload.revenue      = quickForm.revenue;
+                if (quickForm.cash_balance) payload.cash_balance = quickForm.cash_balance;
+                if (quickForm.garima_note)  payload.garima_note  = quickForm.garima_note;
+                await supabase.from("kpis").upsert(payload, { onConflict:"client_id,month" });
+                // Also update report_data garimaNote for visibility on client overview
+                if (quickForm.garima_note) {
+                  const { data: rd } = await supabase.from("report_data")
+                    .select("data").eq("client_id", quickUpdate.id).maybeSingle();
+                  const existing = rd?.data ? (typeof rd.data === "string" ? JSON.parse(rd.data) : rd.data) : {};
+                  await supabase.from("report_data").upsert(
+                    { client_id: quickUpdate.id, data: { ...existing, garimaNote: quickForm.garima_note } },
+                    { onConflict:"client_id" }
+                  );
+                }
+                setQuickSaving(false);
+                setQuickUpdate(null);
+                // Refresh staleness
+                fetchClients();
+              }}
+              style={{ width:"100%", marginTop:18, padding:"14px", borderRadius:10, border:"none",
+                background: quickSaving ? C.muted : C.amber, color:"white",
+                fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", transition:"background 0.2s" }}>
+              {quickSaving ? "Saving…" : "Save Update"}
+            </button>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
