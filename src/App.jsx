@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
-// ─── CHART STUBS (no recharts dependency) ─────────────────────────────────────
-const ResponsiveContainer = ({ children, width, height }) => (
-  <div style={{ width: width||"100%", height: height||200, position:"relative" }}>{children}</div>
-);
-const _ChartBase = ({ data=[], height=180, children, margin={} }) => (
-  <div style={{ width:"100%", height, position:"relative", display:"flex", alignItems:"flex-end", gap:2, padding:"8px 4px 20px" }}>
-    {children}
-  </div>
-);
-// Simple bar chart renderer
+import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+// SimpleBarChart — used by legacy sparkline panels
 const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
   const maxVal = Math.max(...data.flatMap(d => bars.map(b => Math.abs(d[b.key]||0))), 1);
   return (
@@ -20,46 +12,13 @@ const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
             <div key={b.key} style={{ width:"100%", height: Math.max(2,(Math.abs(d[b.key]||0)/maxVal)*(height-24)),
               background: b.fill||"#3B6FF7", borderRadius:"3px 3px 0 0", opacity: b.opacity||1 }}/>
           ))}
-          <div style={{ fontSize:9, color:C.dim, marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
+          <div style={{ fontSize:9, color:"#94A3B8", marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
         </div>
       ))}
     </div>
   );
 };
-// Simple line chart renderer  
-const SimpleLineChart = ({ data=[], lines=[], height=180 }) => {
-  const allVals = data.flatMap(d => lines.map(l => d[l.key]||0));
-  const maxVal = Math.max(...allVals, 1);
-  const minVal = Math.min(...allVals, 0);
-  const range = maxVal - minVal || 1;
-  const w = 100, h = height - 30;
-  return (
-    <div style={{ width:"100%", height, position:"relative" }}>
-      <svg viewBox={`0 0 ${data.length*20} ${h}`} style={{ width:"100%", height:h }} preserveAspectRatio="none">
-        {lines.map(l => {
-          const pts = data.map((d,i) => `${i*20+10},${h - ((d[l.key]||0)-minVal)/range*h}`).join(" ");
-          return <polyline key={l.key} points={pts} fill="none" stroke={l.stroke||"#3B6FF7"} strokeWidth="2"/>;
-        })}
-      </svg>
-      <div style={{ display:"flex", justifyContent:"space-between", padding:"0 4px" }}>
-        {data.map((d,i) => <span key={i} style={{ fontSize:9, color:C.dim }}>{d.month||""}</span>)}
-      </div>
-    </div>
-  );
-};
-// Stubs for unused recharts components (keep JSX valid)
-const AreaChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
-const BarChart = ({children,...p}) => <SimpleBarChart data={p.data||[]} bars={[]} height={p.height||180}/>;
-const LineChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
-const Area = () => null;
-const Bar = () => null;
-const Line = () => null;
-const XAxis = () => null;
-const YAxis = () => null;
-const CartesianGrid = () => null;
-const Legend = () => null;
-const Tooltip = () => null;
-const ReferenceLine = () => null;
+const LineChart = BarChart; // alias — recharts BarChart handles both
  
 // ─── TOKENS ──────────────────────────────────────────────────────────────────
 const C = {
@@ -16009,6 +15968,20 @@ function AdminPanel({ admin, onLogout }) {
       if (existing?.id) await supabase.from("report_data").update(payload).eq("id", existing.id);
       else await supabase.from("report_data").insert(payload);
       setBriefSaved(true); setTimeout(() => setBriefSaved(false), 4000);
+      // Notify client their brief is ready (fire and forget)
+      if (selected.email) {
+        fetch("/api/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "brief_ready",
+            to: selected.email,
+            name: selected.name,
+            company: selected.company || selected.name,
+            month: updated.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" }),
+          }),
+        }).catch(() => {});
+      }
     } catch (e) {
       alert("AI Brief error: " + e.message);
     }
@@ -16052,6 +16025,17 @@ function AdminPanel({ admin, onLogout }) {
     const { data, error } = await supabase.from("clients").insert(newClient).select().single();
     if (error) { alert("Error: " + error.message); return; }
     setClients(prev => [data, ...prev]);
+    fetch("/api/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "welcome",
+        to: newClient.email,
+        name: newClient.name,
+        company: newClient.company || newClient.name,
+        inviteCode: newClient.invite_code,
+      }),
+    }).catch(() => {});
     setNewClient({ name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both" });
     setTab("clients");
   };
