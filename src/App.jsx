@@ -1251,7 +1251,7 @@ PACK_CONFIG.premium  = PACK_CONFIG.corporate;
 // FIXED: Overview now shows Financial Health Score + Story of Month + Actions only.
 // Removed: Revenue/Expenses chart, Cash Flow chart, KPI cards (all moved to Dashboard).
 // This page is the executive landing — no detailed tables or repeated metrics.
-function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[] }) {
+function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[], isDemo=false, liveKpis=null, liveReportData=null }) {
   const displayKpis  = kpis || KPIs;
   const ovPack       = normalizePack(client?.client_pack || client?.clientPack);
   const uaeClient    = isUAE(client);
@@ -1313,7 +1313,55 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   ];
  
   const accentColor = uaeClient ? "#00732F" : C.blue;
- 
+
+  // ── Proactive alerts ───────────────────────────────────────────────────────
+  const [dismissedAlerts, setDismissedAlerts] = React.useState(new Set());
+  const proAlerts = React.useMemo(() => {
+    if (isDemo || !liveKpis) return [];
+    const out = [];
+    // Cash runway
+    const runwayKpi = (kpis||[]).find(k => k.label?.toLowerCase().includes("runway"));
+    if (runwayKpi?.value && runwayKpi.value !== "—") {
+      const months = parseFloat(String(runwayKpi.value).replace(/[^0-9.]/g,""));
+      if (!isNaN(months) && months < 3)
+        out.push({ id:"runway-critical", severity:"critical", icon:"ti-flame",
+          title:`Cash runway critical — ${runwayKpi.value} remaining`,
+          sub:"Immediate action required. Review burn rate and explore bridge options.",
+          page:"cashflow" });
+      else if (!isNaN(months) && months < 6)
+        out.push({ id:"runway-low", severity:"high", icon:"ti-alert-circle",
+          title:`Cash runway below 6 months — ${runwayKpi.value}`,
+          sub:"Start fundraising conversations or reduce monthly burn.",
+          page:"cashflow" });
+    }
+    // UAE VAT due
+    if (uaeClient && liveReportData?.vat?.pendingReturns) {
+      const today = new Date();
+      (liveReportData.vat.pendingReturns || []).forEach(r => {
+        if ((r.status === "Due" || r.status === "Overdue") && r.due) {
+          const days = Math.ceil((new Date(r.due) - today) / 86400000);
+          if (days <= 14)
+            out.push({ id:`vat-${r.period}`, severity: days<=0?"critical":"high", icon:"ti-file-invoice",
+              title:`VAT return due: ${r.period}${days<=0?" — OVERDUE":""}`,
+              sub:`Filing deadline: ${r.due}${r.vatNet ? ` · AED ${Number(r.vatNet).toLocaleString()} payable` : ""}`,
+              page:"uaetax" });
+        }
+      });
+    }
+    // Low health score
+    const score = reportData?.healthScore;
+    if (score && score < 50)
+      out.push({ id:"health-low", severity:"high", icon:"ti-heartbeat",
+        title:`Financial health score low: ${score}/100`,
+        sub:"Multiple KPIs are below benchmark. Review the dashboard.",
+        page:"dashboard" });
+    return out.filter(a => !dismissedAlerts.has(a.id));
+  }, [isDemo, liveKpis, kpis, liveReportData, reportData, uaeClient, dismissedAlerts]);
+
+  const severityStyle = s => s==="critical"
+    ? { background:"#FFF1F0", border:"1px solid #FCA5A5", color:C.red }
+    : { background:"#FFFBEB", border:"1px solid #FCD34D", color:C.amber };
+
   return (
     <div className="ns-page">
 
@@ -1337,6 +1385,30 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </span>
         </div>
       </div>
+
+      {/* ── Proactive alert banners ── */}
+      {proAlerts.map(alert => (
+        <div key={alert.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 16px",
+          borderRadius:9, ...severityStyle(alert.severity) }}>
+          <i className={"ti " + alert.icon} style={{ fontSize:18, flexShrink:0 }}/>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13 }}>{alert.title}</div>
+            <div style={{ fontFamily:F, fontSize:12, opacity:0.8, marginTop:1 }}>{alert.sub}</div>
+          </div>
+          <button onClick={() => setPage(alert.page)}
+            style={{ padding:"5px 12px", borderRadius:6, border:"1px solid currentColor",
+              background:"transparent", color:"inherit", fontFamily:F, fontSize:12,
+              fontWeight:700, cursor:"pointer", flexShrink:0 }}>
+            View →
+          </button>
+          <button onClick={() => setDismissedAlerts(s => new Set([...s, alert.id]))}
+            style={{ padding:"4px 8px", borderRadius:6, border:"none",
+              background:"rgba(0,0,0,0.06)", color:"inherit", fontFamily:F,
+              fontSize:13, cursor:"pointer", flexShrink:0, lineHeight:1 }}>
+            ×
+          </button>
+        </div>
+      ))}
 
       {/* ── Row 1: KPI tiles ── */}
       <div className="ns-grid-6">
@@ -13842,7 +13914,7 @@ function Portal({ client, onLogout }) {
       : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
  
   const pages = {
-    overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData}/>,
+    overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
     dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading}/>,
     cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
     actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
@@ -14029,22 +14101,60 @@ function Portal({ client, onLogout }) {
         onLogout={onLogout} collapsed={collapsed} setCollapsed={setCollapsed}/>
       <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden", background:"#fff" }}>
         <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
-          notifItems={[
-            ...((isDemo ? null : liveInvoices) || [])
+          notifItems={(() => {
+            const items = [];
+            // Unpaid invoices
+            ((isDemo ? null : liveInvoices) || [])
               .filter(inv => inv.status === "unpaid")
-              .map(inv => ({
-                icon:"invoice", page:"invoices",
+              .forEach(inv => items.push({
+                icon:"ti-receipt", page:"invoices", severity:"medium",
                 title:`Invoice due: ${inv.description || inv.invoice_number}`,
                 sub:`${inv.amount} · Due ${inv.due_date || "—"}`,
-              })),
-            ...((isDemo ? null : liveActions) || [])
+              }));
+            // High-priority actions
+            ((isDemo ? null : liveActions) || [])
               .filter(a => !a.done && a.priority === "High")
-              .map(a => ({
-                icon:"ti-alert-triangle", page:"actions",
-                title:a.text.length > 50 ? a.text.slice(0,50)+"…" : a.text,
+              .forEach(a => items.push({
+                icon:"ti-alert-triangle", page:"actions", severity:"high",
+                title:(a.text||a.title||"").length > 50 ? (a.text||a.title||"").slice(0,50)+"…" : (a.text||a.title||""),
                 sub:`High priority · ${a.month || ""}`,
-              })),
-          ]}
+              }));
+            if (!isDemo && liveKpis) {
+              // Cash runway warning
+              const runwayKpi = resolvedKpis.find(k => k.label?.toLowerCase().includes("runway"));
+              if (runwayKpi && runwayKpi.value && runwayKpi.value !== "—") {
+                const months = parseFloat(String(runwayKpi.value).replace(/[^0-9.]/g,""));
+                if (!isNaN(months) && months < 3)
+                  items.unshift({ icon:"ti-flame", page:"cashflow", severity:"critical",
+                    title:`Cash runway critical: ${runwayKpi.value}`,
+                    sub:"Take immediate action — under 3 months remaining" });
+                else if (!isNaN(months) && months < 6)
+                  items.unshift({ icon:"ti-alert-circle", page:"cashflow", severity:"high",
+                    title:`Cash runway below 6 months: ${runwayKpi.value}`,
+                    sub:"Review burn rate and fundraising plan" });
+              }
+              // UAE VAT due
+              if (isUAE(client) && liveReportData?.vat?.pendingReturns) {
+                const today = new Date();
+                (liveReportData.vat.pendingReturns || []).forEach(r => {
+                  if ((r.status === "Due" || r.status === "Overdue") && r.due) {
+                    const days = Math.ceil((new Date(r.due) - today) / 86400000);
+                    if (days <= 14)
+                      items.unshift({ icon:"ti-file-invoice", page:"uaetax", severity:"high",
+                        title:`VAT return due: ${r.period}`,
+                        sub:`Due ${r.due}${days <= 0 ? " — OVERDUE" : ` (${days}d)`}` });
+                  }
+                });
+              }
+              // Low health score
+              const score = resolvedReportData?.healthScore;
+              if (score && score < 50)
+                items.push({ icon:"ti-heartbeat", page:"dashboard", severity:"high",
+                  title:`Financial health score: ${score}/100`,
+                  sub:"Review KPI dashboard for details" });
+            }
+            return items;
+          })()}
         />
         <main style={{ flex:1, overflowY:"auto" }}>
           {/* ── Report PDF buttons — shown on key report pages ── */}
@@ -14104,26 +14214,50 @@ function AIChatbot({ client, reportData, kpis }) {
     setMsgs(m => [...m, { role:"user", text }]);
     setLoading(true);
  
-    // Build context from client data
+    // Build rich context from live client data
+    const uae = isUAE(client);
+    const pl  = reportData?.pl || {};
     const ctx = [
-      client?.name ? `Client: ${client.name}` : "",
-      client?.company ? `Company: ${client.company}` : "",
-      client?.client_pack ? `Pack: ${client.client_pack}` : "",
-      reportData?.pl?.revenue?.actual ? `Revenue: ${reportData.pl.revenue.actual}` : "",
-      reportData?.pl?.ebitda?.actual ? `EBITDA: ${reportData.pl.ebitda.actual}` : "",
-      reportData?.pl?.pat?.actual ? `Net Profit: ${reportData.pl.pat.actual}` : "",
-      (kpis||[]).length ? ("KPIs: " + (kpis||[]).map(k=>k.label+"="+k.value).join(", ")) : "",
+      `Client: ${client?.name || "Unknown"} | Company: ${client?.company || "—"} | Pack: ${client?.client_pack || "—"}`,
+      uae ? `Region: UAE | Freezone: ${reportData?.uaeProfile?.freezone || "DMCC"}` : `Region: India`,
+      reportData?.monthLabel ? `Reporting Period: ${reportData.monthLabel}` : "",
+      // KPIs
+      (kpis||[]).length ? `KPIs: ${(kpis||[]).map(k=>`${k.label}=${k.value}`).join(", ")}` : "",
+      // P&L
+      pl.revenue?.actual   ? `Revenue: ${pl.revenue.actual} (prev: ${pl.revenue.prev||"—"})` : "",
+      pl.grossProfit?.actual ? `Gross Profit: ${pl.grossProfit.actual} | GP Margin: ${pl.gpMargin?.actual||"—"}` : "",
+      pl.ebitda?.actual    ? `EBITDA: ${pl.ebitda.actual} | EBITDA Margin: ${pl.ebitdaMargin?.actual||"—"}` : "",
+      pl.pat?.actual       ? `Net Profit: ${pl.pat.actual} | Net Margin: ${pl.netMargin?.actual||"—"}` : "",
+      // Cash & treasury
+      reportData?.treasury?.totalCash ? `Cash: ${uae ? "AED " : "₹"}${reportData.treasury.totalCash?.toLocaleString()}` : "",
+      // UAE specific
+      uae && reportData?.vat?.vatPayable ? `VAT Payable: AED ${reportData.vat.vatPayable?.toLocaleString()}` : "",
+      uae && reportData?.ct ? `CT Qualifying Income: ${reportData.ct.qualifyingPct||0}%` : "",
+      uae && reportData?.qfzp?.qfzpScore ? `QFZP Score: ${reportData.qfzp.qfzpScore}/100` : "",
+      // Health score
+      reportData?.healthScore ? `Financial Health Score: ${reportData.healthScore}/100` : "",
+      // Garima's note (summarised)
+      reportData?.garimaNote ? `Advisor note summary: ${String(reportData.garimaNote).slice(0,300)}` : "",
+      // Pending actions
+      (reportData?.actions||[]).filter(a=>!a.done).length
+        ? `Pending actions: ${(reportData.actions||[]).filter(a=>!a.done).map(a=>a.text||a.title).slice(0,5).join("; ")}` : "",
     ].filter(Boolean).join("\n");
- 
+
+    const systemPrompt = uae
+      ? `You are Garima's AI CFO assistant on the Finzzup portal. Garima Agarwal is a CA, IBBI Registered Valuer and Fractional CFO specialising in UAE and India cross-border finance. Help the client understand their UAE finances — VAT, Corporate Tax, QFZP compliance, DMCC/DIFC structure, AED cash management. Be concise, accurate and professional. Use AED for UAE amounts. Never guess specific numbers not in the context below.\n\nLive client data:\n${ctx}`
+      : `You are Garima's AI CFO assistant on the Finzzup portal. Garima Agarwal is a CA, IBBI Registered Valuer and Fractional CFO. Help the client understand their business finances — P&L, cash, burn rate, runway, working capital, valuations and Indian accounting. Be concise, friendly and professional. Use ₹ and Indian financial context (Crores, Lakhs). Never guess specific numbers not in the context below.\n\nLive client data:\n${ctx}`;
+
     try {
       const res = await fetch("/api/chat", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: "You are Garima's AI CFO assistant on the Finzzup portal. Garima Agarwal is a CA, IBBI Registered Valuer and Fractional CFO. You help clients understand their finances, valuations and CFO advisory topics. Be concise, friendly and professional. Use Indian financial context (₹, Indian accounting standards). " + (ctx ? "Client context:\n" + ctx : ""),
-          messages: [{ role:"user", content: text }]
+          model: "claude-sonnet-4-6",
+          max_tokens: 800,
+          system: systemPrompt,
+          messages: msgs.concat({ role:"user", content: text })
+            .filter(m => m.role !== "typing")
+            .map(m => ({ role: m.role, content: m.text }))
         })
       });
       const data = await res.json();
@@ -14414,6 +14548,277 @@ function InlineInput({ value, onCommit, placeholder="", style={} }) {
   );
 }
  
+// ─── CSV IMPORT COMPONENT ─────────────────────────────────────────────────────
+function parseIndianNumber(s) {
+  if (!s && s !== 0) return null;
+  const n = parseFloat(String(s).replace(/[₹,\s]/g,"").replace(/[^0-9.-]/g,""));
+  return isNaN(n) ? null : n;
+}
+
+function parseTallyCSV(text) {
+  // Normalise line endings
+  const lines = text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n");
+  const result = { revenue:null, cogs:null, grossProfit:null, ebitda:null, pat:null,
+    cashBalance:null, gpMargin:null, ebitdaMargin:null, netMargin:null,
+    prevRevenue:null, prevPAT:null };
+
+  // Helper: find a row containing keyword and extract the first number
+  const extract = (keywords, colIdx=1) => {
+    const kws = Array.isArray(keywords) ? keywords : [keywords];
+    for (const line of lines) {
+      const low = line.toLowerCase();
+      if (kws.some(k => low.includes(k.toLowerCase()))) {
+        const cols = line.split(",").map(c => c.replace(/"/g,"").trim());
+        const val = parseIndianNumber(cols[colIdx] || cols[colIdx-1] || "");
+        if (val !== null) return val;
+      }
+    }
+    return null;
+  };
+
+  result.revenue      = extract(["net sales","net revenue","total revenue","gross revenue","sales","turnover","total income"]);
+  result.cogs         = extract(["cost of goods","cost of sales","cogs","cost of production","direct expenses","purchases"]);
+  result.grossProfit  = extract(["gross profit","trading profit"]);
+  result.ebitda       = extract(["ebitda","operating profit","profit before interest"]);
+  result.pat          = extract(["net profit","profit after tax","pat","profit for the year","net income"]);
+  result.cashBalance  = extract(["cash and cash equivalents","cash & cash equivalents","cash balance","closing cash","cash in hand"]);
+  // Previous period (col 2)
+  result.prevRevenue  = extract(["net sales","net revenue","total revenue","gross revenue","sales","turnover","total income"], 2);
+  result.prevPAT      = extract(["net profit","profit after tax","pat","profit for the year"], 2);
+
+  // Derived
+  if (result.revenue && result.grossProfit)
+    result.gpMargin = ((result.grossProfit / result.revenue) * 100).toFixed(1) + "%";
+  if (result.revenue && result.ebitda)
+    result.ebitdaMargin = ((result.ebitda / result.revenue) * 100).toFixed(1) + "%";
+  if (result.revenue && result.pat)
+    result.netMargin = ((result.pat / result.revenue) * 100).toFixed(1) + "%";
+
+  return result;
+}
+
+function fmtCrL(n) {
+  if (n === null || n === undefined) return "—";
+  if (Math.abs(n) >= 10000000) return "₹" + (n/10000000).toFixed(2) + " Cr";
+  if (Math.abs(n) >= 100000)   return "₹" + (n/100000).toFixed(2) + " L";
+  if (Math.abs(n) >= 1000)     return "₹" + (n/1000).toFixed(1) + "K";
+  return "₹" + n.toLocaleString("en-IN");
+}
+
+function CsvImport({ selected, onImport, onKpiImport, kpiMonth, C, F, FM, saved, loading }) {
+  const [dragOver, setDragOver] = React.useState(false);
+  const [fileName, setFileName] = React.useState("");
+  const [parsed, setParsed]     = React.useState(null);
+  const [month, setMonth]       = React.useState(kpiMonth || "");
+  const [err, setErr]           = React.useState("");
+  const [importing, setImporting] = React.useState(false);
+  const [done, setDone]         = React.useState(false);
+  const fileRef                 = React.useRef();
+
+  const processFile = (file) => {
+    if (!file) return;
+    if (!file.name.match(/\.(csv|txt)$/i)) { setErr("Please upload a CSV or TXT file."); return; }
+    setErr(""); setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const p = parseTallyCSV(text);
+      const hasData = Object.values(p).some(v => v !== null);
+      if (!hasData) { setErr("Could not detect financial data in this file. Ensure it is a Tally P&L CSV export."); return; }
+      setParsed(p);
+    };
+    reader.readAsText(file, "UTF-8");
+  };
+
+  const handleDrop = e => {
+    e.preventDefault(); setDragOver(false);
+    processFile(e.dataTransfer.files[0]);
+  };
+
+  const handleImport = async () => {
+    if (!parsed || !selected) return;
+    setImporting(true);
+    const fmtVal = (n, prev) => n !== null ? {
+      actual: fmtCrL(n), prev: prev !== null ? fmtCrL(prev) : "—"
+    } : undefined;
+    const plBlock = {
+      revenue:      fmtVal(parsed.revenue, parsed.prevRevenue),
+      cogs:         fmtVal(parsed.cogs),
+      grossProfit:  fmtVal(parsed.grossProfit),
+      gpMargin:     parsed.gpMargin ? { actual: parsed.gpMargin, prev:"—" } : undefined,
+      ebitda:       fmtVal(parsed.ebitda),
+      ebitdaMargin: parsed.ebitdaMargin ? { actual: parsed.ebitdaMargin, prev:"—" } : undefined,
+      pat:          fmtVal(parsed.pat, parsed.prevPAT),
+      netMargin:    parsed.netMargin ? { actual: parsed.netMargin, prev:"—" } : undefined,
+    };
+    // Remove undefined keys
+    Object.keys(plBlock).forEach(k => plBlock[k] === undefined && delete plBlock[k]);
+
+    const plInputs = {
+      revenue:   parsed.revenue   !== null ? String(parsed.revenue)   : undefined,
+      cogs:      parsed.cogs      !== null ? String(parsed.cogs)      : undefined,
+      gpMargin:  parsed.gpMargin  || undefined,
+      ebitda:    parsed.ebitda    !== null ? String(parsed.ebitda)    : undefined,
+      pat:       parsed.pat       !== null ? String(parsed.pat)       : undefined,
+    };
+    Object.keys(plInputs).forEach(k => plInputs[k] === undefined && delete plInputs[k]);
+
+    await onImport({ pl: plBlock, plInputs, monthLabel: month || undefined });
+
+    // Also push KPI row if month set
+    if (month && onKpiImport) {
+      await onKpiImport({
+        month,
+        revenue:      parsed.revenue   !== null ? fmtCrL(parsed.revenue)   : "",
+        gross_margin: parsed.gpMargin  || "",
+        cash_balance: parsed.cashBalance !== null ? fmtCrL(parsed.cashBalance) : "",
+        burn_rate:    "",
+        runway:       "",
+        arr:          "",
+      });
+    }
+    setImporting(false); setDone(true);
+    setTimeout(() => setDone(false), 3000);
+  };
+
+  const FIELD_MAP = [
+    { key:"revenue",      label:"Revenue"       },
+    { key:"cogs",         label:"Cost of Sales" },
+    { key:"grossProfit",  label:"Gross Profit"  },
+    { key:"gpMargin",     label:"GP Margin"     },
+    { key:"ebitda",       label:"EBITDA"        },
+    { key:"ebitdaMargin", label:"EBITDA Margin" },
+    { key:"pat",          label:"Net Profit"    },
+    { key:"netMargin",    label:"Net Margin"    },
+    { key:"cashBalance",  label:"Cash Balance"  },
+  ];
+
+  if (!selected) return (
+    <div style={{ maxWidth:600 }}>
+      <EmptyState icon="ti-user-search" title="Select a client first" sub="Choose an India client from the left panel to import their CSV data."/>
+    </div>
+  );
+
+  return (
+    <div style={{ maxWidth:700 }}>
+      <Card style={{ marginBottom:16 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+          CSV Import — {selected.company}
+        </div>
+        <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginBottom:20, lineHeight:1.7 }}>
+          Upload a <strong>Tally P&L export</strong> (CSV or TXT). The importer detects Revenue, COGS,
+          Gross Profit, EBITDA, PAT and Cash Balance automatically and populates the report data and KPI fields.
+        </div>
+
+        {/* Month picker */}
+        <div style={{ marginBottom:16 }}>
+          <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+            letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>
+            Reporting Month (optional — populates KPI row)
+          </label>
+          <input value={month} onChange={e=>setMonth(e.target.value)} placeholder="e.g. Mar 2026"
+            style={{ padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.border}`,
+              fontFamily:FM, fontSize:13, color:C.text, background:C.bg, outline:"none", width:200 }}
+            onFocus={e=>e.target.style.borderColor=C.blue}
+            onBlur={e=>e.target.style.borderColor=C.border}
+          />
+        </div>
+
+        {/* Drop zone */}
+        <div
+          onDragOver={e=>{e.preventDefault();setDragOver(true)}}
+          onDragLeave={()=>setDragOver(false)}
+          onDrop={handleDrop}
+          onClick={()=>fileRef.current?.click()}
+          style={{ border:`2px dashed ${dragOver?C.blue:C.border}`, borderRadius:10,
+            padding:"36px 24px", textAlign:"center", cursor:"pointer",
+            background: dragOver?`${C.blue}06`:"#FAFAFA", transition:"all 0.2s" }}>
+          <input ref={fileRef} type="file" accept=".csv,.txt" style={{display:"none"}}
+            onChange={e=>processFile(e.target.files[0])}/>
+          <i className="ti ti-file-upload" style={{ fontSize:32, color:dragOver?C.blue:C.dim, marginBottom:10, display:"block"}}/>
+          <div style={{ fontFamily:F, fontWeight:600, fontSize:14, color:C.text }}>
+            {fileName ? fileName : "Drop Tally CSV here or click to browse"}
+          </div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4 }}>
+            Supports Tally ERP 9, Tally Prime, and generic Indian accounting CSV exports
+          </div>
+        </div>
+        {err && <div style={{ color:C.red, fontFamily:F, fontSize:12, marginTop:10 }}>{err}</div>}
+      </Card>
+
+      {/* Preview */}
+      {parsed && (
+        <Card style={{ marginBottom:16 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+            Detected Fields — Preview
+          </div>
+          <table className="ns-table" style={{ marginBottom:16 }}>
+            <thead>
+              <tr>
+                <th>Field</th>
+                <th className="right">Detected Value</th>
+                <th className="right">Previous Period</th>
+                <th style={{textAlign:"center"}}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {FIELD_MAP.map((f,i) => {
+                const raw = parsed[f.key];
+                const isMargin = f.key.includes("Margin") || f.key === "gpMargin" || f.key === "netMargin" || f.key === "ebitdaMargin";
+                const display = raw !== null && raw !== undefined
+                  ? (isMargin ? raw : fmtCrL(raw))
+                  : "—";
+                const prevKey = f.key === "revenue" ? "prevRevenue" : f.key === "pat" ? "prevPAT" : null;
+                const prevDisplay = prevKey && parsed[prevKey] !== null ? fmtCrL(parsed[prevKey]) : "—";
+                const detected = raw !== null && raw !== undefined;
+                return (
+                  <tr key={i} className="striped">
+                    <td>{f.label}</td>
+                    <td className="right mono bold" style={{color: detected?C.text:C.dim}}>{display}</td>
+                    <td className="right mono muted">{prevDisplay}</td>
+                    <td style={{textAlign:"center"}}>
+                      <span className={`ns-badge ${detected?"green":"grey"}`}>
+                        {detected?"Detected":"Not found"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.7 }}>
+            <strong>Review the values above</strong> before importing. Fields marked "Not found" will not overwrite existing data.
+            You can manually enter missing values in the KPIs tab after import.
+          </div>
+          <button onClick={handleImport} disabled={importing || done}
+            style={{ padding:"11px 24px", borderRadius:8, border:"none",
+              background: done ? C.green : C.blue, color:"white",
+              fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer",
+              opacity: importing?0.75:1, transition:"all 0.2s" }}>
+            {importing ? "Importing…" : done ? "✓ Imported successfully" : "Import into Report Data"}
+          </button>
+        </Card>
+      )}
+
+      {/* Format guide */}
+      <Card style={{ background:`${C.blue}04`, borderColor:`${C.blue}20` }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
+          How to export from Tally
+        </div>
+        <ol style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:2, margin:0, paddingLeft:18 }}>
+          <li>Open Tally Prime → Gateway of Tally → Display More Reports → Profit & Loss A/c</li>
+          <li>Set the period (e.g. 1 Apr 2025 to 31 Mar 2026)</li>
+          <li>Press <strong>E (Export)</strong> → Format: CSV → Export</li>
+          <li>Upload the exported file above</li>
+        </ol>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:10 }}>
+          Also works with Zoho Books CSV export: Reports → Profit and Loss → Export → CSV
+        </div>
+      </Card>
+    </div>
+  );
+}
+
 function AdminLogin({ onLogin }) {
   const [form, setForm] = useState({ email:"", password:"" });
   const [error, setError] = useState("");
@@ -14870,6 +15275,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"clients",    icon:"ti-users", label:"All Clients",    group:"Clients"    },
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
     // ── India Client Data ──
+    { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"India"      },
     { id:"kpis",       icon:"ti-chart-bar", label:"KPIs",           group:"India"      },
     { id:"actions",    icon:"ti-checkbox", label:"Action Items",   group:"India"      },
     { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",    group:"India"      },
@@ -15576,6 +15982,46 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             </Card>
           )}
  
+          {/* ── CSV IMPORT ── */}
+          {tab === "import" && (
+            <CsvImport
+              selected={selected}
+              onImport={async (parsed) => {
+                if (!selected) return;
+                // Merge parsed data into existing reportData
+                const existing = reportData || {};
+                const merged = {
+                  ...existing,
+                  pl: { ...(existing.pl||{}), ...parsed.pl },
+                  plInputs: { ...(existing.plInputs||{}), ...parsed.plInputs },
+                  monthLabel: parsed.monthLabel || existing.monthLabel,
+                };
+                const { error } = await supabase.from("report_data")
+                  .upsert({ client_id: selected.id, data: merged }, { onConflict:"client_id" });
+                if (!error) {
+                  setReportData(merged);
+                  setSaved(true);
+                  setTimeout(() => setSaved(false), 2500);
+                } else {
+                  alert("Save failed: " + error.message);
+                }
+              }}
+              kpiMonth={kpiMonth}
+              onKpiImport={async (kpiRow) => {
+                if (!selected) return;
+                const payload = { client_id:selected.id, month:kpiRow.month,
+                  revenue:kpiRow.revenue, gross_margin:kpiRow.gross_margin,
+                  cash_balance:kpiRow.cash_balance, burn_rate:kpiRow.burn_rate,
+                  runway:kpiRow.runway, arr:kpiRow.arr };
+                const { error } = await supabase.from("kpis")
+                  .upsert(payload, { onConflict:"client_id,month" });
+                if (!error) { setSaved(true); setTimeout(()=>setSaved(false),2500); }
+                else alert("KPI save failed: " + error.message);
+              }}
+              C={C} F={F} FM={FM} saved={saved} loading={loading}
+            />
+          )}
+
           {/* ── UPDATE KPIs ── */}
           {tab === "kpis" && (
             <div style={{ maxWidth:900 }}>
