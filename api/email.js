@@ -15,7 +15,7 @@ export default async function handler(req, res) {
   const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
   const { type, to, name, company, month, inviteCode, portalUrl } = body;
 
-  const from = process.env.NOTIFY_FROM || "Finzzup <noreply@finzzup.com>";
+  const from = process.env.NOTIFY_FROM || "Garima · Finzzup <garima@finzzup.org>";
   const loginUrl = portalUrl || "https://finzzup-portal-v4.vercel.app";
 
   let subject, html;
@@ -45,7 +45,7 @@ export default async function handler(req, res) {
     </p>
   </div>
   <div style="padding:16px 32px;font-size:11px;color:#9CA3AF;text-align:center">
-    Finzzup Advisory LLP · garima@finzzup.com · Confidential
+    Finzzup Advisory LLP · garima@finzzup.org · Confidential
   </div>
 </div>`;
   }
@@ -85,11 +85,11 @@ export default async function handler(req, res) {
     </a>
     <p style="margin:24px 0 0;font-size:12px;color:#9CA3AF;line-height:1.7">
       Keep your invite code private — it's your key to the portal. If you have questions,
-      reply to this email or reach Garima at <a href="mailto:garima@finzzup.com" style="color:#2563EB">garima@finzzup.com</a>.
+      reply to this email or reach Garima at <a href="mailto:garima@finzzup.org" style="color:#2563EB">garima@finzzup.org</a>.
     </p>
   </div>
   <div style="padding:16px 32px;font-size:11px;color:#9CA3AF;text-align:center">
-    Finzzup Advisory LLP · garima@finzzup.com
+    Finzzup Advisory LLP · garima@finzzup.org
   </div>
 </div>`;
   }

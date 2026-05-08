@@ -18,8 +18,8 @@ export default async function handler(req, res) {
     const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
     const { clientName, company, service, email, notes } = body;
 
-    const to   = process.env.GARIMA_EMAIL || "garima@finzzup.com";
-    const from  = process.env.NOTIFY_FROM  || "Finzzup Portal <noreply@finzzup.com>";
+    const to   = process.env.GARIMA_EMAIL || "garima@finzzup.org";
+    const from  = process.env.NOTIFY_FROM  || "Finzzup Portal <garima@finzzup.org>";
 
     const response = await fetch("https://api.resend.com/emails", {
       method: "POST",
