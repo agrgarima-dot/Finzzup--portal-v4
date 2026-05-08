@@ -60,7 +60,6 @@ const CartesianGrid = () => null;
 const Legend = () => null;
 const Tooltip = () => null;
 const ReferenceLine = () => null;
-import LOGO_SRC from "./logo.png";
  
 // ─── TOKENS ──────────────────────────────────────────────────────────────────
 const C = {
