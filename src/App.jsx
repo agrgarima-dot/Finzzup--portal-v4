@@ -16567,7 +16567,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   alert("Save failed: " + error.message);
                 }
               }}
-              kpiMonth={kpiMonth}
+              kpiMonth={kpis?.month}
               onKpiImport={async (kpiRow) => {
                 if (!selected) return;
                 const payload = { client_id:selected.id, month:kpiRow.month,
