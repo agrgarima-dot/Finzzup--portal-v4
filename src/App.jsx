@@ -1300,9 +1300,10 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const isMobile     = useMobile();
   const pendingActions = actions.filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
+  const aiNarration  = reportData?.aiNarration || null;
   const displayNote  = uaeClient
     ? (reportData?.uaeGarimaNote || "Q1 2026 closed strongly. Review priorities in your CFO Report.")
-    : (garimaNote || PACK_CONFIG[ovPack]?.garimaNote || PACK_CONFIG.startup.garimaNote);
+    : (aiNarration || garimaNote || PACK_CONFIG[ovPack]?.garimaNote || PACK_CONFIG.startup.garimaNote);
  
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -1514,11 +1515,20 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 
         {/* Garima's Note */}
         <div className="ns-panel" style={{ margin:0, borderLeft:`3px solid ${accentColor}` }}>
-          <div className="ns-panel-header">
+          <div className="ns-panel-header" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <h3 style={{ color:accentColor }}>Garima's CFO Note</h3>
+            {aiNarration && (
+              <span style={{ display:"inline-flex", alignItems:"center", gap:4,
+                padding:"2px 8px", borderRadius:20, background:"#F5F3FF",
+                border:"1px solid #DDD6FE", fontFamily:F, fontSize:10,
+                fontWeight:700, color:"#7C3AED", letterSpacing:"0.05em" }}>
+                ✦ AI-assisted
+              </span>
+            )}
           </div>
           <div style={{ padding:"0 16px 16px" }}>
-            <p style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.8, margin:"0 0 12px" }}>
+            <p style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.8, margin:"0 0 12px",
+              whiteSpace: aiNarration ? "pre-wrap" : "normal" }}>
               {displayNote}
             </p>
             <button onClick={() => setPage("myreport")}
@@ -15636,6 +15646,8 @@ function AdminPanel({ admin, onLogout }) {
   const [aiGenerating, setAiGen]    = useState(false);
   const [aiDraft, setAiDraft]       = useState(null);
   const [aiError, setAiError]       = useState("");
+  const [briefGenerating, setBriefGen] = useState(false);
+  const [briefSaved, setBriefSaved]    = useState(false);
  
   // KPI edit state
   const [kpis, setKpis] = useState({
@@ -15977,6 +15989,30 @@ function AdminPanel({ admin, onLogout }) {
       await supabase.from("report_data").insert(payload);
     }
     setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
+  };
+
+  const generateAIBrief = async () => {
+    if (!selected || !reportData) return;
+    setBriefGen(true); setBriefSaved(false);
+    try {
+      const res = await fetch("/api/narrate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client: selected, reportData, kpis }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.narration) throw new Error(json.error || "Generation failed");
+      const updated = { ...reportData, aiNarration: json.narration, aiNarrationDate: new Date().toISOString() };
+      setReportData(updated);
+      const payload = { client_id: selected.id, data: JSON.stringify(updated), updated_at: new Date().toISOString() };
+      const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).maybeSingle();
+      if (existing?.id) await supabase.from("report_data").update(payload).eq("id", existing.id);
+      else await supabase.from("report_data").insert(payload);
+      setBriefSaved(true); setTimeout(() => setBriefSaved(false), 4000);
+    } catch (e) {
+      alert("AI Brief error: " + e.message);
+    }
+    setBriefGen(false);
   };
  
   const addInvoice = async () => {
@@ -18308,6 +18344,34 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                 </Card>}
  
                 {reportData && <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
+                {reportData && (
+                  <div style={{ marginTop:12 }}>
+                    <button onClick={generateAIBrief} disabled={briefGenerating}
+                      style={{ display:"inline-flex", alignItems:"center", gap:8,
+                        padding:"11px 20px", borderRadius:16, border:"none", cursor: briefGenerating ? "not-allowed" : "pointer",
+                        background: briefGenerating ? C.bg2 : "linear-gradient(135deg,#7C3AED,#2563EB)",
+                        color: briefGenerating ? C.muted : "white", fontFamily:F, fontWeight:700, fontSize:13,
+                        boxShadow: briefGenerating ? "none" : "0 2px 10px rgba(124,58,237,0.3)" }}>
+                      <i className="ti ti-sparkles" style={{fontSize:14}}/>
+                      {briefGenerating ? "Generating AI Brief…" : "Generate AI CFO Brief"}
+                    </button>
+                    {briefSaved && <span style={{ marginLeft:12, fontFamily:F, fontSize:12, color:"#7C3AED", fontWeight:600 }}>✅ AI Brief saved to client portal</span>}
+                    {reportData?.aiNarration && !briefGenerating && (
+                      <div style={{ marginTop:14, padding:"14px 16px", borderRadius:12,
+                        background:"#F5F3FF", border:"1.5px solid #DDD6FE" }}>
+                        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#7C3AED",
+                          textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
+                          AI CFO Brief — visible to client
+                        </div>
+                        <div style={{ fontFamily:F, fontSize:13, color:"#1E1B4B", lineHeight:1.8,
+                          whiteSpace:"pre-wrap" }}>{reportData.aiNarration}</div>
+                        <div style={{ fontFamily:F, fontSize:11, color:"#9CA3AF", marginTop:8 }}>
+                          Generated {reportData.aiNarrationDate ? new Date(reportData.aiNarrationDate).toLocaleString("en-IN") : "recently"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>)}
             </div>
           )}
