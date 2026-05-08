@@ -762,7 +762,7 @@ export function AdminLogin({ onLogin }) {
 }
  
 export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
-  const [tab, setTab]         = useState("clients");
+  const [tab, setTab]         = useState("home");
   const [clients, setClients] = useState([]);
   const [selected, setSelected] = useState(null); // selected client for editing
   const [loading, setLoading]       = useState(false);
@@ -774,6 +774,7 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
   const [quickForm,   setQuickForm]       = useState({ garima_note:"", revenue:"", cash_balance:"" });
   const [quickSaving, setQuickSaving]     = useState(false);
   const [sidebarOpen, setSidebarOpen]     = useState(false);
+  const [dashStats, setDashStats]         = useState({ highPriority:[], overdueInvoices:[], totalRevenue:null, pendingRequests:0 });
   const [aiGenerating, setAiGen]    = useState(false);
   const [aiDraft, setAiDraft]       = useState(null);
   const [aiError, setAiError]       = useState("");
@@ -996,6 +997,29 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
     // Pre-load all requests so the Requests tab works without selecting a client
     const { data: allReqs } = await supabase.from("requests").select("*").order("created_at", { ascending:false });
     if (allReqs) setRequests(allReqs);
+    // Fetch global dashboard stats: high-priority actions + overdue invoices
+    const [{ data: allActions }, { data: allInvs }, { data: allKpis }] = await Promise.all([
+      supabase.from("action_items").select("*").eq("priority","High").neq("done",true).order("created_at",{ascending:false}),
+      supabase.from("invoices").select("*").neq("status","Paid").order("due_date",{ascending:true}),
+      supabase.from("kpis").select("client_id,revenue,month").order("updated_at",{ascending:false}),
+    ]);
+    const today = new Date(); today.setHours(0,0,0,0);
+    const overdue = (allInvs||[]).filter(inv => inv.due_date && new Date(inv.due_date) < today);
+    const pendingReqs = (allReqs||[]).filter(r => !r.resolved).length;
+    // Sum latest revenue per client (text field — parse numbers)
+    const latestKpiPerClient = {};
+    (allKpis||[]).forEach(k => { if (!latestKpiPerClient[k.client_id]) latestKpiPerClient[k.client_id] = k; });
+    let totalRev = 0, revCount = 0;
+    Object.values(latestKpiPerClient).forEach(k => {
+      const n = parseFloat(String(k.revenue||"").replace(/[^0-9.-]/g,""));
+      if (!isNaN(n) && n > 0) { totalRev += n; revCount++; }
+    });
+    setDashStats({
+      highPriority: allActions || [],
+      overdueInvoices: overdue,
+      totalRevenue: revCount > 0 ? totalRev : null,
+      pendingRequests: pendingReqs,
+    });
   };
  
   const selectClient = async (c) => {
@@ -1062,7 +1086,7 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
       ? (typeof rdData.data === "string" ? JSON.parse(rdData.data) : rdData.data)
       : {};
     const { error } = await supabase.from("report_data").upsert(
-      { client_id: selected.id, data: { ...existing, lastReviewedAt: ts } },
+      { client_id: selected.id, data: JSON.stringify({ ...existing, lastReviewedAt: ts }), updated_at: ts },
       { onConflict: "client_id" }
     );
     if (!error) setReviewedAt(ts);
@@ -1178,6 +1202,8 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
   };
  
   const ADMIN_TABS = [
+    // ── Overview ──
+    { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",     group:"Overview"   },
     // ── Client Management ──
     { id:"clients",    icon:"ti-users", label:"All Clients",    group:"Clients"    },
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
@@ -1625,6 +1651,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
         .admin-backdrop { display: none; position: fixed; inset: 0;
           background: rgba(0,0,0,0.4); z-index: 999; }
         .admin-hamburger { display: none; }
+        @media(max-width:480px){ .admin-reviewed-text { display: none; } }
       `}</style>
 
       {/* Mobile backdrop */}
@@ -1692,7 +1719,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           </div>
         )}
         <nav style={{ flex:1, padding:"8px 0", overflowY:"auto" }}>
-          {["Clients","India","UAE","Shared"].map(group => {
+          {["Overview","Clients","India","UAE","Shared"].map(group => {
             const groupTabs = ADMIN_TABS.filter(t => t.group === group);
             return (
               <div key={group}>
@@ -1719,10 +1746,11 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           })}
         </nav>
         <div style={{ padding:"10px 12px", borderTop:`1px solid ${C.border}` }}>
-          <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
-            width:"100%", padding:"10px 12px", background:"none", border:"none",
-            cursor:"pointer", borderRadius:9, fontFamily:F, fontSize:13,
-            fontWeight:600, color:C.muted }}>
+          <button onClick={onLogout}
+            style={{ display:"flex", alignItems:"center", gap:8,
+              width:"100%", padding:"9px 12px", background:"none",
+              border:`1px solid ${C.red}22`, borderRadius:9, cursor:"pointer",
+              fontFamily:F, fontSize:12, fontWeight:600, color:C.red }}>
             <i className="ti ti-logout" style={{ fontSize:14 }}/>
             Sign Out
           </button>
@@ -1732,40 +1760,48 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
       {/* Main content */}
       <div style={{ flex:1, overflowY:"auto" }}>
         {/* Header */}
-        <div style={{ height:58, background:"#fff", borderBottom:`1px solid #EAECF0`,
-          display:"flex", alignItems:"center", padding:"0 16px", gap:12 }}>
+        <div style={{ minHeight:52, background:"#fff", borderBottom:`1px solid #EAECF0`,
+          display:"flex", alignItems:"center", padding:"8px 16px", gap:10, flexWrap:"wrap" }}>
           {/* Hamburger — mobile only */}
           <button className="admin-hamburger" onClick={() => setSidebarOpen(true)}
             style={{ background:"none", border:"none", cursor:"pointer",
               color:C.text, fontSize:20, lineHeight:1, padding:"4px 6px", flexShrink:0 }}>
             ☰
           </button>
-          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", margin:0 }}>
+          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text,
+            letterSpacing:"-0.02em", margin:0, flexShrink:0 }}>
             {ADMIN_TABS.find(t=>t.id===tab)?.label}
           </h1>
           {selected && tab !== "clients" && tab !== "addclient" && (
-            <div style={{ padding:"4px 12px", borderRadius:60, background:`${C.amber}15`,
-              border:`1px solid ${C.amber}30` }}>
-              <span style={{ fontSize:12, fontWeight:700, color:C.amber, fontFamily:F }}>
-                {selected.name} — {selected.company}
+            <div style={{ padding:"3px 10px", borderRadius:60, background:`${C.amber}15`,
+              border:`1px solid ${C.amber}30`, minWidth:0 }}>
+              <span style={{ fontSize:11, fontWeight:700, color:C.amber, fontFamily:F,
+                whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis",
+                display:"block", maxWidth:160 }}>
+                {selected.name}
               </span>
             </div>
           )}
           {selected && (
-            <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:10 }}>
+            <div style={{ marginLeft:"auto", display:"flex", alignItems:"center", gap:8, flexShrink:0 }}>
               {reviewedAt && (
-                <span style={{ fontFamily:F, fontSize:11, color:C.green }}>
-                  <i className="ti ti-circle-check" style={{ marginRight:4 }}/>
-                  Reviewed {new Date(reviewedAt).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"numeric" })}
+                <span style={{ fontFamily:F, fontSize:11, color:C.green, display:"flex",
+                  alignItems:"center", gap:4, whiteSpace:"nowrap" }}>
+                  <i className="ti ti-circle-check"/>
+                  <span className="admin-reviewed-text">
+                    {new Date(reviewedAt).toLocaleDateString("en-GB", { day:"numeric", month:"short" })}
+                  </span>
                 </span>
               )}
               <button onClick={markReviewed} disabled={markingReview}
-                style={{ padding:"7px 16px", borderRadius:8, border:`1.5px solid ${C.green}`,
+                title="Mark Reviewed"
+                style={{ padding:"7px 14px", borderRadius:8, border:`1.5px solid ${C.green}`,
                   background: markingReview ? "#F0FDF4" : C.green, color:"white",
                   fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer",
-                  display:"flex", alignItems:"center", gap:6, transition:"all 0.15s" }}>
+                  display:"flex", alignItems:"center", gap:6, transition:"all 0.15s",
+                  whiteSpace:"nowrap" }}>
                 <i className="ti ti-circle-check" style={{ fontSize:14 }}/>
-                {markingReview ? "Marking…" : "Mark Reviewed"}
+                <span className="admin-reviewed-text">{markingReview ? "Marking…" : "Mark Reviewed"}</span>
               </button>
             </div>
           )}
@@ -1792,10 +1828,15 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             const staleCount   = sorted.filter(c => daysSince(staleness[c.id]?.kpiAt || staleness[c.id]?.rdAt) >= 30).length;
             const freshCount   = sorted.filter(c => daysSince(staleness[c.id]?.kpiAt || staleness[c.id]?.rdAt) < 7).length;
 
+            const fmtRevShort = n => {
+              if (n >= 1e7) return `₹${(n/1e7).toFixed(1)}Cr`;
+              if (n >= 1e5) return `₹${(n/1e5).toFixed(1)}L`;
+              return `₹${Math.round(n).toLocaleString("en-IN")}`;
+            };
             return (
               <div>
-                {/* Summary strip */}
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:20 }}>
+                {/* Summary strip — row 1: clients */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:12 }}>
                   {[
                     { icon:"ti-users",         label:"Active Clients", value:activeClients.length, color:C.blue  },
                     { icon:"ti-circle-check",  label:"Up to date",     value:freshCount,            color:C.green },
@@ -1812,6 +1853,65 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     </div>
                   ))}
                 </div>
+
+                {/* Summary strip — row 2: workload stats */}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:20 }}>
+                  {[
+                    { icon:"ti-flag-3",      label:"High-priority actions", value:dashStats.highPriority.length, color:C.red,   sub: dashStats.highPriority.length===0 ? "All clear" : `across ${new Set(dashStats.highPriority.map(a=>a.client_id)).size} client${new Set(dashStats.highPriority.map(a=>a.client_id)).size!==1?"s":""}` },
+                    { icon:"ti-receipt-off", label:"Overdue invoices",       value:dashStats.overdueInvoices.length, color:C.amber, sub: dashStats.overdueInvoices.length===0 ? "None overdue" : `₹${dashStats.overdueInvoices.reduce((s,i)=>s+(Number(i.amount)||0),0).toLocaleString("en-IN")} outstanding` },
+                    { icon:"ti-message",     label:"Pending requests",       value:dashStats.pendingRequests, color:C.blue,  sub: dashStats.pendingRequests===0 ? "All resolved" : "from clients" },
+                  ].map((s,i) => (
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12,
+                      padding:"16px 18px", display:"flex", alignItems:"center", gap:14 }}>
+                      <i className={"ti " + s.icon} style={{ fontSize:22, color:s.value>0?s.color:C.green }}/>
+                      <div>
+                        <div style={{ fontFamily:F, fontWeight:800, fontSize:22, color:s.value>0?s.color:C.green, lineHeight:1 }}>{s.value}</div>
+                        <div style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, marginTop:2 }}>{s.label}</div>
+                        <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:1 }}>{s.sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* High-priority action list */}
+                {dashStats.highPriority.length > 0 && (
+                  <div style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase",
+                      letterSpacing:"0.1em", marginBottom:8 }}>
+                      <i className="ti ti-flag-3" style={{ marginRight:5 }}/>High-Priority Open Actions ({dashStats.highPriority.length})
+                    </div>
+                    <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                      {dashStats.highPriority.slice(0,8).map(a => {
+                        const clientName = clients.find(c=>c.id===a.client_id)?.name || a.client_id;
+                        return (
+                          <div key={a.id} style={{ background:"#FEF2F2", border:`1px solid ${C.red}22`,
+                            borderLeft:`3px solid ${C.red}`, borderRadius:8, padding:"10px 14px",
+                            display:"flex", alignItems:"center", gap:10 }}>
+                            <i className="ti ti-flag-3" style={{ color:C.red, fontSize:14, flexShrink:0 }}/>
+                            <div style={{ flex:1, minWidth:0 }}>
+                              <div style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600,
+                                overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{a.text}</div>
+                              <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:1 }}>
+                                {clientName}{a.month ? ` · ${a.month}` : ""}
+                              </div>
+                            </div>
+                            <button onClick={() => { const c=clients.find(x=>x.id===a.client_id); if(c){selectClient(c);setTab("actions");} }}
+                              style={{ padding:"4px 10px", borderRadius:6, border:`1px solid ${C.red}40`,
+                                background:"transparent", color:C.red, fontFamily:F, fontSize:10,
+                                fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>
+                              View
+                            </button>
+                          </div>
+                        );
+                      })}
+                      {dashStats.highPriority.length > 8 && (
+                        <div style={{ fontFamily:F, fontSize:11, color:C.muted, textAlign:"center", padding:4 }}>
+                          +{dashStats.highPriority.length-8} more
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Client cards — sorted by most stale first */}
                 <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(300px,1fr))", gap:12 }}>
