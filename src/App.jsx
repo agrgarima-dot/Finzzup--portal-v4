@@ -625,36 +625,80 @@ function Login({ onLogin }) {
   };
  
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center",
-      justifyContent:"center", padding:20, fontFamily:F }}>
-      <div style={{ position:"fixed", inset:0, pointerEvents:"none",
-        background:`radial-gradient(ellipse 60% 50% at 20% 30%, rgba(59,111,247,0.07) 0%, transparent 60%),
-                   radial-gradient(ellipse 40% 40% at 80% 70%, rgba(124,92,245,0.06) 0%, transparent 60%)` }}/>
- 
-      <div style={{ width:"100%", maxWidth:420, position:"relative" }}>
-        <div style={{ textAlign:"center", marginBottom:32 }}>
-          <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:8 }}>
-            <Logo size={36} dark={false} showTagline={true} darkText={true}/>
-          </div>
-          <p style={{ fontSize:13, color:C.muted, marginTop:12 }}>Secure Client Portal</p>
+    <div style={{ minHeight:"100vh", display:"flex", fontFamily:F }}>
+      {/* ── Left branding panel ── */}
+      <div className="login-left-panel" style={{ width:420, flexShrink:0, background:"linear-gradient(160deg,#0A1128 0%,#1a2a5e 100%)",
+        display:"flex", flexDirection:"column", justifyContent:"space-between",
+        padding:"48px 44px", position:"relative", overflow:"hidden" }}>
+        {/* Subtle circle decorations */}
+        <div style={{ position:"absolute", right:-60, top:-60, width:220, height:220,
+          borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", left:-40, bottom:-40, width:160, height:160,
+          borderRadius:"50%", background:"rgba(255,255,255,0.03)", pointerEvents:"none" }}/>
+        {/* Logo */}
+        <div>
+          <Logo size={32} dark={true} showTagline={false} darkText={false}/>
         </div>
- 
-        <Card style={{ padding:32 }}>
- 
+        {/* Main pitch */}
+        <div>
+          <div style={{ fontFamily:F, fontSize:26, fontWeight:800, color:"white",
+            lineHeight:1.25, marginBottom:16, letterSpacing:"-0.02em" }}>
+            Your CFO.<br/>On demand.
+          </div>
+          <div style={{ fontFamily:F, fontSize:13, color:"rgba(255,255,255,0.55)", lineHeight:1.7, marginBottom:32 }}>
+            Real-time financial visibility, AI-powered<br/>
+            analysis, and expert CFO guidance — all in<br/>
+            one secure portal.
+          </div>
+          {/* Trust strip */}
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {[
+              { icon:"ti-shield-check",   text:"Bank-grade security"           },
+              { icon:"ti-robot",          text:"AI analysis via Anthropic"      },
+              { icon:"ti-chart-bar",      text:"India & UAE tax compliance"     },
+            ].map((t,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ width:28, height:28, borderRadius:8,
+                  background:"rgba(255,255,255,0.08)",
+                  display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <i className={"ti " + t.icon} style={{ fontSize:14, color:"rgba(255,255,255,0.7)" }}/>
+                </div>
+                <span style={{ fontFamily:F, fontSize:12, color:"rgba(255,255,255,0.55)" }}>{t.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Footer */}
+        <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.28)" }}>
+          © {new Date().getFullYear()} Finzzup Advisory LLP
+        </div>
+      </div>
+
+      {/* ── Right form panel ── */}
+      <div className="login-right-panel" style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center",
+        background:"#F8FAFC", padding:"40px 24px" }}>
+        <div style={{ position:"fixed", inset:0, pointerEvents:"none",
+          background:`radial-gradient(ellipse 50% 40% at 75% 30%, rgba(59,111,247,0.05) 0%, transparent 60%)` }}/>
+
+        <div style={{ width:"100%", maxWidth:400, position:"relative" }}>
+          <div style={{ marginBottom:32 }}>
+            <div style={{ fontFamily:F, fontSize:22, fontWeight:800, color:C.text,
+              letterSpacing:"-0.02em", marginBottom:6 }}>
+              {step==="code" ? "Sign in to your portal" : step==="signin" ? "Welcome back" : "Set your password"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
+              {step==="code"
+                ? "Enter your invite code to continue."
+                : step==="signin"
+                  ? "Sign in with your email and password."
+                  : `Setting up access for ${client?.company||"your account"}.`}
+            </div>
+          </div>
+
+        <Card style={{ padding:28 }}>
+
           {/* ── STEP 1: Enter invite code ── */}
           {step === "code" && <>
-            <h2 style={{ fontWeight:700, fontSize:15, color:C.text, marginBottom:6, textAlign:"center" }}>
-              Welcome
-            </h2>
-            <p style={{ fontSize:13, color:C.muted, textAlign:"center", marginBottom:14, lineHeight:1.6 }}>
-              New client? Enter your invite code to register.<br/>
-              Already have an account?{" "}
-              <button onClick={() => setStep("signin")}
-                style={{ background:"none", border:"none", color:C.blue, fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:F }}>
-                Sign in here
-              </button>
-            </p>
- 
             <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
               letterSpacing:"0.08em", display:"block", marginBottom:8, fontFamily:F }}>
               Invite Code
@@ -663,76 +707,79 @@ function Login({ onLogin }) {
               onChange={e => { setCode(e.target.value.toUpperCase()); setError(""); }}
               onKeyDown={e => e.key === "Enter" && checkCode()}
               placeholder="e.g. NEXO2026"
-              style={{ width:"100%", padding:"13px 15px", borderRadius:16, fontSize:16,
+              style={{ width:"100%", padding:"12px 14px", borderRadius:8, fontSize:15,
                 border:`1.5px solid ${error ? C.red : C.border}`, fontFamily:FM,
-                fontWeight:600, letterSpacing:"0.1em", color:C.text, background:C.bg,
+                fontWeight:600, letterSpacing:"0.1em", color:C.text, background:"#fff",
                 outline:"none", boxSizing:"border-box", textTransform:"uppercase",
                 textAlign:"center", transition:"border-color 0.2s" }}
               onFocus={e => e.target.style.borderColor = C.blue}
               onBlur={e  => e.target.style.borderColor = error ? C.red : C.border}
             />
-            {error && <p style={{ color:C.red, fontSize:12, marginTop:8, textAlign:"center" }}>{error}</p>}
- 
+            {error && <p style={{ color:C.red, fontSize:12, marginTop:8 }}>{error}</p>}
+
             {/* ── AI & Data Consent ── */}
             <div onClick={() => setConsent(c => !c)}
-              style={{ display:"flex", alignItems:"flex-start", gap:10, marginTop:18,
-                padding:"12px 14px", borderRadius:16, cursor:"pointer",
-                background: consent ? `${C.blue}08` : C.bg3,
-                border:`1.5px solid ${consent ? C.blue : C.border}`,
+              style={{ display:"flex", alignItems:"flex-start", gap:10, marginTop:16,
+                padding:"12px 14px", borderRadius:8, cursor:"pointer",
+                background: consent ? `${C.blue}06` : C.bg3,
+                border:`1.5px solid ${consent ? C.blue+"60" : C.border}`,
                 transition:"all 0.2s" }}>
-              <div style={{ width:18, height:18, borderRadius:12, flexShrink:0, marginTop:1,
+              <div style={{ width:16, height:16, borderRadius:4, flexShrink:0, marginTop:2,
                 border:`2px solid ${consent ? C.blue : C.dim}`,
                 background: consent ? C.blue : "transparent",
                 display:"flex", alignItems:"center", justifyContent:"center",
                 transition:"all 0.2s" }}>
-                {consent && <span style={{ color:"white", fontSize:11, fontWeight:900, lineHeight:1 }}>✓</span>}
+                {consent && <i className="ti ti-check" style={{ fontSize:10, color:"white", fontWeight:900 }}/>}
               </div>
-              <p style={{ margin:0, fontSize:12, color:C.muted, lineHeight:1.6, fontFamily:F }}>
-                I understand that this portal uses <strong>AI (powered by Anthropic/Claude)</strong> to
-                generate financial analysis from data entered by my advisor. Data is processed securely
-                and <strong>not stored or used for AI training</strong>.{" "}
-                By continuing, I acknowledge this and consent to its use for my advisory services.
+              <p style={{ margin:0, fontSize:11.5, color:C.muted, lineHeight:1.6, fontFamily:F }}>
+                I understand this portal uses <strong>AI (Anthropic/Claude)</strong> to generate financial
+                analysis. Data is processed securely and <strong>not used for AI training</strong>.
               </p>
             </div>
- 
-            <button onClick={checkCode} disabled={loading || !consent} style={{ width:"100%", marginTop:14, padding:24,
-              borderRadius:16, border:"none", background: consent ? C.grad1 : C.bg3,
-              color: consent ? "white" : C.dim,
-              fontFamily:F, fontWeight:700, fontSize:15,
-              cursor: consent ? "pointer" : "not-allowed",
-              opacity:loading ? 0.75 : 1,
-              boxShadow: consent ? "0 2px 8px rgba(59,111,247,0.18)" : "none",
-              transition:"all 0.2s", touchAction:"manipulation" }}>
+
+            <button onClick={checkCode} disabled={loading || !consent}
+              style={{ width:"100%", marginTop:14, padding:"13px 16px",
+                borderRadius:8, border:"none", background: consent ? C.grad1 : C.bg3,
+                color: consent ? "white" : C.dim,
+                fontFamily:F, fontWeight:700, fontSize:14,
+                cursor: consent ? "pointer" : "not-allowed",
+                opacity:loading ? 0.75 : 1,
+                boxShadow: consent ? "0 2px 8px rgba(59,111,247,0.22)" : "none",
+                transition:"all 0.2s" }}>
               {loading ? "Checking…" : "Continue →"}
             </button>
- 
-            <p style={{ textAlign:"center", fontSize:12, color:C.dim, marginTop:20 }}>
-              Don't have a code?{" "}
-              <a href="mailto:garima@finzzup.com" style={{ color:C.blue, fontWeight:600 }}>
-                Email garima@finzzup.com
-              </a>
-            </p>
- 
+
+            <div style={{ textAlign:"center", marginTop:16, fontFamily:F, fontSize:13, color:C.muted }}>
+              Already have an account?{" "}
+              <button onClick={() => setStep("signin")}
+                style={{ background:"none", border:"none", color:C.blue, fontWeight:700,
+                  fontSize:13, cursor:"pointer", fontFamily:F, padding:0 }}>
+                Sign in
+              </button>
+            </div>
+
             {/* Demo accounts */}
-            <div style={{ marginTop:20, padding:"14px 16px", borderRadius:16,
-              background:`${C.blue}0A`, border:`1px solid ${C.blue}20` }}>
+            <div style={{ marginTop:20, paddingTop:20, borderTop:`1px solid ${C.border}` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>Try a demo account</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>Try a demo</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                 {[
-                  { code:"DEMO-STARTUP",  label:"Startup / CFO Client",    icon:"ti-rocket", color:C.blue   },
-                  { code:"DEMO-MSME",     label:"MSME Client",              icon:"ti-building", color:C.teal   },
-                  { code:"DEMO-CORP",     label:"Corporate Client",          icon:"ti-building-bank", color:C.purple },
-                  { code:"DEMO-UAE",      label:"UAE / Dubai Client",        icon:"ti-flag", color:"#00732F"},
-                  { code:"DEMO-XBORDER", label:"Cross-Border India + UAE",  icon:"ti-world", color:C.amber  },
+                  { code:"DEMO-STARTUP",  label:"Startup / CFO",      icon:"ti-rocket",        color:C.blue   },
+                  { code:"DEMO-MSME",     label:"MSME",                icon:"ti-building",      color:C.teal   },
+                  { code:"DEMO-CORP",     label:"Corporate",           icon:"ti-building-bank", color:C.purple },
+                  { code:"DEMO-UAE",      label:"UAE / Dubai",         icon:"ti-flag",          color:"#00732F"},
+                  { code:"DEMO-XBORDER", label:"Cross-Border",        icon:"ti-world",         color:C.amber  },
                 ].map(d => (
                   <button key={d.code} onClick={() => setCode(d.code)}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                      padding:"9px 12px", borderRadius:9, border:`1px solid ${d.color}25`,
-                      background:`${d.color}08`, cursor:"pointer", fontFamily:F, width:"100%",
+                      padding:"8px 11px", borderRadius:7, border:`1px solid ${d.color}20`,
+                      background:`${d.color}07`, cursor:"pointer", fontFamily:F, width:"100%",
                       touchAction:"manipulation" }}>
-                    <span style={{ fontSize:13, color:C.text, fontWeight:600, display:"flex", alignItems:"center", gap:7 }}><i className={"ti " + d.icon} style={{ fontSize:16, color:d.color }}/>{d.label}</span>
-                    <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:d.color }}>{d.code}</span>
+                    <span style={{ fontSize:12, color:C.text, fontWeight:600, display:"flex",
+                      alignItems:"center", gap:7 }}>
+                      <i className={"ti " + d.icon} style={{ fontSize:14, color:d.color }}/>{d.label}
+                    </span>
+                    <span style={{ fontFamily:FM, fontSize:10, fontWeight:700, color:d.color }}>{d.code}</span>
                   </button>
                 ))}
               </div>
@@ -754,15 +801,15 @@ function Login({ onLogin }) {
             <LoginInput label="Password"         value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Min 6 characters" />
             <LoginInput label="Confirm Password" value={form.confirm}  onChange={e => { setForm(f=>({...f,confirm:e.target.value}));  setError(""); }} type="password" placeholder="Repeat password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-            <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:24,
-              borderRadius:16, border:"none", background:C.grad1, color:"white",
-              fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
-              boxShadow:"0 2px 8px rgba(59,111,247,0.18)", touchAction:"manipulation" }}>
+            <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:"13px 16px",
+              borderRadius:8, border:"none", background:C.grad1, color:"white",
+              fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", opacity:loading?0.75:1,
+              boxShadow:"0 2px 8px rgba(59,111,247,0.22)", touchAction:"manipulation" }}>
               {loading ? "Creating account…" : "Create Account →"}
             </button>
             <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:20, borderRadius:16, border:`1px solid ${C.border}`,
-              background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
+              marginTop:8, padding:"11px 16px", borderRadius:8, border:`1px solid ${C.border}`,
+              background:"transparent", color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer" }}>
               ← Back
             </button>
           </>}
@@ -776,29 +823,25 @@ function Login({ onLogin }) {
             <LoginInput label="Email"    value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
             <LoginInput label="Password" value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Your password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-            <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:24,
-              borderRadius:16, border:"none", background:C.grad1, color:"white",
-              fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
-              boxShadow:"0 2px 8px rgba(59,111,247,0.18)", touchAction:"manipulation" }}>
+            <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:"13px 16px",
+              borderRadius:8, border:"none", background:C.grad1, color:"white",
+              fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", opacity:loading?0.75:1,
+              boxShadow:"0 2px 8px rgba(59,111,247,0.22)", touchAction:"manipulation" }}>
               {loading ? "Signing in…" : "Sign In →"}
             </button>
             <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:20, borderRadius:16, border:`1px solid ${C.border}`,
-              background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
+              marginTop:8, padding:"11px 16px", borderRadius:8, border:`1px solid ${C.border}`,
+              background:"transparent", color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer" }}>
               ← New client? Enter invite code
             </button>
           </>}
  
         </Card>
         <p style={{ textAlign:"center", fontSize:11, color:C.dim, marginTop:20 }}>
-          Powered by Finzzup · garima@finzzup.com<br/>
-          <span style={{ marginTop:6, display:"block" }}>
-            <a href="#" style={{ color:C.blue, textDecoration:"none" }}>Terms & Conditions</a>
-            {" · "}
-            <a href="#" style={{ color:C.blue, textDecoration:"none" }}>Privacy Policy</a>
-            {" · "}© 2026 Garima Agarwal, CA (M.No. 160944)
-          </span>
+          <a href="mailto:garima@finzzup.com" style={{ color:C.blue }}>garima@finzzup.com</a>
+          {" · "}© 2026 Garima Agarwal, CA (M.No. 160944)
         </p>
+      </div>
       </div>
     </div>
   );
@@ -891,7 +934,8 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
     { label:"Account",      ids:["calendar","newrequest","documents","invoices","engagement"] },
   ];
   return (
-    <aside style={{ width:collapsed?52:220, minHeight:"100vh", background:"#fff",
+    <aside className={`main-sidebar${collapsed?"":" sidebar-open"}`}
+      style={{ width:collapsed?52:220, minHeight:"100vh", background:"#fff",
       flexShrink:0, display:"flex", flexDirection:"column", transition:"width 0.2s",
       overflow:"hidden", borderRight:`1px solid ${C.border}` }}>
  
@@ -997,7 +1041,17 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
  
  
 // ─── TOPBAR ───────────────────────────────────────────────────────────────────
-function Topbar({ title, client, setPage, notifItems=[] }) {
+function useMobile() {
+  const [mob, setMob] = React.useState(() => typeof window !== "undefined" && window.innerWidth < 768);
+  React.useEffect(() => {
+    const h = () => setMob(window.innerWidth < 768);
+    window.addEventListener("resize", h, { passive:true });
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return mob;
+}
+
+function Topbar({ title, client, setPage, notifItems=[], onMenuToggle }) {
   const now  = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"short",year:"numeric"});
   const uae  = isUAE(client);
   const [open, setOpen] = React.useState(false);
@@ -1006,15 +1060,23 @@ function Topbar({ title, client, setPage, notifItems=[] }) {
   return (
     <header style={{ height:52, background:"#fff", borderBottom:`1px solid #EAECF0`,
       display:"flex", alignItems:"center", justifyContent:"space-between",
-      padding:"0 18px", flexShrink:0, zIndex:50,
+      padding:"0 14px", flexShrink:0, zIndex:50,
       boxShadow:"0 1px 3px rgba(0,0,0,0.04)" }}>
- 
-      {/* Breadcrumb */}
-      <div style={{ display:"flex", alignItems:"center", gap:5,
-        fontFamily:F, fontSize:11 }}>
-        <span style={{ color:C.muted }}>Home</span>
-        <span style={{ color:C.dim }}>›</span>
-        <span style={{ color:C.text, fontWeight:500 }}>{title}</span>
+
+      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        {/* Hamburger — visible on mobile via CSS */}
+        <button onClick={onMenuToggle} className="hamburger-btn"
+          style={{ background:"none", border:"none", cursor:"pointer",
+            width:32, height:32, display:"none", alignItems:"center",
+            justifyContent:"center", borderRadius:8, color:C.muted }}>
+          <i className="ti ti-menu-2" style={{ fontSize:18 }}/>
+        </button>
+        {/* Breadcrumb */}
+        <div style={{ display:"flex", alignItems:"center", gap:5, fontFamily:F, fontSize:11 }}>
+          <span style={{ color:C.muted }} className="bc-home">Home</span>
+          <span style={{ color:C.dim }} className="bc-home">›</span>
+          <span style={{ color:C.text, fontWeight:500 }}>{title}</span>
+        </div>
       </div>
  
       {/* Right */}
@@ -1208,10 +1270,11 @@ PACK_CONFIG.premium  = PACK_CONFIG.corporate;
 // FIXED: Overview now shows Financial Health Score + Story of Month + Actions only.
 // Removed: Revenue/Expenses chart, Cash Flow chart, KPI cards (all moved to Dashboard).
 // This page is the executive landing — no detailed tables or repeated metrics.
-function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[] }) {
+function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[], isDemo=false, liveKpis=null, liveReportData=null }) {
   const displayKpis  = kpis || KPIs;
   const ovPack       = normalizePack(client?.client_pack || client?.clientPack);
   const uaeClient    = isUAE(client);
+  const isMobile     = useMobile();
   const pendingActions = actions.filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
   const displayNote  = uaeClient
@@ -1270,235 +1333,257 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   ];
  
   const accentColor = uaeClient ? "#00732F" : C.blue;
- 
+
+  // ── Proactive alerts ───────────────────────────────────────────────────────
+  const [dismissedAlerts, setDismissedAlerts] = React.useState(new Set());
+  const proAlerts = React.useMemo(() => {
+    if (isDemo || !liveKpis) return [];
+    const out = [];
+    // Cash runway
+    const runwayKpi = (kpis||[]).find(k => k.label?.toLowerCase().includes("runway"));
+    if (runwayKpi?.value && runwayKpi.value !== "—") {
+      const months = parseFloat(String(runwayKpi.value).replace(/[^0-9.]/g,""));
+      if (!isNaN(months) && months < 3)
+        out.push({ id:"runway-critical", severity:"critical", icon:"ti-flame",
+          title:`Cash runway critical — ${runwayKpi.value} remaining`,
+          sub:"Immediate action required. Review burn rate and explore bridge options.",
+          page:"cashflow" });
+      else if (!isNaN(months) && months < 6)
+        out.push({ id:"runway-low", severity:"high", icon:"ti-alert-circle",
+          title:`Cash runway below 6 months — ${runwayKpi.value}`,
+          sub:"Start fundraising conversations or reduce monthly burn.",
+          page:"cashflow" });
+    }
+    // UAE VAT due
+    if (uaeClient && liveReportData?.vat?.pendingReturns) {
+      const today = new Date();
+      (liveReportData.vat.pendingReturns || []).forEach(r => {
+        if ((r.status === "Due" || r.status === "Overdue") && r.due) {
+          const days = Math.ceil((new Date(r.due) - today) / 86400000);
+          if (days <= 14)
+            out.push({ id:`vat-${r.period}`, severity: days<=0?"critical":"high", icon:"ti-file-invoice",
+              title:`VAT return due: ${r.period}${days<=0?" — OVERDUE":""}`,
+              sub:`Filing deadline: ${r.due}${r.vatNet ? ` · AED ${Number(r.vatNet).toLocaleString()} payable` : ""}`,
+              page:"uaetax" });
+        }
+      });
+    }
+    // Low health score
+    const score = reportData?.healthScore;
+    if (score && score < 50)
+      out.push({ id:"health-low", severity:"high", icon:"ti-heartbeat",
+        title:`Financial health score low: ${score}/100`,
+        sub:"Multiple KPIs are below benchmark. Review the dashboard.",
+        page:"dashboard" });
+    return out.filter(a => !dismissedAlerts.has(a.id));
+  }, [isDemo, liveKpis, kpis, liveReportData, reportData, uaeClient, dismissedAlerts]);
+
+  const severityStyle = s => s==="critical"
+    ? { background:"#FFF1F0", border:"1px solid #FCA5A5", color:C.red }
+    : { background:"#FFFBEB", border:"1px solid #FCD34D", color:C.amber };
+
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:0, background:"#F3F4F6", minHeight:"100vh" }}>
- 
-      {/* ── Top bar ── */}
-      <div style={{ background:"white", borderBottom:`1px solid ${C.border}`,
-        padding:"10px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+    <div className="ns-page">
+
+      {/* ── Page header ── */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
         <div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text }}>
-            {greeting}, {client?.name?.split(" ")[0] || "there"}
-          </div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:1 }}>
-            {client?.company} · {uaeClient ? "UAE CFO Dashboard" : `${ovPack.toUpperCase()} Pack`} · {reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}
+          <div className="ns-page-title">{greeting}, {client?.name?.split(" ")[0] || "there"}</div>
+          <div className="ns-sub" style={{ marginTop:2 }}>
+            {client?.company} · {uaeClient ? "UAE CFO Dashboard" : `${ovPack.charAt(0).toUpperCase()+ovPack.slice(1)} Pack`}
+            {reportData?.monthLabel ? ` · ${reportData.monthLabel}` : ""}
           </div>
         </div>
-        <div style={{ display:"flex", gap:8 }}>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           {highPriority.length > 0 && (
-            <div style={{ padding:"5px 12px", borderRadius:12, background:"#FEF2F2",
-              border:"1px solid #FCA5A5", fontFamily:F, fontSize:12, fontWeight:700, color:C.red,
-              display:"flex", alignItems:"center", gap:5 }}>
-              {highPriority.length} High Priority Action{highPriority.length>1?"s":""}
-            </div>
+            <span className="ns-badge red">
+              <i className="ti ti-alert-triangle" style={{ fontSize:11 }}/> {highPriority.length} High Priority
+            </span>
           )}
-          <div style={{ padding:"5px 12px", borderRadius:12, background:`${accentColor}12`,
-            border:`1px solid ${accentColor}40`, fontFamily:F, fontSize:12, fontWeight:700, color:accentColor }}>
-            Score: {healthScore}/100 · {healthLabel}
-          </div>
+          <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
+            Health Score: {healthScore}/100 — {healthLabel}
+          </span>
         </div>
       </div>
- 
-      <div style={{ padding:"16px 24px", display:"flex", flexDirection:"column", gap:20 }}>
- 
-        {/* ── Row 1: KPI tiles (NetSuite style) ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>
-          {displayKpis.slice(0,6).map((kpi,i) => (
-            <Card key={i} style={{ padding:"14px 16px" }}>
-              <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-                textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>
-                {kpi.label}
-              </div>
-              <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:kpi.color||C.text, lineHeight:1.2 }}>
-                {kpi.value}
-              </div>
-              {kpi.prev && kpi.prev !== "—" && (
-                <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:4, display:"flex", alignItems:"center", gap:3 }}>
-                  <span style={{ color: kpi.trend==="up"?C.green:C.red, fontWeight:700 }}>
-                    {kpi.trend==="up"?"↑":"↓"}
-                  </span>
-                  prev: {kpi.prev}
-                </div>
-              )}
-            </Card>
-          ))}
+
+      {/* ── Proactive alert banners ── */}
+      {proAlerts.map(alert => (
+        <div key={alert.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 16px",
+          borderRadius:9, ...severityStyle(alert.severity) }}>
+          <i className={"ti " + alert.icon} style={{ fontSize:18, flexShrink:0 }}/>
+          <div style={{ flex:1 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13 }}>{alert.title}</div>
+            <div style={{ fontFamily:F, fontSize:12, opacity:0.8, marginTop:1 }}>{alert.sub}</div>
+          </div>
+          <button onClick={() => setPage(alert.page)}
+            style={{ padding:"5px 12px", borderRadius:6, border:"1px solid currentColor",
+              background:"transparent", color:"inherit", fontFamily:F, fontSize:12,
+              fontWeight:700, cursor:"pointer", flexShrink:0 }}>
+            View →
+          </button>
+          <button onClick={() => setDismissedAlerts(s => new Set([...s, alert.id]))}
+            style={{ padding:"4px 8px", borderRadius:6, border:"none",
+              background:"rgba(0,0,0,0.06)", color:"inherit", fontFamily:F,
+              fontSize:13, cursor:"pointer", flexShrink:0, lineHeight:1 }}>
+            ×
+          </button>
         </div>
- 
-        {/* ── Row 2: P&L + Health Score + Garima Note ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 200px 1fr", gap:20 }}>
- 
-          {/* P&L Summary table */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
-              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>
-                P&L Summary
+      ))}
+
+      {/* ── Row 1: KPI tiles ── */}
+      <div className="ns-grid-6">
+        {displayKpis.slice(0,6).map((kpi,i) => (
+          <div key={i} className="ns-kpi-tile">
+            <div className="label">{kpi.label}</div>
+            <div className="value" style={{ color:kpi.color||C.text }}>{kpi.value}</div>
+            {kpi.prev && kpi.prev !== "—" && (
+              <div className="trend">
+                <span style={{ color:kpi.trend==="up"?C.green:C.red, fontWeight:700 }}>
+                  {kpi.trend==="up"?"↑":"↓"}
+                </span>
+                <span style={{ color:"#9CA3AF" }}>prev: {kpi.prev}</span>
               </div>
-              <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>
-                {reportData?.monthLabel || "Current vs Prior"}
-              </div>
-            </div>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
-              <thead>
-                <tr style={{ background:"#fff" }}>
-                  <th style={{ padding:"7px 16px", textAlign:"left", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Line</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Current</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Prior</th>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Row 2: P&L + Health Score + Garima Note ── */}
+      <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 188px 1fr", gap:14 }}>
+
+        {/* P&L Summary */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>P&L Summary</h3>
+            <span className="ns-badge grey">{reportData?.monthLabel || "Current vs Prior"}</span>
+          </div>
+          <table className="ns-table">
+            <thead>
+              <tr><th>Line</th><th className="right">Current</th><th className="right">Prior</th></tr>
+            </thead>
+            <tbody>
+              {plRows.map((r,i) => (
+                <tr key={i} className={i===plRows.length-1?"total":"striped"}>
+                  <td className={i===0||i===plRows.length-1?"bold":""}>{r.label}</td>
+                  <td className="right mono bold">{r.curr}</td>
+                  <td className="right mono muted">{r.prev}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {plRows.map((r,i) => (
-                  <tr key={i} style={{ borderTop:`1px solid ${C.border}`, background: i===0?"#F0FDF4":"white" }}>
-                    <td style={{ padding:"8px 16px", fontWeight: i===0||i===plRows.length-1?700:400, color:C.text }}>{r.label}</td>
-                    <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, fontWeight:700, color:C.text }}>{r.curr}</td>
-                    <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, color:C.muted }}>{r.prev}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Health Score gauge */}
+        <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column",
+          alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div className="ns-label" style={{ marginBottom:12 }}>Financial Health</div>
+          <svg width="116" height="66" viewBox="0 0 120 68">
+            <path d="M10,60 A50,50 0 0,1 110,60" stroke="#E5E7EB" strokeWidth="10" fill="none" strokeLinecap="round"/>
+            <path d="M10,60 A50,50 0 0,1 110,60"
+              stroke={healthColor} strokeWidth="10" fill="none" strokeLinecap="round"
+              strokeDasharray={`${(healthScore/100)*157} 157`}/>
+            <text x="60" y="56" textAnchor="middle" fontSize="20" fontWeight="900"
+              fill={healthColor} fontFamily="monospace">{healthScore}</text>
+          </svg>
+          <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:healthColor, marginTop:4 }}>{healthLabel}</div>
+          <div className="ns-sub" style={{ marginTop:4, textAlign:"center" }}>{highPriority.length} high-priority action{highPriority.length!==1?"s":""}</div>
+        </div>
+
+        {/* Garima's Note */}
+        <div className="ns-panel" style={{ margin:0, borderLeft:`3px solid ${accentColor}` }}>
+          <div className="ns-panel-header">
+            <h3 style={{ color:accentColor }}>Garima's CFO Note</h3>
           </div>
- 
-          {/* Health Score meter (NetSuite KPI Meter) */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex",
-            flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-            <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>
-              Financial Health
-            </div>
-            {/* Gauge arc */}
-            <svg width="120" height="68" viewBox="0 0 120 68">
-              <path d="M10,60 A50,50 0 0,1 110,60" stroke="#E5E7EB" strokeWidth="10" fill="none" strokeLinecap="round"/>
-              <path d="M10,60 A50,50 0 0,1 110,60"
-                stroke={healthColor} strokeWidth="10" fill="none" strokeLinecap="round"
-                strokeDasharray={`${(healthScore/100)*157} 157`}/>
-              <text x="60" y="56" textAnchor="middle" fontSize="20" fontWeight="900"
-                fill={healthColor} fontFamily="monospace">{healthScore}</text>
-            </svg>
-            <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:healthColor, marginTop:4 }}>
-              {healthLabel}
-            </div>
-            <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:2, textAlign:"center" }}>
-              {highPriority.length} high-priority actions
-            </div>
-          </div>
- 
-          {/* Garima's Note */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            borderLeft:`3px solid ${accentColor}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex", flexDirection:"column" }}>
-            <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:accentColor,
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
-              Garima's CFO Note
-            </div>
-            <p style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.8, margin:0, flex:1 }}>
+          <div style={{ padding:"0 16px 16px" }}>
+            <p style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.8, margin:"0 0 12px" }}>
               {displayNote}
             </p>
             <button onClick={() => setPage("myreport")}
-              style={{ marginTop:12, padding:"6px 12px", borderRadius:7, border:`1px solid ${accentColor}`,
-                background:"transparent", color:accentColor, fontFamily:F, fontSize:11,
-                fontWeight:700, cursor:"pointer", alignSelf:"flex-start" }}>
+              style={{ padding:"7px 14px", borderRadius:7, border:`1px solid ${accentColor}`,
+                background:"transparent", color:accentColor, fontFamily:F, fontSize:12,
+                fontWeight:700, cursor:"pointer" }}>
               Full Report →
             </button>
           </div>
         </div>
- 
-        {/* ── Row 3: Action Items + AR Aging + Cash Flow ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
- 
-          {/* Action Items */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
-              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Action Items</div>
-              <span style={{ padding:"2px 8px", borderRadius:16, background:"#FEF2F2",
-                color:C.red, fontSize:10, fontWeight:700, fontFamily:F }}>
-                {pendingActions.length} pending
-              </span>
-            </div>
-            <div style={{ maxHeight:200, overflowY:"auto" }}>
-              {pendingActions.length === 0 ? (
-                <div style={{ padding:"20px 16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>
-                  All actions complete
-                </div>
-              ) : pendingActions.slice(0,6).map((a,i) => (
+      </div>
+
+      {/* ── Row 3: Action Items + AR Aging + Cash Flow ── */}
+      <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"1fr 1fr 1fr", gap:14 }}>
+
+        {/* Action Items */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>Action Items</h3>
+            <span className="ns-badge red">{pendingActions.length} pending</span>
+          </div>
+          <div className="ns-panel-body no-pad" style={{ maxHeight:220, overflowY:"auto" }}>
+            {pendingActions.length === 0
+              ? <EmptyState icon="ti-circle-check" title="All clear!" sub="No pending actions."/>
+              : pendingActions.slice(0,6).map((a,i) => (
                 <div key={i} style={{ padding:"9px 16px", borderBottom:`1px solid ${C.border}`,
                   display:"flex", alignItems:"flex-start", gap:10,
-                  background: a.priority==="High" ? "#FFF5F5" : "white" }}>
+                  background:a.priority==="High"?"#FFF5F5":"white" }}>
                   <div style={{ width:6, height:6, borderRadius:"50%", flexShrink:0, marginTop:5,
-                    background: a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.green }} />
+                    background:a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.green }}/>
                   <div style={{ flex:1 }}>
                     <div style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:500, lineHeight:1.4 }}>
                       {a.title||a.text||a.action}
                     </div>
-                    {a.due && <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:1 }}>Due: {a.due}</div>}
+                    {a.due && <div className="ns-sub" style={{ marginTop:1 }}>Due: {a.due}</div>}
                   </div>
-                  <span style={{ fontFamily:F, fontSize:9, fontWeight:700, padding:"2px 6px",
-                    borderRadius:12, flexShrink:0,
-                    background: a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#F0FDF4",
-                    color: a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.green }}>
+                  <span className={`ns-badge ${a.priority==="High"?"red":a.priority==="Medium"?"amber":"green"}`}
+                    style={{ fontSize:9 }}>
                     {a.priority||"Low"}
                   </span>
                 </div>
-              ))}
-            </div>
+              ))
+            }
           </div>
- 
-          {/* AR Aging chart */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
-              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>A/R Aging</div>
-              {hasAR && <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.muted }}>
-                Total: {uaeClient?"AED ":"₹"}{arTotal.toLocaleString()}
-              </div>}
-            </div>
-            {!hasAR ? (
-              <div style={{ padding:"32px 16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>
-                No AR data entered yet
-              </div>
-            ) : (
-              <div style={{ padding:16 }}>
+        </div>
+
+        {/* AR Aging */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>A/R Aging</h3>
+            {hasAR && <span className="ns-label" style={{ fontFamily:FM }}>
+              Total: {uaeClient?"AED ":"₹"}{arTotal.toLocaleString()}
+            </span>}
+          </div>
+          {!hasAR
+            ? <EmptyState icon="ti-receipt" title="No A/R data" sub="Working capital data not entered yet."/>
+            : <div style={{ padding:16 }}>
                 {arBuckets.map((b,i) => {
                   const pct = arTotal > 0 ? (b.val/arTotal*100) : 0;
                   return (
                     <div key={i} style={{ marginBottom:10 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
                         <span style={{ fontFamily:F, fontSize:11, color:C.text }}>{b.label}</span>
                         <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
-                          {uaeClient?"AED ":"₹"}{b.val.toLocaleString()} <span style={{color:C.muted,fontWeight:400}}>({pct.toFixed(0)}%)</span>
+                          {uaeClient?"AED ":"₹"}{b.val.toLocaleString()}
+                          <span className="muted" style={{ fontWeight:400 }}> ({pct.toFixed(0)}%)</span>
                         </span>
                       </div>
-                      <div style={{ height:6, background:"#F3F4F6", borderRadius:12, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:12, transition:"width 0.4s" }}/>
+                      <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10, transition:"width 0.5s" }}/>
                       </div>
                     </div>
                   );
                 })}
               </div>
-            )}
-          </div>
- 
-          {/* Cash Flow sparkline */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Cash Flow Trend</div>
-            </div>
-            {cfVals.length < 2 ? (
-              <div style={{ padding:"32px 16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>
-                No cashflow data entered yet
-              </div>
-            ) : (
-              <div style={{ padding:16 }}>
+          }
+        </div>
+
+        {/* Cash Flow sparkline */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header"><h3>Cash Flow Trend</h3></div>
+          {cfVals.length < 2
+            ? <EmptyState icon="ti-chart-line" title="No cash flow data" sub="Cash flow data not entered yet."/>
+            : <div style={{ padding:16 }}>
                 <svg width="100%" height={sparkH+20} viewBox={`0 0 ${sparkW} ${sparkH+20}`} preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={accentColor} stopOpacity="0.3"/>
+                      <stop offset="0%" stopColor={accentColor} stopOpacity="0.25"/>
                       <stop offset="100%" stopColor={accentColor} stopOpacity="0"/>
                     </linearGradient>
                   </defs>
@@ -1512,8 +1597,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                     const fillD = lineD + ` L${pts[pts.length-1][0]},${sparkH+2} L${pts[0][0]},${sparkH+2} Z`;
                     return (<>
                       <path d={fillD} fill="url(#sparkGrad)"/>
-                      <path d={lineD} stroke={accentColor} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                      {pts.map(([x,y],i) => <circle key={i} cx={x} cy={y} r="2" fill={accentColor}/>)}
+                      <path d={lineD} stroke={accentColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      {pts.map(([x,y],i) => <circle key={i} cx={x} cy={y} r="2.5" fill={accentColor}/>)}
                     </>);
                   })()}
                 </svg>
@@ -1523,67 +1608,60 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                   ))}
                 </div>
               </div>
-            )}
-          </div>
+          }
         </div>
- 
-        {/* ── Row 4: Key Indicators table (NetSuite style) ── */}
-        {(reportData?.variance||[]).length > 0 && (
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Key Performance Indicators</div>
-            </div>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
-              <thead>
-                <tr style={{ background:"#fff" }}>
-                  <th style={{ padding:"7px 16px", textAlign:"left", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Indicator</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Budget</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Actual</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Variance</th>
-                  <th style={{ padding:"7px 12px", textAlign:"center", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(reportData.variance||[]).slice(0,6).map((v,i) => {
-                  const diff = v.noCalc ? null : (() => {
-                    const b = parseFloat(String(v.budget||"0").replace(/[^0-9.-]/g,""));
-                    const a = parseFloat(String(v.actual||"0").replace(/[^0-9.-]/g,""));
-                    if (!b) return null;
-                    return (((a-b)/Math.abs(b))*100).toFixed(1);
-                  })();
-                  const favourable = v.fav ? (diff===null||parseFloat(diff)>=0) : (diff===null||parseFloat(diff)<=0);
-                  return (
-                    <tr key={i} style={{ borderTop:`1px solid ${C.border}`, background:i%2===0?"white":"#FAFAFA" }}>
-                      <td style={{ padding:"8px 16px", fontWeight:500, color:C.text }}>{v.metric}</td>
-                      <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, color:C.muted }}>{v.budget}</td>
-                      <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, fontWeight:700, color:C.text }}>{v.actual}</td>
-                      <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, fontWeight:700,
-                        color: diff===null?C.muted:favourable?C.green:C.red }}>
-                        {diff===null?"—":(parseFloat(diff)>0?"+":"")+diff+"%"}
-                      </td>
-                      <td style={{ padding:"8px 12px", textAlign:"center" }}>
-                        <span style={{ padding:"2px 8px", borderRadius:16, fontSize:10, fontWeight:700, fontFamily:F,
-                          background:favourable?"#F0FDF4":"#FEF2F2",
-                          color:favourable?C.green:C.red }}>
-                          {favourable?"✓ Favourable":"✗ Watch"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
- 
       </div>
+
+      {/* ── Row 4: KPI Variance table ── */}
+      {(reportData?.variance||[]).length > 0 && (
+        <div className="ns-panel">
+          <div className="ns-panel-header"><h3>Key Performance Indicators — Budget vs Actual</h3></div>
+          <table className="ns-table">
+            <thead>
+              <tr>
+                <th>Indicator</th>
+                <th className="right">Budget</th>
+                <th className="right">Actual</th>
+                <th className="right">Variance</th>
+                <th style={{ textAlign:"center" }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(reportData.variance||[]).slice(0,6).map((v,i) => {
+                const diff = v.noCalc ? null : (() => {
+                  const b = parseFloat(String(v.budget||"0").replace(/[^0-9.-]/g,""));
+                  const a = parseFloat(String(v.actual||"0").replace(/[^0-9.-]/g,""));
+                  if (!b) return null;
+                  return (((a-b)/Math.abs(b))*100).toFixed(1);
+                })();
+                const favourable = v.fav ? (diff===null||parseFloat(diff)>=0) : (diff===null||parseFloat(diff)<=0);
+                return (
+                  <tr key={i} className="striped">
+                    <td>{v.metric}</td>
+                    <td className="right mono muted">{v.budget}</td>
+                    <td className="right mono bold">{v.actual}</td>
+                    <td className="right mono" style={{ color:diff===null?C.muted:favourable?C.green:C.red, fontWeight:700 }}>
+                      {diff===null?"—":(parseFloat(diff)>0?"+":"")+diff+"%"}
+                    </td>
+                    <td style={{ textAlign:"center" }}>
+                      <span className={`ns-badge ${favourable?"green":"red"}`}>
+                        {favourable?"On Track":"Watch"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
     </div>
   );
 }
  
  
-function Dashboard({ client, kpis, garimaNote, reportData }) {
+function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
   const displayKpis = kpis || KPIs;
   const pack    = normalizePack(client?.client_pack || client?.clientPack);
   const accent  = pack==="msme" ? C.blue : pack==="corporate" ? C.purple : C.blue;
@@ -1666,20 +1744,29 @@ function Dashboard({ client, kpis, garimaNote, reportData }) {
  
       {/* KPI grid — 6 tiles */}
       <div className="ns-grid-6">
-        {displayKpis.slice(0,6).map((k,i) => (
-          <div key={i} className="ns-kpi-tile" style={{  }}>
-            <div className="label">{k.label}</div>
-            <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
-            {k.prev && k.prev!=="—" && (
-              <div className="trend">
-                <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>
-                  {k.trend==="up"?"↑":"↓"}
-                </span>
-                <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
+        {loading
+          ? Array.from({length:6}).map((_,i) => (
+              <div key={i} className="ns-kpi-tile">
+                <Skeleton width="55%" height={11} style={{ marginBottom:10 }}/>
+                <Skeleton width="70%" height={22} style={{ marginBottom:8 }}/>
+                <Skeleton width="45%" height={10}/>
               </div>
-            )}
-          </div>
-        ))}
+            ))
+          : displayKpis.slice(0,6).map((k,i) => (
+              <div key={i} className="ns-kpi-tile">
+                <div className="label">{k.label}</div>
+                <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
+                {k.prev && k.prev!=="—" && (
+                  <div className="trend">
+                    <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>
+                      {k.trend==="up"?"↑":"↓"}
+                    </span>
+                    <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
+                  </div>
+                )}
+              </div>
+            ))
+        }
       </div>
  
       {/* Variance table */}
@@ -2422,9 +2509,7 @@ function ActionItems({ actions: actionsProp, kpis, reportData }) {
         </div>
         <div className="ns-panel-body no-pad">
           {pending.length === 0 ? (
-            <div style={{ padding:"32px 16px", textAlign:"center", color:"#9CA3AF", fontFamily:F, fontSize:13 }}>
-              All actions complete — great work!
-            </div>
+            <EmptyState icon="ti-circle-check" title="All actions complete!" sub="Great work — no pending items right now."/>
           ) : (
             <table className="ns-table">
               <thead>
@@ -7482,10 +7567,7 @@ function CFOPackContent({ reportData, client, kpis }) {
             Monthly packs prepared by Garima — updated by the 20th of each month.
           </div>
           {archiveDocs.length === 0 && !isDemo && (
-            <Card style={{ textAlign:"center", padding:"32px 0", marginBottom:16 }}>
-              <div style={{ marginBottom:8 }}><i className="ti ti-chart-bar" style={{fontSize:28, color:C.blue}}/></div>
-              <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>No packs uploaded yet. Garima will upload your monthly pack here.</div>
-            </Card>
+            <EmptyState icon="ti-chart-bar" title="No packs uploaded yet" sub="Garima will upload your monthly pack here by the 20th of each month."/>
           )}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {archiveDocs.map((p,i) => <ArchiveRow key={i} p={p} label="Starter Pack"/>)}
@@ -8520,18 +8602,22 @@ function MyDocuments({ client }) {
         </div>
  
         {loading && (
-          <div style={{ textAlign:"center", padding:"32px 0", fontFamily:F, fontSize:13, color:C.dim }}>
-            Loading documents…
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {Array.from({length:4}).map((_,i) => (
+              <div key={i} style={{ padding:"16px 18px", borderRadius:10, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:14 }}>
+                <Skeleton width={36} height={36} radius={8}/>
+                <div style={{ flex:1 }}>
+                  <Skeleton width="50%" height={12} style={{ marginBottom:8 }}/>
+                  <Skeleton width="30%" height={10}/>
+                </div>
+                <Skeleton width={70} height={28} radius={14}/>
+              </div>
+            ))}
           </div>
         )}
- 
+
         {!loading && displayDocs.length === 0 && (
-          <div style={{ textAlign:"center", padding:"32px 0" }}>
-            <div style={{ marginBottom:8 }}><i className="ti ti-chart-bar" style={{fontSize:28, color:C.blue}}/></div>
-            <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
-              No documents yet. Garima will upload your reports here.
-            </div>
-          </div>
+          <EmptyState icon="ti-folder-off" title="No documents yet" sub="Garima will upload your reports here."/>
         )}
  
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -13847,8 +13933,8 @@ function Portal({ client, onLogout }) {
       : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
  
   const pages = {
-    overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData}/>,
-    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData}/>,
+    overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
+    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading}/>,
     cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
     actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
     myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
@@ -14004,7 +14090,62 @@ function Portal({ client, onLogout }) {
           .ns-grid-3{grid-template-columns:1fr!important}
           .ns-grid-2{grid-template-columns:1fr!important}
         }
- 
+
+        /* ── Mobile (< 768px) ── */
+        @media(max-width:768px){
+          /* Sidebar becomes a fixed overlay */
+          .main-sidebar {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+            width: 260px !important;
+            transform: translateX(-100%) !important;
+            transition: transform 0.25s ease !important;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
+          }
+          .main-sidebar.sidebar-open {
+            transform: translateX(0) !important;
+          }
+          /* Show mobile backdrop when sidebar open */
+          .main-sidebar.sidebar-open ~ * .mobile-backdrop,
+          .mobile-backdrop { display: block !important; }
+
+          /* Hamburger visible on mobile */
+          .hamburger-btn { display: flex !important; }
+
+          /* Hide breadcrumb home on tiny screens */
+          .bc-home { display: none !important; }
+
+          /* Grids stack on mobile */
+          .ns-grid-6 { grid-template-columns: 1fr 1fr !important; }
+          .ns-grid-4 { grid-template-columns: 1fr 1fr !important; }
+          .ns-grid-3 { grid-template-columns: 1fr !important; }
+          .ns-grid-2 { grid-template-columns: 1fr !important; }
+
+          /* Page padding tighter on mobile */
+          .ns-page { padding: 12px !important; gap: 10px !important; }
+
+          /* Tables scroll horizontally on mobile */
+          .ns-panel { overflow-x: auto !important; }
+          .ns-table { min-width: 480px; }
+
+          /* KPI tiles smaller on mobile */
+          .ns-kpi-tile { padding: 12px 12px !important; }
+          .ns-kpi-tile .value { font-size: 15px !important; }
+        }
+
+        @media(max-width:480px){
+          .ns-grid-6 { grid-template-columns: 1fr !important; }
+          .ns-grid-4 { grid-template-columns: 1fr !important; }
+        }
+
+        /* Login responsive */
+        @media(max-width:700px){
+          .login-left-panel { display:none !important; }
+          .login-right-panel { padding:24px 16px !important; }
+        }
+
         /* Sidebar hover */
         nav button:hover { background:rgba(255,255,255,0.06)!important; }
  
@@ -14025,26 +14166,71 @@ function Portal({ client, onLogout }) {
         <div style={{ position:"fixed", top:0, left:0, right:0, height:3, zIndex:9999,
           background:C.grad1, animation:"progress 1.5s ease-in-out infinite" }}/>
       )}
+      {/* Mobile sidebar backdrop */}
+      {!collapsed && (
+        <div className="mobile-backdrop" onClick={()=>setCollapsed(true)}
+          style={{ display:"none", position:"fixed", inset:0, background:"rgba(0,0,0,0.4)",
+            zIndex:999, backdropFilter:"blur(2px)" }}/>
+      )}
       <Sidebar page={page} setPage={setPage} client={client}
         onLogout={onLogout} collapsed={collapsed} setCollapsed={setCollapsed}/>
       <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0, overflow:"hidden", background:"#fff" }}>
         <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
-          notifItems={[
-            ...((isDemo ? null : liveInvoices) || [])
+          onMenuToggle={()=>setCollapsed(c=>!c)}
+          notifItems={(() => {
+            const items = [];
+            // Unpaid invoices
+            ((isDemo ? null : liveInvoices) || [])
               .filter(inv => inv.status === "unpaid")
-              .map(inv => ({
-                icon:"invoice", page:"invoices",
+              .forEach(inv => items.push({
+                icon:"ti-receipt", page:"invoices", severity:"medium",
                 title:`Invoice due: ${inv.description || inv.invoice_number}`,
                 sub:`${inv.amount} · Due ${inv.due_date || "—"}`,
-              })),
-            ...((isDemo ? null : liveActions) || [])
+              }));
+            // High-priority actions
+            ((isDemo ? null : liveActions) || [])
               .filter(a => !a.done && a.priority === "High")
-              .map(a => ({
-                icon:"ti-alert-triangle", page:"actions",
-                title:a.text.length > 50 ? a.text.slice(0,50)+"…" : a.text,
+              .forEach(a => items.push({
+                icon:"ti-alert-triangle", page:"actions", severity:"high",
+                title:(a.text||a.title||"").length > 50 ? (a.text||a.title||"").slice(0,50)+"…" : (a.text||a.title||""),
                 sub:`High priority · ${a.month || ""}`,
-              })),
-          ]}
+              }));
+            if (!isDemo && liveKpis) {
+              // Cash runway warning
+              const runwayKpi = resolvedKpis.find(k => k.label?.toLowerCase().includes("runway"));
+              if (runwayKpi && runwayKpi.value && runwayKpi.value !== "—") {
+                const months = parseFloat(String(runwayKpi.value).replace(/[^0-9.]/g,""));
+                if (!isNaN(months) && months < 3)
+                  items.unshift({ icon:"ti-flame", page:"cashflow", severity:"critical",
+                    title:`Cash runway critical: ${runwayKpi.value}`,
+                    sub:"Take immediate action — under 3 months remaining" });
+                else if (!isNaN(months) && months < 6)
+                  items.unshift({ icon:"ti-alert-circle", page:"cashflow", severity:"high",
+                    title:`Cash runway below 6 months: ${runwayKpi.value}`,
+                    sub:"Review burn rate and fundraising plan" });
+              }
+              // UAE VAT due
+              if (isUAE(client) && liveReportData?.vat?.pendingReturns) {
+                const today = new Date();
+                (liveReportData.vat.pendingReturns || []).forEach(r => {
+                  if ((r.status === "Due" || r.status === "Overdue") && r.due) {
+                    const days = Math.ceil((new Date(r.due) - today) / 86400000);
+                    if (days <= 14)
+                      items.unshift({ icon:"ti-file-invoice", page:"uaetax", severity:"high",
+                        title:`VAT return due: ${r.period}`,
+                        sub:`Due ${r.due}${days <= 0 ? " — OVERDUE" : ` (${days}d)`}` });
+                  }
+                });
+              }
+              // Low health score
+              const score = resolvedReportData?.healthScore;
+              if (score && score < 50)
+                items.push({ icon:"ti-heartbeat", page:"dashboard", severity:"high",
+                  title:`Financial health score: ${score}/100`,
+                  sub:"Review KPI dashboard for details" });
+            }
+            return items;
+          })()}
         />
         <main style={{ flex:1, overflowY:"auto" }}>
           {/* ── Report PDF buttons — shown on key report pages ── */}
@@ -14059,7 +14245,9 @@ function Portal({ client, onLogout }) {
               onSaved={() => setReportSaveKey(k => k + 1)}
             />
           )}
-          {pages[page]}
+          <div key={page} className="ns-page-enter">
+            {pages[page]}
+          </div>
         </main>
       </div>
       <style>{`@keyframes progress{0%{width:0%;left:0}50%{width:60%;left:20%}100%{width:0%;left:100%}}
@@ -14102,26 +14290,50 @@ function AIChatbot({ client, reportData, kpis }) {
     setMsgs(m => [...m, { role:"user", text }]);
     setLoading(true);
  
-    // Build context from client data
+    // Build rich context from live client data
+    const uae = isUAE(client);
+    const pl  = reportData?.pl || {};
     const ctx = [
-      client?.name ? `Client: ${client.name}` : "",
-      client?.company ? `Company: ${client.company}` : "",
-      client?.client_pack ? `Pack: ${client.client_pack}` : "",
-      reportData?.pl?.revenue?.actual ? `Revenue: ${reportData.pl.revenue.actual}` : "",
-      reportData?.pl?.ebitda?.actual ? `EBITDA: ${reportData.pl.ebitda.actual}` : "",
-      reportData?.pl?.pat?.actual ? `Net Profit: ${reportData.pl.pat.actual}` : "",
-      (kpis||[]).length ? ("KPIs: " + (kpis||[]).map(k=>k.label+"="+k.value).join(", ")) : "",
+      `Client: ${client?.name || "Unknown"} | Company: ${client?.company || "—"} | Pack: ${client?.client_pack || "—"}`,
+      uae ? `Region: UAE | Freezone: ${reportData?.uaeProfile?.freezone || "DMCC"}` : `Region: India`,
+      reportData?.monthLabel ? `Reporting Period: ${reportData.monthLabel}` : "",
+      // KPIs
+      (kpis||[]).length ? `KPIs: ${(kpis||[]).map(k=>`${k.label}=${k.value}`).join(", ")}` : "",
+      // P&L
+      pl.revenue?.actual   ? `Revenue: ${pl.revenue.actual} (prev: ${pl.revenue.prev||"—"})` : "",
+      pl.grossProfit?.actual ? `Gross Profit: ${pl.grossProfit.actual} | GP Margin: ${pl.gpMargin?.actual||"—"}` : "",
+      pl.ebitda?.actual    ? `EBITDA: ${pl.ebitda.actual} | EBITDA Margin: ${pl.ebitdaMargin?.actual||"—"}` : "",
+      pl.pat?.actual       ? `Net Profit: ${pl.pat.actual} | Net Margin: ${pl.netMargin?.actual||"—"}` : "",
+      // Cash & treasury
+      reportData?.treasury?.totalCash ? `Cash: ${uae ? "AED " : "₹"}${reportData.treasury.totalCash?.toLocaleString()}` : "",
+      // UAE specific
+      uae && reportData?.vat?.vatPayable ? `VAT Payable: AED ${reportData.vat.vatPayable?.toLocaleString()}` : "",
+      uae && reportData?.ct ? `CT Qualifying Income: ${reportData.ct.qualifyingPct||0}%` : "",
+      uae && reportData?.qfzp?.qfzpScore ? `QFZP Score: ${reportData.qfzp.qfzpScore}/100` : "",
+      // Health score
+      reportData?.healthScore ? `Financial Health Score: ${reportData.healthScore}/100` : "",
+      // Garima's note (summarised)
+      reportData?.garimaNote ? `Advisor note summary: ${String(reportData.garimaNote).slice(0,300)}` : "",
+      // Pending actions
+      (reportData?.actions||[]).filter(a=>!a.done).length
+        ? `Pending actions: ${(reportData.actions||[]).filter(a=>!a.done).map(a=>a.text||a.title).slice(0,5).join("; ")}` : "",
     ].filter(Boolean).join("\n");
- 
+
+    const systemPrompt = uae
+      ? `You are Garima's AI CFO assistant on the Finzzup portal. Garima Agarwal is a CA, IBBI Registered Valuer and Fractional CFO specialising in UAE and India cross-border finance. Help the client understand their UAE finances — VAT, Corporate Tax, QFZP compliance, DMCC/DIFC structure, AED cash management. Be concise, accurate and professional. Use AED for UAE amounts. Never guess specific numbers not in the context below.\n\nLive client data:\n${ctx}`
+      : `You are Garima's AI CFO assistant on the Finzzup portal. Garima Agarwal is a CA, IBBI Registered Valuer and Fractional CFO. Help the client understand their business finances — P&L, cash, burn rate, runway, working capital, valuations and Indian accounting. Be concise, friendly and professional. Use ₹ and Indian financial context (Crores, Lakhs). Never guess specific numbers not in the context below.\n\nLive client data:\n${ctx}`;
+
     try {
       const res = await fetch("/api/chat", {
         method:"POST",
         headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 1000,
-          system: "You are Garima's AI CFO assistant on the Finzzup portal. Garima Agarwal is a CA, IBBI Registered Valuer and Fractional CFO. You help clients understand their finances, valuations and CFO advisory topics. Be concise, friendly and professional. Use Indian financial context (₹, Indian accounting standards). " + (ctx ? "Client context:\n" + ctx : ""),
-          messages: [{ role:"user", content: text }]
+          model: "claude-sonnet-4-6",
+          max_tokens: 800,
+          system: systemPrompt,
+          messages: msgs.concat({ role:"user", content: text })
+            .filter(m => m.role !== "typing")
+            .map(m => ({ role: m.role, content: m.text }))
         })
       });
       const data = await res.json();
@@ -14412,6 +14624,585 @@ function InlineInput({ value, onCommit, placeholder="", style={} }) {
   );
 }
  
+// ─── CSV IMPORT COMPONENT ─────────────────────────────────────────────────────
+// ─── CSV IMPORT — PARSERS & COMPONENT ────────────────────────────────────────
+
+function parseNum(s) {
+  if (s === null || s === undefined || s === "") return null;
+  const n = parseFloat(String(s).replace(/[₹,AED\s]/g,"").replace(/[^0-9.-]/g,""));
+  return isNaN(n) ? null : n;
+}
+
+function extractField(lines, keywords, colIdx=1, colIdx2=2) {
+  const kws = Array.isArray(keywords) ? keywords : [keywords];
+  for (const line of lines) {
+    const low = line.toLowerCase();
+    if (kws.some(k => low.includes(k.toLowerCase()))) {
+      const cols = line.split(",").map(c => c.replace(/"/g,"").trim());
+      const v1 = parseNum(cols[colIdx]);
+      const v2 = parseNum(cols[colIdx2]);
+      if (v1 !== null) return { curr: v1, prev: v2 };
+    }
+  }
+  return { curr: null, prev: null };
+}
+
+function normaliseLines(text) {
+  return text.replace(/\r\n/g,"\n").replace(/\r/g,"\n").split("\n");
+}
+
+function parsePL(text) {
+  const lines = normaliseLines(text);
+  const ex = (kws, col=1, col2=2) => extractField(lines, kws, col, col2);
+  const rev   = ex(["net sales","net revenue","total revenue","gross revenue","revenue from operations","sales","turnover","total income"]);
+  const cogs  = ex(["cost of goods sold","cost of sales","cogs","cost of production","direct expenses","purchases","cost of revenue"]);
+  const gp    = ex(["gross profit","trading profit"]);
+  const ebi   = ex(["ebitda","operating profit","profit before interest and depreciation","pbit"]);
+  const pat   = ex(["net profit after tax","profit after tax","net profit","pat","profit for the year","net income"]);
+  const cash  = ex(["cash and cash equivalents","cash & cash equivalents","cash at bank and in hand","closing cash","cash balance"]);
+
+  const gpMargin  = (rev.curr && gp.curr)  ? ((gp.curr/rev.curr)*100).toFixed(1)+"%" : null;
+  const ebiMargin = (rev.curr && ebi.curr) ? ((ebi.curr/rev.curr)*100).toFixed(1)+"%" : null;
+  const netMargin = (rev.curr && pat.curr) ? ((pat.curr/rev.curr)*100).toFixed(1)+"%" : null;
+
+  return { type:"pl", revenue:rev, cogs:cogs, grossProfit:gp, ebitda:ebi, pat:pat, cash:cash,
+    gpMargin, ebitdaMargin:ebiMargin, netMargin };
+}
+
+function parseBalanceSheet(text) {
+  const lines = normaliseLines(text);
+  const ex = (kws) => extractField(lines, kws);
+
+  return {
+    type: "bs",
+    totalAssets:        ex(["total assets","balance sheet total","net assets"]),
+    fixedAssets:        ex(["fixed assets","property, plant","property plant","non-current assets","tangible assets"]),
+    currentAssets:      ex(["total current assets","current assets"]),
+    inventory:          ex(["inventory","stock-in-trade","closing stock","stock in hand","inventories"]),
+    tradeReceivables:   ex(["trade receivables","sundry debtors","debtors","accounts receivable"]),
+    cashAndBank:        ex(["cash and cash equivalents","cash & bank","cash at bank","cash in hand and at bank","cash and bank"]),
+    totalLiabilities:   ex(["total liabilities"]),
+    currentLiabilities: ex(["total current liabilities","current liabilities"]),
+    tradePayables:      ex(["trade payables","sundry creditors","creditors","accounts payable"]),
+    shortTermDebt:      ex(["short-term borrowings","short term loans","working capital loan","short term debt"]),
+    longTermDebt:       ex(["long-term borrowings","long term debt","term loans","non-current liabilities","long term borrowings"]),
+    equity:             ex(["shareholders equity","net worth","capital & reserves","equity","total equity"]),
+    shareCapital:       ex(["share capital","paid-up capital","equity share capital"]),
+    reserves:           ex(["reserves and surplus","retained earnings","reserves & surplus","other equity"]),
+  };
+}
+
+function parseCashFlow(text) {
+  const lines = normaliseLines(text);
+  const ex = (kws) => extractField(lines, kws);
+
+  return {
+    type: "cf",
+    operatingCF:  ex(["net cash from operating","cash from operating","cash generated from operations","operating activities"]),
+    investingCF:  ex(["net cash from investing","cash used in investing","investing activities"]),
+    financingCF:  ex(["net cash from financing","cash from financing","financing activities"]),
+    netChange:    ex(["net increase in cash","net decrease in cash","net change in cash","net increase/(decrease)"]),
+    openingCash:  ex(["opening cash","cash at beginning","cash at the beginning","opening balance of cash"]),
+    closingCash:  ex(["closing cash","cash at end","cash at the end","closing balance of cash","cash and cash equivalents at end"]),
+  };
+}
+
+function parseBankStatement(text) {
+  const lines = normaliseLines(text).filter(l => l.trim());
+
+  let headerIdx = -1, debitCol = -1, creditCol = -1, balanceCol = -1;
+
+  for (let i = 0; i < Math.min(lines.length, 20); i++) {
+    const cols = lines[i].toLowerCase().split(",").map(c => c.replace(/"/g,"").trim());
+    const di = cols.findIndex(c => /debit|withdrawal|dr\b/.test(c));
+    const ci = cols.findIndex(c => /credit|deposit|cr\b/.test(c));
+    const bi = cols.findIndex(c => /balance/.test(c));
+    if ((di >= 0 || ci >= 0) && bi >= 0) {
+      headerIdx = i; debitCol = di; creditCol = ci; balanceCol = bi;
+      break;
+    }
+  }
+
+  if (headerIdx < 0) {
+    // Fallback: keyword-based lookup for summary-style exports
+    const ex = kws => extractField(lines, kws);
+    return {
+      type: "bank",
+      openingBalance: ex(["opening balance","balance brought forward","b/f"]),
+      closingBalance:  ex(["closing balance","balance carried forward","c/f"]),
+      totalCredits:    ex(["total credits","total deposits","total inflow"]),
+      totalDebits:     ex(["total debits","total withdrawals","total outflow"]),
+      netFlow:         { curr: null, prev: null },
+    };
+  }
+
+  let totalCredits = 0, totalDebits = 0;
+  let openingBalance = null, closingBalance = null;
+
+  for (let i = headerIdx + 1; i < lines.length; i++) {
+    const cols = lines[i].split(",").map(c => c.replace(/"/g,"").trim());
+    const debit  = debitCol  >= 0 ? parseNum(cols[debitCol])  : null;
+    const credit = creditCol >= 0 ? parseNum(cols[creditCol]) : null;
+    const bal    = balanceCol >= 0 ? parseNum(cols[balanceCol]) : null;
+
+    if (debit  && debit  > 0) totalDebits  += debit;
+    if (credit && credit > 0) totalCredits += credit;
+    if (bal !== null) {
+      if (openingBalance === null) openingBalance = bal;
+      closingBalance = bal;
+    }
+  }
+
+  // Look for explicit opening balance row (B/F row present in some formats)
+  const bfRow = lines.find(l => /opening|b\/f|brought forward/i.test(l));
+  if (bfRow) {
+    const cols = bfRow.split(",").map(c => c.replace(/"/g,"").trim());
+    const v = parseNum(cols[balanceCol >= 0 ? balanceCol : cols.length - 1]);
+    if (v !== null) openingBalance = v;
+  }
+
+  const net = (totalCredits > 0 || totalDebits > 0) ? totalCredits - totalDebits : null;
+
+  return {
+    type: "bank",
+    openingBalance: { curr: openingBalance,              prev: null },
+    closingBalance:  { curr: closingBalance || null,      prev: null },
+    totalCredits:    { curr: totalCredits > 0 ? totalCredits : null, prev: null },
+    totalDebits:     { curr: totalDebits  > 0 ? totalDebits  : null, prev: null },
+    netFlow:         { curr: net,                         prev: null },
+  };
+}
+
+function fmtCrL(n, uae=false) {
+  if (n === null || n === undefined) return "—";
+  if (uae) {
+    if (Math.abs(n) >= 1000000) return "AED " + (n/1000000).toFixed(2) + "M";
+    if (Math.abs(n) >= 1000)    return "AED " + (n/1000).toFixed(0) + "K";
+    return "AED " + n.toLocaleString();
+  }
+  if (Math.abs(n) >= 10000000) return "₹" + (n/10000000).toFixed(2) + " Cr";
+  if (Math.abs(n) >= 100000)   return "₹" + (n/100000).toFixed(2) + " L";
+  if (Math.abs(n) >= 1000)     return "₹" + (n/1000).toFixed(1) + "K";
+  return "₹" + n.toLocaleString("en-IN");
+}
+
+const REPORT_TYPES = [
+  { id:"pl",   label:"Profit & Loss",    icon:"ti-report-analytics", parser: parsePL },
+  { id:"bs",   label:"Balance Sheet",    icon:"ti-building-bank",    parser: parseBalanceSheet },
+  { id:"cf",   label:"Cash Flow",        icon:"ti-cash",             parser: parseCashFlow },
+  { id:"bank", label:"Bank Statement",   icon:"ti-building-community", parser: parseBankStatement },
+];
+
+const PL_FIELDS = [
+  { key:"revenue",     label:"Revenue",        curr:d=>d.revenue?.curr,     prev:d=>d.revenue?.prev,     isMargin:false },
+  { key:"cogs",        label:"Cost of Sales",  curr:d=>d.cogs?.curr,        prev:d=>d.cogs?.prev,        isMargin:false },
+  { key:"grossProfit", label:"Gross Profit",   curr:d=>d.grossProfit?.curr, prev:d=>d.grossProfit?.prev, isMargin:false },
+  { key:"gpMargin",    label:"GP Margin",      curr:d=>d.gpMargin,          prev:()=>null,               isMargin:true  },
+  { key:"ebitda",      label:"EBITDA",         curr:d=>d.ebitda?.curr,      prev:d=>d.ebitda?.prev,      isMargin:false },
+  { key:"ebitdaMargin",label:"EBITDA Margin",  curr:d=>d.ebitdaMargin,      prev:()=>null,               isMargin:true  },
+  { key:"pat",         label:"Net Profit",     curr:d=>d.pat?.curr,         prev:d=>d.pat?.prev,         isMargin:false },
+  { key:"netMargin",   label:"Net Margin",     curr:d=>d.netMargin,         prev:()=>null,               isMargin:true  },
+  { key:"cash",        label:"Cash Balance",   curr:d=>d.cash?.curr,        prev:d=>d.cash?.prev,        isMargin:false },
+];
+
+const BS_FIELDS = [
+  { key:"totalAssets",        label:"Total Assets"           },
+  { key:"fixedAssets",        label:"Fixed / Non-Current Assets" },
+  { key:"currentAssets",      label:"Total Current Assets"   },
+  { key:"inventory",          label:"Inventory / Stock"      },
+  { key:"tradeReceivables",   label:"Trade Receivables"      },
+  { key:"cashAndBank",        label:"Cash & Bank"            },
+  { key:"totalLiabilities",   label:"Total Liabilities"      },
+  { key:"currentLiabilities", label:"Current Liabilities"    },
+  { key:"tradePayables",      label:"Trade Payables"         },
+  { key:"shortTermDebt",      label:"Short-term Debt"        },
+  { key:"longTermDebt",       label:"Long-term Debt"         },
+  { key:"equity",             label:"Shareholders' Equity"   },
+  { key:"shareCapital",       label:"Share Capital"          },
+  { key:"reserves",           label:"Reserves & Surplus"     },
+];
+
+const CF_FIELDS = [
+  { key:"operatingCF", label:"Operating Cash Flow" },
+  { key:"investingCF", label:"Investing Cash Flow" },
+  { key:"financingCF", label:"Financing Cash Flow" },
+  { key:"netChange",   label:"Net Change in Cash"  },
+  { key:"openingCash", label:"Opening Cash Balance" },
+  { key:"closingCash", label:"Closing Cash Balance" },
+];
+
+const BANK_FIELDS = [
+  { key:"openingBalance", label:"Opening Balance"           },
+  { key:"closingBalance", label:"Closing Balance"           },
+  { key:"totalCredits",   label:"Total Inflows (Credits)"   },
+  { key:"totalDebits",    label:"Total Outflows (Debits)"   },
+  { key:"netFlow",        label:"Net Cash Flow (Period)"    },
+];
+
+const EXPORT_GUIDES = {
+  pl: {
+    india: [
+      "Open Tally Prime → Gateway of Tally → Display More Reports → Profit & Loss A/c",
+      "Set the period (e.g. 1 Apr 2025 to 31 Mar 2026)",
+      "Press E (Export) → Format: CSV → Export",
+    ],
+    uae: [
+      "Open Zoho Books → Reports → Business Overview → Profit and Loss",
+      "Set date range and click Export → CSV",
+      "Or: FreshBooks / QuickBooks → Reports → P&L → Export CSV",
+    ],
+  },
+  bs: {
+    india: [
+      "Open Tally Prime → Display More Reports → Balance Sheet",
+      "Set the as-at date, then E (Export) → CSV",
+    ],
+    uae: [
+      "Open Zoho Books → Reports → Business Overview → Balance Sheet",
+      "Set date and Export → CSV",
+    ],
+  },
+  cf: {
+    india: [
+      "Open Tally Prime → Display More Reports → Cash Flow",
+      "Set the period, then E (Export) → CSV",
+    ],
+    uae: [
+      "Open Zoho Books → Reports → Business Overview → Cash Flow Statement",
+      "Set date range and Export → CSV",
+    ],
+  },
+  bank: {
+    india: [
+      "Log in to your bank net banking (HDFC / ICICI / SBI / Axis / Kotak)",
+      "Go to Account Statement → set date range → Download as CSV or Excel",
+      "If downloaded as XLS, open in Excel and Save As → CSV before uploading",
+    ],
+    uae: [
+      "Log in to your bank portal (ENBD / ADCB / FAB / Mashreq / DIB)",
+      "Go to Account Statement → set period → Export / Download as CSV",
+      "Standard UAE format: Date, Description, Debit, Credit, Balance",
+    ],
+  },
+};
+
+function DropZone({ onFile, fileName, dragColor, F, C }) {
+  const [dragOver, setDragOver] = React.useState(false);
+  const fileRef = React.useRef();
+
+  const process = file => {
+    if (!file) return;
+    if (!file.name.match(/\.(csv|txt|xls|xlsx)$/i)) return;
+    onFile(file);
+  };
+
+  return (
+    <div
+      onDragOver={e=>{e.preventDefault();setDragOver(true)}}
+      onDragLeave={()=>setDragOver(false)}
+      onDrop={e=>{e.preventDefault();setDragOver(false);process(e.dataTransfer.files[0])}}
+      onClick={()=>fileRef.current?.click()}
+      style={{ border:`2px dashed ${dragOver?(dragColor||"#3B6FF7"):C.border}`, borderRadius:10,
+        padding:"28px 20px", textAlign:"center", cursor:"pointer",
+        background: dragOver?`${dragColor||"#3B6FF7"}08`:"#FAFAFA", transition:"all 0.2s" }}>
+      <input ref={fileRef} type="file" accept=".csv,.txt" style={{display:"none"}}
+        onChange={e=>process(e.target.files[0])}/>
+      <i className="ti ti-file-upload" style={{ fontSize:28, color:dragOver?(dragColor||"#3B6FF7"):C.dim, marginBottom:8, display:"block"}}/>
+      <div style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text }}>
+        {fileName ? `✓ ${fileName}` : "Drop CSV here or click to browse"}
+      </div>
+      <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:3 }}>
+        Tally, Zoho Books, Bank Statement — CSV or TXT
+      </div>
+    </div>
+  );
+}
+
+function PreviewTable({ fields, data, uae, F, FM, C }) {
+  return (
+    <table className="ns-table">
+      <thead>
+        <tr>
+          <th>Field</th>
+          <th className="right">Current Period</th>
+          <th className="right">Previous Period</th>
+          <th style={{textAlign:"center"}}>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {fields.map((f,i) => {
+          // PL fields have accessor functions; BS/CF fields use .curr/.prev on data[key]
+          const currVal = f.curr ? f.curr(data) : data[f.key]?.curr ?? null;
+          const prevVal = f.prev ? f.prev(data) : data[f.key]?.prev ?? null;
+          const isMargin = f.isMargin;
+          const displayCurr = currVal !== null && currVal !== undefined
+            ? (isMargin ? currVal : fmtCrL(currVal, uae)) : "—";
+          const displayPrev = prevVal !== null && prevVal !== undefined
+            ? (isMargin ? prevVal : fmtCrL(prevVal, uae)) : "—";
+          const detected = currVal !== null && currVal !== undefined;
+          return (
+            <tr key={i} className="striped">
+              <td>{f.label}</td>
+              <td className="right mono bold" style={{color:detected?C.text:C.dim}}>{displayCurr}</td>
+              <td className="right mono muted">{displayPrev}</td>
+              <td style={{textAlign:"center"}}>
+                <span className={`ns-badge ${detected?"green":"grey"}`}>{detected?"Detected":"Not found"}</span>
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  );
+}
+
+function CsvImport({ selected, onImport, onKpiImport, kpiMonth, isUAEClient, C, F, FM, saved, loading }) {
+  const [activeType, setActiveType] = React.useState("pl");
+  const [month, setMonth]           = React.useState(kpiMonth || "");
+  const [reports, setReports]       = React.useState({ pl:null, bs:null, cf:null, bank:null });
+  const [fileNames, setFileNames]   = React.useState({ pl:"", bs:"", cf:"", bank:"" });
+  const [errs, setErrs]             = React.useState({ pl:"", bs:"", cf:"", bank:"" });
+  const [imported, setImported]     = React.useState({ pl:false, bs:false, cf:false, bank:false });
+  const [importing, setImporting]   = React.useState(false);
+
+  const uae = isUAEClient;
+  const accentColor = uae ? "#00732F" : C.blue;
+
+  const handleFile = (type, file) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const text = e.target.result;
+      const rt = REPORT_TYPES.find(r => r.id === type);
+      const parsed = rt.parser(text);
+      // Check if anything was detected
+      const hasData = Object.values(parsed).some(v =>
+        v !== null && typeof v === "object" && v.curr !== null
+      ) || (typeof parsed.gpMargin === "string");
+      if (!hasData) {
+        setErrs(er => ({...er, [type]:"Could not detect financial data. Check that this is the correct report type."}));
+        return;
+      }
+      setErrs(er => ({...er, [type]:""}));
+      setReports(r => ({...r, [type]: parsed}));
+      setFileNames(fn => ({...fn, [type]: file.name}));
+    };
+    reader.readAsText(file, "UTF-8");
+  };
+
+  const handleImportType = async (type) => {
+    const data = reports[type];
+    if (!data || !selected) return;
+    setImporting(true);
+
+    const fmt = n => fmtCrL(n, uae);
+    const fmtPair = (obj, prevObj) => obj?.curr !== null && obj?.curr !== undefined
+      ? { actual: fmt(obj.curr), prev: prevObj?.curr !== null ? fmt(prevObj?.curr ?? null) : "—" }
+      : undefined;
+
+    let patch = {};
+
+    if (type === "pl") {
+      const plBlock = {
+        revenue:      fmtPair(data.revenue, data.revenue),
+        cogs:         fmtPair(data.cogs),
+        grossProfit:  fmtPair(data.grossProfit),
+        gpMargin:     data.gpMargin ? { actual:data.gpMargin, prev:"—" } : undefined,
+        ebitda:       fmtPair(data.ebitda),
+        ebitdaMargin: data.ebitdaMargin ? { actual:data.ebitdaMargin, prev:"—" } : undefined,
+        pat:          fmtPair(data.pat),
+        netMargin:    data.netMargin ? { actual:data.netMargin, prev:"—" } : undefined,
+      };
+      Object.keys(plBlock).forEach(k => plBlock[k]===undefined && delete plBlock[k]);
+      const plInputs = {
+        revenue:  data.revenue?.curr  !== null ? String(data.revenue.curr)  : undefined,
+        cogs:     data.cogs?.curr     !== null ? String(data.cogs.curr)     : undefined,
+        gpMargin: data.gpMargin  || undefined,
+        ebitda:   data.ebitda?.curr   !== null ? String(data.ebitda.curr)   : undefined,
+        pat:      data.pat?.curr      !== null ? String(data.pat.curr)      : undefined,
+      };
+      Object.keys(plInputs).forEach(k => plInputs[k]===undefined && delete plInputs[k]);
+      patch = { pl: plBlock, plInputs, monthLabel: month || undefined };
+
+      // KPI row for India
+      if (!uae && month && onKpiImport) {
+        await onKpiImport({
+          month,
+          revenue:      data.revenue?.curr      !== null ? fmt(data.revenue.curr)      : "",
+          gross_margin: data.gpMargin            || "",
+          cash_balance: data.cash?.curr          !== null ? fmt(data.cash.curr)         : "",
+          burn_rate: "", runway: "", arr: "",
+        });
+      }
+    }
+
+    if (type === "bs") {
+      const bs = {};
+      BS_FIELDS.forEach(f => {
+        const v = data[f.key]?.curr;
+        if (v !== null && v !== undefined) bs[f.key] = v;
+      });
+      // Also merge into workingCapital
+      const wc = {};
+      if (data.tradeReceivables?.curr) wc.ar0_30 = data.tradeReceivables.curr;
+      if (data.tradePayables?.curr)    wc.ap      = data.tradePayables.curr;
+      if (data.inventory?.curr)        wc.inventory = data.inventory.curr;
+      patch = { balanceSheet: bs, workingCapital: wc };
+    }
+
+    if (type === "cf") {
+      const cfEntry = {
+        month: month || "Imported",
+        actual: data.closingCash?.curr !== null ? fmt(data.closingCash.curr) : undefined,
+        operatingCF: data.operatingCF?.curr,
+        investingCF: data.investingCF?.curr,
+        financingCF: data.financingCF?.curr,
+      };
+      Object.keys(cfEntry).forEach(k => cfEntry[k]===undefined && delete cfEntry[k]);
+      patch = { cashflow_import: cfEntry,
+        plInputs: { closingCash: data.closingCash?.curr !== null ? fmt(data.closingCash.curr) : undefined } };
+    }
+
+    if (type === "bank") {
+      const bs = {
+        openingBalance: data.openingBalance?.curr,
+        closingBalance:  data.closingBalance?.curr,
+        totalCredits:    data.totalCredits?.curr,
+        totalDebits:     data.totalDebits?.curr,
+        netFlow:         data.netFlow?.curr,
+        month:           month || "Imported",
+      };
+      Object.keys(bs).forEach(k => bs[k] === null || bs[k] === undefined ? delete bs[k] : null);
+      patch = { bankStatement: bs };
+      // Closing balance updates cash KPI
+      if (data.closingBalance?.curr) {
+        patch.plInputs = { closingCash: fmt(data.closingBalance.curr) };
+      }
+      // Inflows feed working capital analysis
+      if (data.totalCredits?.curr) {
+        patch.workingCapital = { cashInflow: data.totalCredits.curr };
+      }
+    }
+
+    await onImport({ type, ...patch });
+    setImporting(false);
+    setImported(im => ({...im, [type]: true}));
+    setTimeout(() => setImported(im => ({...im, [type]: false})), 3000);
+  };
+
+  if (!selected) return (
+    <div style={{ maxWidth:600 }}>
+      <EmptyState icon="ti-user-search" title="Select a client first"
+        sub="Choose a client from the left panel to import their financial data."/>
+    </div>
+  );
+
+  const activeRt = REPORT_TYPES.find(r => r.id === activeType);
+  const activeData = reports[activeType];
+  const activeFields = activeType==="pl" ? PL_FIELDS : activeType==="bs" ? BS_FIELDS : activeType==="cf" ? CF_FIELDS : BANK_FIELDS;
+  const guide = EXPORT_GUIDES[activeType]?.[uae?"uae":"india"] || [];
+
+  return (
+    <div style={{ maxWidth:780 }}>
+      {/* Header */}
+      <Card style={{ marginBottom:14 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12, marginBottom:16 }}>
+          <div>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>
+              CSV Import — {selected.company}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:2 }}>
+              {uae ? "Zoho Books / FreshBooks / Bank Statement CSV" : "Tally ERP 9 / Tally Prime / Bank Statement CSV"}
+            </div>
+          </div>
+          <div style={{ display:"flex", gap:8 }}>
+            <span className={`ns-badge ${uae?"green":"blue"}`}>{uae ? "UAE — AED" : "India — ₹"}</span>
+            {Object.entries(imported).filter(([,v])=>v).map(([k]) => (
+              <span key={k} className="ns-badge green">✓ {REPORT_TYPES.find(r=>r.id===k)?.label}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Month picker */}
+        <div style={{ marginBottom:0 }}>
+          <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+            letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>
+            Reporting Period — applies to all reports
+          </label>
+          <input value={month} onChange={e=>setMonth(e.target.value)}
+            placeholder={uae ? "e.g. Q1 2026 or Mar 2026" : "e.g. Mar 2026"}
+            style={{ padding:"9px 12px", borderRadius:8, border:`1.5px solid ${C.border}`,
+              fontFamily:FM, fontSize:13, color:C.text, background:"#fff", outline:"none", width:220 }}
+            onFocus={e=>e.target.style.borderColor=accentColor}
+            onBlur={e=>e.target.style.borderColor=C.border}
+          />
+        </div>
+      </Card>
+
+      {/* Report type tabs */}
+      <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+        {REPORT_TYPES.map(rt => (
+          <button key={rt.id} onClick={()=>setActiveType(rt.id)}
+            style={{ padding:"9px 18px", borderRadius:8, border:`1.5px solid ${activeType===rt.id?accentColor:C.border}`,
+              background: activeType===rt.id ? `${accentColor}10` : "#fff",
+              color: activeType===rt.id ? accentColor : C.muted,
+              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer",
+              display:"flex", alignItems:"center", gap:7, transition:"all 0.15s" }}>
+            <i className={"ti " + rt.icon} style={{ fontSize:15 }}/>
+            {rt.label}
+            {reports[rt.id] && <span style={{ width:7, height:7, borderRadius:"50%",
+              background: imported[rt.id] ? C.green : accentColor, display:"inline-block" }}/>}
+          </button>
+        ))}
+      </div>
+
+      {/* Upload area */}
+      <Card style={{ marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontWeight:600, fontSize:13, color:C.text, marginBottom:12 }}>
+          <i className={"ti " + activeRt.icon} style={{ marginRight:8, color:accentColor }}/>{activeRt.label} — Upload
+        </div>
+        <DropZone onFile={f=>handleFile(activeType,f)} fileName={fileNames[activeType]}
+          dragColor={accentColor} F={F} C={C}/>
+        {errs[activeType] && (
+          <div style={{ color:C.red, fontFamily:F, fontSize:12, marginTop:10 }}>{errs[activeType]}</div>
+        )}
+      </Card>
+
+      {/* Preview */}
+      {activeData && (
+        <Card style={{ marginBottom:14 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:14 }}>
+            Detected Fields — {activeRt.label}
+          </div>
+          <PreviewTable fields={activeFields} data={activeData} uae={uae} F={F} FM={FM} C={C}/>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, margin:"14px 0", lineHeight:1.7 }}>
+            Fields marked <strong>"Not found"</strong> will not overwrite existing data.
+            You can manually enter missing values in the KPIs or Report Data tabs after import.
+          </div>
+          <button onClick={()=>handleImportType(activeType)} disabled={importing || imported[activeType]}
+            style={{ padding:"11px 24px", borderRadius:8, border:"none",
+              background: imported[activeType] ? C.green : accentColor, color:"white",
+              fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer",
+              opacity:importing?0.75:1, transition:"all 0.2s" }}>
+            {importing ? "Importing…"
+              : imported[activeType] ? `✓ ${activeRt.label} imported`
+              : `Import ${activeRt.label}`}
+          </button>
+        </Card>
+      )}
+
+      {/* Export guide */}
+      <Card style={{ background:`${accentColor}04`, borderColor:`${accentColor}20` }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10 }}>
+          How to export {activeRt.label} from {uae ? "Zoho Books" : "Tally Prime"}
+        </div>
+        <ol style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:2.1, margin:"0 0 0 -4px", paddingLeft:20 }}>
+          {guide.map((step, i) => <li key={i}>{step}</li>)}
+        </ol>
+      </Card>
+    </div>
+  );
+}
+
 function AdminLogin({ onLogin }) {
   const [form, setForm] = useState({ email:"", password:"" });
   const [error, setError] = useState("");
@@ -14868,6 +15659,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"clients",    icon:"ti-users", label:"All Clients",    group:"Clients"    },
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
     // ── India Client Data ──
+    { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"Shared"     },
     { id:"kpis",       icon:"ti-chart-bar", label:"KPIs",           group:"India"      },
     { id:"actions",    icon:"ti-checkbox", label:"Action Items",   group:"India"      },
     { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",    group:"India"      },
@@ -15574,6 +16366,69 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             </Card>
           )}
  
+          {/* ── CSV IMPORT ── */}
+          {tab === "import" && (
+            <CsvImport
+              selected={selected}
+              isUAEClient={isUAE(selected)}
+              onImport={async (patch) => {
+                if (!selected) return;
+                const existing = reportData || {};
+                let merged = { ...existing };
+                if (patch.type === "pl") {
+                  merged = { ...merged,
+                    pl: { ...(existing.pl||{}), ...(patch.pl||{}) },
+                    plInputs: { ...(existing.plInputs||{}), ...(patch.plInputs||{}) },
+                    ...(patch.monthLabel ? { monthLabel: patch.monthLabel } : {}),
+                  };
+                } else if (patch.type === "bs") {
+                  merged = { ...merged,
+                    balanceSheet: { ...(existing.balanceSheet||{}), ...(patch.balanceSheet||{}) },
+                    workingCapital: { ...(existing.workingCapital||{}), ...(patch.workingCapital||{}) },
+                  };
+                } else if (patch.type === "cf") {
+                  const existingCf = existing.cashflow || [];
+                  const entry = patch.cashflow_import;
+                  const cfMerged = entry
+                    ? [...existingCf.filter(c=>c.month !== entry.month), entry]
+                    : existingCf;
+                  merged = { ...merged,
+                    cashflow: cfMerged,
+                    plInputs: { ...(existing.plInputs||{}), ...(patch.plInputs||{}) },
+                  };
+                } else if (patch.type === "bank") {
+                  merged = { ...merged,
+                    bankStatement: { ...(existing.bankStatement||{}), ...(patch.bankStatement||{}) },
+                    ...(patch.workingCapital ? { workingCapital: { ...(existing.workingCapital||{}), ...patch.workingCapital } } : {}),
+                    ...(patch.plInputs ? { plInputs: { ...(existing.plInputs||{}), ...patch.plInputs } } : {}),
+                  };
+                }
+                const { error } = await supabase.from("report_data")
+                  .upsert({ client_id: selected.id, data: merged }, { onConflict:"client_id" });
+                if (!error) {
+                  setReportData(merged);
+                  setSaved(true);
+                  setTimeout(() => setSaved(false), 2500);
+                } else {
+                  alert("Save failed: " + error.message);
+                }
+              }}
+              kpiMonth={kpiMonth}
+              onKpiImport={async (kpiRow) => {
+                if (!selected) return;
+                const payload = { client_id:selected.id, month:kpiRow.month,
+                  revenue:kpiRow.revenue, gross_margin:kpiRow.gross_margin,
+                  cash_balance:kpiRow.cash_balance, burn_rate:kpiRow.burn_rate,
+                  runway:kpiRow.runway, arr:kpiRow.arr };
+                const { error } = await supabase.from("kpis")
+                  .upsert(payload, { onConflict:"client_id,month" });
+                if (!error) { setSaved(true); setTimeout(()=>setSaved(false),2500); }
+                else alert("KPI save failed: " + error.message);
+              }}
+              C={C} F={F} FM={FM} saved={saved} loading={loading}
+            />
+          )}
+
           {/* ── UPDATE KPIs ── */}
           {tab === "kpis" && (
             <div style={{ maxWidth:900 }}>
@@ -15843,7 +16698,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     All Invoices ({invoices.length})
                   </div>
                   {invoices.length === 0 && (
-                    <p style={{ fontFamily:F, fontSize:13, color:C.dim }}>No invoices yet for this client.</p>
+                    <EmptyState icon="ti-receipt-off" title="No invoices yet" sub="Invoices will appear here once raised."/>
                   )}
                   <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
                     {invoices.map(inv => (
