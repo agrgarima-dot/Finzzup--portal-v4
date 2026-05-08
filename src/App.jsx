@@ -3686,10 +3686,43 @@ function MSMEPackContent({ reportData, kpis, client }) {
 
   const archiveDocs = useLiveDocs(client);
 
+  const handleDownload = async () => {
+    const w = window.open("", "_blank");
+    const mod = await _pdfMod;
+    let html;
+    if (tab === "bankfin") {
+      html = mod.generateLoanPDF({ client, reportData, kpis });
+    } else {
+      html = mod.generateReportPDF({ client, kpis, reportData, garimaNote: reportData?.reportNote || reportData?.packNote });
+    }
+    w.document.write(html); w.document.close();
+    setTimeout(() => w.print(), 600);
+  };
+
   return (
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.teal}>
       <div>
- 
+
+      {/* Download header strip */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+        marginBottom:16, flexWrap:"wrap", gap:10 }}>
+        <div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>
+            MSME CFO Report{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
+          </div>
+          <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:1 }}>
+            Prepared by Garima Agarwal CA · {tab === "bankfin" ? "Bank Finance" : "Financial Report"}
+          </div>
+        </div>
+        <button onClick={handleDownload}
+          style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 16px",
+            borderRadius:16, border:"none", cursor:"pointer", background:C.teal,
+            color:"white", fontFamily:F, fontWeight:700, fontSize:12 }}>
+          <i className="ti ti-download" style={{ fontSize:13 }}/>
+          Download PDF
+        </button>
+      </div>
+
       {tab === "monthly" && (
     <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
       {(reportData?.reportNote || reportData?.packNote) && (
@@ -4245,14 +4278,42 @@ function CorporatePackContent({ reportData, kpis, client }) {
   ];
  
   const archiveDocs = useLiveDocs(client);
- 
+
+  const handleDownload = async () => {
+    const w = window.open("", "_blank");
+    const mod = await _pdfMod;
+    const html = mod.generateReportPDF({ client, kpis, reportData, garimaNote: reportData?.reportNote || reportData?.packNote });
+    w.document.write(html); w.document.close();
+    setTimeout(() => w.print(), 600);
+  };
+
   return (
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.purple}>
       <div>
- 
+
+      {/* Download header strip */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+        marginBottom:16, flexWrap:"wrap", gap:10 }}>
+        <div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>
+            Corporate CFO Report{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
+          </div>
+          <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:1 }}>
+            Prepared by Garima Agarwal CA · Financial Report
+          </div>
+        </div>
+        <button onClick={handleDownload}
+          style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 16px",
+            borderRadius:16, border:"none", cursor:"pointer", background:C.purple,
+            color:"white", fontFamily:F, fontWeight:700, fontSize:12 }}>
+          <i className="ti ti-download" style={{ fontSize:13 }}/>
+          Download PDF
+        </button>
+      </div>
+
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
@@ -6146,9 +6207,41 @@ function CFOPackContent({ reportData, client, kpis }) {
 
   const archiveDocs = useLiveDocs(client);
 
+  const handleDownload = async () => {
+    const w = window.open("", "_blank");
+    const mod = await _pdfMod;
+    let html;
+    if (tab === "loan") {
+      html = mod.generateLoanPDF({ client, reportData, kpis });
+    } else {
+      html = mod.generateReportPDF({ client, kpis, reportData, garimaNote: reportData?.reportNote || reportData?.packNote });
+    }
+    w.document.write(html); w.document.close();
+    setTimeout(() => w.print(), 600);
+  };
+
   return (
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.blue}>
       <div>
+      {/* Download header strip */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+        marginBottom:16, flexWrap:"wrap", gap:10 }}>
+        <div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>
+            Startup CFO Report{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
+          </div>
+          <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:1 }}>
+            Prepared by Garima Agarwal CA · {tab === "loan" ? "Loan Readiness" : "Financial Report"}
+          </div>
+        </div>
+        <button onClick={handleDownload}
+          style={{ display:"flex", alignItems:"center", gap:6, padding:"8px 16px",
+            borderRadius:16, border:"none", cursor:"pointer", background:C.blue,
+            color:"white", fontFamily:F, fontWeight:700, fontSize:12 }}>
+          <i className="ti ti-download" style={{ fontSize:13 }}/>
+          Download PDF
+        </button>
+      </div>
       {/* FIXED: Monthly Report tab — historical profitability ONLY.
           KPI Snapshot removed (lives in Dashboard). Cash metrics removed (live in CashFlow Forecast).
           This tab = Vertical P&L + cost analysis + Garima note. */}
@@ -6825,7 +6918,7 @@ function CFOPackContent({ reportData, client, kpis }) {
             </p>
             <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
               <a href={WA} target="_blank" rel="noopener" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:16, background:`${C.green}10`, border:`1.5px solid ${C.green}30`, color:C.green, fontFamily:F, fontWeight:700, fontSize:13, textDecoration:"none" }}>{"WhatsApp Garima"}</a>
-              <button onClick={() => { const html = generateLoanPDF({ client, reportData, kpis }); const w = window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
+              <button onClick={handleDownload}
                 style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 20px", borderRadius:16, background:`${C.blue}10`, border:`1.5px solid ${C.blue}25`, color:C.blue, fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
                 {"Download Full Report"}
               </button>
@@ -8290,6 +8383,20 @@ function VATDashboard({ client, reportData }) {
   );
 }
  
+// UAE CT: returns due 9 months after financial year end
+function ctDeadline(fyEnd) {
+  if (!fyEnd) return "30 Sep 2026";
+  const lower = String(fyEnd).toLowerCase();
+  const abbr = ["jan","feb","mar","apr","may","jun","jul","aug","sep","oct","nov","dec"];
+  const idx = abbr.findIndex(m => lower.includes(m));
+  if (idx === -1) return "30 Sep 2026";
+  const dueMonth = (idx + 9) % 12;
+  const now = new Date();
+  const dueYear = now.getFullYear() + (now.getMonth() > idx ? 1 : 0) + (idx + 9 >= 12 ? 1 : 0);
+  const last = [31,28,31,30,31,30,31,31,30,31,30,31][dueMonth];
+  return `${last} ${["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][dueMonth]} ${dueYear}`;
+}
+
 // ─── CORPORATE TAX MODULE ─────────────────────────────────────────────────────
 function CorporateTax({ client, reportData, initialTab }) {
   const [tab, setTab] = useState(initialTab || "overview");
