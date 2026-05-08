@@ -531,13 +531,8 @@ function Login({ onLogin }) {
 
         <div style={{ width:"100%", maxWidth:400, position:"relative" }}>
           {isMobile && (
-            <div style={{ textAlign:"center", marginBottom:28 }}>
-              <div style={{ fontFamily:F, fontWeight:900, fontSize:22, color:C.blue, letterSpacing:"-0.03em" }}>
-                Finzzup
-              </div>
-              <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2, letterSpacing:"0.08em", textTransform:"uppercase" }}>
-                CFO · On Demand
-              </div>
+            <div style={{ display:"flex", justifyContent:"center", marginBottom:28 }}>
+              <Logo size={32} showTagline={false}/>
             </div>
           )}
           <div style={{ marginBottom:32 }}>
@@ -872,25 +867,26 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
       </nav>
  
       {/* Footer */}
-      <div style={{ borderTop:`1px solid ${C.border}`, padding:collapsed?"8px 0":"8px 12px" }}>
+      <div style={{ borderTop:`1px solid ${C.border}`, padding:collapsed?"8px 0":"8px 12px", flexShrink:0 }}>
         {!collapsed && (
           <button onClick={()=>setPage("terms")}
             style={{ width:"100%", padding:"5px 8px", background:"none", border:"none",
               cursor:"pointer", fontFamily:F, fontSize:10,
               color:C.dim, textAlign:"left",
-              display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
+              display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
             <i className="ti ti-license" style={{ fontSize:13 }}/>
             Terms & Privacy
           </button>
         )}
         <button onClick={onLogout}
-          style={{ display:"flex", alignItems:"center", gap:6, width:"100%",
-            padding:collapsed?"8px 0":"6px 8px",
+          title="Sign Out"
+          style={{ display:"flex", alignItems:"center", gap:8, width:"100%",
+            padding:collapsed?"10px 0":"8px 10px",
             justifyContent:collapsed?"center":"flex-start",
-            background:"none", border:"none", cursor:"pointer",
-            fontFamily:F, fontSize:11, fontWeight:400,
-            color:C.muted }}>
-          <i className="ti ti-logout" style={{ fontSize:14 }}/>
+            background:"none", border:`1px solid ${C.red}22`, borderRadius:8, cursor:"pointer",
+            fontFamily:F, fontSize:12, fontWeight:600,
+            color:C.red }}>
+          <i className="ti ti-logout" style={{ fontSize:15 }}/>
           {!collapsed && "Sign Out"}
         </button>
       </div>
