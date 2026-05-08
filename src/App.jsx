@@ -625,36 +625,80 @@ function Login({ onLogin }) {
   };
  
   return (
-    <div style={{ minHeight:"100vh", background:C.bg, display:"flex", alignItems:"center",
-      justifyContent:"center", padding:20, fontFamily:F }}>
-      <div style={{ position:"fixed", inset:0, pointerEvents:"none",
-        background:`radial-gradient(ellipse 60% 50% at 20% 30%, rgba(59,111,247,0.07) 0%, transparent 60%),
-                   radial-gradient(ellipse 40% 40% at 80% 70%, rgba(124,92,245,0.06) 0%, transparent 60%)` }}/>
- 
-      <div style={{ width:"100%", maxWidth:420, position:"relative" }}>
-        <div style={{ textAlign:"center", marginBottom:32 }}>
-          <div style={{ display:"inline-flex", flexDirection:"column", alignItems:"center", gap:8 }}>
-            <Logo size={36} dark={false} showTagline={true} darkText={true}/>
-          </div>
-          <p style={{ fontSize:13, color:C.muted, marginTop:12 }}>Secure Client Portal</p>
+    <div style={{ minHeight:"100vh", display:"flex", fontFamily:F }}>
+      {/* ── Left branding panel ── */}
+      <div className="login-left-panel" style={{ width:420, flexShrink:0, background:"linear-gradient(160deg,#0A1128 0%,#1a2a5e 100%)",
+        display:"flex", flexDirection:"column", justifyContent:"space-between",
+        padding:"48px 44px", position:"relative", overflow:"hidden" }}>
+        {/* Subtle circle decorations */}
+        <div style={{ position:"absolute", right:-60, top:-60, width:220, height:220,
+          borderRadius:"50%", background:"rgba(255,255,255,0.04)", pointerEvents:"none" }}/>
+        <div style={{ position:"absolute", left:-40, bottom:-40, width:160, height:160,
+          borderRadius:"50%", background:"rgba(255,255,255,0.03)", pointerEvents:"none" }}/>
+        {/* Logo */}
+        <div>
+          <Logo size={32} dark={true} showTagline={false} darkText={false}/>
         </div>
- 
-        <Card style={{ padding:32 }}>
- 
+        {/* Main pitch */}
+        <div>
+          <div style={{ fontFamily:F, fontSize:26, fontWeight:800, color:"white",
+            lineHeight:1.25, marginBottom:16, letterSpacing:"-0.02em" }}>
+            Your CFO.<br/>On demand.
+          </div>
+          <div style={{ fontFamily:F, fontSize:13, color:"rgba(255,255,255,0.55)", lineHeight:1.7, marginBottom:32 }}>
+            Real-time financial visibility, AI-powered<br/>
+            analysis, and expert CFO guidance — all in<br/>
+            one secure portal.
+          </div>
+          {/* Trust strip */}
+          <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+            {[
+              { icon:"ti-shield-check",   text:"Bank-grade security"           },
+              { icon:"ti-robot",          text:"AI analysis via Anthropic"      },
+              { icon:"ti-chart-bar",      text:"India & UAE tax compliance"     },
+            ].map((t,i) => (
+              <div key={i} style={{ display:"flex", alignItems:"center", gap:10 }}>
+                <div style={{ width:28, height:28, borderRadius:8,
+                  background:"rgba(255,255,255,0.08)",
+                  display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                  <i className={"ti " + t.icon} style={{ fontSize:14, color:"rgba(255,255,255,0.7)" }}/>
+                </div>
+                <span style={{ fontFamily:F, fontSize:12, color:"rgba(255,255,255,0.55)" }}>{t.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Footer */}
+        <div style={{ fontFamily:F, fontSize:11, color:"rgba(255,255,255,0.28)" }}>
+          © {new Date().getFullYear()} Finzzup Advisory LLP
+        </div>
+      </div>
+
+      {/* ── Right form panel ── */}
+      <div className="login-right-panel" style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center",
+        background:"#F8FAFC", padding:"40px 24px" }}>
+        <div style={{ position:"fixed", inset:0, pointerEvents:"none",
+          background:`radial-gradient(ellipse 50% 40% at 75% 30%, rgba(59,111,247,0.05) 0%, transparent 60%)` }}/>
+
+        <div style={{ width:"100%", maxWidth:400, position:"relative" }}>
+          <div style={{ marginBottom:32 }}>
+            <div style={{ fontFamily:F, fontSize:22, fontWeight:800, color:C.text,
+              letterSpacing:"-0.02em", marginBottom:6 }}>
+              {step==="code" ? "Sign in to your portal" : step==="signin" ? "Welcome back" : "Set your password"}
+            </div>
+            <div style={{ fontFamily:F, fontSize:13, color:C.muted }}>
+              {step==="code"
+                ? "Enter your invite code to continue."
+                : step==="signin"
+                  ? "Sign in with your email and password."
+                  : `Setting up access for ${client?.company||"your account"}.`}
+            </div>
+          </div>
+
+        <Card style={{ padding:28 }}>
+
           {/* ── STEP 1: Enter invite code ── */}
           {step === "code" && <>
-            <h2 style={{ fontWeight:700, fontSize:15, color:C.text, marginBottom:6, textAlign:"center" }}>
-              Welcome
-            </h2>
-            <p style={{ fontSize:13, color:C.muted, textAlign:"center", marginBottom:14, lineHeight:1.6 }}>
-              New client? Enter your invite code to register.<br/>
-              Already have an account?{" "}
-              <button onClick={() => setStep("signin")}
-                style={{ background:"none", border:"none", color:C.blue, fontWeight:700, fontSize:13, cursor:"pointer", fontFamily:F }}>
-                Sign in here
-              </button>
-            </p>
- 
             <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
               letterSpacing:"0.08em", display:"block", marginBottom:8, fontFamily:F }}>
               Invite Code
@@ -663,76 +707,79 @@ function Login({ onLogin }) {
               onChange={e => { setCode(e.target.value.toUpperCase()); setError(""); }}
               onKeyDown={e => e.key === "Enter" && checkCode()}
               placeholder="e.g. NEXO2026"
-              style={{ width:"100%", padding:"13px 15px", borderRadius:16, fontSize:16,
+              style={{ width:"100%", padding:"12px 14px", borderRadius:8, fontSize:15,
                 border:`1.5px solid ${error ? C.red : C.border}`, fontFamily:FM,
-                fontWeight:600, letterSpacing:"0.1em", color:C.text, background:C.bg,
+                fontWeight:600, letterSpacing:"0.1em", color:C.text, background:"#fff",
                 outline:"none", boxSizing:"border-box", textTransform:"uppercase",
                 textAlign:"center", transition:"border-color 0.2s" }}
               onFocus={e => e.target.style.borderColor = C.blue}
               onBlur={e  => e.target.style.borderColor = error ? C.red : C.border}
             />
-            {error && <p style={{ color:C.red, fontSize:12, marginTop:8, textAlign:"center" }}>{error}</p>}
- 
+            {error && <p style={{ color:C.red, fontSize:12, marginTop:8 }}>{error}</p>}
+
             {/* ── AI & Data Consent ── */}
             <div onClick={() => setConsent(c => !c)}
-              style={{ display:"flex", alignItems:"flex-start", gap:10, marginTop:18,
-                padding:"12px 14px", borderRadius:16, cursor:"pointer",
-                background: consent ? `${C.blue}08` : C.bg3,
-                border:`1.5px solid ${consent ? C.blue : C.border}`,
+              style={{ display:"flex", alignItems:"flex-start", gap:10, marginTop:16,
+                padding:"12px 14px", borderRadius:8, cursor:"pointer",
+                background: consent ? `${C.blue}06` : C.bg3,
+                border:`1.5px solid ${consent ? C.blue+"60" : C.border}`,
                 transition:"all 0.2s" }}>
-              <div style={{ width:18, height:18, borderRadius:12, flexShrink:0, marginTop:1,
+              <div style={{ width:16, height:16, borderRadius:4, flexShrink:0, marginTop:2,
                 border:`2px solid ${consent ? C.blue : C.dim}`,
                 background: consent ? C.blue : "transparent",
                 display:"flex", alignItems:"center", justifyContent:"center",
                 transition:"all 0.2s" }}>
-                {consent && <span style={{ color:"white", fontSize:11, fontWeight:900, lineHeight:1 }}>✓</span>}
+                {consent && <i className="ti ti-check" style={{ fontSize:10, color:"white", fontWeight:900 }}/>}
               </div>
-              <p style={{ margin:0, fontSize:12, color:C.muted, lineHeight:1.6, fontFamily:F }}>
-                I understand that this portal uses <strong>AI (powered by Anthropic/Claude)</strong> to
-                generate financial analysis from data entered by my advisor. Data is processed securely
-                and <strong>not stored or used for AI training</strong>.{" "}
-                By continuing, I acknowledge this and consent to its use for my advisory services.
+              <p style={{ margin:0, fontSize:11.5, color:C.muted, lineHeight:1.6, fontFamily:F }}>
+                I understand this portal uses <strong>AI (Anthropic/Claude)</strong> to generate financial
+                analysis. Data is processed securely and <strong>not used for AI training</strong>.
               </p>
             </div>
- 
-            <button onClick={checkCode} disabled={loading || !consent} style={{ width:"100%", marginTop:14, padding:24,
-              borderRadius:16, border:"none", background: consent ? C.grad1 : C.bg3,
-              color: consent ? "white" : C.dim,
-              fontFamily:F, fontWeight:700, fontSize:15,
-              cursor: consent ? "pointer" : "not-allowed",
-              opacity:loading ? 0.75 : 1,
-              boxShadow: consent ? "0 2px 8px rgba(59,111,247,0.18)" : "none",
-              transition:"all 0.2s", touchAction:"manipulation" }}>
+
+            <button onClick={checkCode} disabled={loading || !consent}
+              style={{ width:"100%", marginTop:14, padding:"13px 16px",
+                borderRadius:8, border:"none", background: consent ? C.grad1 : C.bg3,
+                color: consent ? "white" : C.dim,
+                fontFamily:F, fontWeight:700, fontSize:14,
+                cursor: consent ? "pointer" : "not-allowed",
+                opacity:loading ? 0.75 : 1,
+                boxShadow: consent ? "0 2px 8px rgba(59,111,247,0.22)" : "none",
+                transition:"all 0.2s" }}>
               {loading ? "Checking…" : "Continue →"}
             </button>
- 
-            <p style={{ textAlign:"center", fontSize:12, color:C.dim, marginTop:20 }}>
-              Don't have a code?{" "}
-              <a href="mailto:garima@finzzup.com" style={{ color:C.blue, fontWeight:600 }}>
-                Email garima@finzzup.com
-              </a>
-            </p>
- 
+
+            <div style={{ textAlign:"center", marginTop:16, fontFamily:F, fontSize:13, color:C.muted }}>
+              Already have an account?{" "}
+              <button onClick={() => setStep("signin")}
+                style={{ background:"none", border:"none", color:C.blue, fontWeight:700,
+                  fontSize:13, cursor:"pointer", fontFamily:F, padding:0 }}>
+                Sign in
+              </button>
+            </div>
+
             {/* Demo accounts */}
-            <div style={{ marginTop:20, padding:"14px 16px", borderRadius:16,
-              background:`${C.blue}0A`, border:`1px solid ${C.blue}20` }}>
+            <div style={{ marginTop:20, paddingTop:20, borderTop:`1px solid ${C.border}` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-                letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>Try a demo account</div>
-              <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                letterSpacing:"0.08em", marginBottom:10, fontFamily:F }}>Try a demo</div>
+              <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
                 {[
-                  { code:"DEMO-STARTUP",  label:"Startup / CFO Client",    icon:"ti-rocket", color:C.blue   },
-                  { code:"DEMO-MSME",     label:"MSME Client",              icon:"ti-building", color:C.teal   },
-                  { code:"DEMO-CORP",     label:"Corporate Client",          icon:"ti-building-bank", color:C.purple },
-                  { code:"DEMO-UAE",      label:"UAE / Dubai Client",        icon:"ti-flag", color:"#00732F"},
-                  { code:"DEMO-XBORDER", label:"Cross-Border India + UAE",  icon:"ti-world", color:C.amber  },
+                  { code:"DEMO-STARTUP",  label:"Startup / CFO",      icon:"ti-rocket",        color:C.blue   },
+                  { code:"DEMO-MSME",     label:"MSME",                icon:"ti-building",      color:C.teal   },
+                  { code:"DEMO-CORP",     label:"Corporate",           icon:"ti-building-bank", color:C.purple },
+                  { code:"DEMO-UAE",      label:"UAE / Dubai",         icon:"ti-flag",          color:"#00732F"},
+                  { code:"DEMO-XBORDER", label:"Cross-Border",        icon:"ti-world",         color:C.amber  },
                 ].map(d => (
                   <button key={d.code} onClick={() => setCode(d.code)}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                      padding:"9px 12px", borderRadius:9, border:`1px solid ${d.color}25`,
-                      background:`${d.color}08`, cursor:"pointer", fontFamily:F, width:"100%",
+                      padding:"8px 11px", borderRadius:7, border:`1px solid ${d.color}20`,
+                      background:`${d.color}07`, cursor:"pointer", fontFamily:F, width:"100%",
                       touchAction:"manipulation" }}>
-                    <span style={{ fontSize:13, color:C.text, fontWeight:600, display:"flex", alignItems:"center", gap:7 }}><i className={"ti " + d.icon} style={{ fontSize:16, color:d.color }}/>{d.label}</span>
-                    <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:d.color }}>{d.code}</span>
+                    <span style={{ fontSize:12, color:C.text, fontWeight:600, display:"flex",
+                      alignItems:"center", gap:7 }}>
+                      <i className={"ti " + d.icon} style={{ fontSize:14, color:d.color }}/>{d.label}
+                    </span>
+                    <span style={{ fontFamily:FM, fontSize:10, fontWeight:700, color:d.color }}>{d.code}</span>
                   </button>
                 ))}
               </div>
@@ -754,15 +801,15 @@ function Login({ onLogin }) {
             <LoginInput label="Password"         value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Min 6 characters" />
             <LoginInput label="Confirm Password" value={form.confirm}  onChange={e => { setForm(f=>({...f,confirm:e.target.value}));  setError(""); }} type="password" placeholder="Repeat password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-            <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:24,
-              borderRadius:16, border:"none", background:C.grad1, color:"white",
-              fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
-              boxShadow:"0 2px 8px rgba(59,111,247,0.18)", touchAction:"manipulation" }}>
+            <button onClick={register} disabled={loading} style={{ width:"100%", marginTop:8, padding:"13px 16px",
+              borderRadius:8, border:"none", background:C.grad1, color:"white",
+              fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", opacity:loading?0.75:1,
+              boxShadow:"0 2px 8px rgba(59,111,247,0.22)", touchAction:"manipulation" }}>
               {loading ? "Creating account…" : "Create Account →"}
             </button>
             <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:20, borderRadius:16, border:`1px solid ${C.border}`,
-              background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
+              marginTop:8, padding:"11px 16px", borderRadius:8, border:`1px solid ${C.border}`,
+              background:"transparent", color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer" }}>
               ← Back
             </button>
           </>}
@@ -776,29 +823,25 @@ function Login({ onLogin }) {
             <LoginInput label="Email"    value={form.email}    onChange={e => { setForm(f=>({...f,email:e.target.value}));    setError(""); }} type="email"    placeholder="your@email.com" />
             <LoginInput label="Password" value={form.password} onChange={e => { setForm(f=>({...f,password:e.target.value})); setError(""); }} type="password" placeholder="Your password" />
             {error && <p style={{ color:C.red, fontSize:12, marginTop:4 }}>{error}</p>}
-            <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:24,
-              borderRadius:16, border:"none", background:C.grad1, color:"white",
-              fontFamily:F, fontWeight:700, fontSize:15, cursor:"pointer", opacity:loading?0.75:1,
-              boxShadow:"0 2px 8px rgba(59,111,247,0.18)", touchAction:"manipulation" }}>
+            <button onClick={signIn} disabled={loading} style={{ width:"100%", marginTop:8, padding:"13px 16px",
+              borderRadius:8, border:"none", background:C.grad1, color:"white",
+              fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer", opacity:loading?0.75:1,
+              boxShadow:"0 2px 8px rgba(59,111,247,0.22)", touchAction:"manipulation" }}>
               {loading ? "Signing in…" : "Sign In →"}
             </button>
             <button onClick={() => { setStep("code"); setError(""); }} style={{ width:"100%",
-              marginTop:10, padding:20, borderRadius:16, border:`1px solid ${C.border}`,
-              background:"transparent", color:C.muted, fontFamily:F, fontSize:14, cursor:"pointer" }}>
+              marginTop:8, padding:"11px 16px", borderRadius:8, border:`1px solid ${C.border}`,
+              background:"transparent", color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer" }}>
               ← New client? Enter invite code
             </button>
           </>}
  
         </Card>
         <p style={{ textAlign:"center", fontSize:11, color:C.dim, marginTop:20 }}>
-          Powered by Finzzup · garima@finzzup.com<br/>
-          <span style={{ marginTop:6, display:"block" }}>
-            <a href="#" style={{ color:C.blue, textDecoration:"none" }}>Terms & Conditions</a>
-            {" · "}
-            <a href="#" style={{ color:C.blue, textDecoration:"none" }}>Privacy Policy</a>
-            {" · "}© 2026 Garima Agarwal, CA (M.No. 160944)
-          </span>
+          <a href="mailto:garima@finzzup.com" style={{ color:C.blue }}>garima@finzzup.com</a>
+          {" · "}© 2026 Garima Agarwal, CA (M.No. 160944)
         </p>
+      </div>
       </div>
     </div>
   );
@@ -1272,233 +1315,183 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const accentColor = uaeClient ? "#00732F" : C.blue;
  
   return (
-    <div style={{ display:"flex", flexDirection:"column", gap:0, background:"#F3F4F6", minHeight:"100vh" }}>
- 
-      {/* ── Top bar ── */}
-      <div style={{ background:"white", borderBottom:`1px solid ${C.border}`,
-        padding:"10px 24px", display:"flex", alignItems:"center", justifyContent:"space-between" }}>
+    <div className="ns-page">
+
+      {/* ── Page header ── */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
         <div>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text }}>
-            {greeting}, {client?.name?.split(" ")[0] || "there"}
-          </div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:1 }}>
-            {client?.company} · {uaeClient ? "UAE CFO Dashboard" : `${ovPack.toUpperCase()} Pack`} · {reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}
+          <div className="ns-page-title">{greeting}, {client?.name?.split(" ")[0] || "there"}</div>
+          <div className="ns-sub" style={{ marginTop:2 }}>
+            {client?.company} · {uaeClient ? "UAE CFO Dashboard" : `${ovPack.charAt(0).toUpperCase()+ovPack.slice(1)} Pack`}
+            {reportData?.monthLabel ? ` · ${reportData.monthLabel}` : ""}
           </div>
         </div>
-        <div style={{ display:"flex", gap:8 }}>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           {highPriority.length > 0 && (
-            <div style={{ padding:"5px 12px", borderRadius:12, background:"#FEF2F2",
-              border:"1px solid #FCA5A5", fontFamily:F, fontSize:12, fontWeight:700, color:C.red,
-              display:"flex", alignItems:"center", gap:5 }}>
-              {highPriority.length} High Priority Action{highPriority.length>1?"s":""}
-            </div>
+            <span className="ns-badge red">
+              <i className="ti ti-alert-triangle" style={{ fontSize:11 }}/> {highPriority.length} High Priority
+            </span>
           )}
-          <div style={{ padding:"5px 12px", borderRadius:12, background:`${accentColor}12`,
-            border:`1px solid ${accentColor}40`, fontFamily:F, fontSize:12, fontWeight:700, color:accentColor }}>
-            Score: {healthScore}/100 · {healthLabel}
-          </div>
+          <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
+            Health Score: {healthScore}/100 — {healthLabel}
+          </span>
         </div>
       </div>
- 
-      <div style={{ padding:"16px 24px", display:"flex", flexDirection:"column", gap:20 }}>
- 
-        {/* ── Row 1: KPI tiles (NetSuite style) ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:10 }}>
-          {displayKpis.slice(0,6).map((kpi,i) => (
-            <Card key={i} style={{ padding:"14px 16px" }}>
-              <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-                textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>
-                {kpi.label}
+
+      {/* ── Row 1: KPI tiles ── */}
+      <div className="ns-grid-6">
+        {displayKpis.slice(0,6).map((kpi,i) => (
+          <div key={i} className="ns-kpi-tile">
+            <div className="label">{kpi.label}</div>
+            <div className="value" style={{ color:kpi.color||C.text }}>{kpi.value}</div>
+            {kpi.prev && kpi.prev !== "—" && (
+              <div className="trend">
+                <span style={{ color:kpi.trend==="up"?C.green:C.red, fontWeight:700 }}>
+                  {kpi.trend==="up"?"↑":"↓"}
+                </span>
+                <span style={{ color:"#9CA3AF" }}>prev: {kpi.prev}</span>
               </div>
-              <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:kpi.color||C.text, lineHeight:1.2 }}>
-                {kpi.value}
-              </div>
-              {kpi.prev && kpi.prev !== "—" && (
-                <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:4, display:"flex", alignItems:"center", gap:3 }}>
-                  <span style={{ color: kpi.trend==="up"?C.green:C.red, fontWeight:700 }}>
-                    {kpi.trend==="up"?"↑":"↓"}
-                  </span>
-                  prev: {kpi.prev}
-                </div>
-              )}
-            </Card>
-          ))}
-        </div>
- 
-        {/* ── Row 2: P&L + Health Score + Garima Note ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 200px 1fr", gap:20 }}>
- 
-          {/* P&L Summary table */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
-              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>
-                P&L Summary
-              </div>
-              <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>
-                {reportData?.monthLabel || "Current vs Prior"}
-              </div>
-            </div>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
-              <thead>
-                <tr style={{ background:"#fff" }}>
-                  <th style={{ padding:"7px 16px", textAlign:"left", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Line</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Current</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Prior</th>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Row 2: P&L + Health Score + Garima Note ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 188px 1fr", gap:14 }}>
+
+        {/* P&L Summary */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>P&L Summary</h3>
+            <span className="ns-badge grey">{reportData?.monthLabel || "Current vs Prior"}</span>
+          </div>
+          <table className="ns-table">
+            <thead>
+              <tr><th>Line</th><th className="right">Current</th><th className="right">Prior</th></tr>
+            </thead>
+            <tbody>
+              {plRows.map((r,i) => (
+                <tr key={i} className={i===plRows.length-1?"total":"striped"}>
+                  <td className={i===0||i===plRows.length-1?"bold":""}>{r.label}</td>
+                  <td className="right mono bold">{r.curr}</td>
+                  <td className="right mono muted">{r.prev}</td>
                 </tr>
-              </thead>
-              <tbody>
-                {plRows.map((r,i) => (
-                  <tr key={i} style={{ borderTop:`1px solid ${C.border}`, background: i===0?"#F0FDF4":"white" }}>
-                    <td style={{ padding:"8px 16px", fontWeight: i===0||i===plRows.length-1?700:400, color:C.text }}>{r.label}</td>
-                    <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, fontWeight:700, color:C.text }}>{r.curr}</td>
-                    <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, color:C.muted }}>{r.prev}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Health Score gauge */}
+        <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column",
+          alignItems:"center", justifyContent:"center", padding:16 }}>
+          <div className="ns-label" style={{ marginBottom:12 }}>Financial Health</div>
+          <svg width="116" height="66" viewBox="0 0 120 68">
+            <path d="M10,60 A50,50 0 0,1 110,60" stroke="#E5E7EB" strokeWidth="10" fill="none" strokeLinecap="round"/>
+            <path d="M10,60 A50,50 0 0,1 110,60"
+              stroke={healthColor} strokeWidth="10" fill="none" strokeLinecap="round"
+              strokeDasharray={`${(healthScore/100)*157} 157`}/>
+            <text x="60" y="56" textAnchor="middle" fontSize="20" fontWeight="900"
+              fill={healthColor} fontFamily="monospace">{healthScore}</text>
+          </svg>
+          <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:healthColor, marginTop:4 }}>{healthLabel}</div>
+          <div className="ns-sub" style={{ marginTop:4, textAlign:"center" }}>{highPriority.length} high-priority action{highPriority.length!==1?"s":""}</div>
+        </div>
+
+        {/* Garima's Note */}
+        <div className="ns-panel" style={{ margin:0, borderLeft:`3px solid ${accentColor}` }}>
+          <div className="ns-panel-header">
+            <h3 style={{ color:accentColor }}>Garima's CFO Note</h3>
           </div>
- 
-          {/* Health Score meter (NetSuite KPI Meter) */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex",
-            flexDirection:"column", alignItems:"center", justifyContent:"center" }}>
-            <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:12 }}>
-              Financial Health
-            </div>
-            {/* Gauge arc */}
-            <svg width="120" height="68" viewBox="0 0 120 68">
-              <path d="M10,60 A50,50 0 0,1 110,60" stroke="#E5E7EB" strokeWidth="10" fill="none" strokeLinecap="round"/>
-              <path d="M10,60 A50,50 0 0,1 110,60"
-                stroke={healthColor} strokeWidth="10" fill="none" strokeLinecap="round"
-                strokeDasharray={`${(healthScore/100)*157} 157`}/>
-              <text x="60" y="56" textAnchor="middle" fontSize="20" fontWeight="900"
-                fill={healthColor} fontFamily="monospace">{healthScore}</text>
-            </svg>
-            <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:healthColor, marginTop:4 }}>
-              {healthLabel}
-            </div>
-            <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:2, textAlign:"center" }}>
-              {highPriority.length} high-priority actions
-            </div>
-          </div>
- 
-          {/* Garima's Note */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            borderLeft:`3px solid ${accentColor}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", padding:16, display:"flex", flexDirection:"column" }}>
-            <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:accentColor,
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
-              Garima's CFO Note
-            </div>
-            <p style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.8, margin:0, flex:1 }}>
+          <div style={{ padding:"0 16px 16px" }}>
+            <p style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.8, margin:"0 0 12px" }}>
               {displayNote}
             </p>
             <button onClick={() => setPage("myreport")}
-              style={{ marginTop:12, padding:"6px 12px", borderRadius:7, border:`1px solid ${accentColor}`,
-                background:"transparent", color:accentColor, fontFamily:F, fontSize:11,
-                fontWeight:700, cursor:"pointer", alignSelf:"flex-start" }}>
+              style={{ padding:"7px 14px", borderRadius:7, border:`1px solid ${accentColor}`,
+                background:"transparent", color:accentColor, fontFamily:F, fontSize:12,
+                fontWeight:700, cursor:"pointer" }}>
               Full Report →
             </button>
           </div>
         </div>
- 
-        {/* ── Row 3: Action Items + AR Aging + Cash Flow ── */}
-        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:20 }}>
- 
-          {/* Action Items */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
-              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Action Items</div>
-              <span style={{ padding:"2px 8px", borderRadius:16, background:"#FEF2F2",
-                color:C.red, fontSize:10, fontWeight:700, fontFamily:F }}>
-                {pendingActions.length} pending
-              </span>
-            </div>
-            <div style={{ maxHeight:200, overflowY:"auto" }}>
-              {pendingActions.length === 0 ? (
-                <div style={{ padding:"20px 16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>
-                  All actions complete
-                </div>
-              ) : pendingActions.slice(0,6).map((a,i) => (
+      </div>
+
+      {/* ── Row 3: Action Items + AR Aging + Cash Flow ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 }}>
+
+        {/* Action Items */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>Action Items</h3>
+            <span className="ns-badge red">{pendingActions.length} pending</span>
+          </div>
+          <div className="ns-panel-body no-pad" style={{ maxHeight:220, overflowY:"auto" }}>
+            {pendingActions.length === 0
+              ? <EmptyState icon="ti-circle-check" title="All clear!" sub="No pending actions."/>
+              : pendingActions.slice(0,6).map((a,i) => (
                 <div key={i} style={{ padding:"9px 16px", borderBottom:`1px solid ${C.border}`,
                   display:"flex", alignItems:"flex-start", gap:10,
-                  background: a.priority==="High" ? "#FFF5F5" : "white" }}>
+                  background:a.priority==="High"?"#FFF5F5":"white" }}>
                   <div style={{ width:6, height:6, borderRadius:"50%", flexShrink:0, marginTop:5,
-                    background: a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.green }} />
+                    background:a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.green }}/>
                   <div style={{ flex:1 }}>
                     <div style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:500, lineHeight:1.4 }}>
                       {a.title||a.text||a.action}
                     </div>
-                    {a.due && <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:1 }}>Due: {a.due}</div>}
+                    {a.due && <div className="ns-sub" style={{ marginTop:1 }}>Due: {a.due}</div>}
                   </div>
-                  <span style={{ fontFamily:F, fontSize:9, fontWeight:700, padding:"2px 6px",
-                    borderRadius:12, flexShrink:0,
-                    background: a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#F0FDF4",
-                    color: a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.green }}>
+                  <span className={`ns-badge ${a.priority==="High"?"red":a.priority==="Medium"?"amber":"green"}`}
+                    style={{ fontSize:9 }}>
                     {a.priority||"Low"}
                   </span>
                 </div>
-              ))}
-            </div>
+              ))
+            }
           </div>
- 
-          {/* AR Aging chart */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}`,
-              display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>A/R Aging</div>
-              {hasAR && <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.muted }}>
-                Total: {uaeClient?"AED ":"₹"}{arTotal.toLocaleString()}
-              </div>}
-            </div>
-            {!hasAR ? (
-              <div style={{ padding:"32px 16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>
-                No AR data entered yet
-              </div>
-            ) : (
-              <div style={{ padding:16 }}>
+        </div>
+
+        {/* AR Aging */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>A/R Aging</h3>
+            {hasAR && <span className="ns-label" style={{ fontFamily:FM }}>
+              Total: {uaeClient?"AED ":"₹"}{arTotal.toLocaleString()}
+            </span>}
+          </div>
+          {!hasAR
+            ? <EmptyState icon="ti-receipt" title="No A/R data" sub="Working capital data not entered yet."/>
+            : <div style={{ padding:16 }}>
                 {arBuckets.map((b,i) => {
                   const pct = arTotal > 0 ? (b.val/arTotal*100) : 0;
                   return (
                     <div key={i} style={{ marginBottom:10 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:3 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
                         <span style={{ fontFamily:F, fontSize:11, color:C.text }}>{b.label}</span>
                         <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
-                          {uaeClient?"AED ":"₹"}{b.val.toLocaleString()} <span style={{color:C.muted,fontWeight:400}}>({pct.toFixed(0)}%)</span>
+                          {uaeClient?"AED ":"₹"}{b.val.toLocaleString()}
+                          <span className="muted" style={{ fontWeight:400 }}> ({pct.toFixed(0)}%)</span>
                         </span>
                       </div>
-                      <div style={{ height:6, background:"#F3F4F6", borderRadius:12, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:12, transition:"width 0.4s" }}/>
+                      <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10, transition:"width 0.5s" }}/>
                       </div>
                     </div>
                   );
                 })}
               </div>
-            )}
-          </div>
- 
-          {/* Cash Flow sparkline */}
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Cash Flow Trend</div>
-            </div>
-            {cfVals.length < 2 ? (
-              <div style={{ padding:"32px 16px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>
-                No cashflow data entered yet
-              </div>
-            ) : (
-              <div style={{ padding:16 }}>
+          }
+        </div>
+
+        {/* Cash Flow sparkline */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header"><h3>Cash Flow Trend</h3></div>
+          {cfVals.length < 2
+            ? <EmptyState icon="ti-chart-line" title="No cash flow data" sub="Cash flow data not entered yet."/>
+            : <div style={{ padding:16 }}>
                 <svg width="100%" height={sparkH+20} viewBox={`0 0 ${sparkW} ${sparkH+20}`} preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="sparkGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={accentColor} stopOpacity="0.3"/>
+                      <stop offset="0%" stopColor={accentColor} stopOpacity="0.25"/>
                       <stop offset="100%" stopColor={accentColor} stopOpacity="0"/>
                     </linearGradient>
                   </defs>
@@ -1512,8 +1505,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                     const fillD = lineD + ` L${pts[pts.length-1][0]},${sparkH+2} L${pts[0][0]},${sparkH+2} Z`;
                     return (<>
                       <path d={fillD} fill="url(#sparkGrad)"/>
-                      <path d={lineD} stroke={accentColor} strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
-                      {pts.map(([x,y],i) => <circle key={i} cx={x} cy={y} r="2" fill={accentColor}/>)}
+                      <path d={lineD} stroke={accentColor} strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"/>
+                      {pts.map(([x,y],i) => <circle key={i} cx={x} cy={y} r="2.5" fill={accentColor}/>)}
                     </>);
                   })()}
                 </svg>
@@ -1523,61 +1516,54 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                   ))}
                 </div>
               </div>
-            )}
-          </div>
+          }
         </div>
- 
-        {/* ── Row 4: Key Indicators table (NetSuite style) ── */}
-        {(reportData?.variance||[]).length > 0 && (
-          <div style={{ background:"white", borderRadius:12, border:`1px solid ${C.border}`,
-            boxShadow:"0 1px 3px rgba(0,0,0,0.04)", overflow:"hidden" }}>
-            <div style={{ padding:"10px 16px", borderBottom:`1px solid ${C.border}` }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>Key Performance Indicators</div>
-            </div>
-            <table style={{ width:"100%", borderCollapse:"collapse", fontSize:12, fontFamily:F }}>
-              <thead>
-                <tr style={{ background:"#fff" }}>
-                  <th style={{ padding:"7px 16px", textAlign:"left", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Indicator</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Budget</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Actual</th>
-                  <th style={{ padding:"7px 12px", textAlign:"right", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Variance</th>
-                  <th style={{ padding:"7px 12px", textAlign:"center", fontWeight:700, color:C.muted, fontSize:10, textTransform:"uppercase" }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {(reportData.variance||[]).slice(0,6).map((v,i) => {
-                  const diff = v.noCalc ? null : (() => {
-                    const b = parseFloat(String(v.budget||"0").replace(/[^0-9.-]/g,""));
-                    const a = parseFloat(String(v.actual||"0").replace(/[^0-9.-]/g,""));
-                    if (!b) return null;
-                    return (((a-b)/Math.abs(b))*100).toFixed(1);
-                  })();
-                  const favourable = v.fav ? (diff===null||parseFloat(diff)>=0) : (diff===null||parseFloat(diff)<=0);
-                  return (
-                    <tr key={i} style={{ borderTop:`1px solid ${C.border}`, background:i%2===0?"white":"#FAFAFA" }}>
-                      <td style={{ padding:"8px 16px", fontWeight:500, color:C.text }}>{v.metric}</td>
-                      <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, color:C.muted }}>{v.budget}</td>
-                      <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, fontWeight:700, color:C.text }}>{v.actual}</td>
-                      <td style={{ padding:"8px 12px", textAlign:"right", fontFamily:FM, fontWeight:700,
-                        color: diff===null?C.muted:favourable?C.green:C.red }}>
-                        {diff===null?"—":(parseFloat(diff)>0?"+":"")+diff+"%"}
-                      </td>
-                      <td style={{ padding:"8px 12px", textAlign:"center" }}>
-                        <span style={{ padding:"2px 8px", borderRadius:16, fontSize:10, fontWeight:700, fontFamily:F,
-                          background:favourable?"#F0FDF4":"#FEF2F2",
-                          color:favourable?C.green:C.red }}>
-                          {favourable?"✓ Favourable":"✗ Watch"}
-                        </span>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
- 
       </div>
+
+      {/* ── Row 4: KPI Variance table ── */}
+      {(reportData?.variance||[]).length > 0 && (
+        <div className="ns-panel">
+          <div className="ns-panel-header"><h3>Key Performance Indicators — Budget vs Actual</h3></div>
+          <table className="ns-table">
+            <thead>
+              <tr>
+                <th>Indicator</th>
+                <th className="right">Budget</th>
+                <th className="right">Actual</th>
+                <th className="right">Variance</th>
+                <th style={{ textAlign:"center" }}>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(reportData.variance||[]).slice(0,6).map((v,i) => {
+                const diff = v.noCalc ? null : (() => {
+                  const b = parseFloat(String(v.budget||"0").replace(/[^0-9.-]/g,""));
+                  const a = parseFloat(String(v.actual||"0").replace(/[^0-9.-]/g,""));
+                  if (!b) return null;
+                  return (((a-b)/Math.abs(b))*100).toFixed(1);
+                })();
+                const favourable = v.fav ? (diff===null||parseFloat(diff)>=0) : (diff===null||parseFloat(diff)<=0);
+                return (
+                  <tr key={i} className="striped">
+                    <td>{v.metric}</td>
+                    <td className="right mono muted">{v.budget}</td>
+                    <td className="right mono bold">{v.actual}</td>
+                    <td className="right mono" style={{ color:diff===null?C.muted:favourable?C.green:C.red, fontWeight:700 }}>
+                      {diff===null?"—":(parseFloat(diff)>0?"+":"")+diff+"%"}
+                    </td>
+                    <td style={{ textAlign:"center" }}>
+                      <span className={`ns-badge ${favourable?"green":"red"}`}>
+                        {favourable?"On Track":"Watch"}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
     </div>
   );
 }
@@ -14012,6 +13998,11 @@ function Portal({ client, onLogout }) {
           .ns-grid-4{grid-template-columns:repeat(2,1fr)!important}
           .ns-grid-3{grid-template-columns:1fr!important}
           .ns-grid-2{grid-template-columns:1fr!important}
+        }
+        /* Login responsive — hide left panel on small screens */
+        @media(max-width:700px){
+          .login-left-panel { display:none !important; }
+          .login-right-panel { padding:24px 16px !important; }
         }
  
         /* Sidebar hover */
