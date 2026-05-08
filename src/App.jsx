@@ -1765,7 +1765,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
             <div key={i} style={{ flex:1, padding:"14px 18px",
               borderRight:i<summaryMetrics.length-1?"1px solid #E5E7EB":"none" }}>
               <div className="ns-label">{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:16, fontWeight:900, color:"#111827", marginTop:4 }}>{m.value}</div>
+              <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:"#111827", marginTop:4 }}>{m.value}</div>
             </div>
           ))}
         </div>
@@ -1794,7 +1794,36 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
           </tbody>
         </table>
       </div>
- 
+
+      {/* P&L bar chart — current vs prior */}
+      {(() => {
+        const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
+        const chartData = [
+          { name:"Revenue",    Current:parse(pl.revenue?.actual),    Prior:parse(pl.revenue?.prev) },
+          { name:"Gross P",    Current:parse(pl.grossProfit?.actual), Prior:parse(pl.grossProfit?.prev) },
+          { name:"EBITDA",     Current:parse(pl.ebitda?.actual),      Prior:parse(pl.ebitda?.prev) },
+          { name:"Net Profit", Current:parse(pl.pat?.actual),         Prior:parse(pl.pat?.prev) },
+        ].filter(d => d.Current > 0 || d.Prior > 0);
+        if (!chartData.length) return null;
+        return (
+          <div className="ns-panel">
+            <div className="ns-panel-header"><h3>P&L — Current vs Prior Period</h3></div>
+            <div style={{ height:200, padding:"8px 0" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top:4, right:12, left:0, bottom:0 }} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false}/>
+                  <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#9CA3AF" }} axisLine={false} tickLine={false}/>
+                  <YAxis tick={{ fontSize:9, fill:"#9CA3AF" }} axisLine={false} tickLine={false} width={32}/>
+                  <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, borderRadius:8, border:"1px solid #E5E7EB" }}/>
+                  <Bar dataKey="Current" name="Current Period" fill={uae?"#00732F":"#2563EB"} radius={[3,3,0,0]}/>
+                  <Bar dataKey="Prior" name="Prior Period" fill="#E5E7EB" radius={[3,3,0,0]}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* KPI grid — 6 tiles */}
       <div className="ns-grid-6">
         {loading
@@ -1939,7 +1968,7 @@ function CashFlow({ reportData, client, kpis }) {
         <Card key={i} style={{ padding:"14px 16px" }}>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
             textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{k.label}</div>
-          <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:k.color||C.text, lineHeight:1.2 }}>{k.value}</div>
+          <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:k.color||C.text, lineHeight:1.2 }}>{k.value}</div>
           {k.sub && (
             <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:4, display:"flex", alignItems:"center", gap:3 }}>
               {k.trend && (
@@ -14422,7 +14451,7 @@ function Portal({ client, onLogout }) {
           box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
         .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
-        .ns-kpi-tile .value { font-size:16px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
+        .ns-kpi-tile .value { font-size:13px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
         .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
  
         /* Badges */
