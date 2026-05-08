@@ -3219,52 +3219,59 @@ const DL_BTN = { display:"inline-flex", alignItems:"center", gap:6, padding:"7px
   borderRadius:8, border:"1.5px solid #2563EB22", background:"#EFF6FF", color:"#2563EB",
   fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:12, cursor:"pointer" };
 
-function pdfBase(title, company, month, bodyHTML) {
+function pdfBase(title, company, month, bodyHTML, accentColor="#2563EB", headerColor1="#1E3A8A", headerColor2="#2563EB") {
+  const now = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial,sans-serif;color:#111827;background:white;}
-.page{max-width:820px;margin:0 auto;padding:48px;}
-.hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:3px solid #2563EB;}
-.logo{font-size:22px;font-weight:900;color:#2563EB;letter-spacing:-0.03em;}
-.logo span{background:linear-gradient(90deg,#2563EB,#7C3AED);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
-.meta{text-align:right;font-size:11px;color:#6B7280;line-height:1.7;}
-.meta strong{font-size:13px;color:#111827;display:block;}
-h1{font-size:22px;font-weight:900;color:#111827;margin-bottom:4px;}
-.sub{font-size:12px;color:#6B7280;margin-bottom:24px;}
-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:20px;}
-thead tr{background:#0F172A;}
-thead th{padding:9px 12px;color:white;font-weight:700;font-size:11px;text-align:left;}
-thead th.r{text-align:right;}
-tbody tr{border-bottom:1px solid #F3F4F6;}
-tbody tr:nth-child(even){background:#F9FAFB;}
-tbody td{padding:9px 12px;color:#374151;}
-tbody td.r{text-align:right;font-family:monospace;}
-tbody td.b{font-weight:700;color:#111827;}
+body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+.banner{background:linear-gradient(135deg,${headerColor1},${headerColor2});padding:32px 48px;color:white;}
+.banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
+.banner .sub{font-size:12px;opacity:0.8;margin-bottom:14px;}
+.banner .meta{display:flex;gap:28px;font-size:11px;flex-wrap:wrap;}
+.banner .meta-item label{opacity:0.6;display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+.page{padding:32px 48px;max-width:820px;margin:0 auto;}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
+.kpi-card{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:12px;text-align:center;}
+.kpi-card .val{font-size:18px;font-weight:800;font-family:monospace;margin-bottom:3px;color:${accentColor};}
+.kpi-card .lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6B7280;}
+.section-title{font-size:15px;font-weight:800;color:#111827;margin:20px 0 10px;border-left:4px solid ${accentColor};padding-left:12px;}
+table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:14px;}
+th{background:#0F172A;color:white;padding:9px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+th.r{text-align:right;}
+td{padding:9px 12px;border-bottom:1px solid #F3F4F6;}
+td.r{text-align:right;font-family:monospace;}
+td.b{font-weight:700;color:#111827;}
+tr:nth-child(even) td{background:#F9FAFB;}
+.in-val{color:#059669;font-weight:700;}
+.out-val{color:#DC2626;font-weight:700;}
 .fav{display:inline-block;padding:2px 8px;border-radius:60px;font-size:10px;font-weight:700;background:#DCFCE7;color:#15803D;}
 .unfav{display:inline-block;padding:2px 8px;border-radius:60px;font-size:10px;font-weight:700;background:#FEF2F2;color:#DC2626;}
 .box{padding:16px 18px;border-radius:10px;border:1px solid #E5E7EB;margin-bottom:16px;}
-.box.blue{border-left:3px solid #2563EB;background:#EFF6FF;}
+.box.blue{border-left:3px solid ${accentColor};background:#EFF6FF;}
 .box.green{border-left:3px solid #059669;background:#F0FDF4;}
 .box.amber{border-left:3px solid #D97706;background:#FFFBEB;}
 .box.red{border-left:3px solid #EF4444;background:#FEF2F2;}
 .box.purple{border-left:3px solid #7C3AED;background:#F5F3FF;}
 .label{font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
-.val{font-size:20px;font-weight:900;color:#111827;}
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px;}
-.kpi{padding:12px;border-radius:8px;background:#F9FAFB;border:1px solid #E5E7EB;text-align:center;}
-.kpi .label{margin-bottom:4px;}
-.kpi .val{font-size:16px;}
-.disc{margin-top:20px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
-.ftr{margin-top:16px;padding-top:12px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
-@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
-</style></head><body><div class="page">
-<div class="hdr">
-  <div><div class="logo">Finz<span>zup</span></div><div style="font-size:9px;color:#9CA3AF;letter-spacing:0.1em;text-transform:uppercase;">Your CFO · On Demand</div></div>
-  <div class="meta"><strong>${title}</strong>${company}<br/>${month}</div>
+.note-box{background:#EFF6FF;border-left:4px solid ${accentColor};border-radius:6px;padding:12px 14px;margin:12px 0;font-size:12px;color:#1E3A8A;line-height:1.8;}
+.disc{margin-top:18px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
+.ftr{margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
+</style></head><body>
+<div class="banner">
+  <h1>${title}</h1>
+  <div class="sub">${company}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${month}</div>
+    <div class="meta-item"><label>Prepared By</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Membership</label>160944</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
+  </div>
 </div>
+<div class="page">
 ${bodyHTML}
-<div class="disc">This report is prepared by Finzzup Advisory LLP. All figures are based on data provided by the client and reviewed by the CFO. This document is confidential and intended solely for the named client. For queries, contact garima@finzzup.com</div>
+<div class="disc">This report is prepared by Finzzup Advisory LLP based on information provided by the client and reviewed by the CFO. Confidential — for management use only. For statutory reporting, refer to audited financials.</div>
 <div class="ftr"><span>Finzzup Advisory LLP · garima@finzzup.com</span><span>Confidential — ${company}</span></div>
 </div></body></html>`;
 }
@@ -3484,111 +3491,64 @@ function generateExecSummaryPDF({ client, reportData, kpis }) {
   const nextSteps= reportData?.execNextSteps    || "Next steps not yet added.";
   const garimaNote = reportData?.garimaNote || reportData?.packNote || "";
  
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"/>
+  const now = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:Arial,sans-serif; color:#111827; background:white; }
-  .page { max-width:800px; margin:0 auto; padding:48px; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; padding-bottom:18px; border-bottom:3px solid #3B6FF7; }
-  .logo { font-size:26px; font-weight:900; color:#3B6FF7; }
-  .tagline { font-size:9px; color:#9CA3AF; letter-spacing:0.1em; text-transform:uppercase; margin-top:2px; }
-  .doc-meta { text-align:right; font-size:11px; color:#6B7280; line-height:1.7; }
-  .doc-meta strong { font-size:14px; color:#111827; display:block; }
-  h1 { font-size:28px; font-weight:900; color:#111827; margin-bottom:4px; }
-  .subtitle { font-size:13px; color:#6B7280; margin-bottom:6px; }
-  .eyebrow { font-size:10px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
-  .kpi-strip { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:24px 0; }
-  .kpi { padding:10px 8px; border-radius:8px; background:#F9FAFB; border:1px solid #E5E7EB; text-align:center; }
-  .kpi-label { font-size:8px; color:#6B7280; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
-  .kpi-value { font-size:14px; font-weight:900; color:#111827; }
-  .section { margin-bottom:24px; padding:18px 20px; border-radius:12px; border:1px solid #E5E7EB; }
-  .section-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-  .section-icon { font-size:18px; }
-  h2 { font-size:13px; font-weight:800; color:#111827; text-transform:uppercase; letter-spacing:0.05em; }
-  .section-body { font-size:13px; color:#374151; line-height:1.8; }
-  .perf   { border-left:3px solid #3B6FF7; background:#F0F4FF; }
-  .cash   { border-left:3px solid #10B981; background:#F0FDF4; }
-  .risks  { border-left:3px solid #EF4444; background:#FEF2F2; }
-  .opps   { border-left:3px solid #8B5CF6; background:#F5F3FF; }
-  .next   { border-left:3px solid #F59E0B; background:#FFFBEB; }
-  .garima-note { margin-top:24px; padding:16px 18px; background:#EEF3FE; border-radius:10px; border-left:3px solid #3B6FF7; }
-  .garima-label { font-size:10px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
-  .garima-text  { font-size:13px; color:#111827; line-height:1.8; }
-  .disclaimer { margin-top:24px; padding:10px 12px; background:#F9FAFB; border-radius:6px; font-size:10px; color:#6B7280; line-height:1.6; border:1px solid #E5E7EB; }
-  .footer { margin-top:16px; padding-top:14px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
-  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
-</style>
-</head>
-<body>
-<div class="page">
-  <div class="header">
-    <div><div class="logo">Finzzup</div><div class="tagline">Build. Value. Scale.</div></div>
-    <div class="doc-meta">
-      <strong>Executive Summary</strong>
-      ${company} | ${packLabel}<br/>
-      Period: ${month}<br/>
-      ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
-    </div>
-  </div>
- 
-  <div class="eyebrow">Board-Ready | Confidential | Prepared by Garima Agarwal CA</div>
-  <h1>${company}</h1>
-  <div class="subtitle">Monthly Executive Summary — ${month}</div>
- 
-  <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Revenue</div><div class="kpi-value">${rev}</div></div>
-    <div class="kpi"><div class="kpi-label">Gross Margin</div><div class="kpi-value">${mar}</div></div>
-    <div class="kpi"><div class="kpi-label">EBITDA</div><div class="kpi-value">${ebitda}</div></div>
-    <div class="kpi"><div class="kpi-label">Cash Balance</div><div class="kpi-value">${cash}</div></div>
-    <div class="kpi"><div class="kpi-label">Burn Rate</div><div class="kpi-value">${burn}</div></div>
-    <div class="kpi"><div class="kpi-label">Runway</div><div class="kpi-value">${run}</div></div>
-  </div>
- 
-  <div class="section perf">
-    <div class="section-header"><span class="section-icon">↑</span><h2>Performance</h2></div>
-    <div class="section-body">${perf}</div>
-  </div>
- 
-  <div class="section cash">
-    <div class="section-header"><span class="section-icon">$</span><h2>Cash & Liquidity</h2></div>
-    <div class="section-body">${cashNote}</div>
-  </div>
- 
-  <div class="section risks">
-    <div class="section-header"><span class="section-icon">!</span><h2>Key Risks</h2></div>
-    <div class="section-body">${risks}</div>
-  </div>
- 
-  <div class="section opps">
-    <div class="section-header"><span class="section-icon">→</span><h2>Opportunities</h2></div>
-    <div class="section-body">${opps}</div>
-  </div>
- 
-  <div class="section next">
-    <div class="section-header"><span class="section-icon">✓</span><h2>Next Steps</h2></div>
-    <div class="section-body">${nextSteps}</div>
-  </div>
- 
-  ${garimaNote ? `
-  <div class="garima-note">
-    <div class="garima-label">CA's Note — ${month}</div>
-    <div class="garima-text">${garimaNote}</div>
-  </div>` : ""}
- 
-  <div class="disclaimer">
-    This executive summary is prepared by Garima Agarwal (CA Membership: 160944) based on management information provided by the client. It is for internal management and board use only and does not constitute audited financial statements.
-  </div>
- 
-  <div class="footer">
-    <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038 | agrgarima@gmail.com</span>
-    <span>Finzzup | Build. Value. Scale.</span>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+.banner{background:linear-gradient(135deg,#1E3A8A,#2563EB);padding:32px 48px;color:white;}
+.banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
+.banner .sub{font-size:12px;opacity:0.8;margin-bottom:14px;}
+.banner .meta{display:flex;gap:28px;font-size:11px;flex-wrap:wrap;}
+.banner .meta-item label{opacity:0.6;display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+.page{padding:32px 48px;max-width:820px;margin:0 auto;}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:22px;}
+.kpi-card{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:10px 8px;text-align:center;}
+.kpi-card .val{font-size:14px;font-weight:800;font-family:monospace;margin-bottom:3px;color:#2563EB;}
+.kpi-card .lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6B7280;}
+.section-title{font-size:13px;font-weight:800;color:#111827;margin:16px 0 8px;border-left:4px solid #2563EB;padding-left:12px;text-transform:uppercase;letter-spacing:0.05em;}
+.section{margin-bottom:18px;padding:16px 18px;border-radius:10px;border:1px solid #E5E7EB;font-size:13px;color:#374151;line-height:1.8;}
+.section.perf{border-left:4px solid #2563EB;background:#F0F4FF;}
+.section.cash{border-left:4px solid #10B981;background:#F0FDF4;}
+.section.risks{border-left:4px solid #EF4444;background:#FEF2F2;}
+.section.opps{border-left:4px solid #8B5CF6;background:#F5F3FF;}
+.section.next{border-left:4px solid #F59E0B;background:#FFFBEB;}
+.note-box{background:#EFF6FF;border-left:4px solid #2563EB;border-radius:6px;padding:12px 14px;margin:12px 0;font-size:12px;color:#1E3A8A;line-height:1.8;}
+.disc{margin-top:18px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
+.ftr{margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
+</style></head><body>
+<div class="banner">
+  <h1>Executive Summary</h1>
+  <div class="sub">${company} · ${packLabel}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${month}</div>
+    <div class="meta-item"><label>Prepared By</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Membership</label>160944</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
   </div>
 </div>
-</body>
-</html>`;
+<div class="page">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="val">${rev}</div><div class="lbl">Revenue</div></div>
+    <div class="kpi-card"><div class="val">${mar}</div><div class="lbl">Gross Margin</div></div>
+    <div class="kpi-card"><div class="val">${ebitda}</div><div class="lbl">EBITDA</div></div>
+    <div class="kpi-card"><div class="val">${cash}</div><div class="lbl">Cash Balance</div></div>
+    <div class="kpi-card"><div class="val">${burn}</div><div class="lbl">Burn Rate</div></div>
+    <div class="kpi-card"><div class="val">${run}</div><div class="lbl">Runway</div></div>
+  </div>
+
+  <div class="section perf"><div class="section-title">↑ Performance</div>${perf}</div>
+  <div class="section cash"><div class="section-title">$ Cash &amp; Liquidity</div>${cashNote}</div>
+  <div class="section risks"><div class="section-title">! Key Risks</div>${risks}</div>
+  <div class="section opps"><div class="section-title">→ Opportunities</div>${opps}</div>
+  <div class="section next"><div class="section-title">✓ Next Steps</div>${nextSteps}</div>
+
+  ${garimaNote ? `<div class="note-box"><strong>CA's Note — ${month}</strong><br/>${garimaNote}</div>` : ""}
+
+  <div class="disc">This executive summary is prepared by Garima Agarwal (CA Membership: 160944) based on management information provided by the client. It is for internal management and board use only and does not constitute audited financial statements.</div>
+  <div class="ftr"><span>Garima Agarwal | CA Membership: 160944 | agrgarima@gmail.com</span><span>Confidential — ${company}</span></div>
+</div></body></html>`;
 }
  
  
@@ -4018,173 +3978,131 @@ function generateCashPDF({ client, reportData, kpis }) {
     { label:"Working Capital",        value: reportData?.workingCapital   || "—", benchmark:"Positive" },
   ].filter(r => r.value !== "—");
  
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"/>
+  const now = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:13px; }
-  .page { max-width:800px; margin:0 auto; padding:48px; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; padding-bottom:18px; border-bottom:2px solid #3B6FF7; }
-  .logo { font-size:24px; font-weight:900; color:#3B6FF7; letter-spacing:-0.02em; }
-  .tagline { font-size:9px; color:#9CA3AF; letter-spacing:0.1em; text-transform:uppercase; margin-top:2px; }
-  .doc-meta { text-align:right; font-size:11px; color:#6B7280; line-height:1.7; }
-  .doc-meta strong { color:#111827; font-size:13px; display:block; }
-  h1 { font-size:24px; font-weight:900; color:#111827; margin-bottom:4px; }
-  .subtitle { font-size:12px; color:#6B7280; margin-bottom:24px; }
-  .eyebrow { font-size:10px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
-  h2 { font-size:13px; font-weight:800; color:#111827; margin:0 0 12px; padding-bottom:7px; border-bottom:1px solid #F3F4F6; text-transform:uppercase; letter-spacing:0.05em; }
-  .section { margin-bottom:24px; }
-  .kpi-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px; margin-bottom:24px; }
-  .kpi-card { padding:12px; border-radius:8px; background:#F9FAFB; border:1px solid #E5E7EB; text-align:center; }
-  .kpi-label { font-size:9px; color:#6B7280; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px; }
-  .kpi-value { font-size:18px; font-weight:900; color:#111827; }
-  .kpi-sub { font-size:9px; color:#6B7280; margin-top:3px; }
-  table { width:100%; border-collapse:collapse; margin-bottom:4px; }
-  th { background:#F9FAFB; padding:8px 10px; text-align:left; font-size:9px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
-  td { padding:9px 10px; border-bottom:1px solid #F3F4F6; font-size:12px; vertical-align:middle; }
-  .bold-row td { font-weight:800; background:#F0F4FF; }
-  .in-val  { color:#059669; font-weight:700; text-align:right; }
-  .out-val { color:#DC2626; font-weight:700; text-align:right; }
-  .neu-val { color:#111827; font-weight:800; text-align:right; }
-  .right   { text-align:right; }
-  .dim     { color:#6B7280; font-size:11px; }
-  .note-box { padding:14px 16px; background:#EEF3FE; border-radius:8px; border-left:3px solid #3B6FF7; margin-bottom:24px; }
-  .note-label { font-size:9px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
-  .note-text { font-size:12px; color:#111827; line-height:1.8; }
-  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .disclaimer { margin-top:24px; padding:10px 12px; background:#F9FAFB; border-radius:6px; font-size:10px; color:#6B7280; line-height:1.6; border:1px solid #E5E7EB; }
-  .footer { margin-top:16px; padding-top:14px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
-  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
-</style>
-</head>
-<body>
-<div class="page">
- 
-  <div class="header">
-    <div><div class="logo">Finzzup</div><div class="tagline">Build. Value. Scale.</div></div>
-    <div class="doc-meta">
-      <strong>Cash Flow Report</strong>
-      ${company} | ${packLabel}<br/>
-      Period: ${month}<br/>
-      ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
-    </div>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+.banner{background:linear-gradient(135deg,#1E3A8A,#2563EB);padding:32px 48px;color:white;}
+.banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
+.banner .sub{font-size:12px;opacity:0.8;margin-bottom:14px;}
+.banner .meta{display:flex;gap:28px;font-size:11px;flex-wrap:wrap;}
+.banner .meta-item label{opacity:0.6;display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+.page{padding:32px 48px;max-width:820px;margin:0 auto;}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
+.kpi-card{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:12px;text-align:center;}
+.kpi-card .val{font-size:18px;font-weight:800;font-family:monospace;margin-bottom:3px;color:#2563EB;}
+.kpi-card .lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6B7280;}
+.section-title{font-size:15px;font-weight:800;color:#111827;margin:20px 0 10px;border-left:4px solid #2563EB;padding-left:12px;}
+table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:14px;}
+th{background:#0F172A;color:white;padding:9px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+th.r{text-align:right;}
+td{padding:9px 12px;border-bottom:1px solid #F3F4F6;}
+td.r{text-align:right;font-family:monospace;}
+td.b{font-weight:700;color:#111827;}
+tr:nth-child(even) td{background:#F9FAFB;}
+.in-val{color:#059669;font-weight:700;text-align:right;}
+.out-val{color:#DC2626;font-weight:700;text-align:right;}
+.neu-val{color:#111827;font-weight:800;text-align:right;}
+.bold-row td{font-weight:800;background:#EFF6FF;}
+.dim{color:#6B7280;font-size:11px;}
+.note-box{background:#EFF6FF;border-left:4px solid #2563EB;border-radius:6px;padding:12px 14px;margin:12px 0;font-size:12px;color:#1E3A8A;line-height:1.8;}
+.disc{margin-top:18px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
+.ftr{margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
+</style></head><body>
+<div class="banner">
+  <h1>Cash Flow Report</h1>
+  <div class="sub">${company} · ${packLabel}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${month}</div>
+    <div class="meta-item"><label>Prepared By</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Membership</label>160944</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
   </div>
- 
-  <div class="eyebrow">Confidential | Prepared by Garima Agarwal CA | Membership 160944</div>
-  <h1>${company}</h1>
-  <div class="subtitle">Cash Flow Statement, Working Capital & Liquidity Analysis — ${month}</div>
- 
-  <!-- KPI SUMMARY -->
-  <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-label">Cash Balance</div><div class="kpi-value">${cashKpi}</div><div class="kpi-sub">End of period</div></div>
-    <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-value">${revenueKpi}</div><div class="kpi-sub">This period</div></div>
-    <div class="kpi-card"><div class="kpi-label">EBITDA</div><div class="kpi-value">${ebitda}</div><div class="kpi-sub">Operating profit</div></div>
+</div>
+<div class="page">
+
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="val">${cashKpi}</div><div class="lbl">Cash Balance</div></div>
+    <div class="kpi-card"><div class="val">${revenueKpi}</div><div class="lbl">Revenue</div></div>
+    <div class="kpi-card"><div class="val">${ebitda}</div><div class="lbl">EBITDA</div></div>
     ${isMSME || isCorp
-      ? `<div class="kpi-card"><div class="kpi-label">Working Capital</div><div class="kpi-value">${reportData?.workingCapital || "—"}</div><div class="kpi-sub">Current assets − liabilities</div></div>`
-      : `<div class="kpi-card"><div class="kpi-label">Runway</div><div class="kpi-value">${runwayKpi}</div><div class="kpi-sub">At current burn</div></div>`
+      ? `<div class="kpi-card"><div class="val">${reportData?.workingCapital || "—"}</div><div class="lbl">Working Capital</div></div>`
+      : `<div class="kpi-card"><div class="val">${runwayKpi}</div><div class="lbl">Runway</div></div>`
     }
   </div>
- 
-  <!-- P&L SUMMARY -->
-  <div class="section">
-    <h2>P&L Summary — ${month}</h2>
-    <table>
-      <thead><tr><th>Line Item</th><th class="right">Amount</th><th>Notes</th></tr></thead>
-      <tbody>
-        <tr><td>Revenue</td><td class="neu-val">${revenueKpi}</td><td class="dim">Gross receipts this period</td></tr>
-        <tr><td>Cost of Goods Sold</td><td class="out-val">${cogs}</td><td class="dim">Direct costs</td></tr>
-        <tr class="bold-row"><td>Gross Profit</td><td class="right">${grossProfit}</td><td class="dim">Margin: ${marginKpi}</td></tr>
-        <tr class="bold-row"><td>EBITDA</td><td class="right">${ebitda}</td><td class="dim">Earnings before interest, tax, depreciation</td></tr>
-        <tr><td>PAT (Net Profit after Tax)</td><td class="in-val">${pat}</td><td class="dim">Bottom line</td></tr>
-      </tbody>
-    </table>
-  </div>
- 
-  <!-- CASH MOVEMENT -->
-  <div class="section">
-    <h2>Cash Movement — ${month}</h2>
-    <table>
-      <thead><tr><th>Item</th><th class="right">Amount</th></tr></thead>
-      <tbody>
-        ${cashMoves.map(r => `
-        <tr ${r.type==="neutral"?"class=\"bold-row\"":""}>
-          <td>${r.label}</td>
-          <td class="${r.type==="in"?"in-val":r.type==="out"?"out-val":"neu-val"}">${r.value}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>
- 
+
+  <div class="section-title">P&amp;L Summary — ${month}</div>
+  <table>
+    <thead><tr><th>Line Item</th><th class="r">Amount</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Revenue</td><td class="neu-val">${revenueKpi}</td><td class="dim">Gross receipts this period</td></tr>
+      <tr><td>Cost of Goods Sold</td><td class="out-val">${cogs}</td><td class="dim">Direct costs</td></tr>
+      <tr class="bold-row"><td>Gross Profit</td><td class="r">${grossProfit}</td><td class="dim">Margin: ${marginKpi}</td></tr>
+      <tr class="bold-row"><td>EBITDA</td><td class="r">${ebitda}</td><td class="dim">Earnings before interest, tax, depreciation</td></tr>
+      <tr><td>PAT (Net Profit after Tax)</td><td class="in-val">${pat}</td><td class="dim">Bottom line</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Cash Movement — ${month}</div>
+  <table>
+    <thead><tr><th>Item</th><th class="r">Amount</th></tr></thead>
+    <tbody>
+      ${cashMoves.map(r => `
+      <tr ${r.type==="neutral"?"class=\"bold-row\"":""}>
+        <td>${r.label}</td>
+        <td class="${r.type==="in"?"in-val":r.type==="out"?"out-val":"neu-val"}">${r.value}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>
+
   ${isCorp ? `
-  <!-- INDIRECT CASH FLOW -->
-  <div class="section">
-    <h2>Indirect Cash Flow Statement</h2>
-    <table>
-      <thead><tr><th>Item</th><th class="right">Amount</th></tr></thead>
-      <tbody>
-        ${indirectCF.map(r => `
-        <tr ${r.bold?"class=\"bold-row\"":""}>
-          <td>${r.label}</td>
-          <td class="${r.bold?"neu-val":"right"}">${r.value}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>` : ""}
- 
-  <!-- WORKING CAPITAL -->
-  <div class="section">
-    <h2>Working Capital Analysis</h2>
-    <table>
-      <thead><tr><th>Component</th><th class="right">Value</th><th class="right">Days</th><th>Notes</th></tr></thead>
-      <tbody>
-        ${wcItems.map(r => `
-        <tr>
-          <td>${r.label}</td>
-          <td class="neu-val">${r.value}</td>
-          <td class="right dim">${r.days}</td>
-          <td class="dim">${r.note}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>
- 
+  <div class="section-title">Indirect Cash Flow Statement</div>
+  <table>
+    <thead><tr><th>Item</th><th class="r">Amount</th></tr></thead>
+    <tbody>
+      ${indirectCF.map(r => `
+      <tr ${r.bold?"class=\"bold-row\"":""}>
+        <td>${r.label}</td>
+        <td class="${r.bold?"neu-val":"r"}">${r.value}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>` : ""}
+
+  <div class="section-title">Working Capital Analysis</div>
+  <table>
+    <thead><tr><th>Component</th><th class="r">Value</th><th class="r">Days</th><th>Notes</th></tr></thead>
+    <tbody>
+      ${wcItems.map(r => `
+      <tr>
+        <td>${r.label}</td>
+        <td class="neu-val">${r.value}</td>
+        <td class="r dim">${r.days}</td>
+        <td class="dim">${r.note}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>
+
   ${ratios.length > 0 ? `
-  <!-- KEY RATIOS -->
-  <div class="section">
-    <h2>Key Liquidity & Debt Ratios</h2>
-    <table>
-      <thead><tr><th>Ratio</th><th class="right">Value</th><th>Benchmark</th></tr></thead>
-      <tbody>
-        ${ratios.map(r => `
-        <tr>
-          <td>${r.label}</td>
-          <td class="neu-val">${r.value}</td>
-          <td class="dim">${r.benchmark}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>` : ""}
- 
-  ${note ? `
-  <div class="note-box">
-    <div class="note-label">CA's Cash Flow Analysis — ${month}</div>
-    <div class="note-text">${note}</div>
-  </div>` : ""}
- 
-  <div class="disclaimer">
-    <strong>Disclaimer:</strong> This cash flow report is prepared based on information provided by the client and is for management and banking purposes. It does not constitute a statutory financial statement. Figures are subject to audit adjustments. For statutory reporting, refer to audited financials.
-  </div>
- 
-  <div class="footer">
-    <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038 | agrgarima@gmail.com</span>
-    <span>Finzzup | ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</span>
-  </div>
- 
-</div>
-</body>
-</html>`;
+  <div class="section-title">Key Liquidity &amp; Debt Ratios</div>
+  <table>
+    <thead><tr><th>Ratio</th><th class="r">Value</th><th>Benchmark</th></tr></thead>
+    <tbody>
+      ${ratios.map(r => `
+      <tr>
+        <td>${r.label}</td>
+        <td class="neu-val">${r.value}</td>
+        <td class="dim">${r.benchmark}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>` : ""}
+
+  ${note ? `<div class="note-box"><strong>CA's Cash Flow Analysis — ${month}</strong><br/>${note}</div>` : ""}
+
+  <div class="disc">This cash flow report is prepared based on information provided by the client and is for management and banking purposes. It does not constitute a statutory financial statement. Figures are subject to audit adjustments. For statutory reporting, refer to audited financials.</div>
+  <div class="ftr"><span>Garima Agarwal | CA Membership: 160944 | agrgarima@gmail.com</span><span>Confidential — ${company}</span></div>
+</div></body></html>`;
 }
  
  
@@ -4278,180 +4196,141 @@ function generateLoanPDF({ client, reportData, kpis }) {
   const statusText = score >= 75 ? "Strong Profile — Eligible for Most Schemes"
     : score >= 55 ? "Moderate Profile — Eligible with Preparation"
     : "Early Stage — Build Track Record First";
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"/>
+  const now = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Arial', sans-serif; color: #111827; background: white; }
-  .page { max-width: 800px; margin: 0 auto; padding: 48px 48px; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:40px; padding-bottom:24px; border-bottom:2px solid #5B4FDB; }
-  .logo-text { font-size:26px; font-weight:900; color:#5B4FDB; letter-spacing:-0.02em; }
-  .tagline { font-size:9px; color:#9CA3AF; letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
-  .doc-meta { text-align:right; font-size:11px; color:#6B7280; }
-  .doc-meta strong { color:#111827; font-size:13px; display:block; margin-bottom:4px; }
-  .title-block { margin-bottom:32px; }
-  .eyebrow { font-size:11px; font-weight:700; color:#5B4FDB; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
-  h1 { font-size:28px; font-weight:900; color:#111827; margin-bottom:6px; }
-  .subtitle { font-size:14px; color:#6B7280; }
-  .score-box { background:linear-gradient(135deg,#EEF2FF,#F5F3FF); border:1px solid #C7D2FE; border-radius:16px; padding:24px 28px; margin-bottom:28px; display:flex; justify-content:space-between; align-items:center; }
-  .score-num { font-size:56px; font-weight:900; color:#5B4FDB; line-height:1; }
-  .score-label { font-size:11px; color:#6B7280; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
-  .score-status { font-size:14px; font-weight:700; color:#111827; }
-  .score-bar-wrap { flex:1; margin: 0 32px; }
-  .score-bar-bg { height:12px; background:#E5E7EB; border-radius:6px; overflow:hidden; }
-  .score-bar-fill { height:100%; background:linear-gradient(90deg,#5B4FDB,#7C3AED); border-radius:6px; width:${score}%; }
-  h2 { font-size:16px; font-weight:800; color:#111827; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #F3F4F6; }
-  .section { margin-bottom:28px; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { background:#F9FAFB; padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
-  td { padding:11px 14px; border-bottom:1px solid #F3F4F6; vertical-align:top; }
-  tr:last-child td { border-bottom:none; }
-  .badge { display:inline-block; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:700; }
-  .badge-rec { background:#EEF2FF; color:#5B4FDB; }
-  .badge-done { background:#ECFDF5; color:#059669; }
-  .badge-pending { background:#FEF3C7; color:#D97706; }
-  .checklist-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; margin-bottom:6px; font-size:13px; }
-  .done-row { background:#F0FDF4; border:1px solid #BBF7D0; color:#111827; }
-  .pending-row { background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; }
-  .footer { margin-top:40px; padding-top:20px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:11px; color:#9CA3AF; }
-  .disclaimer { margin-top:20px; padding:14px 16px; background:#F9FAFB; border-radius:8px; font-size:11px; color:#6B7280; line-height:1.6; border:1px solid #E5E7EB; }
-  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
-</style>
-</head>
-<body>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+.banner{background:linear-gradient(135deg,#1E3A8A,#2563EB);padding:32px 48px;color:white;}
+.banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
+.banner .sub{font-size:12px;opacity:0.8;margin-bottom:14px;}
+.banner .meta{display:flex;gap:28px;font-size:11px;flex-wrap:wrap;}
+.banner .meta-item label{opacity:0.6;display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+.page{padding:32px 48px;max-width:820px;margin:0 auto;}
+.score-box{background:linear-gradient(135deg,#EEF2FF,#EFF6FF);border:1px solid #BFDBFE;border-radius:12px;padding:20px 24px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;}
+.score-num{font-size:52px;font-weight:900;color:#2563EB;line-height:1;}
+.score-bar-bg{height:10px;background:#E5E7EB;border-radius:6px;overflow:hidden;margin:8px 0;}
+.score-bar-fill{height:100%;background:linear-gradient(90deg,#1E3A8A,#2563EB);border-radius:6px;width:${score}%;}
+.section-title{font-size:15px;font-weight:800;color:#111827;margin:20px 0 10px;border-left:4px solid #2563EB;padding-left:12px;}
+table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:14px;}
+th{background:#0F172A;color:white;padding:9px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+th.r{text-align:right;}
+td{padding:9px 12px;border-bottom:1px solid #F3F4F6;vertical-align:top;}
+td.r{text-align:right;font-family:monospace;}
+td.b{font-weight:700;color:#111827;}
+tr:nth-child(even) td{background:#F9FAFB;}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;}
+.badge-rec{background:#DBEAFE;color:#1E3A8A;}
+.badge-done{background:#DCFCE7;color:#15803D;}
+.badge-pending{background:#FEF3C7;color:#D97706;}
+.checklist-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;margin-bottom:6px;font-size:12px;}
+.done-row{background:#F0FDF4;border:1px solid #BBF7D0;color:#111827;}
+.pending-row{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;}
+.note-box{background:#EFF6FF;border-left:4px solid #2563EB;border-radius:6px;padding:12px 14px;margin:12px 0;font-size:12px;color:#1E3A8A;line-height:1.8;}
+.disc{margin-top:18px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
+.ftr{margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
+</style></head><body>
+<div class="banner">
+  <h1>Loan &amp; Debt Analysis</h1>
+  <div class="sub">${company}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${month}</div>
+    <div class="meta-item"><label>Prepared By</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Membership</label>160944</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
+  </div>
+</div>
 <div class="page">
-  <div class="header">
-    <div>
-      <div class="logo-text">Finzzup</div>
-      <div class="tagline">Build. Value. Scale.</div>
-    </div>
-    <div class="doc-meta">
-      <strong>Loan Readiness Report</strong>
-      Prepared for: ${company}<br/>
-      Period: ${month}<br/>
-      Date: ${new Date().toLocaleDateString("en-IN", {day:"numeric",month:"long",year:"numeric"})}
-    </div>
-  </div>
- 
-  <div class="title-block">
-    <div class="eyebrow">Confidential | Prepared by Garima Agarwal CA</div>
-    <h1>${company}</h1>
-    <div class="subtitle">Loan Readiness Assessment &amp; Scheme Eligibility Report</div>
-  </div>
-  ${loanNote ? "<div style=\"margin-bottom:24px;padding:16px 18px;background:#EEF2FF;border-radius:10px;border-left:3px solid #5B4FDB\"><div style=\"font-size:10px;font-weight:700;color:#5B4FDB;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px\">Garima's Assessment</div><p style=\"font-size:14px;color:#111827;line-height:1.7;margin:0\">" + loanNote + "</p></div>" : ""}
- 
+
+  ${loanNote ? `<div class="note-box"><strong>Garima's Assessment</strong><br/>${loanNote}</div>` : ""}
+
   <div class="score-box">
     <div>
-      <div class="score-label">Loan Eligibility Score</div>
+      <div style="font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Loan Eligibility Score</div>
       <div class="score-num">${score}</div>
-      <div style="font-size:12px;color:#6B7280;margin-top:4px;">out of 100</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:4px;">out of 100</div>
     </div>
-    <div class="score-bar-wrap">
-      <div class="score-status" style="margin-bottom:12px;">${statusText}</div>
+    <div style="flex:1;margin:0 28px;">
+      <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:10px;">${statusText}</div>
       <div class="score-bar-bg"><div class="score-bar-fill"></div></div>
       <div style="font-size:11px;color:#6B7280;margin-top:6px;">Documents ready: ${readyCount}/${docs.length}</div>
     </div>
   </div>
- 
-  <div class="section">
-    <h2>Recommended Loan Schemes</h2>
-    <table>
-      <thead>
-        <tr><th>Scheme</th><th>Loan Amount</th><th>Rate</th><th>Suitability</th></tr>
-      </thead>
-      <tbody>
-        ${schemes.map(s => `
-        <tr>
-          <td><strong>${s.name}</strong>${s.recommended ? ' <span class="badge badge-rec">Recommended</span>' : ''}</td>
-          <td>${s.amount}</td>
-          <td>${s.rate}</td>
-          <td>${s.recommended ? "High" : "Moderate"}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>
- 
-  <div class="section">
-    <h2>Documents Checklist (${readyCount}/${docs.length} Ready)</h2>
-    ${docs.map(d => `
-    <div class="checklist-row ${d.done ? "done-row" : "pending-row"}">
-      <span style="color:${d.done?'#059669':'#9CA3AF'}">${d.done ? "✓" : "○"}</span>
-      <span>${d.doc}</span>
-      <span class="badge ${d.done ? "badge-done" : "badge-pending"}" style="margin-left:auto;">${d.done ? "Ready" : "Pending"}</span>
-    </div>`).join("")}
-  </div>
- 
-  <div class="section">
-    <h2>Financial Snapshot</h2>
-    <table>
-      <thead><tr><th>Metric</th><th>Value</th><th>Metric</th><th>Value</th></tr></thead>
-      <tbody>
-        <tr><td>Revenue</td><td><strong>${revKpi}</strong></td><td>Gross Margin</td><td><strong>${marginKpi}</strong></td></tr>
-        <tr><td>EBITDA</td><td><strong>${ebitda}</strong></td><td>PAT</td><td><strong>${pat}</strong></td></tr>
-        <tr><td>Cash Balance</td><td><strong>${cashKpi}</strong></td><td>Runway</td><td><strong>${runwayKpi}</strong></td></tr>
-      </tbody>
-    </table>
-  </div>
- 
-  <div class="section">
-    <h2>Debt Position</h2>
-    <table>
-      <thead><tr><th>Item</th><th>Value</th></tr></thead>
-      <tbody>
-        <tr><td>Existing Debt / Loans</td><td><strong>${existing}</strong></td></tr>
-        <tr><td>Annual Interest Cost</td><td><strong>${interest}</strong></td></tr>
-        <tr><td>Loan Amount Sought</td><td><strong>${sought}</strong></td></tr>
-        <tr><td>Purpose of Loan</td><td><strong>${purpose}</strong></td></tr>
-      </tbody>
-    </table>
-  </div>
- 
+
+  <div class="section-title">Financial Snapshot</div>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Revenue</td><td class="b">${revKpi}</td><td>Gross Margin</td><td class="b">${marginKpi}</td></tr>
+      <tr><td>EBITDA</td><td class="b">${ebitda}</td><td>PAT</td><td class="b">${pat}</td></tr>
+      <tr><td>Cash Balance</td><td class="b">${cashKpi}</td><td>Runway</td><td class="b">${runwayKpi}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Debt Position</div>
+  <table>
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Existing Debt / Loans</td><td class="b">${existing}</td></tr>
+      <tr><td>Annual Interest Cost</td><td class="b">${interest}</td></tr>
+      <tr><td>Loan Amount Sought</td><td class="b">${sought}</td></tr>
+      <tr><td>Purpose of Loan</td><td class="b">${purpose}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Recommended Loan Schemes</div>
+  <table>
+    <thead><tr><th>Scheme</th><th>Loan Amount</th><th>Rate</th><th>Suitability</th></tr></thead>
+    <tbody>
+      ${schemes.map(s => `
+      <tr>
+        <td class="b">${s.name}${s.recommended ? ' <span class="badge badge-rec">Recommended</span>' : ''}</td>
+        <td>${s.amount}</td>
+        <td>${s.rate}</td>
+        <td>${s.recommended ? "High" : "Moderate"}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>
+
   ${ratios.length > 0 ? `
-  <div class="section">
-    <h2>Key Financial Ratios</h2>
-    <table>
-      <thead><tr><th>Ratio</th><th>Value</th><th>Benchmark</th><th>Status</th></tr></thead>
-      <tbody>
-        ${ratios.map(r => '<tr><td>' + r.label + '</td><td><strong>' + r.value + '</strong></td><td style="color:#6B7280">' + r.benchmark + '</td><td><span class="badge ' + (r.good?"badge-done":"badge-pending") + '">' + (r.good?"Within Range":"Needs Attention") + '</span></td></tr>').join("")}
-      </tbody>
-    </table>
-  </div>` : ""}
- 
+  <div class="section-title">Key Financial Ratios</div>
+  <table>
+    <thead><tr><th>Ratio</th><th>Value</th><th>Benchmark</th><th>Status</th></tr></thead>
+    <tbody>
+      ${ratios.map(r => `<tr><td>${r.label}</td><td class="b">${r.value}</td><td style="color:#6B7280">${r.benchmark}</td><td><span class="badge ${r.good?"badge-done":"badge-pending"}">${r.good?"Within Range":"Needs Attention"}</span></td></tr>`).join("")}
+    </tbody>
+  </table>` : ""}
+
+  <div class="section-title">Documents Checklist (${readyCount}/${docs.length} Ready)</div>
+  ${docs.map(d => `
+  <div class="checklist-row ${d.done ? "done-row" : "pending-row"}">
+    <span style="color:${d.done?"#059669":"#9CA3AF"}">${d.done ? "✓" : "○"}</span>
+    <span>${d.doc}</span>
+    <span class="badge ${d.done ? "badge-done" : "badge-pending"}" style="margin-left:auto;">${d.done ? "Ready" : "Pending"}</span>
+  </div>`).join("")}
+
   ${improvements.length > 0 ? `
-  <div class="section">
-    <h2>Recommended Improvements</h2>
-    ${improvements.map((imp,i) => `
-    <div class="checklist-row pending-row" style="margin-bottom:6px">
-      <span style="font-weight:700;color:#2563EB;background:#EEF2FF;padding:2px 8px;border-radius:4px;font-size:11px">${i+1}</span>
-      <span>${imp}</span>
-    </div>`).join("")}
-  </div>` : ""}
- 
-  <div class="section">
-    <h2>Next Steps</h2>
-    <table>
-      <tbody>
-        <tr><td style="width:28px;font-size:18px;">1</td><td><strong>Complete pending documents</strong> — ${docs.filter(d=>!d.done).length} documents still needed before applying</td></tr>
-        <tr><td style="font-size:18px;">2</td><td><strong>Financial projections</strong> — CA-certified 3-year projections are required for most schemes</td></tr>
-        <tr><td style="font-size:18px;">3</td><td><strong>Connect with lender</strong> — Garima has a direct connection with SBI Startup Branch and can facilitate introduction</td></tr>
-        <tr><td style="font-size:18px;">4</td><td><strong>Submit application</strong> — Garima will prepare and review the complete package before submission</td></tr>
-      </tbody>
-    </table>
-  </div>
- 
-  <div class="disclaimer">
-    <strong>Disclaimer:</strong> This assessment is based on information provided by the client and is indicative in nature. Actual loan eligibility is subject to lender assessment, credit bureau checks, and applicable scheme criteria at the time of application. This report does not constitute a guarantee of loan approval.
-  </div>
- 
-  <div class="footer">
-    <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038</span>
-    <span>agrgarima@gmail.com | Finzzup</span>
-  </div>
-</div>
-</body>
-</html>`;
+  <div class="section-title">Recommended Improvements</div>
+  ${improvements.map((imp,i) => `
+  <div class="checklist-row pending-row" style="margin-bottom:6px">
+    <span style="font-weight:700;color:#2563EB;background:#EEF2FF;padding:2px 8px;border-radius:4px;font-size:11px">${i+1}</span>
+    <span>${imp}</span>
+  </div>`).join("")}` : ""}
+
+  <div class="section-title">Next Steps</div>
+  <table>
+    <tbody>
+      <tr><td style="width:28px;font-weight:800;color:#2563EB;">1</td><td><strong>Complete pending documents</strong> — ${docs.filter(d=>!d.done).length} documents still needed before applying</td></tr>
+      <tr><td style="font-weight:800;color:#2563EB;">2</td><td><strong>Financial projections</strong> — CA-certified 3-year projections are required for most schemes</td></tr>
+      <tr><td style="font-weight:800;color:#2563EB;">3</td><td><strong>Connect with lender</strong> — Garima has a direct connection with SBI Startup Branch and can facilitate introduction</td></tr>
+      <tr><td style="font-weight:800;color:#2563EB;">4</td><td><strong>Submit application</strong> — Garima will prepare and review the complete package before submission</td></tr>
+    </tbody>
+  </table>
+
+  <div class="disc">This assessment is based on information provided by the client and is indicative in nature. Actual loan eligibility is subject to lender assessment, credit bureau checks, and applicable scheme criteria at the time of application. This report does not constitute a guarantee of loan approval.</div>
+  <div class="ftr"><span>Garima Agarwal | CA Membership: 160944 | agrgarima@gmail.com</span><span>Confidential — ${company}</span></div>
+</div></body></html>`;
 }
  
 // ─── LIVE DOCS HOOK for Pack Content components ──────────────────────────────
