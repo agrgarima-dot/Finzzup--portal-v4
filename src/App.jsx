@@ -13734,7 +13734,7 @@ function Portal({ client, onLogout }) {
       if (actionRes.data) setLiveActions(actionRes.data);
       if (engRes.data)    setLiveEngagement(engRes.data);
       if (invRes.data)    setLiveInvoices(invRes.data);
-      if (rdRes.data?.data) { try { setLiveReportData(JSON.parse(rdRes.data.data)); } catch(e){} }
+      if (rdRes.data?.data) { try { setLiveReportData(typeof rdRes.data.data === "string" ? JSON.parse(rdRes.data.data) : rdRes.data.data); } catch(e){} }
       setDataLoading(false);
     };
     fetchAll();
