@@ -15282,11 +15282,14 @@ function AdminLogin({ onLogin }) {
 }
  
 function AdminPanel({ admin, onLogout }) {
-  const [tab, setTab]         = useState("clients");
+  const [tab, setTab]         = useState("home");
   const [clients, setClients] = useState([]);
   const [selected, setSelected] = useState(null); // selected client for editing
   const [loading, setLoading]       = useState(false);
   const [saved, setSaved]           = useState(false);
+  const [staleness,   setStaleness]   = useState({});
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dashStats, setDashStats]     = useState({ highPriority:[], overdueInvoices:[], pendingRequests:0 });
   const [aiGenerating, setAiGen]    = useState(false);
   const [aiDraft, setAiDraft]       = useState(null);
   const [aiError, setAiError]       = useState("");
@@ -15500,6 +15503,23 @@ function AdminPanel({ admin, onLogout }) {
     // Pre-load all requests so the Requests tab works without selecting a client
     const { data: allReqs } = await supabase.from("requests").select("*").order("created_at", { ascending:false });
     if (allReqs) setRequests(allReqs);
+    // Build staleness map + dashboard stats in one go
+    const [{ data: kpiMeta }, { data: rdMeta }, { data: allActs }, { data: allInvs }] = await Promise.all([
+      supabase.from("kpis").select("client_id,updated_at").order("updated_at",{ascending:false}),
+      supabase.from("report_data").select("client_id,updated_at"),
+      supabase.from("action_items").select("*").eq("priority","High").neq("done",true),
+      supabase.from("invoices").select("*").neq("status","Paid"),
+    ]);
+    const sm = {};
+    (kpiMeta||[]).forEach(r => { if (!sm[r.client_id]) sm[r.client_id]={}; sm[r.client_id].kpiAt=r.updated_at; });
+    (rdMeta||[]).forEach(r  => { if (!sm[r.client_id]) sm[r.client_id]={}; sm[r.client_id].rdAt=r.updated_at; });
+    setStaleness(sm);
+    const today = new Date(); today.setHours(0,0,0,0);
+    setDashStats({
+      highPriority: allActs||[],
+      overdueInvoices: (allInvs||[]).filter(i => i.due_date && new Date(i.due_date)<today),
+      pendingRequests: (allReqs||[]).filter(r => !r.resolved).length,
+    });
   };
  
   const selectClient = async (c) => {
@@ -15664,6 +15684,8 @@ function AdminPanel({ admin, onLogout }) {
   };
  
   const ADMIN_TABS = [
+    // ── Overview ──
+    { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",   group:"Overview"   },
     // ── Client Management ──
     { id:"clients",    icon:"ti-users", label:"All Clients",    group:"Clients"    },
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
@@ -16143,7 +16165,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           </div>
         )}
         <nav style={{ flex:1, padding:"8px 0", overflowY:"auto" }}>
-          {["Clients","India","UAE","Shared"].map(group => {
+          {["Overview","Clients","India","UAE","Shared"].map(group => {
             const groupTabs = ADMIN_TABS.filter(t => t.group === group);
             return (
               <div key={group}>
@@ -16199,7 +16221,104 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
         </div>
  
         <div className="ns-page">
- 
+
+          {/* ── DASHBOARD HOME ── */}
+          {tab === "home" && (() => {
+            const now = Date.now();
+            const daysSince = iso => iso ? Math.floor((now - new Date(iso).getTime()) / 86400000) : 999;
+            const stalenessColor = d => d < 7 ? C.green : d < 30 ? C.amber : C.red;
+            const stalenessLabel = d => d < 7 ? "Updated recently" : d < 30 ? `${d}d ago` : d > 200 ? "Never updated" : `${d}d ago — stale`;
+            const activeClients = clients.filter(c => c.active !== false && !c.id?.startsWith("DEMO"));
+            const demoClients   = clients.filter(c => c.id?.startsWith("DEMO"));
+            const freshCount = activeClients.filter(c => daysSince(staleness[c.id]?.kpiAt||staleness[c.id]?.rdAt) < 7).length;
+            const staleCount = activeClients.filter(c => daysSince(staleness[c.id]?.kpiAt||staleness[c.id]?.rdAt) >= 30).length;
+            const sorted = [...activeClients].sort((a,b) => daysSince(staleness[a.id]?.kpiAt||staleness[a.id]?.rdAt) - daysSince(staleness[b.id]?.kpiAt||staleness[b.id]?.rdAt) > 0 ? -1 : 1);
+            return (
+              <div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:12 }}>
+                  {[
+                    { icon:"ti-users",          label:"Active Clients", value:activeClients.length, color:C.blue  },
+                    { icon:"ti-circle-check",   label:"Up to date",     value:freshCount,            color:C.green },
+                    { icon:"ti-alert-triangle", label:"Needs update",   value:staleCount,            color:C.red   },
+                    { icon:"ti-clock",          label:"Demo clients",   value:demoClients.length,    color:C.muted },
+                  ].map((s,i) => (
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12,
+                      padding:"14px 16px", display:"flex", alignItems:"center", gap:10 }}>
+                      <i className={"ti "+s.icon} style={{ fontSize:20, color:s.color }}/>
+                      <div>
+                        <div style={{ fontFamily:F, fontWeight:800, fontSize:20, color:s.color, lineHeight:1 }}>{s.value}</div>
+                        <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:2 }}>{s.label}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:20 }}>
+                  {[
+                    { icon:"ti-flag-3",      label:"High-priority actions", value:dashStats.highPriority.length, color:C.red,   sub: dashStats.highPriority.length===0?"All clear":`across ${new Set(dashStats.highPriority.map(a=>a.client_id)).size} client(s)` },
+                    { icon:"ti-receipt-off", label:"Overdue invoices",       value:dashStats.overdueInvoices.length, color:C.amber, sub: dashStats.overdueInvoices.length===0?"None overdue":`₹${dashStats.overdueInvoices.reduce((s,i)=>s+(Number(i.amount)||0),0).toLocaleString("en-IN")} outstanding` },
+                    { icon:"ti-message",     label:"Pending requests",       value:dashStats.pendingRequests, color:C.blue,  sub: dashStats.pendingRequests===0?"All resolved":"from clients" },
+                  ].map((s,i) => (
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:12,
+                      padding:"14px 16px", display:"flex", alignItems:"center", gap:10 }}>
+                      <i className={"ti "+s.icon} style={{ fontSize:20, color:s.value>0?s.color:C.green }}/>
+                      <div>
+                        <div style={{ fontFamily:F, fontWeight:800, fontSize:20, color:s.value>0?s.color:C.green, lineHeight:1 }}>{s.value}</div>
+                        <div style={{ fontFamily:F, fontSize:10, color:C.text, fontWeight:600, marginTop:2 }}>{s.label}</div>
+                        <div style={{ fontFamily:F, fontSize:9, color:C.muted }}>{s.sub}</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {dashStats.highPriority.length > 0 && (
+                  <div style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.red, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
+                      <i className="ti ti-flag-3" style={{ marginRight:5 }}/>High-Priority Open Actions ({dashStats.highPriority.length})
+                    </div>
+                    {dashStats.highPriority.slice(0,8).map(a => (
+                      <div key={a.id} style={{ background:"#FEF2F2", border:`1px solid ${C.red}22`, borderLeft:`3px solid ${C.red}`,
+                        borderRadius:8, padding:"10px 14px", marginBottom:6, display:"flex", alignItems:"center", gap:10 }}>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:600, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{a.text}</div>
+                          <div style={{ fontFamily:F, fontSize:10, color:C.muted }}>{clients.find(c=>c.id===a.client_id)?.name||a.client_id}{a.month?` · ${a.month}`:""}</div>
+                        </div>
+                        <button onClick={() => { const c=clients.find(x=>x.id===a.client_id); if(c){selectClient(c);setTab("actions");} }}
+                          style={{ padding:"4px 10px", borderRadius:6, border:`1px solid ${C.red}40`, background:"transparent",
+                            color:C.red, fontFamily:F, fontSize:10, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>View</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:12 }}>
+                  {sorted.map(c => {
+                    const lastAt = staleness[c.id]?.kpiAt||staleness[c.id]?.rdAt;
+                    const days = daysSince(lastAt);
+                    const sc = stalenessColor(days); const sl = stalenessLabel(days);
+                    return (
+                      <div key={c.id} style={{ background:"#fff", border:`1px solid ${C.border}`, borderTop:`3px solid ${sc}`,
+                        borderRadius:12, padding:"14px 16px" }}>
+                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:8 }}>
+                          <div>
+                            <div style={{ fontFamily:F, fontWeight:700, fontSize:13 }}>{c.name}</div>
+                            <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{c.company}</div>
+                          </div>
+                          <span style={{ padding:"2px 8px", borderRadius:60, fontSize:9, fontWeight:700, background:isUAE(c)?"#E8F5EE":`${C.blue}12`, color:isUAE(c)?"#00732F":C.blue, whiteSpace:"nowrap" }}>
+                            {isUAE(c)?"UAE":"India"} · {getPackLabel(c.client_pack)}
+                          </span>
+                        </div>
+                        <div style={{ fontSize:10, color:sc, fontWeight:600, marginBottom:10 }}>● {sl}</div>
+                        <button onClick={() => { selectClient(c); setTab(isUAE(c)?"uae":"kpis"); }}
+                          style={{ width:"100%", padding:"7px 0", borderRadius:7, border:`1.5px solid ${C.amber}`,
+                            background:"transparent", color:C.amber, fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>
+                          Update Data
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
           {/* ── ALL CLIENTS ── */}
           {tab === "clients" && (
             <div>
