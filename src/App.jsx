@@ -8618,7 +8618,6 @@ function MyDocuments({ client }) {
 
         {!loading && displayDocs.length === 0 && (
           <EmptyState icon="ti-folder-off" title="No documents yet" sub="Garima will upload your reports here."/>
-          </div>
         )}
  
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
