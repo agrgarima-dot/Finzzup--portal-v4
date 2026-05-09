@@ -1,15 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
-// ─── CHART STUBS (no recharts dependency) ─────────────────────────────────────
-const ResponsiveContainer = ({ children, width, height }) => (
-  <div style={{ width: width||"100%", height: height||200, position:"relative" }}>{children}</div>
-);
-const _ChartBase = ({ data=[], height=180, children, margin={} }) => (
-  <div style={{ width:"100%", height, position:"relative", display:"flex", alignItems:"flex-end", gap:2, padding:"8px 4px 20px" }}>
-    {children}
-  </div>
-);
-// Simple bar chart renderer
+import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+// SimpleBarChart — used by legacy sparkline panels
 const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
   const maxVal = Math.max(...data.flatMap(d => bars.map(b => Math.abs(d[b.key]||0))), 1);
   return (
@@ -20,46 +12,13 @@ const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
             <div key={b.key} style={{ width:"100%", height: Math.max(2,(Math.abs(d[b.key]||0)/maxVal)*(height-24)),
               background: b.fill||"#3B6FF7", borderRadius:"3px 3px 0 0", opacity: b.opacity||1 }}/>
           ))}
-          <div style={{ fontSize:9, color:C.dim, marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
+          <div style={{ fontSize:9, color:"#94A3B8", marginTop:2, textAlign:"center", whiteSpace:"nowrap" }}>{d.month||d.name||""}</div>
         </div>
       ))}
     </div>
   );
 };
-// Simple line chart renderer  
-const SimpleLineChart = ({ data=[], lines=[], height=180 }) => {
-  const allVals = data.flatMap(d => lines.map(l => d[l.key]||0));
-  const maxVal = Math.max(...allVals, 1);
-  const minVal = Math.min(...allVals, 0);
-  const range = maxVal - minVal || 1;
-  const w = 100, h = height - 30;
-  return (
-    <div style={{ width:"100%", height, position:"relative" }}>
-      <svg viewBox={`0 0 ${data.length*20} ${h}`} style={{ width:"100%", height:h }} preserveAspectRatio="none">
-        {lines.map(l => {
-          const pts = data.map((d,i) => `${i*20+10},${h - ((d[l.key]||0)-minVal)/range*h}`).join(" ");
-          return <polyline key={l.key} points={pts} fill="none" stroke={l.stroke||"#3B6FF7"} strokeWidth="2"/>;
-        })}
-      </svg>
-      <div style={{ display:"flex", justifyContent:"space-between", padding:"0 4px" }}>
-        {data.map((d,i) => <span key={i} style={{ fontSize:9, color:C.dim }}>{d.month||""}</span>)}
-      </div>
-    </div>
-  );
-};
-// Stubs for unused recharts components (keep JSX valid)
-const AreaChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
-const BarChart = ({children,...p}) => <SimpleBarChart data={p.data||[]} bars={[]} height={p.height||180}/>;
-const LineChart = ({children,...p}) => <SimpleLineChart data={p.data||[]} lines={[]} height={p.height||180}/>;
-const Area = () => null;
-const Bar = () => null;
-const Line = () => null;
-const XAxis = () => null;
-const YAxis = () => null;
-const CartesianGrid = () => null;
-const Legend = () => null;
-const Tooltip = () => null;
-const ReferenceLine = () => null;
+const LineChart = BarChart; // alias — recharts BarChart handles both
  
 // ─── TOKENS ──────────────────────────────────────────────────────────────────
 const C = {
@@ -435,6 +394,20 @@ const SectionTitle = ({ children, sub }) => (
   </div>
 );
  
+const Skeleton = ({ width="100%", height=16, radius=4, style={} }) => (
+  <div style={{ width, height, borderRadius:radius,
+    background:"linear-gradient(90deg,#F1F5F9 25%,#E2E8F0 50%,#F1F5F9 75%)",
+    backgroundSize:"200% 100%", animation:"skeleton-shimmer 1.5s infinite", ...style }}/>
+);
+
+const EmptyState = ({ icon, title, sub }) => (
+  <div style={{ textAlign:"center", padding:"40px 24px", color:C.muted }}>
+    {icon && <i className={"ti " + icon} style={{ fontSize:32, marginBottom:12, display:"block", color:C.dim }}/>}
+    <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>{title}</div>
+    {sub && <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{sub}</div>}
+  </div>
+);
+
 const Badge = ({ children, color=C.blue, bg }) => (
   <span style={{ display:"inline-block", padding:"3px 10px", borderRadius:60,
     background:bg||`${color}18`, fontSize:11, fontWeight:700, color,
@@ -1286,9 +1259,10 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const isMobile     = useMobile();
   const pendingActions = actions.filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
+  const aiNarration  = reportData?.aiNarration || null;
   const displayNote  = uaeClient
     ? (reportData?.uaeGarimaNote || "Q1 2026 closed strongly. Review priorities in your CFO Report.")
-    : (garimaNote || PACK_CONFIG[ovPack]?.garimaNote || PACK_CONFIG.startup.garimaNote);
+    : (aiNarration || garimaNote || PACK_CONFIG[ovPack]?.garimaNote || PACK_CONFIG.startup.garimaNote);
  
   const hour     = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -1500,11 +1474,20 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 
         {/* Garima's Note */}
         <div className="ns-panel" style={{ margin:0, borderLeft:`3px solid ${accentColor}` }}>
-          <div className="ns-panel-header">
+          <div className="ns-panel-header" style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
             <h3 style={{ color:accentColor }}>Garima's CFO Note</h3>
+            {aiNarration && (
+              <span style={{ display:"inline-flex", alignItems:"center", gap:4,
+                padding:"2px 8px", borderRadius:20, background:"#F5F3FF",
+                border:"1px solid #DDD6FE", fontFamily:F, fontSize:10,
+                fontWeight:700, color:"#7C3AED", letterSpacing:"0.05em" }}>
+                ✦ AI-assisted
+              </span>
+            )}
           </div>
           <div style={{ padding:"0 16px 16px" }}>
-            <p style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.8, margin:"0 0 12px" }}>
+            <p style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.8, margin:"0 0 12px",
+              whiteSpace: aiNarration ? "pre-wrap" : "normal" }}>
               {displayNote}
             </p>
             <button onClick={() => setPage("myreport")}
@@ -1621,6 +1604,67 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
       </div>
 
+      {/* ── Row 3b: Cashflow Trend chart ── */}
+      {cfData.length > 0 && (
+        <Card style={{ marginBottom:14 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>
+            Cash Flow Trend
+          </div>
+          <div style={{ height:180 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={cfData.map(m => {
+                const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
+                return { name: m.month, Actual: parse(m.actual)||null, Forecast: parse(m.forecast)||null };
+              })} margin={{ top:5, right:10, left:0, bottom:0 }}>
+                <defs>
+                  <linearGradient id="ovActGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#2563EB" stopOpacity={0.15}/>
+                    <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false}/>
+                <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#94A3B8" }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize:9, fill:"#94A3B8" }} axisLine={false} tickLine={false} width={36}/>
+                <Tooltip/>
+                <Area type="monotone" dataKey="Actual" stroke="#2563EB" strokeWidth={2} fill="url(#ovActGrad)" dot={{ fill:"#2563EB", r:3 }}/>
+                <Area type="monotone" dataKey="Forecast" stroke="#7C3AED" strokeWidth={2} fill="none" strokeDasharray="5 4" dot={{ fill:"#7C3AED", r:3 }}/>
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </Card>
+      )}
+
+      {/* ── Row 3c: P&L Comparison chart ── */}
+      {(() => {
+        const parsePl = v => parseFloat(String(v||"0").replace(/[^0-9.,]/g,"").replace(/,/g,"")) || 0;
+        const plChartData = [
+          { name:"Revenue",  Current: parsePl(pl.revenue?.actual),    Previous: parsePl(pl.revenue?.prev) },
+          { name:"Gross P",  Current: parsePl(pl.grossProfit?.actual), Previous: parsePl(pl.grossProfit?.prev) },
+          { name:"EBITDA",   Current: parsePl(pl.ebitda?.actual),      Previous: parsePl(pl.ebitda?.prev) },
+          { name:"Net P",    Current: parsePl(pl.pat?.actual),         Previous: parsePl(pl.pat?.prev) },
+        ].filter(d => d.Current > 0 || d.Previous > 0);
+        if (!plChartData.length) return null;
+        return (
+          <Card style={{ marginBottom:14 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>
+              P&L — Current vs Prior Period
+            </div>
+            <div style={{ height:180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={plChartData} margin={{ top:5, right:10, left:0, bottom:0 }} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false}/>
+                  <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#94A3B8" }} axisLine={false} tickLine={false}/>
+                  <YAxis tick={{ fontSize:9, fill:"#94A3B8" }} axisLine={false} tickLine={false} width={36}/>
+                  <Tooltip/>
+                  <Bar dataKey="Current" fill="#2563EB" radius={[3,3,0,0]}/>
+                  <Bar dataKey="Previous" fill="#E5E7EB" radius={[3,3,0,0]}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </Card>
+        );
+      })()}
+
       {/* ── Row 4: KPI Variance table ── */}
       {(reportData?.variance||[]).length > 0 && (
         <div className="ns-panel">
@@ -1721,7 +1765,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
             <div key={i} style={{ flex:1, padding:"14px 18px",
               borderRight:i<summaryMetrics.length-1?"1px solid #E5E7EB":"none" }}>
               <div className="ns-label">{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:16, fontWeight:900, color:"#111827", marginTop:4 }}>{m.value}</div>
+              <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:"#111827", marginTop:4 }}>{m.value}</div>
             </div>
           ))}
         </div>
@@ -1750,7 +1794,36 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
           </tbody>
         </table>
       </div>
- 
+
+      {/* P&L bar chart — current vs prior */}
+      {(() => {
+        const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
+        const chartData = [
+          { name:"Revenue",    Current:parse(pl.revenue?.actual),    Prior:parse(pl.revenue?.prev) },
+          { name:"Gross P",    Current:parse(pl.grossProfit?.actual), Prior:parse(pl.grossProfit?.prev) },
+          { name:"EBITDA",     Current:parse(pl.ebitda?.actual),      Prior:parse(pl.ebitda?.prev) },
+          { name:"Net Profit", Current:parse(pl.pat?.actual),         Prior:parse(pl.pat?.prev) },
+        ].filter(d => d.Current > 0 || d.Prior > 0);
+        if (!chartData.length) return null;
+        return (
+          <div className="ns-panel">
+            <div className="ns-panel-header"><h3>P&L — Current vs Prior Period</h3></div>
+            <div style={{ height:200, padding:"8px 0" }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} margin={{ top:4, right:12, left:0, bottom:0 }} barGap={4}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false}/>
+                  <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#9CA3AF" }} axisLine={false} tickLine={false}/>
+                  <YAxis tick={{ fontSize:9, fill:"#9CA3AF" }} axisLine={false} tickLine={false} width={32}/>
+                  <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, borderRadius:8, border:"1px solid #E5E7EB" }}/>
+                  <Bar dataKey="Current" name="Current Period" fill={uae?"#00732F":"#2563EB"} radius={[3,3,0,0]}/>
+                  <Bar dataKey="Prior" name="Prior Period" fill="#E5E7EB" radius={[3,3,0,0]}/>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* KPI grid — 6 tiles */}
       <div className="ns-grid-6">
         {loading
@@ -1895,7 +1968,7 @@ function CashFlow({ reportData, client, kpis }) {
         <Card key={i} style={{ padding:"14px 16px" }}>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
             textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{k.label}</div>
-          <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:k.color||C.text, lineHeight:1.2 }}>{k.value}</div>
+          <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:k.color||C.text, lineHeight:1.2 }}>{k.value}</div>
           {k.sub && (
             <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:4, display:"flex", alignItems:"center", gap:3 }}>
               {k.trend && (
@@ -2026,8 +2099,8 @@ function CashFlow({ reportData, client, kpis }) {
                 <YAxis tick={{ fontFamily:FM, fontSize:10, fill:C.dim }} axisLine={false} tickLine={false} tickFormatter={v=>`₹${v}L`} width={50}/>
                 <Tooltip content={<Tip/>}/>
                 <ReferenceLine x="Feb" stroke={C.border} strokeDasharray="4 4" label={{ value:"Today", position:"top", fontSize:10, fill:C.dim, fontFamily:F }}/>
-                <Area type="monotone" dataKey="value"    name="Actual"   stroke={C.blue}   strokeWidth={2.5} fill="url(#gaS)" dot={{ fill:C.blue, r:3 }}/>
-                <Area type="monotone" dataKey="forecast" name="Forecast" stroke={C.purple} strokeWidth={2} fill="url(#gfS)" strokeDasharray="5 5" dot={{ fill:C.purple, r:3 }}/>
+                <Area type="monotone" dataKey="value"    name="Actual"   stroke={C.blue}   strokeWidth={2.5} fill={`${C.blue}18`} dot={{ fill:C.blue, r:3, strokeWidth:0 }} connectNulls={false}/>
+                <Area type="monotone" dataKey="forecast" name="Forecast" stroke={C.purple} strokeWidth={2}   fill={`${C.purple}10`} strokeDasharray="5 5" dot={{ fill:C.purple, r:3, strokeWidth:0 }} connectNulls={false}/>
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -2051,7 +2124,7 @@ function CashFlow({ reportData, client, kpis }) {
               borderBottom:i<6?`1px solid ${C.border}`:"none",
               background:r.bold?`${C.blue}04`:"transparent", margin:r.bold?"0 -4px":"0", padding:r.bold?"9px 4px":"9px 0" }}>
               <span style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:r.bold?700:400 }}>{r.label}</span>
-              <span style={{ fontFamily:FM, fontSize:18, fontWeight:600, color:r.color }}>{r.value}</span>
+              <span style={{ fontFamily:FM, fontSize:13, fontWeight:600, color:r.color }}>{r.value}</span>
             </div>
           ))}
         </Card>
@@ -3141,6 +3214,262 @@ const COMPLIANCE_DATES = [
  
  
  
+// ─── SHARED PDF HELPERS ───────────────────────────────────────────────────────
+const DL_BTN = { display:"inline-flex", alignItems:"center", gap:6, padding:"7px 14px",
+  borderRadius:8, border:"1.5px solid #2563EB22", background:"#EFF6FF", color:"#2563EB",
+  fontFamily:"'Inter',sans-serif", fontWeight:700, fontSize:12, cursor:"pointer" };
+
+function pdfBase(title, company, month, bodyHTML, accentColor="#2563EB", headerColor1="#1E3A8A", headerColor2="#2563EB") {
+  const now = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+.banner{background:linear-gradient(135deg,${headerColor1},${headerColor2});padding:32px 48px;color:white;}
+.banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
+.banner .sub{font-size:12px;opacity:0.8;margin-bottom:14px;}
+.banner .meta{display:flex;gap:28px;font-size:11px;flex-wrap:wrap;}
+.banner .meta-item label{opacity:0.6;display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+.page{padding:32px 48px;max-width:820px;margin:0 auto;}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
+.kpi-card{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:12px;text-align:center;}
+.kpi-card .val{font-size:18px;font-weight:800;font-family:monospace;margin-bottom:3px;color:${accentColor};}
+.kpi-card .lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6B7280;}
+.section-title{font-size:15px;font-weight:800;color:#111827;margin:20px 0 10px;border-left:4px solid ${accentColor};padding-left:12px;}
+table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:14px;}
+th{background:#0F172A;color:white;padding:9px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+th.r{text-align:right;}
+td{padding:9px 12px;border-bottom:1px solid #F3F4F6;}
+td.r{text-align:right;font-family:monospace;}
+td.b{font-weight:700;color:#111827;}
+tr:nth-child(even) td{background:#F9FAFB;}
+.in-val{color:#059669;font-weight:700;}
+.out-val{color:#DC2626;font-weight:700;}
+.fav{display:inline-block;padding:2px 8px;border-radius:60px;font-size:10px;font-weight:700;background:#DCFCE7;color:#15803D;}
+.unfav{display:inline-block;padding:2px 8px;border-radius:60px;font-size:10px;font-weight:700;background:#FEF2F2;color:#DC2626;}
+.box{padding:16px 18px;border-radius:10px;border:1px solid #E5E7EB;margin-bottom:16px;}
+.box.blue{border-left:3px solid ${accentColor};background:#EFF6FF;}
+.box.green{border-left:3px solid #059669;background:#F0FDF4;}
+.box.amber{border-left:3px solid #D97706;background:#FFFBEB;}
+.box.red{border-left:3px solid #EF4444;background:#FEF2F2;}
+.box.purple{border-left:3px solid #7C3AED;background:#F5F3FF;}
+.label{font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;}
+.note-box{background:#EFF6FF;border-left:4px solid ${accentColor};border-radius:6px;padding:12px 14px;margin:12px 0;font-size:12px;color:#1E3A8A;line-height:1.8;}
+.disc{margin-top:18px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
+.ftr{margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
+</style></head><body>
+<div class="banner">
+  <h1>${title}</h1>
+  <div class="sub">${company}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${month}</div>
+    <div class="meta-item"><label>Prepared By</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Membership</label>160944</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
+  </div>
+</div>
+<div class="page">
+${bodyHTML}
+<div class="disc">This report is prepared by Finzzup Advisory LLP based on information provided by the client and reviewed by the CFO. Confidential — for management use only. For statutory reporting, refer to audited financials.</div>
+<div class="ftr"><span>Finzzup Advisory LLP · garima@finzzup.com</span><span>Confidential — ${company}</span></div>
+</div></body></html>`;
+}
+function openPDF(html) {
+  const w = window.open("","_blank");
+  if (!w) { alert("Allow pop-ups to download PDF"); return; }
+  w.document.write(html);
+  w.document.close();
+  setTimeout(() => w.print(), 700);
+}
+
+function generateVariancePDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const rows = (reportData?.variance || []).filter(r => r.item);
+  const commentary = (reportData?.varianceCommentary || []).filter(v => v.item);
+  const rowsHTML = rows.length ? rows.map(r => `
+    <tr><td class="b">${r.item}</td><td class="r">${r.budget||"—"}</td><td class="r">${r.actual||"—"}</td>
+    <td class="r"><span class="${r.fav?"fav":"unfav"}">${r.fav?"▲ Fav":"▼ Unfav"}</span></td></tr>`).join("") :
+    `<tr><td colspan="4" style="text-align:center;padding:20px;color:#6B7280;">No variance data entered yet.</td></tr>`;
+  const commHTML = commentary.length ? commentary.map(v => `
+    <div class="box ${v.favorable?"green":"red"}" style="margin-bottom:10px">
+      <div class="label">${v.favorable?"▲ Favourable":"▼ Unfavourable"}</div>
+      <div style="font-size:13px;font-weight:700;color:#111827;margin-bottom:4px">${v.item}</div>
+      ${v.note?`<div style="font-size:12px;color:#374151;line-height:1.6">${v.note}</div>`:""}
+    </div>`).join("") : "";
+  return pdfBase("Variance Analysis", company, month, `
+    <h1>Variance Analysis</h1><div class="sub">${company} · ${month} · Budget vs Actual</div>
+    <table><thead><tr><th>Item</th><th class="r">Budget</th><th class="r">Actual</th><th class="r">Status</th></tr></thead>
+    <tbody>${rowsHTML}</tbody></table>
+    ${commHTML ? `<div style="margin-top:4px"><div class="label" style="margin-bottom:12px">Variance Commentary</div>${commHTML}</div>` : ""}
+  `);
+}
+
+function generateMonthlyPnLPDF({ client, reportData, kpis }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const pl = reportData?.pl || {};
+  const rows = [
+    ["Revenue",      pl.revenue?.actual||"—",      pl.revenue?.prev||"—"],
+    ["COGS",         pl.cogs?.actual||"—",          pl.cogs?.prev||"—"],
+    ["Gross Profit", pl.grossProfit?.actual||"—",   pl.grossProfit?.prev||"—"],
+    ["EBITDA",       pl.ebitda?.actual||"—",        pl.ebitda?.prev||"—"],
+    ["Net Profit",   pl.pat?.actual||"—",           pl.pat?.prev||"—"],
+    ["GP Margin",    pl.gpMargin?.actual||"—",      pl.gpMargin?.prev||"—"],
+    ["EBITDA Margin",pl.ebitdaMargin?.actual||"—",  pl.ebitdaMargin?.prev||"—"],
+    ["Net Margin",   pl.netMargin?.actual||"—",     pl.netMargin?.prev||"—"],
+  ].filter(r => r[1] !== "—" || r[2] !== "—");
+  const rowsHTML = rows.length ? rows.map(r => `<tr><td class="b">${r[0]}</td><td class="r">${r[1]}</td><td class="r">${r[2]}</td></tr>`).join("") :
+    `<tr><td colspan="3" style="text-align:center;padding:20px;color:#6B7280;">P&L data not yet entered.</td></tr>`;
+  const note = reportData?.varianceSummary || reportData?.packNote || reportData?.garimaNote || "";
+  return pdfBase("Monthly P&L Report", company, month, `
+    <h1>Monthly P&L Report</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Metric</th><th class="r">Current</th><th class="r">Prior Period</th></tr></thead>
+    <tbody>${rowsHTML}</tbody></table>
+    ${note ? `<div class="box blue"><div class="label">CFO Commentary</div><div style="font-size:13px;color:#111827;line-height:1.8;margin-top:4px">${note}</div></div>` : ""}
+  `);
+}
+
+function generateFundraisePDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const score = reportData?.score || reportData?.healthScore || "—";
+  const breakdown = (reportData?.scoreBreakdown || []).filter(s => s.label);
+  const metrics = (reportData?.metrics || []).filter(m => m.label);
+  const rowsHTML = breakdown.map(s => `<tr><td class="b">${s.label}</td><td class="r">${s.score||"—"}/100</td><td>${s.comment||""}</td></tr>`).join("");
+  const metricsHTML = metrics.map(m => `<tr><td class="b">${m.label}</td><td class="r">${m.yours||"—"}</td><td class="r">${m.median||"—"}</td><td class="r">${m.bench||"—"}</td></tr>`).join("");
+  return pdfBase("Fundraise Readiness Report", company, month, `
+    <h1>Fundraise Readiness</h1><div class="sub">${company} · ${month}</div>
+    <div class="kpi-grid"><div class="kpi"><div class="label">Readiness Score</div><div class="val" style="color:#2563EB">${score}/100</div></div></div>
+    ${breakdown.length ? `<div class="label" style="margin-bottom:8px">Score Breakdown</div>
+    <table><thead><tr><th>Dimension</th><th class="r">Score</th><th>Commentary</th></tr></thead><tbody>${rowsHTML}</tbody></table>` : ""}
+    ${metrics.length ? `<div class="label" style="margin:16px 0 8px">Benchmark vs Peers</div>
+    <table><thead><tr><th>Metric</th><th class="r">Yours</th><th class="r">Sector Median</th><th class="r">Target</th></tr></thead><tbody>${metricsHTML}</tbody></table>` : ""}
+  `);
+}
+
+function generateUnitEcoPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const ue = reportData?.unitEconomics || {};
+  const note = reportData?.unitEcoNote || reportData?.packNote || "";
+  const items = [
+    ["CAC (Customer Acq. Cost)", ue.cac||"—"],
+    ["LTV (Lifetime Value)", ue.ltv||"—"],
+    ["LTV : CAC Ratio", ue.ltvCac||"—"],
+    ["Payback Period", ue.payback||"—"],
+    ["Churn Rate", ue.churn||"—"],
+    ["Gross Margin per Customer", ue.gmPerCustomer||"—"],
+    ["MRR / ARR", ue.arr||"—"],
+    ["NRR (Net Revenue Retention)", ue.nrr||"—"],
+  ].filter(i => i[1] !== "—");
+  const rowsHTML = items.length ? items.map(i => `<tr><td class="b">${i[0]}</td><td class="r">${i[1]}</td></tr>`).join("") :
+    `<tr><td colspan="2" style="text-align:center;padding:20px;color:#6B7280;">Unit economics data not yet entered.</td></tr>`;
+  return pdfBase("Unit Economics Report", company, month, `
+    <h1>Unit Economics</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Metric</th><th class="r">Value</th></tr></thead><tbody>${rowsHTML}</tbody></table>
+    ${note ? `<div class="box blue"><div class="label">CFO Note</div><div style="font-size:13px;line-height:1.8;margin-top:4px">${note}</div></div>` : ""}
+  `);
+}
+
+function generateFundUtilPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const depts = reportData?.spendDepts || {};
+  const totalRev = Number(reportData?.spendRevenue || 0);
+  const rows = Object.entries(depts).filter(([,v]) => v.actual || v.budget);
+  const rowsHTML = rows.length ? rows.map(([name, v]) => {
+    const act = Number(v.actual||0), bud = Number(v.budget||0);
+    const pct = totalRev ? ((act/totalRev)*100).toFixed(1)+"%" : "—";
+    const diff = bud ? act - bud : null;
+    return `<tr><td class="b">${name}</td><td class="r">₹${(act/100000).toFixed(1)}L</td><td class="r">₹${bud?(bud/100000).toFixed(1)+"L":"—"}</td><td class="r">${pct}</td><td class="r"><span class="${diff!==null&&diff>0?"unfav":"fav"}">${diff!==null?(diff>0?"Over":"Under"):"—"}</span></td></tr>`;
+  }).join("") : `<tr><td colspan="5" style="text-align:center;padding:20px;color:#6B7280;">Fund utilisation data not yet entered.</td></tr>`;
+  return pdfBase("Fund Utilisation Report", company, month, `
+    <h1>Fund Utilisation</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Department</th><th class="r">Actual</th><th class="r">Budget</th><th class="r">% of Revenue</th><th class="r">Status</th></tr></thead><tbody>${rowsHTML}</tbody></table>
+  `);
+}
+
+function generateScenarioPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const base = reportData?.scenarioBase || {};
+  const rev = Number(base.revenue||0), cogs = Number(base.cogs||0), opex = Number(base.opex||0);
+  const scenarios = [
+    { name:"Base Case",       revMult:1.0, cogsMult:1.0, opexMult:1.0 },
+    { name:"Bull Case (+20%)",revMult:1.2, cogsMult:1.1, opexMult:1.05 },
+    { name:"Bear Case (-20%)",revMult:0.8, cogsMult:0.9, opexMult:0.95 },
+  ];
+  const rowsHTML = scenarios.map(s => {
+    const sRev = (rev*s.revMult/100000).toFixed(1), sCogs = (cogs*s.cogsMult/100000).toFixed(1);
+    const sOpex = (opex*s.opexMult/100000).toFixed(1);
+    const sGP = ((rev*s.revMult - cogs*s.cogsMult)/100000).toFixed(1);
+    const sEBITDA = ((rev*s.revMult - cogs*s.cogsMult - opex*s.opexMult)/100000).toFixed(1);
+    return `<tr><td class="b">${s.name}</td><td class="r">₹${sRev}L</td><td class="r">₹${sCogs}L</td><td class="r">₹${sGP}L</td><td class="r">₹${sOpex}L</td><td class="r">₹${sEBITDA}L</td></tr>`;
+  }).join("");
+  return pdfBase("Scenario Analysis Report", company, month, `
+    <h1>Scenario Modelling</h1><div class="sub">${company} · ${month} · Based on entered financials</div>
+    ${rev ? `<table><thead><tr><th>Scenario</th><th class="r">Revenue</th><th class="r">COGS</th><th class="r">Gross Profit</th><th class="r">Opex</th><th class="r">EBITDA</th></tr></thead><tbody>${rowsHTML}</tbody></table>` : `<div style="text-align:center;padding:30px;color:#6B7280">Base financial data not yet entered.</div>`}
+  `);
+}
+
+function generateBankFinPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  return pdfBase("Bank Finance Report", company, month, `
+    <h1>Bank Finance Assessment</h1><div class="sub">${company} · ${month}</div>
+    <div class="box blue"><div class="label">About this report</div><div style="font-size:13px;line-height:1.8;margin-top:4px">
+    This section covers your working capital credit lines, term loan facilities, and banker relationship management. Detailed credit metrics are maintained by your CFO and updated monthly.</div></div>
+  `);
+}
+
+function generateGovernancePDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const note = reportData?.boardNote || reportData?.packNote || "";
+  const items = (reportData?.boardItems || []).filter(i => i.item);
+  const rowsHTML = items.length ? items.map(i => `<tr><td class="b">${i.item}</td><td>${i.status||"—"}</td><td>${i.owner||"—"}</td><td>${i.date||"—"}</td></tr>`).join("") :
+    `<tr><td colspan="4" style="text-align:center;padding:20px;color:#6B7280">Board governance items will appear here once entered.</td></tr>`;
+  return pdfBase("Board Governance Report", company, month, `
+    <h1>Board Governance</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Action Item</th><th>Status</th><th>Owner</th><th>Target Date</th></tr></thead><tbody>${rowsHTML}</tbody></table>
+    ${note ? `<div class="box blue"><div class="label">Board Note</div><div style="font-size:13px;line-height:1.8;margin-top:4px">${note}</div></div>` : ""}
+  `);
+}
+
+function generateIPOPDF({ client, reportData }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const score = reportData?.score || "—";
+  const breakdown = (reportData?.scoreBreakdown || []).filter(s => s.label);
+  const metrics = (reportData?.metrics || []).filter(m => m.label);
+  const rowsHTML = breakdown.map(s => `<tr><td class="b">${s.label}</td><td class="r">${s.score||"—"}/100</td><td>${s.comment||""}</td></tr>`).join("");
+  const metricsHTML = metrics.map(m => `<tr><td class="b">${m.label}</td><td class="r">${m.yours||"—"}</td><td class="r">${m.median||"—"}</td><td class="r">${m.bench||"—"}</td></tr>`).join("");
+  return pdfBase("IPO Readiness Report", company, month, `
+    <h1>IPO Readiness Assessment</h1><div class="sub">${company} · ${month}</div>
+    <div class="kpi-grid"><div class="kpi"><div class="label">IPO Readiness Score</div><div class="val" style="color:#7C3AED">${score}/100</div></div></div>
+    ${breakdown.length ? `<div class="label" style="margin-bottom:8px">Readiness Breakdown</div>
+    <table><thead><tr><th>Dimension</th><th class="r">Score</th><th>Commentary</th></tr></thead><tbody>${rowsHTML}</tbody></table>` : ""}
+    ${metrics.length ? `<div class="label" style="margin:16px 0 8px">IPO Benchmarks</div>
+    <table><thead><tr><th>Metric</th><th class="r">Yours</th><th class="r">IPO Ready</th><th class="r">Sector Median</th></tr></thead><tbody>${metricsHTML}</tbody></table>` : ""}
+  `);
+}
+
+function generateCashHealthPDF({ client, reportData, kpis }) {
+  const company = client?.company || "Your Company";
+  const month = reportData?.monthLabel || "Current Period";
+  const cf = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+  const rowsHTML = cf.length ? cf.map(m => `<tr><td class="b">${m.month}</td><td class="r">${m.actual||"—"}</td><td class="r">${m.forecast||"—"}</td></tr>`).join("") :
+    `<tr><td colspan="3" style="text-align:center;padding:20px;color:#6B7280">Cash flow data not yet entered.</td></tr>`;
+  const note = reportData?.cashflowNote || reportData?.packNote || "";
+  return pdfBase("Cash Health Report", company, month, `
+    <h1>Cash Health</h1><div class="sub">${company} · ${month}</div>
+    <table><thead><tr><th>Month</th><th class="r">Actual</th><th class="r">Forecast</th></tr></thead><tbody>${rowsHTML}</tbody></table>
+    ${note ? `<div class="box green"><div class="label">CFO Cash Assessment</div><div style="font-size:13px;line-height:1.8;margin-top:4px">${note}</div></div>` : ""}
+  `);
+}
+
 // ─── EXECUTIVE SUMMARY PDF ───────────────────────────────────────────────────
 function generateExecSummaryPDF({ client, reportData, kpis }) {
   const company  = client?.company || "Your Company";
@@ -3162,111 +3491,64 @@ function generateExecSummaryPDF({ client, reportData, kpis }) {
   const nextSteps= reportData?.execNextSteps    || "Next steps not yet added.";
   const garimaNote = reportData?.garimaNote || reportData?.packNote || "";
  
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"/>
+  const now = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:Arial,sans-serif; color:#111827; background:white; }
-  .page { max-width:800px; margin:0 auto; padding:48px; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; padding-bottom:18px; border-bottom:3px solid #3B6FF7; }
-  .logo { font-size:26px; font-weight:900; color:#3B6FF7; }
-  .tagline { font-size:9px; color:#9CA3AF; letter-spacing:0.1em; text-transform:uppercase; margin-top:2px; }
-  .doc-meta { text-align:right; font-size:11px; color:#6B7280; line-height:1.7; }
-  .doc-meta strong { font-size:14px; color:#111827; display:block; }
-  h1 { font-size:28px; font-weight:900; color:#111827; margin-bottom:4px; }
-  .subtitle { font-size:13px; color:#6B7280; margin-bottom:6px; }
-  .eyebrow { font-size:10px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
-  .kpi-strip { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin:24px 0; }
-  .kpi { padding:10px 8px; border-radius:8px; background:#F9FAFB; border:1px solid #E5E7EB; text-align:center; }
-  .kpi-label { font-size:8px; color:#6B7280; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:4px; }
-  .kpi-value { font-size:14px; font-weight:900; color:#111827; }
-  .section { margin-bottom:24px; padding:18px 20px; border-radius:12px; border:1px solid #E5E7EB; }
-  .section-header { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
-  .section-icon { font-size:18px; }
-  h2 { font-size:13px; font-weight:800; color:#111827; text-transform:uppercase; letter-spacing:0.05em; }
-  .section-body { font-size:13px; color:#374151; line-height:1.8; }
-  .perf   { border-left:3px solid #3B6FF7; background:#F0F4FF; }
-  .cash   { border-left:3px solid #10B981; background:#F0FDF4; }
-  .risks  { border-left:3px solid #EF4444; background:#FEF2F2; }
-  .opps   { border-left:3px solid #8B5CF6; background:#F5F3FF; }
-  .next   { border-left:3px solid #F59E0B; background:#FFFBEB; }
-  .garima-note { margin-top:24px; padding:16px 18px; background:#EEF3FE; border-radius:10px; border-left:3px solid #3B6FF7; }
-  .garima-label { font-size:10px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
-  .garima-text  { font-size:13px; color:#111827; line-height:1.8; }
-  .disclaimer { margin-top:24px; padding:10px 12px; background:#F9FAFB; border-radius:6px; font-size:10px; color:#6B7280; line-height:1.6; border:1px solid #E5E7EB; }
-  .footer { margin-top:16px; padding-top:14px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
-  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
-</style>
-</head>
-<body>
-<div class="page">
-  <div class="header">
-    <div><div class="logo">Finzzup</div><div class="tagline">Build. Value. Scale.</div></div>
-    <div class="doc-meta">
-      <strong>Executive Summary</strong>
-      ${company} | ${packLabel}<br/>
-      Period: ${month}<br/>
-      ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
-    </div>
-  </div>
- 
-  <div class="eyebrow">Board-Ready | Confidential | Prepared by Garima Agarwal CA</div>
-  <h1>${company}</h1>
-  <div class="subtitle">Monthly Executive Summary — ${month}</div>
- 
-  <div class="kpi-strip">
-    <div class="kpi"><div class="kpi-label">Revenue</div><div class="kpi-value">${rev}</div></div>
-    <div class="kpi"><div class="kpi-label">Gross Margin</div><div class="kpi-value">${mar}</div></div>
-    <div class="kpi"><div class="kpi-label">EBITDA</div><div class="kpi-value">${ebitda}</div></div>
-    <div class="kpi"><div class="kpi-label">Cash Balance</div><div class="kpi-value">${cash}</div></div>
-    <div class="kpi"><div class="kpi-label">Burn Rate</div><div class="kpi-value">${burn}</div></div>
-    <div class="kpi"><div class="kpi-label">Runway</div><div class="kpi-value">${run}</div></div>
-  </div>
- 
-  <div class="section perf">
-    <div class="section-header"><span class="section-icon">↑</span><h2>Performance</h2></div>
-    <div class="section-body">${perf}</div>
-  </div>
- 
-  <div class="section cash">
-    <div class="section-header"><span class="section-icon">$</span><h2>Cash & Liquidity</h2></div>
-    <div class="section-body">${cashNote}</div>
-  </div>
- 
-  <div class="section risks">
-    <div class="section-header"><span class="section-icon">!</span><h2>Key Risks</h2></div>
-    <div class="section-body">${risks}</div>
-  </div>
- 
-  <div class="section opps">
-    <div class="section-header"><span class="section-icon">→</span><h2>Opportunities</h2></div>
-    <div class="section-body">${opps}</div>
-  </div>
- 
-  <div class="section next">
-    <div class="section-header"><span class="section-icon">✓</span><h2>Next Steps</h2></div>
-    <div class="section-body">${nextSteps}</div>
-  </div>
- 
-  ${garimaNote ? `
-  <div class="garima-note">
-    <div class="garima-label">CA's Note — ${month}</div>
-    <div class="garima-text">${garimaNote}</div>
-  </div>` : ""}
- 
-  <div class="disclaimer">
-    This executive summary is prepared by Garima Agarwal (CA Membership: 160944) based on management information provided by the client. It is for internal management and board use only and does not constitute audited financial statements.
-  </div>
- 
-  <div class="footer">
-    <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038 | agrgarima@gmail.com</span>
-    <span>Finzzup | Build. Value. Scale.</span>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+.banner{background:linear-gradient(135deg,#1E3A8A,#2563EB);padding:32px 48px;color:white;}
+.banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
+.banner .sub{font-size:12px;opacity:0.8;margin-bottom:14px;}
+.banner .meta{display:flex;gap:28px;font-size:11px;flex-wrap:wrap;}
+.banner .meta-item label{opacity:0.6;display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+.page{padding:32px 48px;max-width:820px;margin:0 auto;}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:22px;}
+.kpi-card{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:10px 8px;text-align:center;}
+.kpi-card .val{font-size:14px;font-weight:800;font-family:monospace;margin-bottom:3px;color:#2563EB;}
+.kpi-card .lbl{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:0.05em;color:#6B7280;}
+.section-title{font-size:13px;font-weight:800;color:#111827;margin:16px 0 8px;border-left:4px solid #2563EB;padding-left:12px;text-transform:uppercase;letter-spacing:0.05em;}
+.section{margin-bottom:18px;padding:16px 18px;border-radius:10px;border:1px solid #E5E7EB;font-size:13px;color:#374151;line-height:1.8;}
+.section.perf{border-left:4px solid #2563EB;background:#F0F4FF;}
+.section.cash{border-left:4px solid #10B981;background:#F0FDF4;}
+.section.risks{border-left:4px solid #EF4444;background:#FEF2F2;}
+.section.opps{border-left:4px solid #8B5CF6;background:#F5F3FF;}
+.section.next{border-left:4px solid #F59E0B;background:#FFFBEB;}
+.note-box{background:#EFF6FF;border-left:4px solid #2563EB;border-radius:6px;padding:12px 14px;margin:12px 0;font-size:12px;color:#1E3A8A;line-height:1.8;}
+.disc{margin-top:18px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
+.ftr{margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
+</style></head><body>
+<div class="banner">
+  <h1>Executive Summary</h1>
+  <div class="sub">${company} · ${packLabel}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${month}</div>
+    <div class="meta-item"><label>Prepared By</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Membership</label>160944</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
   </div>
 </div>
-</body>
-</html>`;
+<div class="page">
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="val">${rev}</div><div class="lbl">Revenue</div></div>
+    <div class="kpi-card"><div class="val">${mar}</div><div class="lbl">Gross Margin</div></div>
+    <div class="kpi-card"><div class="val">${ebitda}</div><div class="lbl">EBITDA</div></div>
+    <div class="kpi-card"><div class="val">${cash}</div><div class="lbl">Cash Balance</div></div>
+    <div class="kpi-card"><div class="val">${burn}</div><div class="lbl">Burn Rate</div></div>
+    <div class="kpi-card"><div class="val">${run}</div><div class="lbl">Runway</div></div>
+  </div>
+
+  <div class="section perf"><div class="section-title">↑ Performance</div>${perf}</div>
+  <div class="section cash"><div class="section-title">$ Cash &amp; Liquidity</div>${cashNote}</div>
+  <div class="section risks"><div class="section-title">! Key Risks</div>${risks}</div>
+  <div class="section opps"><div class="section-title">→ Opportunities</div>${opps}</div>
+  <div class="section next"><div class="section-title">✓ Next Steps</div>${nextSteps}</div>
+
+  ${garimaNote ? `<div class="note-box"><strong>CA's Note — ${month}</strong><br/>${garimaNote}</div>` : ""}
+
+  <div class="disc">This executive summary is prepared by Garima Agarwal (CA Membership: 160944) based on management information provided by the client. It is for internal management and board use only and does not constitute audited financial statements.</div>
+  <div class="ftr"><span>Garima Agarwal | CA Membership: 160944 | agrgarima@gmail.com</span><span>Confidential — ${company}</span></div>
+</div></body></html>`;
 }
  
  
@@ -3696,173 +3978,131 @@ function generateCashPDF({ client, reportData, kpis }) {
     { label:"Working Capital",        value: reportData?.workingCapital   || "—", benchmark:"Positive" },
   ].filter(r => r.value !== "—");
  
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"/>
+  const now = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:13px; }
-  .page { max-width:800px; margin:0 auto; padding:48px; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; padding-bottom:18px; border-bottom:2px solid #3B6FF7; }
-  .logo { font-size:24px; font-weight:900; color:#3B6FF7; letter-spacing:-0.02em; }
-  .tagline { font-size:9px; color:#9CA3AF; letter-spacing:0.1em; text-transform:uppercase; margin-top:2px; }
-  .doc-meta { text-align:right; font-size:11px; color:#6B7280; line-height:1.7; }
-  .doc-meta strong { color:#111827; font-size:13px; display:block; }
-  h1 { font-size:24px; font-weight:900; color:#111827; margin-bottom:4px; }
-  .subtitle { font-size:12px; color:#6B7280; margin-bottom:24px; }
-  .eyebrow { font-size:10px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
-  h2 { font-size:13px; font-weight:800; color:#111827; margin:0 0 12px; padding-bottom:7px; border-bottom:1px solid #F3F4F6; text-transform:uppercase; letter-spacing:0.05em; }
-  .section { margin-bottom:24px; }
-  .kpi-grid { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px; margin-bottom:24px; }
-  .kpi-card { padding:12px; border-radius:8px; background:#F9FAFB; border:1px solid #E5E7EB; text-align:center; }
-  .kpi-label { font-size:9px; color:#6B7280; font-weight:700; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px; }
-  .kpi-value { font-size:18px; font-weight:900; color:#111827; }
-  .kpi-sub { font-size:9px; color:#6B7280; margin-top:3px; }
-  table { width:100%; border-collapse:collapse; margin-bottom:4px; }
-  th { background:#F9FAFB; padding:8px 10px; text-align:left; font-size:9px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
-  td { padding:9px 10px; border-bottom:1px solid #F3F4F6; font-size:12px; vertical-align:middle; }
-  .bold-row td { font-weight:800; background:#F0F4FF; }
-  .in-val  { color:#059669; font-weight:700; text-align:right; }
-  .out-val { color:#DC2626; font-weight:700; text-align:right; }
-  .neu-val { color:#111827; font-weight:800; text-align:right; }
-  .right   { text-align:right; }
-  .dim     { color:#6B7280; font-size:11px; }
-  .note-box { padding:14px 16px; background:#EEF3FE; border-radius:8px; border-left:3px solid #3B6FF7; margin-bottom:24px; }
-  .note-label { font-size:9px; font-weight:700; color:#3B6FF7; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
-  .note-text { font-size:12px; color:#111827; line-height:1.8; }
-  .two-col { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-  .disclaimer { margin-top:24px; padding:10px 12px; background:#F9FAFB; border-radius:6px; font-size:10px; color:#6B7280; line-height:1.6; border:1px solid #E5E7EB; }
-  .footer { margin-top:16px; padding-top:14px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:10px; color:#9CA3AF; }
-  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
-</style>
-</head>
-<body>
-<div class="page">
- 
-  <div class="header">
-    <div><div class="logo">Finzzup</div><div class="tagline">Build. Value. Scale.</div></div>
-    <div class="doc-meta">
-      <strong>Cash Flow Report</strong>
-      ${company} | ${packLabel}<br/>
-      Period: ${month}<br/>
-      ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}
-    </div>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+.banner{background:linear-gradient(135deg,#1E3A8A,#2563EB);padding:32px 48px;color:white;}
+.banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
+.banner .sub{font-size:12px;opacity:0.8;margin-bottom:14px;}
+.banner .meta{display:flex;gap:28px;font-size:11px;flex-wrap:wrap;}
+.banner .meta-item label{opacity:0.6;display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+.page{padding:32px 48px;max-width:820px;margin:0 auto;}
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px;}
+.kpi-card{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:12px;text-align:center;}
+.kpi-card .val{font-size:18px;font-weight:800;font-family:monospace;margin-bottom:3px;color:#2563EB;}
+.kpi-card .lbl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:#6B7280;}
+.section-title{font-size:15px;font-weight:800;color:#111827;margin:20px 0 10px;border-left:4px solid #2563EB;padding-left:12px;}
+table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:14px;}
+th{background:#0F172A;color:white;padding:9px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+th.r{text-align:right;}
+td{padding:9px 12px;border-bottom:1px solid #F3F4F6;}
+td.r{text-align:right;font-family:monospace;}
+td.b{font-weight:700;color:#111827;}
+tr:nth-child(even) td{background:#F9FAFB;}
+.in-val{color:#059669;font-weight:700;text-align:right;}
+.out-val{color:#DC2626;font-weight:700;text-align:right;}
+.neu-val{color:#111827;font-weight:800;text-align:right;}
+.bold-row td{font-weight:800;background:#EFF6FF;}
+.dim{color:#6B7280;font-size:11px;}
+.note-box{background:#EFF6FF;border-left:4px solid #2563EB;border-radius:6px;padding:12px 14px;margin:12px 0;font-size:12px;color:#1E3A8A;line-height:1.8;}
+.disc{margin-top:18px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
+.ftr{margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
+</style></head><body>
+<div class="banner">
+  <h1>Cash Flow Report</h1>
+  <div class="sub">${company} · ${packLabel}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${month}</div>
+    <div class="meta-item"><label>Prepared By</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Membership</label>160944</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
   </div>
- 
-  <div class="eyebrow">Confidential | Prepared by Garima Agarwal CA | Membership 160944</div>
-  <h1>${company}</h1>
-  <div class="subtitle">Cash Flow Statement, Working Capital & Liquidity Analysis — ${month}</div>
- 
-  <!-- KPI SUMMARY -->
-  <div class="kpi-grid">
-    <div class="kpi-card"><div class="kpi-label">Cash Balance</div><div class="kpi-value">${cashKpi}</div><div class="kpi-sub">End of period</div></div>
-    <div class="kpi-card"><div class="kpi-label">Revenue</div><div class="kpi-value">${revenueKpi}</div><div class="kpi-sub">This period</div></div>
-    <div class="kpi-card"><div class="kpi-label">EBITDA</div><div class="kpi-value">${ebitda}</div><div class="kpi-sub">Operating profit</div></div>
+</div>
+<div class="page">
+
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="val">${cashKpi}</div><div class="lbl">Cash Balance</div></div>
+    <div class="kpi-card"><div class="val">${revenueKpi}</div><div class="lbl">Revenue</div></div>
+    <div class="kpi-card"><div class="val">${ebitda}</div><div class="lbl">EBITDA</div></div>
     ${isMSME || isCorp
-      ? `<div class="kpi-card"><div class="kpi-label">Working Capital</div><div class="kpi-value">${reportData?.workingCapital || "—"}</div><div class="kpi-sub">Current assets − liabilities</div></div>`
-      : `<div class="kpi-card"><div class="kpi-label">Runway</div><div class="kpi-value">${runwayKpi}</div><div class="kpi-sub">At current burn</div></div>`
+      ? `<div class="kpi-card"><div class="val">${reportData?.workingCapital || "—"}</div><div class="lbl">Working Capital</div></div>`
+      : `<div class="kpi-card"><div class="val">${runwayKpi}</div><div class="lbl">Runway</div></div>`
     }
   </div>
- 
-  <!-- P&L SUMMARY -->
-  <div class="section">
-    <h2>P&L Summary — ${month}</h2>
-    <table>
-      <thead><tr><th>Line Item</th><th class="right">Amount</th><th>Notes</th></tr></thead>
-      <tbody>
-        <tr><td>Revenue</td><td class="neu-val">${revenueKpi}</td><td class="dim">Gross receipts this period</td></tr>
-        <tr><td>Cost of Goods Sold</td><td class="out-val">${cogs}</td><td class="dim">Direct costs</td></tr>
-        <tr class="bold-row"><td>Gross Profit</td><td class="right">${grossProfit}</td><td class="dim">Margin: ${marginKpi}</td></tr>
-        <tr class="bold-row"><td>EBITDA</td><td class="right">${ebitda}</td><td class="dim">Earnings before interest, tax, depreciation</td></tr>
-        <tr><td>PAT (Net Profit after Tax)</td><td class="in-val">${pat}</td><td class="dim">Bottom line</td></tr>
-      </tbody>
-    </table>
-  </div>
- 
-  <!-- CASH MOVEMENT -->
-  <div class="section">
-    <h2>Cash Movement — ${month}</h2>
-    <table>
-      <thead><tr><th>Item</th><th class="right">Amount</th></tr></thead>
-      <tbody>
-        ${cashMoves.map(r => `
-        <tr ${r.type==="neutral"?"class=\"bold-row\"":""}>
-          <td>${r.label}</td>
-          <td class="${r.type==="in"?"in-val":r.type==="out"?"out-val":"neu-val"}">${r.value}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>
- 
+
+  <div class="section-title">P&amp;L Summary — ${month}</div>
+  <table>
+    <thead><tr><th>Line Item</th><th class="r">Amount</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>Revenue</td><td class="neu-val">${revenueKpi}</td><td class="dim">Gross receipts this period</td></tr>
+      <tr><td>Cost of Goods Sold</td><td class="out-val">${cogs}</td><td class="dim">Direct costs</td></tr>
+      <tr class="bold-row"><td>Gross Profit</td><td class="r">${grossProfit}</td><td class="dim">Margin: ${marginKpi}</td></tr>
+      <tr class="bold-row"><td>EBITDA</td><td class="r">${ebitda}</td><td class="dim">Earnings before interest, tax, depreciation</td></tr>
+      <tr><td>PAT (Net Profit after Tax)</td><td class="in-val">${pat}</td><td class="dim">Bottom line</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Cash Movement — ${month}</div>
+  <table>
+    <thead><tr><th>Item</th><th class="r">Amount</th></tr></thead>
+    <tbody>
+      ${cashMoves.map(r => `
+      <tr ${r.type==="neutral"?"class=\"bold-row\"":""}>
+        <td>${r.label}</td>
+        <td class="${r.type==="in"?"in-val":r.type==="out"?"out-val":"neu-val"}">${r.value}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>
+
   ${isCorp ? `
-  <!-- INDIRECT CASH FLOW -->
-  <div class="section">
-    <h2>Indirect Cash Flow Statement</h2>
-    <table>
-      <thead><tr><th>Item</th><th class="right">Amount</th></tr></thead>
-      <tbody>
-        ${indirectCF.map(r => `
-        <tr ${r.bold?"class=\"bold-row\"":""}>
-          <td>${r.label}</td>
-          <td class="${r.bold?"neu-val":"right"}">${r.value}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>` : ""}
- 
-  <!-- WORKING CAPITAL -->
-  <div class="section">
-    <h2>Working Capital Analysis</h2>
-    <table>
-      <thead><tr><th>Component</th><th class="right">Value</th><th class="right">Days</th><th>Notes</th></tr></thead>
-      <tbody>
-        ${wcItems.map(r => `
-        <tr>
-          <td>${r.label}</td>
-          <td class="neu-val">${r.value}</td>
-          <td class="right dim">${r.days}</td>
-          <td class="dim">${r.note}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>
- 
+  <div class="section-title">Indirect Cash Flow Statement</div>
+  <table>
+    <thead><tr><th>Item</th><th class="r">Amount</th></tr></thead>
+    <tbody>
+      ${indirectCF.map(r => `
+      <tr ${r.bold?"class=\"bold-row\"":""}>
+        <td>${r.label}</td>
+        <td class="${r.bold?"neu-val":"r"}">${r.value}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>` : ""}
+
+  <div class="section-title">Working Capital Analysis</div>
+  <table>
+    <thead><tr><th>Component</th><th class="r">Value</th><th class="r">Days</th><th>Notes</th></tr></thead>
+    <tbody>
+      ${wcItems.map(r => `
+      <tr>
+        <td>${r.label}</td>
+        <td class="neu-val">${r.value}</td>
+        <td class="r dim">${r.days}</td>
+        <td class="dim">${r.note}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>
+
   ${ratios.length > 0 ? `
-  <!-- KEY RATIOS -->
-  <div class="section">
-    <h2>Key Liquidity & Debt Ratios</h2>
-    <table>
-      <thead><tr><th>Ratio</th><th class="right">Value</th><th>Benchmark</th></tr></thead>
-      <tbody>
-        ${ratios.map(r => `
-        <tr>
-          <td>${r.label}</td>
-          <td class="neu-val">${r.value}</td>
-          <td class="dim">${r.benchmark}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>` : ""}
- 
-  ${note ? `
-  <div class="note-box">
-    <div class="note-label">CA's Cash Flow Analysis — ${month}</div>
-    <div class="note-text">${note}</div>
-  </div>` : ""}
- 
-  <div class="disclaimer">
-    <strong>Disclaimer:</strong> This cash flow report is prepared based on information provided by the client and is for management and banking purposes. It does not constitute a statutory financial statement. Figures are subject to audit adjustments. For statutory reporting, refer to audited financials.
-  </div>
- 
-  <div class="footer">
-    <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038 | agrgarima@gmail.com</span>
-    <span>Finzzup | ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}</span>
-  </div>
- 
-</div>
-</body>
-</html>`;
+  <div class="section-title">Key Liquidity &amp; Debt Ratios</div>
+  <table>
+    <thead><tr><th>Ratio</th><th class="r">Value</th><th>Benchmark</th></tr></thead>
+    <tbody>
+      ${ratios.map(r => `
+      <tr>
+        <td>${r.label}</td>
+        <td class="neu-val">${r.value}</td>
+        <td class="dim">${r.benchmark}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>` : ""}
+
+  ${note ? `<div class="note-box"><strong>CA's Cash Flow Analysis — ${month}</strong><br/>${note}</div>` : ""}
+
+  <div class="disc">This cash flow report is prepared based on information provided by the client and is for management and banking purposes. It does not constitute a statutory financial statement. Figures are subject to audit adjustments. For statutory reporting, refer to audited financials.</div>
+  <div class="ftr"><span>Garima Agarwal | CA Membership: 160944 | agrgarima@gmail.com</span><span>Confidential — ${company}</span></div>
+</div></body></html>`;
 }
  
  
@@ -3956,180 +4196,141 @@ function generateLoanPDF({ client, reportData, kpis }) {
   const statusText = score >= 75 ? "Strong Profile — Eligible for Most Schemes"
     : score >= 55 ? "Moderate Profile — Eligible with Preparation"
     : "Early Stage — Build Track Record First";
-  return `<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"/>
+  const now = new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"});
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Arial', sans-serif; color: #111827; background: white; }
-  .page { max-width: 800px; margin: 0 auto; padding: 48px 48px; }
-  .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:40px; padding-bottom:24px; border-bottom:2px solid #5B4FDB; }
-  .logo-text { font-size:26px; font-weight:900; color:#5B4FDB; letter-spacing:-0.02em; }
-  .tagline { font-size:9px; color:#9CA3AF; letter-spacing:0.1em; text-transform:uppercase; margin-top:3px; }
-  .doc-meta { text-align:right; font-size:11px; color:#6B7280; }
-  .doc-meta strong { color:#111827; font-size:13px; display:block; margin-bottom:4px; }
-  .title-block { margin-bottom:32px; }
-  .eyebrow { font-size:11px; font-weight:700; color:#5B4FDB; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:8px; }
-  h1 { font-size:28px; font-weight:900; color:#111827; margin-bottom:6px; }
-  .subtitle { font-size:14px; color:#6B7280; }
-  .score-box { background:linear-gradient(135deg,#EEF2FF,#F5F3FF); border:1px solid #C7D2FE; border-radius:16px; padding:24px 28px; margin-bottom:28px; display:flex; justify-content:space-between; align-items:center; }
-  .score-num { font-size:56px; font-weight:900; color:#5B4FDB; line-height:1; }
-  .score-label { font-size:11px; color:#6B7280; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
-  .score-status { font-size:14px; font-weight:700; color:#111827; }
-  .score-bar-wrap { flex:1; margin: 0 32px; }
-  .score-bar-bg { height:12px; background:#E5E7EB; border-radius:6px; overflow:hidden; }
-  .score-bar-fill { height:100%; background:linear-gradient(90deg,#5B4FDB,#7C3AED); border-radius:6px; width:${score}%; }
-  h2 { font-size:16px; font-weight:800; color:#111827; margin-bottom:16px; padding-bottom:8px; border-bottom:1px solid #F3F4F6; }
-  .section { margin-bottom:28px; }
-  table { width:100%; border-collapse:collapse; font-size:13px; }
-  th { background:#F9FAFB; padding:10px 14px; text-align:left; font-size:11px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
-  td { padding:11px 14px; border-bottom:1px solid #F3F4F6; vertical-align:top; }
-  tr:last-child td { border-bottom:none; }
-  .badge { display:inline-block; padding:2px 8px; border-radius:100px; font-size:10px; font-weight:700; }
-  .badge-rec { background:#EEF2FF; color:#5B4FDB; }
-  .badge-done { background:#ECFDF5; color:#059669; }
-  .badge-pending { background:#FEF3C7; color:#D97706; }
-  .checklist-row { display:flex; align-items:center; gap:10px; padding:9px 12px; border-radius:8px; margin-bottom:6px; font-size:13px; }
-  .done-row { background:#F0FDF4; border:1px solid #BBF7D0; color:#111827; }
-  .pending-row { background:#FFFBEB; border:1px solid #FDE68A; color:#92400E; }
-  .footer { margin-top:40px; padding-top:20px; border-top:1px solid #E5E7EB; display:flex; justify-content:space-between; font-size:11px; color:#9CA3AF; }
-  .disclaimer { margin-top:20px; padding:14px 16px; background:#F9FAFB; border-radius:8px; font-size:11px; color:#6B7280; line-height:1.6; border:1px solid #E5E7EB; }
-  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
-</style>
-</head>
-<body>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
+.banner{background:linear-gradient(135deg,#1E3A8A,#2563EB);padding:32px 48px;color:white;}
+.banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
+.banner .sub{font-size:12px;opacity:0.8;margin-bottom:14px;}
+.banner .meta{display:flex;gap:28px;font-size:11px;flex-wrap:wrap;}
+.banner .meta-item label{opacity:0.6;display:block;font-size:9px;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:2px;}
+.page{padding:32px 48px;max-width:820px;margin:0 auto;}
+.score-box{background:linear-gradient(135deg,#EEF2FF,#EFF6FF);border:1px solid #BFDBFE;border-radius:12px;padding:20px 24px;margin-bottom:22px;display:flex;justify-content:space-between;align-items:center;}
+.score-num{font-size:52px;font-weight:900;color:#2563EB;line-height:1;}
+.score-bar-bg{height:10px;background:#E5E7EB;border-radius:6px;overflow:hidden;margin:8px 0;}
+.score-bar-fill{height:100%;background:linear-gradient(90deg,#1E3A8A,#2563EB);border-radius:6px;width:${score}%;}
+.section-title{font-size:15px;font-weight:800;color:#111827;margin:20px 0 10px;border-left:4px solid #2563EB;padding-left:12px;}
+table{width:100%;border-collapse:collapse;font-size:11.5px;margin-bottom:14px;}
+th{background:#0F172A;color:white;padding:9px 12px;text-align:left;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;}
+th.r{text-align:right;}
+td{padding:9px 12px;border-bottom:1px solid #F3F4F6;vertical-align:top;}
+td.r{text-align:right;font-family:monospace;}
+td.b{font-weight:700;color:#111827;}
+tr:nth-child(even) td{background:#F9FAFB;}
+.badge{display:inline-block;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;}
+.badge-rec{background:#DBEAFE;color:#1E3A8A;}
+.badge-done{background:#DCFCE7;color:#15803D;}
+.badge-pending{background:#FEF3C7;color:#D97706;}
+.checklist-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;margin-bottom:6px;font-size:12px;}
+.done-row{background:#F0FDF4;border:1px solid #BBF7D0;color:#111827;}
+.pending-row{background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;}
+.note-box{background:#EFF6FF;border-left:4px solid #2563EB;border-radius:6px;padding:12px 14px;margin:12px 0;font-size:12px;color:#1E3A8A;line-height:1.8;}
+.disc{margin-top:18px;padding:10px 12px;background:#F9FAFB;border-radius:6px;font-size:10px;color:#6B7280;line-height:1.6;border:1px solid #E5E7EB;}
+.ftr{margin-top:12px;padding-top:10px;border-top:1px solid #E5E7EB;display:flex;justify-content:space-between;font-size:10px;color:#9CA3AF;}
+</style></head><body>
+<div class="banner">
+  <h1>Loan &amp; Debt Analysis</h1>
+  <div class="sub">${company}</div>
+  <div class="meta">
+    <div class="meta-item"><label>Period</label>${month}</div>
+    <div class="meta-item"><label>Prepared By</label>Garima Agarwal, CA</div>
+    <div class="meta-item"><label>Membership</label>160944</div>
+    <div class="meta-item"><label>Date</label>${now}</div>
+  </div>
+</div>
 <div class="page">
-  <div class="header">
-    <div>
-      <div class="logo-text">Finzzup</div>
-      <div class="tagline">Build. Value. Scale.</div>
-    </div>
-    <div class="doc-meta">
-      <strong>Loan Readiness Report</strong>
-      Prepared for: ${company}<br/>
-      Period: ${month}<br/>
-      Date: ${new Date().toLocaleDateString("en-IN", {day:"numeric",month:"long",year:"numeric"})}
-    </div>
-  </div>
- 
-  <div class="title-block">
-    <div class="eyebrow">Confidential | Prepared by Garima Agarwal CA</div>
-    <h1>${company}</h1>
-    <div class="subtitle">Loan Readiness Assessment &amp; Scheme Eligibility Report</div>
-  </div>
-  ${loanNote ? "<div style=\"margin-bottom:24px;padding:16px 18px;background:#EEF2FF;border-radius:10px;border-left:3px solid #5B4FDB\"><div style=\"font-size:10px;font-weight:700;color:#5B4FDB;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px\">Garima's Assessment</div><p style=\"font-size:14px;color:#111827;line-height:1.7;margin:0\">" + loanNote + "</p></div>" : ""}
- 
+
+  ${loanNote ? `<div class="note-box"><strong>Garima's Assessment</strong><br/>${loanNote}</div>` : ""}
+
   <div class="score-box">
     <div>
-      <div class="score-label">Loan Eligibility Score</div>
+      <div style="font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px;">Loan Eligibility Score</div>
       <div class="score-num">${score}</div>
-      <div style="font-size:12px;color:#6B7280;margin-top:4px;">out of 100</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:4px;">out of 100</div>
     </div>
-    <div class="score-bar-wrap">
-      <div class="score-status" style="margin-bottom:12px;">${statusText}</div>
+    <div style="flex:1;margin:0 28px;">
+      <div style="font-size:14px;font-weight:700;color:#111827;margin-bottom:10px;">${statusText}</div>
       <div class="score-bar-bg"><div class="score-bar-fill"></div></div>
       <div style="font-size:11px;color:#6B7280;margin-top:6px;">Documents ready: ${readyCount}/${docs.length}</div>
     </div>
   </div>
- 
-  <div class="section">
-    <h2>Recommended Loan Schemes</h2>
-    <table>
-      <thead>
-        <tr><th>Scheme</th><th>Loan Amount</th><th>Rate</th><th>Suitability</th></tr>
-      </thead>
-      <tbody>
-        ${schemes.map(s => `
-        <tr>
-          <td><strong>${s.name}</strong>${s.recommended ? ' <span class="badge badge-rec">Recommended</span>' : ''}</td>
-          <td>${s.amount}</td>
-          <td>${s.rate}</td>
-          <td>${s.recommended ? "High" : "Moderate"}</td>
-        </tr>`).join("")}
-      </tbody>
-    </table>
-  </div>
- 
-  <div class="section">
-    <h2>Documents Checklist (${readyCount}/${docs.length} Ready)</h2>
-    ${docs.map(d => `
-    <div class="checklist-row ${d.done ? "done-row" : "pending-row"}">
-      <span style="color:${d.done?'#059669':'#9CA3AF'}">${d.done ? "✓" : "○"}</span>
-      <span>${d.doc}</span>
-      <span class="badge ${d.done ? "badge-done" : "badge-pending"}" style="margin-left:auto;">${d.done ? "Ready" : "Pending"}</span>
-    </div>`).join("")}
-  </div>
- 
-  <div class="section">
-    <h2>Financial Snapshot</h2>
-    <table>
-      <thead><tr><th>Metric</th><th>Value</th><th>Metric</th><th>Value</th></tr></thead>
-      <tbody>
-        <tr><td>Revenue</td><td><strong>${revKpi}</strong></td><td>Gross Margin</td><td><strong>${marginKpi}</strong></td></tr>
-        <tr><td>EBITDA</td><td><strong>${ebitda}</strong></td><td>PAT</td><td><strong>${pat}</strong></td></tr>
-        <tr><td>Cash Balance</td><td><strong>${cashKpi}</strong></td><td>Runway</td><td><strong>${runwayKpi}</strong></td></tr>
-      </tbody>
-    </table>
-  </div>
- 
-  <div class="section">
-    <h2>Debt Position</h2>
-    <table>
-      <thead><tr><th>Item</th><th>Value</th></tr></thead>
-      <tbody>
-        <tr><td>Existing Debt / Loans</td><td><strong>${existing}</strong></td></tr>
-        <tr><td>Annual Interest Cost</td><td><strong>${interest}</strong></td></tr>
-        <tr><td>Loan Amount Sought</td><td><strong>${sought}</strong></td></tr>
-        <tr><td>Purpose of Loan</td><td><strong>${purpose}</strong></td></tr>
-      </tbody>
-    </table>
-  </div>
- 
+
+  <div class="section-title">Financial Snapshot</div>
+  <table>
+    <thead><tr><th>Metric</th><th>Value</th><th>Metric</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Revenue</td><td class="b">${revKpi}</td><td>Gross Margin</td><td class="b">${marginKpi}</td></tr>
+      <tr><td>EBITDA</td><td class="b">${ebitda}</td><td>PAT</td><td class="b">${pat}</td></tr>
+      <tr><td>Cash Balance</td><td class="b">${cashKpi}</td><td>Runway</td><td class="b">${runwayKpi}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Debt Position</div>
+  <table>
+    <thead><tr><th>Item</th><th>Value</th></tr></thead>
+    <tbody>
+      <tr><td>Existing Debt / Loans</td><td class="b">${existing}</td></tr>
+      <tr><td>Annual Interest Cost</td><td class="b">${interest}</td></tr>
+      <tr><td>Loan Amount Sought</td><td class="b">${sought}</td></tr>
+      <tr><td>Purpose of Loan</td><td class="b">${purpose}</td></tr>
+    </tbody>
+  </table>
+
+  <div class="section-title">Recommended Loan Schemes</div>
+  <table>
+    <thead><tr><th>Scheme</th><th>Loan Amount</th><th>Rate</th><th>Suitability</th></tr></thead>
+    <tbody>
+      ${schemes.map(s => `
+      <tr>
+        <td class="b">${s.name}${s.recommended ? ' <span class="badge badge-rec">Recommended</span>' : ''}</td>
+        <td>${s.amount}</td>
+        <td>${s.rate}</td>
+        <td>${s.recommended ? "High" : "Moderate"}</td>
+      </tr>`).join("")}
+    </tbody>
+  </table>
+
   ${ratios.length > 0 ? `
-  <div class="section">
-    <h2>Key Financial Ratios</h2>
-    <table>
-      <thead><tr><th>Ratio</th><th>Value</th><th>Benchmark</th><th>Status</th></tr></thead>
-      <tbody>
-        ${ratios.map(r => '<tr><td>' + r.label + '</td><td><strong>' + r.value + '</strong></td><td style="color:#6B7280">' + r.benchmark + '</td><td><span class="badge ' + (r.good?"badge-done":"badge-pending") + '">' + (r.good?"Within Range":"Needs Attention") + '</span></td></tr>').join("")}
-      </tbody>
-    </table>
-  </div>` : ""}
- 
+  <div class="section-title">Key Financial Ratios</div>
+  <table>
+    <thead><tr><th>Ratio</th><th>Value</th><th>Benchmark</th><th>Status</th></tr></thead>
+    <tbody>
+      ${ratios.map(r => `<tr><td>${r.label}</td><td class="b">${r.value}</td><td style="color:#6B7280">${r.benchmark}</td><td><span class="badge ${r.good?"badge-done":"badge-pending"}">${r.good?"Within Range":"Needs Attention"}</span></td></tr>`).join("")}
+    </tbody>
+  </table>` : ""}
+
+  <div class="section-title">Documents Checklist (${readyCount}/${docs.length} Ready)</div>
+  ${docs.map(d => `
+  <div class="checklist-row ${d.done ? "done-row" : "pending-row"}">
+    <span style="color:${d.done?"#059669":"#9CA3AF"}">${d.done ? "✓" : "○"}</span>
+    <span>${d.doc}</span>
+    <span class="badge ${d.done ? "badge-done" : "badge-pending"}" style="margin-left:auto;">${d.done ? "Ready" : "Pending"}</span>
+  </div>`).join("")}
+
   ${improvements.length > 0 ? `
-  <div class="section">
-    <h2>Recommended Improvements</h2>
-    ${improvements.map((imp,i) => `
-    <div class="checklist-row pending-row" style="margin-bottom:6px">
-      <span style="font-weight:700;color:#2563EB;background:#EEF2FF;padding:2px 8px;border-radius:4px;font-size:11px">${i+1}</span>
-      <span>${imp}</span>
-    </div>`).join("")}
-  </div>` : ""}
- 
-  <div class="section">
-    <h2>Next Steps</h2>
-    <table>
-      <tbody>
-        <tr><td style="width:28px;font-size:18px;">1</td><td><strong>Complete pending documents</strong> — ${docs.filter(d=>!d.done).length} documents still needed before applying</td></tr>
-        <tr><td style="font-size:18px;">2</td><td><strong>Financial projections</strong> — CA-certified 3-year projections are required for most schemes</td></tr>
-        <tr><td style="font-size:18px;">3</td><td><strong>Connect with lender</strong> — Garima has a direct connection with SBI Startup Branch and can facilitate introduction</td></tr>
-        <tr><td style="font-size:18px;">4</td><td><strong>Submit application</strong> — Garima will prepare and review the complete package before submission</td></tr>
-      </tbody>
-    </table>
-  </div>
- 
-  <div class="disclaimer">
-    <strong>Disclaimer:</strong> This assessment is based on information provided by the client and is indicative in nature. Actual loan eligibility is subject to lender assessment, credit bureau checks, and applicable scheme criteria at the time of application. This report does not constitute a guarantee of loan approval.
-  </div>
- 
-  <div class="footer">
-    <span>Garima Agarwal | CA Membership: 160944 | IBBI/RV/14/2022/15038</span>
-    <span>agrgarima@gmail.com | Finzzup</span>
-  </div>
-</div>
-</body>
-</html>`;
+  <div class="section-title">Recommended Improvements</div>
+  ${improvements.map((imp,i) => `
+  <div class="checklist-row pending-row" style="margin-bottom:6px">
+    <span style="font-weight:700;color:#2563EB;background:#EEF2FF;padding:2px 8px;border-radius:4px;font-size:11px">${i+1}</span>
+    <span>${imp}</span>
+  </div>`).join("")}` : ""}
+
+  <div class="section-title">Next Steps</div>
+  <table>
+    <tbody>
+      <tr><td style="width:28px;font-weight:800;color:#2563EB;">1</td><td><strong>Complete pending documents</strong> — ${docs.filter(d=>!d.done).length} documents still needed before applying</td></tr>
+      <tr><td style="font-weight:800;color:#2563EB;">2</td><td><strong>Financial projections</strong> — CA-certified 3-year projections are required for most schemes</td></tr>
+      <tr><td style="font-weight:800;color:#2563EB;">3</td><td><strong>Connect with lender</strong> — Garima has a direct connection with SBI Startup Branch and can facilitate introduction</td></tr>
+      <tr><td style="font-weight:800;color:#2563EB;">4</td><td><strong>Submit application</strong> — Garima will prepare and review the complete package before submission</td></tr>
+    </tbody>
+  </table>
+
+  <div class="disc">This assessment is based on information provided by the client and is indicative in nature. Actual loan eligibility is subject to lender assessment, credit bureau checks, and applicable scheme criteria at the time of application. This report does not constitute a guarantee of loan approval.</div>
+  <div class="ftr"><span>Garima Agarwal | CA Membership: 160944 | agrgarima@gmail.com</span><span>Confidential — ${company}</span></div>
+</div></body></html>`;
 }
  
 // ─── LIVE DOCS HOOK for Pack Content components ──────────────────────────────
@@ -4420,6 +4621,11 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
       {tab === "monthly" && (
     <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+      <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+        <button style={DL_BTN} onClick={() => openPDF(generateMonthlyPnLPDF({ client, reportData, kpis }))}>
+          <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+        </button>
+      </div>
       {(reportData?.reportNote || reportData?.packNote) && (
         <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
           <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
@@ -4521,6 +4727,11 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateVariancePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           {reportData?.variance?.some(r => r.item && (r.budget || r.actual)) ? (<>
             <Card>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -4580,6 +4791,11 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
       {tab === "cash" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateCashHealthPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <MSMECFOPack data={data} reportData={reportData}/>
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
@@ -4605,7 +4821,12 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
             {tab === "workingcap" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateWorkingCapitalPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           {/* Question this tab answers */}
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.teal}10,${C.blue}06)`,
@@ -4744,7 +4965,12 @@ function MSMEPackContent({ reportData, kpis, client }) {
  
       {tab === "bankfin" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateBankFinPDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           {/* Question this tab answers */}
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.blue}10,${C.purple}06)`,
@@ -4902,9 +5128,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
         </div>
       )}
  
-      {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.teal}/>}
-      {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.teal}/>}
-      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.teal} client={client}/>}
+      {tab === "fundutil" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateFundUtilPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><FundUtilisation reportData={reportData} accentColor={C.teal}/></div>}
+      {tab === "verticalpnl" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVerticalAnalysisPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VerticalPnL reportData={reportData} accentColor={C.teal}/></div>}
+      {tab === "scenario" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateScenarioPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><ScenarioModelling reportData={reportData} accentColor={C.teal} client={client}/></div>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.teal} client={client}/> }
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.teal} client={client}/>}
  
@@ -4980,7 +5206,12 @@ function CorporatePackContent({ reportData, kpis, client }) {
  
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateMonthlyPnLPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
@@ -5109,6 +5340,11 @@ function CorporatePackContent({ reportData, kpis, client }) {
 
       {tab === "workingcap" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateWorkingCapitalPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}20` }}>
@@ -5199,6 +5435,11 @@ function CorporatePackContent({ reportData, kpis, client }) {
 
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateVariancePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           {reportData?.variance?.some(r => r.item && (r.budget || r.actual)) ? (<>
             <Card>
               <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
@@ -5258,7 +5499,12 @@ function CorporatePackContent({ reportData, kpis, client }) {
  
             {tab === "governance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateGovernancePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           {/* Question this tab answers */}
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
@@ -5382,7 +5628,12 @@ function CorporatePackContent({ reportData, kpis, client }) {
  
       {tab === "ipo" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateIPOPDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.purple}10,${C.blue}06)`,
             border:`1px solid ${C.purple}18` }}>
@@ -5481,9 +5732,9 @@ function CorporatePackContent({ reportData, kpis, client }) {
         </div>
       )}
  
-      {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.purple}/>}
-      {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.purple}/>}
-      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.purple} client={client}/>}
+      {tab === "fundutil" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateFundUtilPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><FundUtilisation reportData={reportData} accentColor={C.purple}/></div>}
+      {tab === "verticalpnl" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVerticalAnalysisPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VerticalPnL reportData={reportData} accentColor={C.purple}/></div>}
+      {tab === "scenario" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateScenarioPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><ScenarioModelling reportData={reportData} accentColor={C.purple} client={client}/></div>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.purple} client={client}/>}
  
@@ -6882,6 +7133,11 @@ function CFOPackContent({ reportData, client, kpis }) {
           This tab = Vertical P&L + cost analysis + Garima note. */}
       {tab === "monthly" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateMonthlyPnLPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           {/* FIXED: Garima Note — prominent at top, unique insight not in Overview */}
           <Card style={{ borderLeft:`3px solid #F59E0B`, background:"#FFFBF0", border:"1px solid #FDE68A" }}>
             <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
@@ -6946,6 +7202,11 @@ function CFOPackContent({ reportData, client, kpis }) {
  
       {tab === "workingcap" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateWorkingCapitalPDF({ client, reportData, kpis }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <div style={{ padding:"16px 20px", borderRadius:16,
             background:`linear-gradient(135deg,${C.blue}10,${C.teal}06)`,
             border:`1px solid ${C.blue}20` }}>
@@ -7037,6 +7298,11 @@ function CFOPackContent({ reportData, client, kpis }) {
       {/* Fundraise Readiness tab */}
       {tab === "variance" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateVariancePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <Card>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>Budget vs Actual{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : " — Current Month"}</div>
             <div style={{ fontSize:12, color:C.muted, fontFamily:F, marginBottom:16 }}>All figures in ₹L unless stated</div>
@@ -7105,7 +7371,12 @@ function CFOPackContent({ reportData, client, kpis }) {
  
       {tab === "uniteco" && (
         <div style={{ display:"flex", flexDirection:"column", gap:24 }}>
- 
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateUnitEcoPDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
+
           {/* Header */}
           <div style={{ padding:"18px 22px", borderRadius:16,
             background:`linear-gradient(135deg,${C.blue}10,${C.teal}08)`,
@@ -7293,6 +7564,11 @@ function CFOPackContent({ reportData, client, kpis }) {
  
       {tab === "fundraise" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateFundraisePDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <StartupCFOPack data={data} client={client} reportData={reportData}/>
           <div style={{ textAlign:"center" }}>
             <a href={WA} target="_blank" rel="noopener"
@@ -7564,9 +7840,9 @@ function CFOPackContent({ reportData, client, kpis }) {
         </div>
       )}
  
-      {tab === "fundutil" && <FundUtilisation reportData={reportData} accentColor={C.blue}/>}
-      {tab === "verticalpnl" && <VerticalPnL reportData={reportData} accentColor={C.blue}/>}
-      {tab === "scenario" && <ScenarioModelling reportData={reportData} accentColor={C.blue} client={client}/>}
+      {tab === "fundutil" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateFundUtilPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><FundUtilisation reportData={reportData} accentColor={C.blue}/></div>}
+      {tab === "verticalpnl" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVerticalAnalysisPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VerticalPnL reportData={reportData} accentColor={C.blue}/></div>}
+      {tab === "scenario" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateScenarioPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><ScenarioModelling reportData={reportData} accentColor={C.blue} client={client}/></div>}
       {tab === "spend" && <SpendIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
       {tab === "bizintel" && <BusinessIntelligence reportData={reportData} accentColor={C.blue} client={client}/>}
  
@@ -7933,6 +8209,139 @@ function Calendar() {
   );
 }
  
+// ─── ENGAGEMENT LETTER GENERATOR ─────────────────────────────────────────────
+function generateEngagementLetterHTML(client, details) {
+  const packLabel = { startup:"CFO Pack — Startup", msme:"CFO Pack — MSME", corporate:"CFO Pack — Corporate", uae:"CFO Pack — UAE" }[client?.client_pack] || "CFO Services";
+  const currency = client?.jurisdiction === "UAE" ? "AED" : "₹";
+  const isUAEClient = client?.jurisdiction === "UAE" || client?.jurisdiction === "Cross-Border";
+  const accentColor = isUAEClient ? "#00732F" : "#2563EB";
+  const gradient = isUAEClient ? "linear-gradient(135deg,#00732F,#0891B2)" : "linear-gradient(135deg,#1E3A8A,#2563EB)";
+
+  const scopeByPack = {
+    startup: ["Monthly P&L Review & Commentary","Cash Flow Planning & Monitoring","Investor Reporting Pack","Cap Table Advisory","AI-Powered CFO Brief (monthly)","Financial KPI Dashboard — Client Portal"],
+    msme: ["Monthly Management Accounts","P&L & Variance Analysis","Working Capital Management","GST / TDS Compliance Support","Business Benchmarking","AI-Powered CFO Brief (monthly)"],
+    corporate: ["Monthly Management Accounts","Board Pack Preparation","EBITDA Analysis & KPI Reporting","Strategic Financial Planning","Audit Support & Coordination","AI-Powered CFO Brief (monthly)"],
+    uae: ["Monthly Management Accounts","VAT Return Filing & Compliance","Corporate Tax Compliance (UAE CT)","Free Zone Compliance Documentation","QFZP Substance Advisory","AI-Powered CFO Brief (monthly)"],
+  };
+  const services = scopeByPack[client?.client_pack] || scopeByPack.msme;
+  const today = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
+  const refNo = `EL-${(client?.company||"CLT").slice(0,4).toUpperCase().replace(/\s/g,"")}-${new Date().getFullYear()}`;
+
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"/><title>Engagement Letter — ${client?.company}</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:Arial,sans-serif; color:#111827; background:#fff; }
+  .banner { background:${gradient}; padding:28px 40px; }
+  .banner-brand { font-size:24px; font-weight:900; color:#fff; letter-spacing:-0.03em; }
+  .banner-brand span { opacity:0.75; }
+  .banner-sub { font-size:11px; color:rgba(255,255,255,0.7); letter-spacing:0.12em; text-transform:uppercase; margin-top:3px; }
+  .body { padding:40px; }
+  .ref-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; }
+  .ref-label { font-size:11px; color:#6B7280; text-transform:uppercase; letter-spacing:0.08em; }
+  .ref-val { font-size:13px; color:#111827; font-weight:600; margin-top:2px; }
+  h1 { font-size:20px; font-weight:800; color:#111827; margin-bottom:20px; letter-spacing:-0.02em; }
+  .to-block { background:#F8FAFC; border:1px solid #E5E7EB; border-radius:10px; padding:16px 20px; margin-bottom:24px; }
+  .to-label { font-size:10px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px; }
+  .to-name { font-size:14px; font-weight:700; color:#111827; }
+  .to-company { font-size:13px; color:#374151; }
+  .to-email { font-size:12px; color:#6B7280; margin-top:2px; }
+  p { font-size:13px; color:#374151; line-height:1.75; margin-bottom:16px; }
+  h2 { font-size:14px; font-weight:700; color:${accentColor}; text-transform:uppercase; letter-spacing:0.08em; margin:28px 0 12px; border-bottom:2px solid ${accentColor}22; padding-bottom:6px; }
+  ul { margin:0 0 16px 18px; }
+  ul li { font-size:13px; color:#374151; line-height:1.8; }
+  table { width:100%; border-collapse:collapse; margin-bottom:16px; font-size:13px; }
+  th { background:#0F172A; color:#fff; padding:10px 14px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.07em; }
+  td { padding:10px 14px; border-bottom:1px solid #F1F5F9; color:#374151; }
+  tr:last-child td { border-bottom:none; }
+  .fee-row td { font-weight:700; color:#111827; font-size:14px; }
+  .sig-grid { display:grid; grid-template-columns:1fr 1fr; gap:40px; margin-top:40px; }
+  .sig-box { border-top:2px solid #E5E7EB; padding-top:12px; }
+  .sig-name { font-size:13px; font-weight:700; color:#111827; margin-top:32px; }
+  .sig-title { font-size:11px; color:#6B7280; margin-top:2px; }
+  .footer { background:#F8FAFC; border-top:1px solid #E5E7EB; padding:16px 40px; font-size:11px; color:#9CA3AF; display:flex; justify-content:space-between; margin-top:40px; }
+  @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
+</style></head><body>
+<div class="banner">
+  <div class="banner-brand">Finz<span>zup</span></div>
+  <div class="banner-sub">Your CFO · On Demand</div>
+</div>
+<div class="body">
+  <div class="ref-row">
+    <div>
+      <div class="ref-label">Reference</div>
+      <div class="ref-val">${refNo}</div>
+    </div>
+    <div style="text-align:right">
+      <div class="ref-label">Date</div>
+      <div class="ref-val">${today}</div>
+    </div>
+  </div>
+
+  <h1>Letter of Engagement</h1>
+
+  <div class="to-block">
+    <div class="to-label">Addressed To</div>
+    <div class="to-name">${client?.name || "—"}</div>
+    <div class="to-company">${client?.company || "—"}${client?.freezone ? ` · ${client.freezone}` : ""}</div>
+    <div class="to-email">${client?.email || ""}</div>
+  </div>
+
+  <p>Dear ${client?.name?.split(" ")[0] || "there"},</p>
+  <p>Thank you for engaging Finzzup Advisory for your financial management requirements. This letter sets out the terms and scope of our engagement.</p>
+
+  <h2>Scope of Services — ${packLabel}</h2>
+  <ul>
+    ${services.map(s => `<li>${s}</li>`).join("")}
+    ${details.additionalServices ? `<li>${details.additionalServices}</li>` : ""}
+  </ul>
+  <p style="font-size:12px;color:#6B7280">All deliverables are accessible through your dedicated Finzzup client portal. Reports are published monthly and you will be notified by email.</p>
+
+  <h2>Fee Structure</h2>
+  <table>
+    <thead><tr><th>Service</th><th>Frequency</th><th>Fee</th></tr></thead>
+    <tbody>
+      <tr><td>${packLabel}</td><td>Monthly</td><td>${currency} ${details.monthlyFee || "—"} + applicable taxes</td></tr>
+      ${details.additionalFee ? `<tr><td>${details.additionalFeeLabel || "Additional Services"}</td><td>As agreed</td><td>${currency} ${details.additionalFee}</td></tr>` : ""}
+      <tr class="fee-row"><td colspan="2"><strong>Total Monthly Retainer</strong></td><td><strong>${currency} ${details.monthlyFee || "—"}</strong></td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:12px;color:#6B7280">Invoices are raised on the 1st of each month and are due within 7 days. Continued access to the portal is subject to timely payment.</p>
+
+  <h2>Engagement Terms</h2>
+  <table>
+    <tbody>
+      <tr><td style="font-weight:600;width:180px">Start Date</td><td>${details.startDate || today}</td></tr>
+      <tr><td style="font-weight:600">Duration</td><td>${details.duration || "12 months (auto-renewing)"}</td></tr>
+      <tr><td style="font-weight:600">Notice Period</td><td>30 days written notice by either party</td></tr>
+      <tr><td style="font-weight:600">Governing Law</td><td>${isUAEClient ? "UAE (DIFC / applicable free zone regulations)" : "India — Arbitration & Conciliation Act, 1996"}</td></tr>
+    </tbody>
+  </table>
+
+  ${details.specialTerms ? `<h2>Special Terms</h2><p>${details.specialTerms}</p>` : ""}
+
+  <p>This engagement is subject to Finzzup Advisory's standard confidentiality obligations. All financial data shared will be held in strict confidence and not disclosed to third parties without your written consent.</p>
+
+  <div class="sig-grid">
+    <div class="sig-box">
+      <div class="sig-name">Garima Agarwal</div>
+      <div class="sig-title">CA · Virtual CFO · Finzzup Advisory LLP</div>
+      <div class="sig-title" style="margin-top:4px">garima@finzzup.org</div>
+    </div>
+    <div class="sig-box">
+      <div class="sig-name">${client?.name || "Authorised Signatory"}</div>
+      <div class="sig-title">${client?.company || ""}</div>
+      <div class="sig-title" style="margin-top:4px">Date: ___________________</div>
+    </div>
+  </div>
+</div>
+<div class="footer">
+  <span>Finzzup Advisory LLP · garima@finzzup.org · Confidential</span>
+  <span>${refNo} · ${today}</span>
+</div>
+</body></html>`;
+}
+
 // ─── DOWNLOAD UTILITIES ───────────────────────────────────────────────────────
 function downloadInvoicePDF(inv, client) {
   const html = `<!DOCTYPE html>
@@ -8527,6 +8936,7 @@ function MyDocuments({ client }) {
   };
  
   const fileIcon = (name, docType) => {
+    if (docType === "engagement_letter") return "ti-file-description";
     if (docType === "report") return "ti-chart-bar";
     const ext = name?.split(".").pop()?.toLowerCase();
     if (["pdf"].includes(ext))                    return "ti-file-type-pdf";
@@ -8632,31 +9042,43 @@ function MyDocuments({ client }) {
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
           {displayDocs.map((doc, i) => {
             const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
+            const isEL = doc.doc_type === "engagement_letter";
+            const rowBg = isEL ? "#F0FDF4" : byGarima ? `${C.blue}08` : C.bg;
+            const rowBorder = isEL ? "#00732F30" : byGarima ? C.blue+"25" : C.border;
+            const iconColor = isEL ? "#00732F" : byGarima ? C.blue : C.muted;
+            const iconBg = isEL ? "#00732F12" : byGarima ? `${C.blue}12` : `${C.muted}0A`;
+            const resolvedDocType = isEL ? "engagement_letter" : doc.file_url?.startsWith("data:text/html") ? "report" : null;
             return (
               <div key={doc.id || i} style={{ display:"flex", alignItems:"center",
                 justifyContent:"space-between", padding:"12px 14px", borderRadius:12,
-                background: byGarima ? `${C.blue}08` : C.bg,
-                border:`1px solid ${byGarima ? C.blue+"25" : C.border}`,
+                background: rowBg, border:`1px solid ${rowBorder}`,
                 flexWrap:"wrap", gap:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, flex:1, minWidth:0 }}>
                   <div style={{ width:38, height:38, borderRadius:10,
-                    background: byGarima ? `${C.blue}12` : `${C.muted}0A`,
+                    background: iconBg,
                     display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
-                    <i className={"ti " + fileIcon(doc.name, doc.file_url?.startsWith("data:text/html") ? "report" : null)}
-                      style={{ fontSize:18, color: byGarima ? C.blue : C.muted }}/>
+                    <i className={"ti " + fileIcon(doc.name, resolvedDocType)}
+                      style={{ fontSize:18, color: iconColor }}/>
                   </div>
                   <div style={{ minWidth:0 }}>
-                    <div title={doc.name} style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text,
-                      wordBreak:"break-word", lineHeight:1.4 }}>
-                      {doc.name}
+                    <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap" }}>
+                      <div title={doc.name} style={{ fontFamily:F, fontSize:13, fontWeight:600, color:C.text,
+                        wordBreak:"break-word", lineHeight:1.4 }}>
+                        {doc.name}
+                      </div>
+                      {isEL && (
+                        <span style={{ fontSize:10, fontWeight:700, color:"#00732F", background:"#DCFCE7",
+                          padding:"2px 8px", borderRadius:20, letterSpacing:"0.06em", textTransform:"uppercase" }}>
+                          Engagement Letter
+                        </span>
+                      )}
                     </div>
                     <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2, display:"flex", gap:8, flexWrap:"wrap" }}>
-                      <span>{doc.file_size}</span>
-                      <span>·</span>
+                      {doc.file_size && doc.file_size !== "—" && <><span>{doc.file_size}</span><span>·</span></>}
                       <span>{doc.created_at ? new Date(doc.created_at).toLocaleDateString("en-IN", { day:"numeric", month:"short", year:"numeric" }) : "—"}</span>
                       <span>·</span>
-                      <span style={{ color: byGarima ? C.blue : C.muted, fontWeight:600 }}>
-                        {byGarima ? "From Garima" : "You"}
+                      <span style={{ color: iconColor, fontWeight:600 }}>
+                        {isEL ? "From Garima · Sign & return" : byGarima ? "From Garima" : "You"}
                       </span>
                     </div>
                   </div>
@@ -8670,10 +9092,10 @@ function MyDocuments({ client }) {
                       : handleDownload(doc)
                     }
                     style={{ padding:"7px 14px", borderRadius:16,
-                      border:`1.5px solid ${C.blue}`, background:"transparent",
-                      color:C.blue, fontFamily:F, fontWeight:700, fontSize:12,
+                      border:`1.5px solid ${isEL ? "#00732F" : C.blue}`, background:"transparent",
+                      color: isEL ? "#00732F" : C.blue, fontFamily:F, fontWeight:700, fontSize:12,
                       cursor:"pointer", display:"flex", alignItems:"center", gap:5 }}>
-                    {doc.file_url?.startsWith("data:text/html") ? "View Report" : "⬇ Download"}
+                    {isEL ? "View & Sign" : doc.file_url?.startsWith("data:text/html") ? "View Report" : "⬇ Download"}
                   </button>
  
                   {/* Delete — only for files the client uploaded themselves */}
@@ -9269,6 +9691,11 @@ function CorporateTax({ client, reportData, initialTab }) {
  
       {tab === "qfzp" && (
         <div style={{ display:"flex", flexDirection:"column", gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+            <button style={DL_BTN} onClick={() => openPDF(generateQFZPPDF({ client, reportData }))}>
+              <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
+            </button>
+          </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
             <Card>
               <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:4 }}>Qualifying Income %</div>
@@ -13514,31 +13941,51 @@ function UAECFOReport({ client, reportData, kpis }) {
             </div>
           )}
  
-          {/* ── WORKING CAPITAL (redirect to dedicated page) ── */}
-          {tab === "cashflow" && <CashFlow client={client} reportData={reportData} liveInvoices={[]}/>}
+          {/* ── CASH FLOW + VAT REPORT (combined for UAE) ── */}
+          {tab === "cashflow" && (
+            <div>
+              <div style={{ display:"flex", justifyContent:"flex-end", gap:8, marginBottom:8, flexWrap:"wrap" }}>
+                <button style={DL_BTN} onClick={() => openPDF(generateCashPDF({ client, reportData, kpis }))}>
+                  <i className="ti ti-download" style={{fontSize:13}}/> Cash Flow PDF
+                </button>
+                <button style={{...DL_BTN, background:"#F0FDF4", color:"#00732F", borderColor:"#00732F22"}}
+                  onClick={() => openPDF(generateVATPDF({ client, reportData }))}>
+                  <i className="ti ti-download" style={{fontSize:13}}/> VAT Report PDF
+                </button>
+              </div>
+              <CashFlow client={client} reportData={reportData} liveInvoices={[]}/>
+              <div style={{ marginTop:24, borderTop:"2px solid #E5E7EB", paddingTop:20 }}>
+                <div style={{ fontFamily:"'Inter',sans-serif", fontSize:11, fontWeight:700,
+                  color:"#00732F", textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:14 }}>
+                  VAT Compliance — {reportData?.monthLabel || "Current Period"}
+                </div>
+                <VATDashboard client={client} reportData={reportData}/>
+              </div>
+            </div>
+          )}
  
-          {tab === "workingcap" && <WorkingCapital client={client} reportData={reportData}/>}
- 
+          {tab === "workingcap" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateWorkingCapitalPDF({ client, reportData, kpis }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><WorkingCapital client={client} reportData={reportData}/></div>}
+
           {/* ── AR MANAGEMENT ── */}
           {tab === "ar" && <WorkingCapital client={client} reportData={reportData}/>}
- 
+
           {/* ── VAT REPORT ── */}
-          {tab === "vatreport" && <VATDashboard client={client} reportData={reportData}/>}
- 
+          {tab === "vatreport" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVATPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VATDashboard client={client} reportData={reportData}/></div>}
+
           {/* ── REVENUE RECONCILIATION ── */}
-          {tab === "revrecon" && <RevenueReconciliation client={client} reportData={reportData}/>}
- 
+          {tab === "revrecon" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateRevReconPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><RevenueReconciliation client={client} reportData={reportData}/></div>}
+
           {/* ── RELATED PARTY REPORT ── */}
           {tab === "rpt" && <CorporateTax client={client} reportData={reportData} initialTab="rpt"/>}
- 
+
           {/* ── CONNECTED PERSONS ── */}
           {tab === "connected" && <CorporateTax client={client} reportData={reportData} initialTab="connected"/>}
- 
+
           {/* ── QFZP ── */}
-          {tab === "qfzp" && <QFZPModule client={client} reportData={reportData}/>}
- 
+          {tab === "qfzp" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateQFZPPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><QFZPModule client={client} reportData={reportData}/></div>}
+
           {/* ── VERTICAL ANALYSIS ── */}
-          {tab === "vertical" && <VerticalAnalysis client={client} reportData={reportData}/>}
+          {tab === "vertical" && <div><div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}><button style={DL_BTN} onClick={() => openPDF(generateVerticalAnalysisPDF({ client, reportData }))}><i className="ti ti-download" style={{fontSize:13}}/> Download PDF</button></div><VerticalAnalysis client={client} reportData={reportData}/></div>}
  
         </div>
       </PackLayout>
@@ -13734,7 +14181,7 @@ function Portal({ client, onLogout }) {
       if (actionRes.data) setLiveActions(actionRes.data);
       if (engRes.data)    setLiveEngagement(engRes.data);
       if (invRes.data)    setLiveInvoices(invRes.data);
-      if (rdRes.data?.data) { try { setLiveReportData(JSON.parse(rdRes.data.data)); } catch(e){} }
+      if (rdRes.data?.data) { try { setLiveReportData(typeof rdRes.data.data === "string" ? JSON.parse(rdRes.data.data) : rdRes.data.data); } catch(e){} }
       setDataLoading(false);
     };
     fetchAll();
@@ -14049,7 +14496,7 @@ function Portal({ client, onLogout }) {
           box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
         .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
-        .ns-kpi-tile .value { font-size:16px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
+        .ns-kpi-tile .value { font-size:13px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
         .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
  
         /* Badges */
@@ -15293,6 +15740,11 @@ function AdminPanel({ admin, onLogout }) {
   const [aiGenerating, setAiGen]    = useState(false);
   const [aiDraft, setAiDraft]       = useState(null);
   const [aiError, setAiError]       = useState("");
+  const [briefGenerating, setBriefGen] = useState(false);
+  const [briefSaved, setBriefSaved]    = useState(false);
+  const [elForm, setElForm] = useState({ monthlyFee:"", startDate:"", duration:"12 months (auto-renewing)", additionalServices:"", specialTerms:"" });
+  const [elPublishing, setElPublishing] = useState(false);
+  const [elPublished, setElPublished] = useState(false);
  
   // KPI edit state
   const [kpis, setKpis] = useState({
@@ -15635,7 +16087,70 @@ function AdminPanel({ admin, onLogout }) {
     }
     setLoading(false); setSaved(true); setTimeout(() => setSaved(false), 2500);
   };
- 
+
+  const generateAIBrief = async () => {
+    if (!selected || !reportData) return;
+    setBriefGen(true); setBriefSaved(false);
+    try {
+      const res = await fetch("/api/narrate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client: selected, reportData, kpis }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.narration) throw new Error(json.error || "Generation failed");
+      const updated = { ...reportData, aiNarration: json.narration, aiNarrationDate: new Date().toISOString() };
+      setReportData(updated);
+      const payload = { client_id: selected.id, data: JSON.stringify(updated), updated_at: new Date().toISOString() };
+      const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).maybeSingle();
+      if (existing?.id) await supabase.from("report_data").update(payload).eq("id", existing.id);
+      else await supabase.from("report_data").insert(payload);
+      setBriefSaved(true); setTimeout(() => setBriefSaved(false), 4000);
+      // Notify client their brief is ready (fire and forget)
+      if (selected.email) {
+        fetch("/api/email", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            type: "brief_ready",
+            to: selected.email,
+            name: selected.name,
+            company: selected.company || selected.name,
+            month: updated.monthLabel || new Date().toLocaleDateString("en-IN", { month:"long", year:"numeric" }),
+          }),
+        }).catch(() => {});
+      }
+    } catch (e) {
+      alert("AI Brief error: " + e.message);
+    }
+    setBriefGen(false);
+  };
+
+  const generateAndPublishEL = async () => {
+    if (!selected) return;
+    setElPublishing(true); setElPublished(false);
+    try {
+      const html = generateEngagementLetterHTML(selected, elForm);
+      const fileUrl = "data:text/html;charset=utf-8," + encodeURIComponent(html);
+      const company = selected.company || selected.name || "Client";
+      const docName = `Engagement Letter — ${company} — ${new Date().getFullYear()}.html`;
+      await supabase.from("documents").insert({
+        client_id: selected.id,
+        name: docName,
+        file_url: fileUrl,
+        file_size: "—",
+        doc_type: "engagement_letter",
+        uploaded_by: "garima",
+        created_at: new Date().toISOString(),
+      });
+      setElPublished(true);
+      setTimeout(() => setElPublished(false), 4000);
+    } catch (e) {
+      alert("Error publishing engagement letter: " + e.message);
+    }
+    setElPublishing(false);
+  };
+
   const addInvoice = async () => {
     if (!selected || !newInvoice.invoice_number || !newInvoice.amount) return;
     setLoading(true);
@@ -15673,6 +16188,17 @@ function AdminPanel({ admin, onLogout }) {
     const { data, error } = await supabase.from("clients").insert(newClient).select().single();
     if (error) { alert("Error: " + error.message); return; }
     setClients(prev => [data, ...prev]);
+    fetch("/api/email", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        type: "welcome",
+        to: newClient.email,
+        name: newClient.name,
+        company: newClient.company || newClient.name,
+        inviteCode: newClient.invite_code,
+      }),
+    }).catch(() => {});
     setNewClient({ name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both" });
     setTab("clients");
   };
@@ -15689,6 +16215,7 @@ function AdminPanel({ admin, onLogout }) {
     // ── Client Management ──
     { id:"clients",    icon:"ti-users", label:"All Clients",    group:"Clients"    },
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
+    { id:"eletter",    icon:"ti-file-description", label:"Engagement Letter", group:"Clients" },
     // ── India Client Data ──
     { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"Shared"     },
     { id:"kpis",       icon:"ti-chart-bar", label:"KPIs",           group:"India"      },
@@ -16513,6 +17040,74 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             </Card>
           )}
  
+          {/* ── ENGAGEMENT LETTER ── */}
+          {tab === "eletter" && (
+            <div style={{ maxWidth:700 }}>
+              {!selected ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+                </Card>
+              ) : (
+                <Card>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                    Engagement Letter — {selected.company || selected.name}
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:20, lineHeight:1.6 }}>
+                    Generate a signed engagement letter and publish it to the client's My Documents. The client can view and download it from their portal.
+                  </p>
+
+                  <AdminInput C={C} F={F} FM={FM} label={`Monthly Fee (${selected.jurisdiction==="UAE"?"AED":"₹"})`}
+                    val={elForm.monthlyFee} onChange={v=>setElForm(f=>({...f,monthlyFee:v}))}
+                    placeholder="e.g. 25000"/>
+                  <AdminInput C={C} F={F} FM={FM} label="Start Date"
+                    val={elForm.startDate} onChange={v=>setElForm(f=>({...f,startDate:v}))}
+                    placeholder={`e.g. ${new Date().toLocaleDateString("en-IN",{day:"numeric",month:"long",year:"numeric"})}`}/>
+                  <div style={{ marginBottom:14 }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>Duration</label>
+                    <select value={elForm.duration} onChange={e=>setElForm(f=>({...f,duration:e.target.value}))}
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none" }}>
+                      <option>12 months (auto-renewing)</option>
+                      <option>6 months</option>
+                      <option>Month-to-month</option>
+                      <option>Project basis</option>
+                    </select>
+                  </div>
+                  <AdminInput C={C} F={F} FM={FM} label="Additional Services (optional)"
+                    val={elForm.additionalServices} onChange={v=>setElForm(f=>({...f,additionalServices:v}))}
+                    placeholder="e.g. One-time valuation report, fundraise support"/>
+                  <div style={{ marginBottom:16 }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>Special Terms (optional)</label>
+                    <textarea value={elForm.specialTerms} rows={3}
+                      onChange={e=>setElForm(f=>({...f,specialTerms:e.target.value}))}
+                      placeholder="e.g. First month is a free trial. Quarterly reviews included."
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}/>
+                  </div>
+
+                  <div style={{ background:`${C.blue}08`, border:`1px solid ${C.blue}20`, borderRadius:10, padding:"12px 16px", marginBottom:20, fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7 }}>
+                    <strong style={{ color:C.blue }}>Pack scope auto-filled:</strong> Services listed in the letter are based on the client's pack type ({selected.client_pack}). The letter includes Finzzup branding, signature blocks, and formal terms.
+                  </div>
+
+                  <button onClick={generateAndPublishEL} disabled={elPublishing || !elForm.monthlyFee}
+                    style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"11px 22px",
+                      borderRadius:16, border:"none", cursor:(elPublishing||!elForm.monthlyFee)?"not-allowed":"pointer",
+                      background:(elPublishing||!elForm.monthlyFee)?C.bg2:"linear-gradient(135deg,#1E3A8A,#2563EB)",
+                      color:(elPublishing||!elForm.monthlyFee)?C.muted:"white",
+                      fontFamily:F, fontWeight:700, fontSize:13,
+                      boxShadow:(elPublishing||!elForm.monthlyFee)?"none":"0 2px 10px rgba(37,99,235,0.3)" }}>
+                    <i className="ti ti-file-description" style={{fontSize:14}}/>
+                    {elPublishing ? "Publishing…" : "Generate & Publish to Client Portal"}
+                  </button>
+                  {elPublished && (
+                    <span style={{ marginLeft:12, fontFamily:F, fontSize:12, color:C.blue, fontWeight:600 }}>
+                      ✅ Engagement letter saved to client's My Documents
+                    </span>
+                  )}
+                </Card>
+              )}
+            </div>
+          )}
+
           {/* ── CSV IMPORT ── */}
           {tab === "import" && !selected && (
             <div style={{ textAlign:"center", padding:"48px 24px", color:C.muted, fontFamily:F }}>
@@ -17965,6 +18560,34 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                 </Card>}
  
                 {reportData && <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
+                {reportData && (
+                  <div style={{ marginTop:12 }}>
+                    <button onClick={generateAIBrief} disabled={briefGenerating}
+                      style={{ display:"inline-flex", alignItems:"center", gap:8,
+                        padding:"11px 20px", borderRadius:16, border:"none", cursor: briefGenerating ? "not-allowed" : "pointer",
+                        background: briefGenerating ? C.bg2 : "linear-gradient(135deg,#7C3AED,#2563EB)",
+                        color: briefGenerating ? C.muted : "white", fontFamily:F, fontWeight:700, fontSize:13,
+                        boxShadow: briefGenerating ? "none" : "0 2px 10px rgba(124,58,237,0.3)" }}>
+                      <i className="ti ti-sparkles" style={{fontSize:14}}/>
+                      {briefGenerating ? "Generating AI Brief…" : "Generate AI CFO Brief"}
+                    </button>
+                    {briefSaved && <span style={{ marginLeft:12, fontFamily:F, fontSize:12, color:"#7C3AED", fontWeight:600 }}>✅ AI Brief saved to client portal</span>}
+                    {reportData?.aiNarration && !briefGenerating && (
+                      <div style={{ marginTop:14, padding:"14px 16px", borderRadius:12,
+                        background:"#F5F3FF", border:"1.5px solid #DDD6FE" }}>
+                        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:"#7C3AED",
+                          textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
+                          AI CFO Brief — visible to client
+                        </div>
+                        <div style={{ fontFamily:F, fontSize:13, color:"#1E1B4B", lineHeight:1.8,
+                          whiteSpace:"pre-wrap" }}>{reportData.aiNarration}</div>
+                        <div style={{ fontFamily:F, fontSize:11, color:"#9CA3AF", marginTop:8 }}>
+                          Generated {reportData.aiNarrationDate ? new Date(reportData.aiNarrationDate).toLocaleString("en-IN") : "recently"}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>)}
             </div>
           )}
