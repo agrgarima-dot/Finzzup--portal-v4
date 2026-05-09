@@ -625,10 +625,36 @@ function Login({ onLogin }) {
             lineHeight:1.25, marginBottom:16, letterSpacing:"-0.02em" }}>
             Your CFO.<br/>On demand.
           </div>
-          <div style={{ fontFamily:F, fontSize:13, color:"rgba(255,255,255,0.55)", lineHeight:1.7, marginBottom:32 }}>
+          <div style={{ fontFamily:F, fontSize:13, color:"rgba(255,255,255,0.55)", lineHeight:1.7, marginBottom:20 }}>
             Real-time financial visibility, AI-powered<br/>
             analysis, and expert CFO guidance — all in<br/>
             one secure portal.
+          </div>
+          {/* Instagram reel */}
+          <div style={{ marginBottom:20 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:"rgba(255,255,255,0.35)",
+              textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:10, fontFamily:F }}>
+              See it in action
+            </div>
+            <div style={{ display:"flex", justifyContent:"center" }}>
+              <div style={{ width:232, borderRadius:14, overflow:"hidden",
+                boxShadow:"0 8px 24px rgba(0,0,0,0.4)", flexShrink:0 }}>
+                <iframe
+                  src="https://www.instagram.com/reel/DXmVee8jI1z/embed/"
+                  title="Finzzup portal demo reel"
+                  style={{ border:"none", width:232, height:412, display:"block" }}
+                  allowFullScreen
+                  loading="lazy"
+                />
+              </div>
+            </div>
+            <a href="https://www.instagram.com/reel/DXmVee8jI1z/" target="_blank" rel="noopener noreferrer"
+              style={{ display:"flex", alignItems:"center", gap:5, marginTop:8,
+                fontSize:11, color:"rgba(255,255,255,0.35)", fontFamily:F,
+                textDecoration:"none", justifyContent:"center" }}>
+              <i className="ti ti-brand-instagram" style={{ fontSize:13 }}/>
+              Watch on Instagram
+            </a>
           </div>
           {/* Trust strip */}
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
