@@ -1263,81 +1263,32 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const displayNote  = uaeClient
     ? (reportData?.uaeGarimaNote || "Q1 2026 closed strongly. Review priorities in your CFO Report.")
     : (aiNarration || garimaNote || PACK_CONFIG[ovPack]?.garimaNote || PACK_CONFIG.startup.garimaNote);
- 
-  const hour     = new Date().getHours();
-  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
- 
+
+  const hour      = new Date().getHours();
+  const greeting  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const accentColor = uaeClient ? "#00732F" : C.blue;
+
   const healthScore = reportData?.healthScore || 72;
   const healthColor = healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
   const healthLabel = healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
- 
-  // ── KPI 1 (primary — revenue or AED revenue) ──────────────────────────────
-  const primaryKpi  = displayKpis[0] || {};
-  const secondaryKpi = displayKpis[1] || {};
-  const tertiaryKpi  = displayKpis[2] || {};
- 
-  // ── AR aging (from invoices or reportData) ────────────────────────────────
-  const wc = reportData?.workingCapital || {};
-  const arBuckets = [
-    { label:"Current",  val: Number(wc.ar0_30   || reportData?.ar0to30   || 0), color: C.green  },
-    { label:"31–60d",   val: Number(wc.ar31_60  || reportData?.ar31to60  || 0), color: C.amber  },
-    { label:"61–90d",   val: Number(wc.ar61_90  || reportData?.ar61to90  || 0), color: C.orange || "#F97316" },
-    { label:"90d+",     val: Number(wc.ar90plus || reportData?.ar90plus  || 0), color: C.red    },
-  ];
-  const arTotal = arBuckets.reduce((s,b) => s+b.val, 0);
-  const hasAR   = arTotal > 0;
- 
-  // ── Recent invoices ───────────────────────────────────────────────────────
-  const recentInv = (invoices || []).slice(0, 5);
- 
-  // ── Cashflow sparkline data ───────────────────────────────────────────────
-  const cfData = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
-  const cfVals = cfData.map(m => {
-    const s = String(m.actual || m.forecast || "0").replace(/[^0-9.-]/g,"");
-    return parseFloat(s) || 0;
-  });
-  const cfMax  = Math.max(...cfVals, 1);
-  const cfMin  = Math.min(...cfVals, 0);
-  const cfRange = cfMax - cfMin || 1;
-  const sparkH = 40, sparkW = 140;
- 
-  // ── P&L summary rows ─────────────────────────────────────────────────────
-  const pl = reportData?.pl || {};
-  const plRows = uaeClient ? [
-    { label:"Revenue",       curr: pl.revenue?.actual    || "—", prev: pl.revenue?.prev    || "—" },
-    { label:"Gross Profit",  curr: pl.grossProfit?.actual || "—", prev: pl.grossProfit?.prev || "—" },
-    { label:"EBITDA",        curr: pl.ebitda?.actual      || "—", prev: pl.ebitda?.prev      || "—" },
-    { label:"Net Profit",    curr: pl.pat?.actual         || "—", prev: pl.pat?.prev         || "—" },
-  ] : [
-    { label:"Revenue",       curr: pl.revenue?.actual    || "—", prev: pl.revenue?.prev    || "—" },
-    { label:"Gross Profit",  curr: pl.grossProfit?.actual || "—", prev: pl.grossProfit?.prev || "—" },
-    { label:"EBITDA",        curr: pl.ebitda?.actual      || "—", prev: pl.ebitda?.prev      || "—" },
-    { label:"PAT",           curr: pl.pat?.actual         || "—", prev: pl.pat?.prev         || "—" },
-  ];
- 
-  const accentColor = uaeClient ? "#00732F" : C.blue;
 
-  // ── Proactive alerts ───────────────────────────────────────────────────────
+  // ── Proactive alerts ──────────────────────────────────────────────────────
   const [dismissedAlerts, setDismissedAlerts] = React.useState(new Set());
   const proAlerts = React.useMemo(() => {
     if (isDemo || !liveKpis) return [];
     const out = [];
-    // Cash runway
     const runwayKpi = (kpis||[]).find(k => k.label?.toLowerCase().includes("runway"));
     if (runwayKpi?.value && runwayKpi.value !== "—") {
       const months = parseFloat(String(runwayKpi.value).replace(/[^0-9.]/g,""));
       if (!isNaN(months) && months < 3)
         out.push({ id:"runway-critical", severity:"critical", icon:"ti-flame",
           title:`Cash runway critical — ${runwayKpi.value} remaining`,
-          sub:"Immediate action required. Review burn rate and explore bridge options.",
-          page:"cashflow" });
+          sub:"Immediate action required. Review burn rate and explore bridge options.", page:"cashflow" });
       else if (!isNaN(months) && months < 6)
         out.push({ id:"runway-low", severity:"high", icon:"ti-alert-circle",
           title:`Cash runway below 6 months — ${runwayKpi.value}`,
-          sub:"Start fundraising conversations or reduce monthly burn.",
-          page:"cashflow" });
+          sub:"Start fundraising conversations or reduce monthly burn.", page:"cashflow" });
     }
-    // UAE VAT due
     if (uaeClient && liveReportData?.vat?.pendingReturns) {
       const today = new Date();
       (liveReportData.vat.pendingReturns || []).forEach(r => {
@@ -1351,13 +1302,10 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         }
       });
     }
-    // Low health score
-    const score = reportData?.healthScore;
-    if (score && score < 50)
+    if (reportData?.healthScore && reportData.healthScore < 50)
       out.push({ id:"health-low", severity:"high", icon:"ti-heartbeat",
-        title:`Financial health score low: ${score}/100`,
-        sub:"Multiple KPIs are below benchmark. Review the dashboard.",
-        page:"dashboard" });
+        title:`Financial health score low: ${reportData.healthScore}/100`,
+        sub:"Multiple KPIs are below benchmark. Review the dashboard.", page:"dashboard" });
     return out.filter(a => !dismissedAlerts.has(a.id));
   }, [isDemo, liveKpis, kpis, liveReportData, reportData, uaeClient, dismissedAlerts]);
 
@@ -1365,74 +1313,66 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
     ? { background:"#FFF1F0", border:"1px solid #FCA5A5", color:C.red }
     : { background:"#FFFBEB", border:"1px solid #FCD34D", color:C.amber };
 
-  // ── Section digest data ─────────────────────────────────────────────────────
-  const latestCF = cfData.length > 0 ? cfData[cfData.length - 1] : null;
-  const cashVal  = latestCF ? (latestCF.actual || latestCF.forecast || "—") : (displayKpis.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—");
-  const pendingCount = pendingActions.length;
-  const checklistItems = reportData?.checklist || [];
-  const checkDone = checklistItems.filter(c => c.done || c.status === "done").length;
-  const unpaidInv = (invoices||[]).filter(i => i.status === "unpaid").length;
-  const wc2 = reportData?.workingCapital || {};
-  const debtorDays = wc2.debtorDays || wc2.debtor_days || null;
-  const vatStatus = reportData?.vat?.filingStatus || null;
+  // ── Data ──────────────────────────────────────────────────────────────────
+  const wc = reportData?.workingCapital || {};
+  const pl = reportData?.pl || {};
 
-  const digestCards = [
-    {
-      icon: "ti-trending-up",
-      label: "P&L",
-      value: pl.revenue?.actual || "—",
-      sub: `Net margin: ${pl.netMargin?.actual || "—"}`,
-      color: C.blue,
-      page: "dashboard",
-    },
-    {
-      icon: "ti-building-bank",
-      label: "Cash Position",
-      value: cashVal,
-      sub: latestCF?.month ? `as of ${latestCF.month}` : "latest",
-      color: C.green,
-      page: "cashflow",
-    },
-    {
-      icon: "ti-checkbox",
-      label: "Action Items",
-      value: `${pendingCount} pending`,
-      sub: highPriority.length > 0 ? `${highPriority.length} high priority` : "No urgent items",
-      color: highPriority.length > 0 ? C.red : C.green,
-      page: "actions",
-    },
-    uaeClient ? {
-      icon: "ti-file-invoice",
-      label: "VAT Status",
-      value: vatStatus || (reportData?.vat?.vatRegistered ? "Registered" : "—"),
-      sub: reportData?.vat?.trnNumber ? `TRN: ${reportData.vat.trnNumber}` : "Check VAT tab",
-      color: "#00732F",
-      page: "uaetax",
-    } : {
-      icon: "ti-shield-check",
-      label: "Compliance",
-      value: checklistItems.length > 0 ? `${checkDone}/${checklistItems.length} done` : "—",
-      sub: checklistItems.length > 0 ? (checkDone === checklistItems.length ? "All complete" : `${checklistItems.length - checkDone} pending`) : "No items",
-      color: checkDone === checklistItems.length ? C.green : C.amber,
-      page: "compliance",
-    },
-    {
-      icon: "ti-briefcase",
-      label: "Working Capital",
-      value: debtorDays ? `${debtorDays}d` : (wc2.currentRatio ? `${wc2.currentRatio}x` : "—"),
-      sub: debtorDays ? "Debtor days" : (wc2.currentRatio ? "Current ratio" : "See W/C tab"),
-      color: C.purple,
-      page: "myreport",
-    },
-    {
-      icon: "ti-receipt",
-      label: "Invoices",
-      value: unpaidInv > 0 ? `${unpaidInv} unpaid` : "All paid",
-      sub: `${(invoices||[]).length} total invoices`,
-      color: unpaidInv > 0 ? C.amber : C.green,
-      page: "invoices",
-    },
-  ].filter(Boolean);
+  // Cashflow
+  const cfRaw  = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+  const cfData = cfRaw.map(m => {
+    const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
+    return { name: m.month, Actual: parse(m.actual)||null, Forecast: parse(m.forecast)||null };
+  });
+
+  // AR aging buckets (aggregate)
+  const arBuckets = [
+    { label:"Current (0–30d)",  val: Number(wc.ar0_30   || reportData?.ar0to30   || 0), color: C.green  },
+    { label:"31–60 days",       val: Number(wc.ar31_60  || reportData?.ar31to60  || 0), color: C.amber  },
+    { label:"61–90 days",       val: Number(wc.ar61_90  || reportData?.ar61to90  || 0), color: "#F97316" },
+    { label:"90+ days",         val: Number(wc.ar90plus || reportData?.ar90plus  || 0), color: C.red    },
+  ];
+  const arTotal = arBuckets.reduce((s,b) => s+b.val, 0);
+
+  // AP aging — derive from apSchedule by overdue/upcoming/track buckets
+  const apRows  = (wc.apSchedule || []);
+  const apTotal = apRows.reduce((s,r) => s + Number(r.amount||0), 0);
+  const apOverdue  = apRows.filter(r => r.priority === "Overdue").reduce((s,r) => s+Number(r.amount||0), 0);
+  const apUpcoming = apRows.filter(r => r.priority === "Upcoming").reduce((s,r) => s+Number(r.amount||0), 0);
+  const apOnTrack  = apRows.filter(r => r.priority === "On Track").reduce((s,r) => s+Number(r.amount||0), 0);
+  const apBuckets  = [
+    { label:"Overdue",   val: apOverdue,  color: C.red   },
+    { label:"Upcoming",  val: apUpcoming, color: C.amber },
+    { label:"On Track",  val: apOnTrack,  color: C.green },
+  ].filter(b => b.val > 0);
+
+  // Top 5 clients — from arAging rows sorted by total AR
+  const arAging = wc.arAging || [];
+  const top5Clients = [...arAging]
+    .map(r => ({ name: r.customer, val: Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0) }))
+    .filter(r => r.val > 0)
+    .sort((a,b) => b.val - a.val)
+    .slice(0,5);
+  const clientMax = Math.max(...top5Clients.map(c => c.val), 1);
+
+  // Top 5 vendors — from apSchedule sorted by amount
+  const top5Vendors = [...apRows]
+    .filter(r => Number(r.amount||0) > 0)
+    .sort((a,b) => Number(b.amount||0) - Number(a.amount||0))
+    .slice(0,5)
+    .map(r => ({ name: r.supplier, val: Number(r.amount||0) }));
+  const vendorMax = Math.max(...top5Vendors.map(v => v.val), 1);
+
+  // Invoice status
+  const paidInv   = (invoices||[]).filter(i => i.status === "paid").length;
+  const unpaidInv = (invoices||[]).filter(i => i.status === "unpaid").length;
+  const totalInv  = (invoices||[]).length;
+  const paidPct   = totalInv > 0 ? Math.round((paidInv/totalInv)*100) : 0;
+
+  // Connected persons
+  const connPersons = (reportData?.connectedPersonsAdmin || []).filter(p => p?.name);
+
+  const currSym = uaeClient ? "AED " : "₹";
+  const fmtVal  = v => uaeClient ? fmtAED(v) : fmtINR(v);
 
   return (
     <div className="ns-page">
@@ -1448,58 +1388,392 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           {highPriority.length > 0 && (
-            <span className="ns-badge red">
-              <i className="ti ti-alert-triangle" style={{ fontSize:11 }}/> {highPriority.length} High Priority
-            </span>
+            <span className="ns-badge red"><i className="ti ti-alert-triangle" style={{ fontSize:11 }}/> {highPriority.length} High Priority</span>
           )}
           <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
-            Health Score: {healthScore}/100 — {healthLabel}
+            Health: {healthScore}/100 — {healthLabel}
           </span>
         </div>
       </div>
 
-      {/* ── Proactive alert banners ── */}
+      {/* ── Alert banners ── */}
       {proAlerts.map(alert => (
-        <div key={alert.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 16px",
-          borderRadius:9, ...severityStyle(alert.severity) }}>
+        <div key={alert.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 16px", borderRadius:9, ...severityStyle(alert.severity) }}>
           <i className={"ti " + alert.icon} style={{ fontSize:18, flexShrink:0 }}/>
           <div style={{ flex:1 }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13 }}>{alert.title}</div>
             <div style={{ fontFamily:F, fontSize:12, opacity:0.8, marginTop:1 }}>{alert.sub}</div>
           </div>
-          <button onClick={() => setPage(alert.page)}
-            style={{ padding:"5px 12px", borderRadius:6, border:"1px solid currentColor",
-              background:"transparent", color:"inherit", fontFamily:F, fontSize:12,
-              fontWeight:700, cursor:"pointer", flexShrink:0 }}>
-            View →
-          </button>
-          <button onClick={() => setDismissedAlerts(s => new Set([...s, alert.id]))}
-            style={{ padding:"4px 8px", borderRadius:6, border:"none",
-              background:"rgba(0,0,0,0.06)", color:"inherit", fontFamily:F,
-              fontSize:13, cursor:"pointer", flexShrink:0, lineHeight:1 }}>
-            ×
-          </button>
+          <button onClick={() => setPage(alert.page)} style={{ padding:"5px 12px", borderRadius:6, border:"1px solid currentColor", background:"transparent", color:"inherit", fontFamily:F, fontSize:12, fontWeight:700, cursor:"pointer", flexShrink:0 }}>View →</button>
+          <button onClick={() => setDismissedAlerts(s => new Set([...s, alert.id]))} style={{ padding:"4px 8px", borderRadius:6, border:"none", background:"rgba(0,0,0,0.06)", color:"inherit", fontFamily:F, fontSize:13, cursor:"pointer", flexShrink:0, lineHeight:1 }}>×</button>
         </div>
       ))}
 
-      {/* ── Section digest ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }}
-        className="ov-digest">
-        <style>{`.ov-digest{grid-template-columns:repeat(3,1fr)!important}@media(max-width:640px){.ov-digest{grid-template-columns:repeat(2,1fr)!important}}`}</style>
-        {digestCards.map((card, i) => (
-          <div key={i} onClick={() => setPage(card.page)}
+      {/* ── AI CFO Brief ── */}
+      <div className="ns-panel" style={{ borderLeft:`4px solid ${accentColor}` }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px 0", flexWrap:"wrap", gap:8 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:accentColor }}>
+            CFO Brief — {reportData?.monthLabel || "Current Period"}
+          </div>
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            {aiNarration && (
+              <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"2px 8px", borderRadius:20, background:"#F5F3FF", border:"1px solid #DDD6FE", fontFamily:F, fontSize:10, fontWeight:700, color:"#7C3AED" }}>✦ AI-assisted</span>
+            )}
+            <button onClick={() => setPage("myreport")} style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${accentColor}`, background:"transparent", color:accentColor, fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>Full Report →</button>
+          </div>
+        </div>
+        <div style={{ padding:"14px 18px" }}>
+          <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.85, margin:0, whiteSpace: aiNarration ? "pre-wrap" : "normal" }}>{displayNote}</p>
+        </div>
+      </div>
+
+      {/* ── Cash Flow Story ── */}
+      {cfData.length > 0 && (
+        <div className="ns-panel">
+          <div className="ns-panel-header">
+            <h3>Cash Flow Trend</h3>
+            <span className="ns-label">Actual vs Forecast</span>
+          </div>
+          <div style={{ height:200, padding:"8px 0 4px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={cfData} margin={{ top:5, right:12, left:0, bottom:0 }}>
+                <defs>
+                  <linearGradient id="cfGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor={accentColor} stopOpacity={0.18}/>
+                    <stop offset="95%" stopColor={accentColor} stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false}/>
+                <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#94A3B8" }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize:9, fill:"#94A3B8" }} axisLine={false} tickLine={false} width={36}/>
+                <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, borderRadius:8, border:"1px solid #E5E7EB" }}/>
+                <Area type="monotone" dataKey="Actual" stroke={accentColor} strokeWidth={2.5} fill="url(#cfGrad)" connectNulls={false} dot={{ fill:accentColor, r:3, strokeWidth:0 }}/>
+                <Area type="monotone" dataKey="Forecast" stroke="#7C3AED" strokeWidth={2} fill="none" strokeDasharray="5 4" connectNulls={false} dot={{ fill:"#7C3AED", r:3, strokeWidth:0 }}/>
+                <Legend iconType="line" iconSize={12} wrapperStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, paddingTop:6 }}/>
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
+
+      {/* ── AR Aging + Payables Aging row ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }} className="ov-aging-row">
+        <style>{`.ov-aging-row{grid-template-columns:1fr 1fr!important}@media(max-width:580px){.ov-aging-row{grid-template-columns:1fr!important}}`}</style>
+
+        {/* AR Aging */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>A/R Aging</h3>
+            {arTotal > 0 && <span className="ns-label" style={{ fontFamily:FM }}>{currSym}{arTotal.toLocaleString()}</span>}
+          </div>
+          {arTotal === 0
+            ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
+                <i className="ti ti-receipt" style={{ fontSize:28, color:C.dim, display:"block", marginBottom:6 }}/>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>No receivables data</div>
+              </div>
+            : <div style={{ padding:"12px 18px 16px" }}>
+                {arBuckets.map((b,i) => {
+                  const pct = arTotal > 0 ? (b.val/arTotal*100) : 0;
+                  return (
+                    <div key={i} style={{ marginBottom:11 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                        <span style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:500 }}>{b.label}</span>
+                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
+                          {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400, fontFamily:F }}>({pct.toFixed(0)}%)</span>
+                        </span>
+                      </div>
+                      <div style={{ height:6, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10, transition:"width 0.5s ease" }}/>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+          }
+        </div>
+
+        {/* Payables Aging */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>Payables Status</h3>
+            {apTotal > 0 && <span className="ns-label" style={{ fontFamily:FM }}>{currSym}{apTotal.toLocaleString()}</span>}
+          </div>
+          {apTotal === 0
+            ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
+                <i className="ti ti-building-bank" style={{ fontSize:28, color:C.dim, display:"block", marginBottom:6 }}/>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>No payables data</div>
+              </div>
+            : <div style={{ padding:"12px 18px 16px" }}>
+                {apBuckets.map((b,i) => {
+                  const pct = apTotal > 0 ? (b.val/apTotal*100) : 0;
+                  return (
+                    <div key={i} style={{ marginBottom:11 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
+                        <span style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:500 }}>{b.label}</span>
+                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
+                          {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400, fontFamily:F }}>({pct.toFixed(0)}%)</span>
+                        </span>
+                      </div>
+                      <div style={{ height:6, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10, transition:"width 0.5s ease" }}/>
+                      </div>
+                    </div>
+                  );
+                })}
+                {/* Top vendors mini list */}
+                {apRows.slice(0,3).map((r,i) => {
+                  const ov = r.priority === "Overdue";
+                  return (
+                    <div key={i} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                      padding:"6px 0", borderTop:`1px solid ${C.border}`, marginTop: i===0 ? 8:0 }}>
+                      <span style={{ fontFamily:F, fontSize:11, color:C.text, flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.supplier}</span>
+                      <div style={{ display:"flex", gap:6, alignItems:"center", flexShrink:0, marginLeft:8 }}>
+                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:ov?C.red:C.text }}>{currSym}{Number(r.amount||0).toLocaleString()}</span>
+                        <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:20,
+                          background:ov?"#FEF2F2":r.priority==="Upcoming"?"#FFFBEB":"#ECFDF5",
+                          color:ov?C.red:r.priority==="Upcoming"?C.amber:C.green }}>{r.priority}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+          }
+        </div>
+      </div>
+
+      {/* ── Top 5 Clients + Top 5 Vendors row ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }} className="ov-top5-row">
+        <style>{`.ov-top5-row{grid-template-columns:1fr 1fr!important}@media(max-width:580px){.ov-top5-row{grid-template-columns:1fr!important}}`}</style>
+
+        {/* Top 5 Clients */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>Top Clients by A/R</h3>
+            <span className="ns-badge blue">{top5Clients.length} clients</span>
+          </div>
+          {top5Clients.length === 0
+            ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
+                <i className="ti ti-users" style={{ fontSize:28, color:C.dim, display:"block", marginBottom:6 }}/>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>Add AR aging data to see clients</div>
+              </div>
+            : <div style={{ padding:"10px 18px 14px" }}>
+                {top5Clients.map((c,i) => {
+                  const pct = clientMax > 0 ? (c.val/clientMax*100) : 0;
+                  const colors = [C.blue, C.purple, "#0EA5E9", "#10B981", "#F59E0B"];
+                  return (
+                    <div key={i} style={{ marginBottom:10 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                        <span style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</span>
+                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:colors[i], flexShrink:0, marginLeft:8 }}>{fmtVal(c.val)}</span>
+                      </div>
+                      <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:colors[i], borderRadius:10, transition:"width 0.6s ease" }}/>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+          }
+        </div>
+
+        {/* Top 5 Vendors */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>Top Vendors by Spend</h3>
+            <span className="ns-badge" style={{ background:"#FFF7ED", color:C.amber, border:"1px solid #FED7AA" }}>{top5Vendors.length} vendors</span>
+          </div>
+          {top5Vendors.length === 0
+            ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
+                <i className="ti ti-truck" style={{ fontSize:28, color:C.dim, display:"block", marginBottom:6 }}/>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>Add AP schedule data to see vendors</div>
+              </div>
+            : <div style={{ padding:"10px 18px 14px" }}>
+                {top5Vendors.map((v,i) => {
+                  const pct = vendorMax > 0 ? (v.val/vendorMax*100) : 0;
+                  const colors = [C.amber, "#F97316", "#EF4444", "#D97706", "#92400E"];
+                  return (
+                    <div key={i} style={{ marginBottom:10 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                        <span style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v.name}</span>
+                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:colors[i], flexShrink:0, marginLeft:8 }}>{fmtVal(v.val)}</span>
+                      </div>
+                      <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:colors[i], borderRadius:10, transition:"width 0.6s ease" }}/>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+          }
+        </div>
+      </div>
+
+      {/* ── Invoice Status + Connected Persons row ── */}
+      <div style={{ display:"grid", gridTemplateColumns:`${isMobile?"1fr":"180px 1fr"}`, gap:14 }}>
+
+        {/* Invoice donut-style status */}
+        <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:18 }}>
+          <div className="ns-label" style={{ marginBottom:12 }}>Invoice Status</div>
+          {/* Circular progress */}
+          <svg width="90" height="90" viewBox="0 0 90 90">
+            <circle cx="45" cy="45" r="36" stroke="#F3F4F6" strokeWidth="9" fill="none"/>
+            <circle cx="45" cy="45" r="36" stroke={C.green} strokeWidth="9" fill="none"
+              strokeDasharray={`${(paidPct/100)*226} 226`}
+              strokeDashoffset="56.5"
+              strokeLinecap="round"
+              style={{ transition:"stroke-dasharray 0.6s ease" }}/>
+            <text x="45" y="43" textAnchor="middle" fontSize="16" fontWeight="900" fill={C.text} fontFamily="monospace">{paidPct}%</text>
+            <text x="45" y="57" textAnchor="middle" fontSize="9" fill={C.muted} fontFamily="Inter,sans-serif">paid</text>
+          </svg>
+          <div style={{ marginTop:10, display:"flex", gap:10, flexWrap:"wrap", justifyContent:"center" }}>
+            <div style={{ fontFamily:F, fontSize:11, color:C.green, fontWeight:700 }}>{paidInv} paid</div>
+            <div style={{ fontFamily:F, fontSize:11, color:C.amber, fontWeight:700 }}>{unpaidInv} unpaid</div>
+          </div>
+          <button onClick={() => setPage("invoices")}
+            style={{ marginTop:10, padding:"5px 14px", borderRadius:7, border:`1px solid ${C.blue}`,
+              background:"transparent", color:C.blue, fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>
+            View all →
+          </button>
+        </div>
+
+        {/* Connected Persons */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>Connected Persons</h3>
+            {connPersons.length > 0 && <span className="ns-badge blue">{connPersons.length}</span>}
+          </div>
+          {connPersons.length === 0
+            ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
+                <i className="ti ti-users-group" style={{ fontSize:28, color:C.dim, display:"block", marginBottom:6 }}/>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>No connected persons on record</div>
+              </div>
+            : <div style={{ padding:"10px 18px 14px" }}>
+                {connPersons.slice(0,5).map((p,i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"8px 0",
+                    borderBottom: i < connPersons.length-1 ? `1px solid ${C.border}` : "none" }}>
+                    <div style={{ width:34, height:34, borderRadius:"50%", flexShrink:0,
+                      background:`linear-gradient(135deg,${C.blue},${C.purple})`,
+                      display:"flex", alignItems:"center", justifyContent:"center",
+                      fontFamily:F, fontWeight:800, fontSize:13, color:"white" }}>
+                      {(p.name||"?")[0].toUpperCase()}
+                    </div>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{p.name}</div>
+                      <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:1 }}>{p.role || "—"}</div>
+                    </div>
+                    {p.totalPayments && (
+                      <div style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.text, flexShrink:0 }}>{fmtVal(Number(String(p.totalPayments).replace(/[^0-9.-]/g,""))||0)}</div>
+                    )}
+                  </div>
+                ))}
+              </div>
+          }
+        </div>
+      </div>
+
+    </div>
+  );
+}
+
+
+function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, actions=[], invoices=[] }) {
+  const displayKpis = kpis || KPIs;
+  const pack    = normalizePack(client?.client_pack || client?.clientPack);
+  const uae     = isUAE(client);
+  const isMobile = useMobile();
+  const pl      = reportData?.pl || {};
+  const accentColor = uae ? "#00732F" : C.blue;
+
+  const healthScore = reportData?.healthScore || 72;
+  const healthColor = healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
+  const healthLabel = healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
+
+  const pendingActions = (actions||[]).filter(a => !a.done);
+  const highPriority   = pendingActions.filter(a => a.priority === "High");
+
+  const hour      = new Date().getHours();
+  const greeting  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  // ── Summary digest cards ──────────────────────────────────────────────────
+  const wc = reportData?.workingCapital || {};
+  const cfData = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+  const latestCF = cfData.length > 0 ? cfData[cfData.length - 1] : null;
+  const cashVal  = latestCF ? (latestCF.actual || latestCF.forecast || "—") : (displayKpis.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—");
+  const debtorDays = wc.debtorDays || wc.debtor_days || null;
+  const unpaidInv  = (invoices||[]).filter(i => i.status === "unpaid").length;
+  const checklistItems = reportData?.checklist || [];
+  const checkDone = checklistItems.filter(c => c.done || c.status === "done").length;
+  const vatStatus = reportData?.vat?.filingStatus || null;
+  const currSym = uae ? "AED " : "₹";
+
+  const digestCards = [
+    { icon:"ti-trending-up",   label:"Revenue",       value:pl.revenue?.actual||"—",  sub:`Net margin: ${pl.netMargin?.actual||"—"}`, color:C.blue,   page:"myreport"   },
+    { icon:"ti-building-bank", label:"Cash Position", value:cashVal,                   sub:latestCF?.month?`as of ${latestCF.month}`:"latest",         color:C.green,  page:"cashflow"   },
+    { icon:"ti-checkbox",      label:"Action Items",  value:`${pendingActions.length} pending`, sub:highPriority.length>0?`${highPriority.length} high priority`:"No urgent items", color:highPriority.length>0?C.red:C.green, page:"actions" },
+    uae ? { icon:"ti-file-invoice", label:"VAT Status", value:vatStatus||(reportData?.vat?.vatRegistered?"Registered":"—"), sub:reportData?.vat?.trnNumber?`TRN: ${reportData.vat.trnNumber}`:"Check VAT tab", color:"#00732F", page:"uaetax" }
+        : { icon:"ti-shield-check", label:"Compliance",  value:checklistItems.length>0?`${checkDone}/${checklistItems.length} done`:"—", sub:checklistItems.length>0?(checkDone===checklistItems.length?"All complete":`${checklistItems.length-checkDone} pending`):"No items", color:checkDone===checklistItems.length?C.green:C.amber, page:"compliance" },
+    { icon:"ti-briefcase",     label:"Working Capital", value:debtorDays?`${debtorDays}d`:(wc.currentRatio?`${wc.currentRatio}x`:"—"), sub:debtorDays?"Debtor days":(wc.currentRatio?"Current ratio":"See W/C tab"), color:C.purple, page:"myreport" },
+    { icon:"ti-receipt",       label:"Invoices",      value:unpaidInv>0?`${unpaidInv} unpaid`:"All paid", sub:`${(invoices||[]).length} total invoices`, color:unpaidInv>0?C.amber:C.green, page:"invoices" },
+  ].filter(Boolean);
+
+  // ── P&L rows ──────────────────────────────────────────────────────────────
+  const plRows = [
+    { label:"Revenue",       curr:pl.revenue?.actual||"—",     prev:pl.revenue?.prev||"—",     key:"revenue"    },
+    { label:"Cost of Sales", curr:pl.cogs?.actual||"—",        prev:pl.cogs?.prev||"—",        key:"cogs"       },
+    { label:"Gross Profit",  curr:pl.grossProfit?.actual||"—", prev:pl.grossProfit?.prev||"—", key:"gp"         },
+    { label:"GP Margin %",   curr:pl.gpMargin?.actual||"—",    prev:pl.gpMargin?.prev||"—",    key:"gpmargin"   },
+    { label:"EBITDA",        curr:pl.ebitda?.actual||"—",      prev:pl.ebitda?.prev||"—",      key:"ebitda"     },
+    { label:"EBITDA Margin", curr:pl.ebitdaMargin?.actual||"—",prev:pl.ebitdaMargin?.prev||"—",key:"ebitdamargin"},
+    { label:"Net Profit",    curr:pl.pat?.actual||"—",         prev:pl.pat?.prev||"—",         key:"pat"        },
+    { label:"Net Margin %",  curr:pl.netMargin?.actual||"—",   prev:pl.netMargin?.prev||"—",   key:"netmargin"  },
+  ];
+  const varRows = (reportData?.variance||[]).slice(0,6);
+
+  // ── AR aging ──────────────────────────────────────────────────────────────
+  const arBuckets = [
+    { label:"Current",  val: Number(wc.ar0_30   || reportData?.ar0to30   || 0), color: C.green  },
+    { label:"31–60d",   val: Number(wc.ar31_60  || reportData?.ar31to60  || 0), color: C.amber  },
+    { label:"61–90d",   val: Number(wc.ar61_90  || reportData?.ar61to90  || 0), color: "#F97316" },
+    { label:"90d+",     val: Number(wc.ar90plus || reportData?.ar90plus  || 0), color: C.red    },
+  ];
+  const arTotal = arBuckets.reduce((s,b) => s+b.val, 0);
+
+  return (
+    <div className="ns-page">
+
+      {/* ── Page header ── */}
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+        <div>
+          <div className="ns-page-title">{greeting}, {client?.name?.split(" ")[0] || "there"}</div>
+          <div className="ns-sub" style={{ marginTop:2 }}>
+            {client?.company} · {reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}
+          </div>
+        </div>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          {highPriority.length > 0 && (
+            <span className="ns-badge red"><i className="ti ti-alert-triangle" style={{ fontSize:11 }}/> {highPriority.length} High Priority</span>
+          )}
+          <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
+            Health: {healthScore}/100 — {healthLabel}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Digest cards ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }} className="dash-digest">
+        <style>{`.dash-digest{grid-template-columns:repeat(3,1fr)!important}@media(max-width:640px){.dash-digest{grid-template-columns:repeat(2,1fr)!important}}`}</style>
+        {digestCards.map((card,i) => (
+          <div key={i} onClick={() => setPage && setPage(card.page)}
             style={{ padding:"14px 16px", borderRadius:12, background:"#fff",
-              border:`1px solid ${card.color}25`, cursor:"pointer",
+              border:`1px solid ${card.color}25`, cursor:setPage?"pointer":"default",
               boxShadow:"0 1px 4px rgba(0,0,0,0.04)", transition:"box-shadow 0.15s" }}
             onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.08)"}
             onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,0.04)"}>
             <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-              <div style={{ width:28, height:28, borderRadius:8, background:`${card.color}15`,
-                display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <div style={{ width:28, height:28, borderRadius:8, background:`${card.color}15`, display:"flex", alignItems:"center", justifyContent:"center" }}>
                 <i className={"ti " + card.icon} style={{ fontSize:14, color:card.color }}/>
               </div>
-              <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-                textTransform:"uppercase", letterSpacing:"0.08em" }}>{card.label}</span>
+              <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em" }}>{card.label}</span>
             </div>
             <div style={{ fontFamily:F, fontSize:14, fontWeight:700, color:C.text, marginBottom:2 }}>{card.value}</div>
             <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{card.sub}</div>
@@ -1507,72 +1781,40 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         ))}
       </div>
 
-      {/* ── AI CFO Brief ── */}
-      <div className="ns-panel" style={{ borderLeft:`4px solid ${accentColor}` }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-          padding:"14px 18px 0", flexWrap:"wrap", gap:8 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:accentColor }}>
-            CFO Brief — {reportData?.monthLabel || "Current Period"}
-          </div>
-          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-            {aiNarration && (
-              <span style={{ display:"inline-flex", alignItems:"center", gap:4,
-                padding:"2px 8px", borderRadius:20, background:"#F5F3FF",
-                border:"1px solid #DDD6FE", fontFamily:F, fontSize:10,
-                fontWeight:700, color:"#7C3AED" }}>✦ AI-assisted</span>
-            )}
-            <button onClick={() => setPage("myreport")}
-              style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${accentColor}`,
-                background:"transparent", color:accentColor, fontFamily:F, fontSize:11,
-                fontWeight:700, cursor:"pointer" }}>
-              Full Report →
-            </button>
-          </div>
-        </div>
-        <div style={{ padding:"14px 18px" }}>
-          <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.85, margin:0,
-            whiteSpace: aiNarration ? "pre-wrap" : "normal" }}>
-            {displayNote}
-          </p>
-        </div>
+      {/* ── KPI tiles ── */}
+      <div className="ns-grid-6">
+        {loading
+          ? Array.from({length:6}).map((_,i) => (
+              <div key={i} className="ns-kpi-tile">
+                <Skeleton width="55%" height={11} style={{ marginBottom:10 }}/>
+                <Skeleton width="70%" height={22} style={{ marginBottom:8 }}/>
+                <Skeleton width="45%" height={10}/>
+              </div>
+            ))
+          : displayKpis.slice(0,6).map((k,i) => (
+              <div key={i} className="ns-kpi-tile">
+                <div className="label">{k.label}</div>
+                <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
+                {k.prev && k.prev!=="—" && (
+                  <div className="trend">
+                    <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>{k.trend==="up"?"↑":"↓"}</span>
+                    <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
+                  </div>
+                )}
+              </div>
+            ))
+        }
       </div>
 
-      {/* ── Cashflow trend ── */}
-      {cfData.length > 0 && (
-        <Card>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>
-            Cash Flow Trend
-          </div>
-          <div style={{ height:180 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cfData.map(m => {
-                const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
-                return { name: m.month, Actual: parse(m.actual)||null, Forecast: parse(m.forecast)||null };
-              })} margin={{ top:5, right:10, left:0, bottom:0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false}/>
-                <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#94A3B8" }} axisLine={false} tickLine={false}/>
-                <YAxis tick={{ fontSize:9, fill:"#94A3B8" }} axisLine={false} tickLine={false} width={36}/>
-                <Tooltip/>
-                <Area type="monotone" dataKey="Actual" stroke={accentColor} strokeWidth={2} fill={`${accentColor}18`} connectNulls={false} dot={{ fill:accentColor, r:3, strokeWidth:0 }}/>
-                <Area type="monotone" dataKey="Forecast" stroke="#7C3AED" strokeWidth={2} fill="none" strokeDasharray="5 4" connectNulls={false} dot={{ fill:"#7C3AED", r:3, strokeWidth:0 }}/>
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </Card>
-      )}
-
-      {/* ── Health score + margins strip ── */}
+      {/* ── Health score + Margins ── */}
       <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"188px 1fr", gap:14 }}>
-        <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column",
-          alignItems:"center", justifyContent:"center", padding:16 }}>
+        <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:16 }}>
           <div className="ns-label" style={{ marginBottom:12 }}>Financial Health</div>
           <svg width="116" height="66" viewBox="0 0 120 68">
             <path d="M10,60 A50,50 0 0,1 110,60" stroke="#E5E7EB" strokeWidth="10" fill="none" strokeLinecap="round"/>
-            <path d="M10,60 A50,50 0 0,1 110,60"
-              stroke={healthColor} strokeWidth="10" fill="none" strokeLinecap="round"
+            <path d="M10,60 A50,50 0 0,1 110,60" stroke={healthColor} strokeWidth="10" fill="none" strokeLinecap="round"
               strokeDasharray={`${(healthScore/100)*157} 157`}/>
-            <text x="60" y="56" textAnchor="middle" fontSize="20" fontWeight="900"
-              fill={healthColor} fontFamily="monospace">{healthScore}</text>
+            <text x="60" y="56" textAnchor="middle" fontSize="20" fontWeight="900" fill={healthColor} fontFamily="monospace">{healthScore}</text>
           </svg>
           <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:healthColor, marginTop:4 }}>{healthLabel}</div>
         </div>
@@ -1584,8 +1826,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
               { label:"EBITDA Margin", value: pl.ebitdaMargin?.actual || "—" },
               { label:"Net Margin",    value: pl.netMargin?.actual    || "—" },
             ].map((m,i,arr) => (
-              <div key={i} style={{ flex:1, padding:"14px 18px",
-                borderRight:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
+              <div key={i} style={{ flex:1, padding:"14px 18px", borderRight:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
                 <div className="ns-label">{m.label}</div>
                 <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color:C.text, marginTop:4 }}>{m.value}</div>
               </div>
@@ -1594,78 +1835,48 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
       </div>
 
-    </div>
-  );
-}
-
-
-function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
-  const displayKpis = kpis || KPIs;
-  const pack    = normalizePack(client?.client_pack || client?.clientPack);
-  const accent  = pack==="msme" ? C.blue : pack==="corporate" ? C.purple : C.blue;
-  const pl      = reportData?.pl || {};
-  const uae     = isUAE(client);
- 
-  // Period-over-period P&L rows
-  const plRows = [
-    { label:"Revenue",       curr:pl.revenue?.actual||"—",     prev:pl.revenue?.prev||"—",     key:"revenue"    },
-    { label:"Cost of Sales", curr:pl.cogs?.actual||"—",        prev:pl.cogs?.prev||"—",        key:"cogs"       },
-    { label:"Gross Profit",  curr:pl.grossProfit?.actual||"—", prev:pl.grossProfit?.prev||"—", key:"gp"         },
-    { label:"GP Margin %",   curr:pl.gpMargin?.actual||"—",    prev:pl.gpMargin?.prev||"—",    key:"gpmargin"   },
-    { label:"EBITDA",        curr:pl.ebitda?.actual||"—",      prev:pl.ebitda?.prev||"—",      key:"ebitda"     },
-    { label:"EBITDA Margin", curr:pl.ebitdaMargin?.actual||"—",prev:pl.ebitdaMargin?.prev||"—",key:"ebitdamargin"},
-    { label:"Net Profit",    curr:pl.pat?.actual||"—",         prev:pl.pat?.prev||"—",         key:"pat"        },
-    { label:"Net Margin %",  curr:pl.netMargin?.actual||"—",   prev:pl.netMargin?.prev||"—",   key:"netmargin"  },
-  ];
- 
-  // Variance rows
-  const varRows = (reportData?.variance||[]).slice(0,6);
- 
-  // Key metric summary (NetSuite "Financials" strip)
-  const summaryMetrics = [
-    { label:"Gross Profit %",         value:pl.gpMargin?.actual||"—"     },
-    { label:"Net Income as % Revenue", value:pl.netMargin?.actual||"—"    },
-    { label:"EBITDA",                  value:pl.ebitda?.actual||"—"       },
-    { label:"Cash Balance",            value:displayKpis.find(k=>k.label?.toLowerCase().includes("cash"))?.value||"—" },
-  ];
- 
-  return (
-    <div className="ns-page">
-      {/* Page title */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between" }}>
-        <div>
-          <div className="ns-page-title">KPI Dashboard</div>
-          <div className="ns-sub" style={{ marginTop:2 }}>{client?.company} · {reportData?.monthLabel||new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}</div>
+      {/* ── Cashflow trend ── */}
+      {cfData.length > 0 && (
+        <div className="ns-panel">
+          <div className="ns-panel-header"><h3>Cash Flow Trend</h3><span className="ns-label">Actual vs Forecast</span></div>
+          <div style={{ height:180, padding:"8px 0 4px" }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={cfData.map(m => {
+                const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
+                return { name: m.month, Actual: parse(m.actual)||null, Forecast: parse(m.forecast)||null };
+              })} margin={{ top:5, right:10, left:0, bottom:0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false}/>
+                <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#94A3B8" }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize:9, fill:"#94A3B8" }} axisLine={false} tickLine={false} width={36}/>
+                <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, borderRadius:8, border:"1px solid #E5E7EB" }}/>
+                <Area type="monotone" dataKey="Actual" stroke={accentColor} strokeWidth={2} fill={`${accentColor}18`} connectNulls={false} dot={{ fill:accentColor, r:3, strokeWidth:0 }}/>
+                <Area type="monotone" dataKey="Forecast" stroke="#7C3AED" strokeWidth={2} fill="none" strokeDasharray="5 4" connectNulls={false} dot={{ fill:"#7C3AED", r:3, strokeWidth:0 }}/>
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
         </div>
-        {reportData?.monthLabel && (
-          <span className="ns-badge blue">{reportData.monthLabel}</span>
-        )}
-      </div>
- 
-      {/* Summary metrics strip — NetSuite Financials Overview */}
+      )}
+
+      {/* ── Financials Overview strip ── */}
       <div className="ns-panel">
         <div className="ns-panel-header"><h3>Financials Overview</h3></div>
         <div style={{ display:"flex", gap:0, borderBottom:"1px solid #E5E7EB" }}>
-          {summaryMetrics.map((m,i) => (
-            <div key={i} style={{ flex:1, padding:"14px 18px",
-              borderRight:i<summaryMetrics.length-1?"1px solid #E5E7EB":"none" }}>
+          {[
+            { label:"Gross Profit %",          value:pl.gpMargin?.actual||"—" },
+            { label:"Net Income as % Revenue",  value:pl.netMargin?.actual||"—" },
+            { label:"EBITDA",                   value:pl.ebitda?.actual||"—" },
+            { label:"Cash Balance",             value:displayKpis.find(k=>k.label?.toLowerCase().includes("cash"))?.value||"—" },
+          ].map((m,i,arr) => (
+            <div key={i} style={{ flex:1, padding:"14px 18px", borderRight:i<arr.length-1?"1px solid #E5E7EB":"none" }}>
               <div className="ns-label">{m.label}</div>
               <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:"#111827", marginTop:4 }}>{m.value}</div>
             </div>
           ))}
         </div>
-        {/* Multi-period P&L table */}
         <table className="ns-table">
-          <thead>
-            <tr>
-              <th>Indicator</th>
-              <th className="right">This Period</th>
-              <th className="right">Last Period</th>
-            </tr>
-          </thead>
+          <thead><tr><th>Indicator</th><th className="right">This Period</th><th className="right">Last Period</th></tr></thead>
           <tbody>
             {plRows.map((r,i) => {
-              const isMargin = r.key.includes("margin");
               const isSubtot = ["gp","ebitda","pat"].includes(r.key);
               const isTotal  = r.key === "pat";
               return (
@@ -1680,7 +1891,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
         </table>
       </div>
 
-      {/* P&L bar chart — current vs prior */}
+      {/* ── P&L bar chart ── */}
       {(() => {
         const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
         const chartData = [
@@ -1701,7 +1912,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
                   <YAxis tick={{ fontSize:9, fill:"#9CA3AF" }} axisLine={false} tickLine={false} width={32}/>
                   <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, borderRadius:8, border:"1px solid #E5E7EB" }}/>
                   <Bar dataKey="Current" name="Current Period" fill={uae?"#00732F":"#2563EB"} radius={[3,3,0,0]}/>
-                  <Bar dataKey="Prior" name="Prior Period" fill="#E5E7EB" radius={[3,3,0,0]}/>
+                  <Bar dataKey="Prior"   name="Prior Period"   fill="#E5E7EB"                 radius={[3,3,0,0]}/>
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -1709,34 +1920,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
         );
       })()}
 
-      {/* KPI grid — 6 tiles */}
-      <div className="ns-grid-6">
-        {loading
-          ? Array.from({length:6}).map((_,i) => (
-              <div key={i} className="ns-kpi-tile">
-                <Skeleton width="55%" height={11} style={{ marginBottom:10 }}/>
-                <Skeleton width="70%" height={22} style={{ marginBottom:8 }}/>
-                <Skeleton width="45%" height={10}/>
-              </div>
-            ))
-          : displayKpis.slice(0,6).map((k,i) => (
-              <div key={i} className="ns-kpi-tile">
-                <div className="label">{k.label}</div>
-                <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
-                {k.prev && k.prev!=="—" && (
-                  <div className="trend">
-                    <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>
-                      {k.trend==="up"?"↑":"↓"}
-                    </span>
-                    <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
-                  </div>
-                )}
-              </div>
-            ))
-        }
-      </div>
- 
-      {/* Variance table */}
+      {/* ── Budget vs Actual ── */}
       {varRows.length > 0 && (
         <div className="ns-panel">
           <div className="ns-panel-header"><h3>Budget vs Actual — Key Performance Indicators</h3></div>
@@ -1777,11 +1961,12 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
           </table>
         </div>
       )}
- 
-      {/* Score breakdown if available */}
+
+      {/* ── Score breakdown ── */}
       {(reportData?.scoreBreakdown||[]).length > 0 && (
         <div className="ns-panel">
-          <div className="ns-panel-header"><h3>Financial Health Score — Breakdown</h3>
+          <div className="ns-panel-header">
+            <h3>Financial Health Score — Breakdown</h3>
             <span className="ns-badge blue">{reportData.score||reportData.healthScore||"—"}/100</span>
           </div>
           <table className="ns-table">
@@ -1799,61 +1984,33 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading }) {
         </div>
       )}
 
-      {/* ── AR Aging + Action Items ── */}
-      {(() => {
-        const wc = reportData?.workingCapital || {};
-        const arBuckets = [
-          { label:"Current",  val: Number(wc.ar0_30   || reportData?.ar0to30   || 0), color: C.green  },
-          { label:"31–60d",   val: Number(wc.ar31_60  || reportData?.ar31to60  || 0), color: C.amber  },
-          { label:"61–90d",   val: Number(wc.ar61_90  || reportData?.ar61to90  || 0), color: "#F97316" },
-          { label:"90d+",     val: Number(wc.ar90plus || reportData?.ar90plus  || 0), color: C.red    },
-        ];
-        const arTotal = arBuckets.reduce((s,b) => s+b.val, 0);
-        const uae = isUAE(client);
-        return (
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }} className="dash-bottom-grid">
-            <style>{`.dash-bottom-grid{grid-template-columns:1fr 1fr!important}@media(max-width:600px){.dash-bottom-grid{grid-template-columns:1fr!important}}`}</style>
-            {/* AR Aging */}
-            <div className="ns-panel" style={{ margin:0 }}>
-              <div className="ns-panel-header">
-                <h3>A/R Aging</h3>
-                {arTotal > 0 && <span className="ns-label" style={{ fontFamily:FM }}>Total: {uae?"AED ":"₹"}{arTotal.toLocaleString()}</span>}
-              </div>
-              {arTotal === 0
-                ? <EmptyState icon="ti-receipt" title="No A/R data" sub="Enter working capital data to see aging."/>
-                : <div style={{ padding:16 }}>
-                    {arBuckets.map((b,i) => {
-                      const pct = arTotal > 0 ? (b.val/arTotal*100) : 0;
-                      return (
-                        <div key={i} style={{ marginBottom:10 }}>
-                          <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                            <span style={{ fontFamily:F, fontSize:11, color:C.text }}>{b.label}</span>
-                            <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
-                              {uae?"AED ":"₹"}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400 }}>({pct.toFixed(0)}%)</span>
-                            </span>
-                          </div>
-                          <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
-                            <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10 }}/>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-              }
-            </div>
-            {/* Action Items */}
-            <div className="ns-panel" style={{ margin:0 }}>
-              <div className="ns-panel-header">
-                <h3>Action Items</h3>
-                <span className="ns-badge red">{(displayKpis||[]).length > 0 ? "" : ""}</span>
-              </div>
-              <div className="ns-panel-body no-pad" style={{ maxHeight:220, overflowY:"auto" }}>
-                <EmptyState icon="ti-circle-check" title="Action items" sub="View in Actions tab for full list."/>
-              </div>
-            </div>
+      {/* ── AR Aging ── */}
+      {arTotal > 0 && (
+        <div className="ns-panel">
+          <div className="ns-panel-header">
+            <h3>A/R Aging</h3>
+            <span className="ns-label" style={{ fontFamily:FM }}>Total: {currSym}{arTotal.toLocaleString()}</span>
           </div>
-        );
-      })()}
+          <div style={{ padding:16 }}>
+            {arBuckets.map((b,i) => {
+              const pct = arTotal > 0 ? (b.val/arTotal*100) : 0;
+              return (
+                <div key={i} style={{ marginBottom:10 }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                    <span style={{ fontFamily:F, fontSize:11, color:C.text }}>{b.label}</span>
+                    <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
+                      {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400 }}>({pct.toFixed(0)}%)</span>
+                    </span>
+                  </div>
+                  <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10 }}/>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
     </div>
   );
@@ -14331,8 +14488,8 @@ function Portal({ client, onLogout }) {
       : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
  
   const pages = {
-    overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
-    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading}/>,
+    overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} invoices={isDemo ? [] : (liveInvoices||[])} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
+    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading} setPage={setPage} actions={resolvedActions} invoices={isDemo ? [] : (liveInvoices||[])}/>,
     cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
     actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
     myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
