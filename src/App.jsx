@@ -7698,22 +7698,12 @@ function CFOPackContent({ reportData, client, kpis }) {
               <i className="ti ti-download" style={{fontSize:13}}/> Download PDF
             </button>
           </div>
-          {/* FIXED: Garima Note — prominent at top, unique insight not in Overview */}
-          <Card style={{ borderLeft:`3px solid #F59E0B`, background:"#FFFBF0", border:"1px solid #FDE68A" }}>
-            <div style={{ display:"flex", gap:10, alignItems:"flex-start" }}>
-              <div style={{ width:36, height:36, borderRadius:"50%", flexShrink:0,
-                background:"linear-gradient(135deg,#F59E0B,#D97706)",
-                display:"flex", alignItems:"center", justifyContent:"center",
-                fontFamily:F, fontWeight:800, fontSize:14, color:"white" }}>G</div>
-              <div style={{ flex:1 }}>
-                <div style={{ fontSize:11, fontWeight:700, color:C.warning, fontFamily:F, marginBottom:4 }}>
-                  Note from Garima — Profitability Analysis
-                </div>
-                <p style={{ fontSize:13, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
-                  {reportData?.reportNote || reportData?.packNote || (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote}
-                </p>
-              </div>
-            </div>
+          {/* Garima Note */}
+          <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
+            <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
+            <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
+              {reportData?.reportNote || reportData?.packNote || (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote}
+            </p>
           </Card>
           {/* P&L Deep Dive — historical data, no duplication with Overview/CashFlow */}
           <Card>
@@ -10533,20 +10523,18 @@ function CorporateTax({ client, reportData, initialTab }) {
             ))}
  
             {/* Garima Note */}
-            <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:8 }}>
-                💬 Garima's Note on RPT Compliance
-              </div>
-              <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.8, margin:0 }}>
+            <Card style={{ borderLeft:`4px solid #00732F` }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#00732F", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima — RPT Compliance</div>
+              <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8, margin:"0 0 12px" }}>
                 Your RPT total at AED {fmtAED(rptData.totalRPT, false)} ({rptData.revenueRatio}% of revenue) is above the threshold where the FTA expects formal transfer pricing documentation.
                 The most urgent issue is the <strong>Al Rashidi Brothers service fee</strong> — billed at AED 120K vs market rate of AED 160–200K.
                 This underpricing is a CT audit red flag and must be corrected before your return.
                 For all other RPTs, ensure you have signed agreements, board resolutions, and benchmarking studies on file.
                 I'll prepare the RPT schedule for your CT return — please send me the signed loan agreement with Rashidi Holdings.
               </p>
-              <button onClick={() => window.open(WA,"_blank")} style={{ marginTop:12, padding:"9px 20px",
-                borderRadius:16, border:"none", background:"#D97706", color:"white",
-                fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+              <button onClick={() => window.open(WA,"_blank")} style={{ padding:"8px 16px",
+                borderRadius:16, border:"none", background:"#00732F", color:"white",
+                fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
                 Discuss RPT with Garima
               </button>
             </Card>
@@ -10716,17 +10704,17 @@ function CorporateTax({ client, reportData, initialTab }) {
               </Card>
             ))}
  
-            <Card style={{ background:"#FFFBEB", border:"1px solid #FCD34D" }}>
-              <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:8 }}>💬 Garima's Note</div>
-              <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.8, margin:"0 0 12px" }}>
+            <Card style={{ borderLeft:`4px solid #00732F` }}>
+              <div style={{ fontSize:11, fontWeight:700, color:"#00732F", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
+              <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8, margin:"0 0 12px" }}>
                 Your most urgent related party issue is the <strong>Al Rashidi Brothers service fee</strong> — underpriced at AED 120K vs AED 160–200K market rate.
                 The FTA can adjust this upward during audit and disallow the deduction in Al Rashidi Brothers' return.
                 I need three third-party quotes for comparable advisory services and a revised service agreement at AED 160K minimum before we file the CT return.
                 The Rashidi Holdings loan agreement is also outstanding — please send me a signed copy this week.
               </p>
-              <button onClick={() => window.open(WA,"_blank")} style={{ padding:"9px 20px",
-                borderRadius:16, border:"none", background:"#D97706", color:"white",
-                fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+              <button onClick={() => window.open(WA,"_blank")} style={{ padding:"8px 16px",
+                borderRadius:16, border:"none", background:"#00732F", color:"white",
+                fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
                 Discuss Related Parties with Garima
               </button>
             </Card>
@@ -11724,39 +11712,26 @@ function RevenueReconciliation({ client, reportData }) {
       </div>
  
       {/* Note from Garima */}
-      <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
-        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:40, height:52, borderRadius:"50%", flexShrink:0,
-            background:"linear-gradient(135deg,#F59E0B,#D97706)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:2 }}>
-              Note from Garima
-            </div>
-            <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
-              Garima Agarwal · CA · Revenue Reconciliation Analysis
-            </div>
-            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 14px" }}>
-              {note || "Revenue reconciliation note not yet added. Garima will update this section each quarter explaining the specific differences for this client."}
-            </p>
-            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-              <a href={WA} target="_blank" rel="noopener noreferrer"
-                style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#25D366", color:"white", borderRadius:16,
-                  padding:"8px 16px", fontFamily:F, fontWeight:700,
-                  fontSize:12, textDecoration:"none" }}>
-                WhatsApp Garima
-              </a>
-              <button onClick={handlePrint}
-                style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:C.warning, borderRadius:16,
-                  padding:"8px 16px", fontFamily:F, fontWeight:700,
-                  fontSize:12, border:"1px solid #FDE68A", cursor:"pointer" }}>
-                Download Full Report
-              </button>
-            </div>
-          </div>
+      <Card style={{ borderLeft:`4px solid #00732F` }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#00732F", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
+        <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:"0 0 14px" }}>
+          {note || "Revenue reconciliation note not yet added. Garima will update this section each quarter explaining the specific differences for this client."}
+        </p>
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+          <a href={WA} target="_blank" rel="noopener noreferrer"
+            style={{ display:"inline-flex", alignItems:"center", gap:6,
+              background:"#25D366", color:"white", borderRadius:16,
+              padding:"8px 16px", fontFamily:F, fontWeight:700,
+              fontSize:12, textDecoration:"none" }}>
+            WhatsApp Garima
+          </a>
+          <button onClick={handlePrint}
+            style={{ display:"inline-flex", alignItems:"center", gap:6,
+              background:C.bg, color:"#00732F", borderRadius:16,
+              padding:"8px 16px", fontFamily:F, fontWeight:700,
+              fontSize:12, border:`1px solid #00732F40`, cursor:"pointer" }}>
+            Download Full Report
+          </button>
         </div>
       </Card>
  
@@ -12331,42 +12306,31 @@ function WorkingCapital({ client, reportData }) {
       </Card>
  
       {/* Note from Garima */}
-      <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
-        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:40, height:52, borderRadius:"50%", flexShrink:0,
-            background:"linear-gradient(135deg,#F59E0B,#D97706)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:2 }}>Note from Garima</div>
-            <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
-              Garima Agarwal · CA · Working Capital Analysis
-            </div>
-            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 14px" }}>
-              {note || "Working capital analysis note not yet added. Garima will update this section each period with specific recommendations."}
-            </p>
-            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-              <a href={WA} target="_blank" rel="noopener noreferrer"
-                style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#25D366", color:"white", borderRadius:16, padding:"8px 16px",
-                  fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                WhatsApp Garima
-              </a>
-              <button onClick={handlePrint}
-                style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:C.warning, borderRadius:16, padding:"8px 16px",
-                  fontFamily:F, fontWeight:700, fontSize:12,
-                  border:"1px solid #FDE68A", cursor:"pointer" }}>
-                Download PDF
-              </button>
-            </div>
-          </div>
+      <Card style={{ borderLeft:`4px solid ${C.teal}` }}>
+        <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
+        <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:"0 0 14px" }}>
+          {note || "Working capital analysis not yet added. Garima will update this section each period with specific recommendations."}
+        </p>
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+          <a href={WA} target="_blank" rel="noopener noreferrer"
+            style={{ display:"inline-flex", alignItems:"center", gap:6,
+              background:"#25D366", color:"white", borderRadius:16, padding:"8px 16px",
+              fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
+            WhatsApp Garima
+          </a>
+          <button onClick={handlePrint}
+            style={{ display:"inline-flex", alignItems:"center", gap:6,
+              background:C.bg, color:C.teal, borderRadius:16, padding:"8px 16px",
+              fontFamily:F, fontWeight:700, fontSize:12,
+              border:`1px solid ${C.teal}40`, cursor:"pointer" }}>
+            Download PDF
+          </button>
         </div>
       </Card>
     </div>
   );
 }
- 
+
 // ─── NEW: VERTICAL ANALYSIS & GP RATIO ───────────────────────────────────────
  
 function generateVerticalAnalysisPDF({ client, reportData }) {
@@ -13483,38 +13447,25 @@ function QFZPModule({ client, reportData }) {
       </Card>
  
       {/* Note from Garima */}
-      <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A" }}>
-        <div style={{ display:"flex", gap:14, alignItems:"flex-start" }}>
-          <div style={{ width:40, height:52, borderRadius:"50%", flexShrink:0,
-            background:"linear-gradient(135deg,#F59E0B,#D97706)",
-            display:"flex", alignItems:"center", justifyContent:"center",
-            fontFamily:F, fontWeight:800, fontSize:16, color:"white" }}>G</div>
-          <div style={{ flex:1 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.warning, marginBottom:2 }}>
-              Note from Garima
-            </div>
-            <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:10 }}>
-              Garima Agarwal · CA · QFZP Substance Analysis
-            </div>
-            <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 14px" }}>
-              {note || "QFZP substance analysis not yet added. Garima will update this section with specific compliance observations and action items."}
-            </p>
-            <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
-              <a href={WA} target="_blank" rel="noopener noreferrer"
-                style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#25D366", color:"white", borderRadius:16, padding:"8px 16px",
-                  fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
-                WhatsApp Garima
-              </a>
-              <button onClick={handlePrint}
-                style={{ display:"inline-flex", alignItems:"center", gap:6,
-                  background:"#FEF3C7", color:C.warning, borderRadius:16, padding:"8px 16px",
-                  fontFamily:F, fontWeight:700, fontSize:12,
-                  border:"1px solid #FDE68A", cursor:"pointer" }}>
-                Download PDF
-              </button>
-            </div>
-          </div>
+      <Card style={{ borderLeft:`4px solid #00732F` }}>
+        <div style={{ fontSize:11, fontWeight:700, color:"#00732F", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
+        <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:"0 0 14px" }}>
+          {note || "QFZP substance analysis not yet added. Garima will update this section with specific compliance observations and action items."}
+        </p>
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+          <a href={WA} target="_blank" rel="noopener noreferrer"
+            style={{ display:"inline-flex", alignItems:"center", gap:6,
+              background:"#25D366", color:"white", borderRadius:16, padding:"8px 16px",
+              fontFamily:F, fontWeight:700, fontSize:12, textDecoration:"none" }}>
+            WhatsApp Garima
+          </a>
+          <button onClick={handlePrint}
+            style={{ display:"inline-flex", alignItems:"center", gap:6,
+              background:C.bg, color:"#00732F", borderRadius:16, padding:"8px 16px",
+              fontFamily:F, fontWeight:700, fontSize:12,
+              border:`1px solid #00732F40`, cursor:"pointer" }}>
+            Download PDF
+          </button>
         </div>
       </Card>
     </div>
@@ -14375,20 +14326,11 @@ function UAECFOReport({ client, reportData, kpis }) {
           {tab === "cashflow" && (
             <div style={{ display:"flex", flexDirection:"column", gap:16, padding:20 }}>
               {/* Garima Note — prominent at top */}
-              <Card style={{ background:"#FFFBF0", border:"1px solid #FDE68A", borderLeft:`4px solid #F59E0B` }}>
-                <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-                  <div style={{ width:38, height:38, borderRadius:"50%", flexShrink:0,
-                    background:"linear-gradient(135deg,#F59E0B,#D97706)",
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    fontFamily:F, fontWeight:800, fontSize:15, color:"white" }}>G</div>
-                  <div style={{ flex:1 }}>
-                    <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.warning, marginBottom:2 }}>Note from Garima — Cash Flow</div>
-                    <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:8 }}>Forward-looking cash position · {period}</div>
-                    <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:0 }}>
-                      {reportData?.cashflowGarimaNote || "Cash flow forecast for the next 3–6 months. This section covers projected cash inflows, outflows, and ending balance only. For historical cash performance, see the Full Dashboard."}
-                    </p>
-                  </div>
-                </div>
+              <Card style={{ borderLeft:`4px solid #00732F` }}>
+                <div style={{ fontSize:11, fontWeight:700, color:"#00732F", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
+                <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:0 }}>
+                  {reportData?.cashflowGarimaNote || "Cash flow forecast for the next 3–6 months. This section covers projected cash inflows, outflows, and ending balance only. For historical cash performance, see the Full Dashboard."}
+                </p>
               </Card>
  
               {/* Forecast KPIs — future only, styled like Related Party report */}
