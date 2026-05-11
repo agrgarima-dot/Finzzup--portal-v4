@@ -1409,6 +1409,85 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
       ))}
 
+      {/* ── Business Snapshot — section-wise key metrics ── */}
+      {(() => {
+        const pNum = s => parseFloat(String(s||"0").replace(/[^0-9.-]/g,"")) || 0;
+        const cfRaw2 = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+        const latestMonth = cfRaw2.length > 0 ? cfRaw2[cfRaw2.length - 1] : null;
+        const latestCashVal = latestMonth ? (latestMonth.actual || latestMonth.forecast || "—") : (displayKpis.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—");
+        const dso2 = Number(wc.dso || wc.debtorDays || wc.debtor_days || 0);
+        const checklistItems2 = reportData?.checklist || [];
+        const checkDone2 = checklistItems2.filter(c=>c.done||c.status==="done").length;
+        const paidInv2   = (invoices||[]).filter(i=>i.status==="paid").length;
+        const unpaidInv2 = (invoices||[]).filter(i=>i.status==="unpaid").length;
+        const arTotal2   = arBuckets.reduce((s,b)=>s+b.val,0);
+        const ar90plus2  = arBuckets.find(b=>b.label.includes("90+"))?.val || 0;
+        const ovaPack    = normalizePack(client?.client_pack || client?.clientPack);
+
+        const snaps = [
+          // P&L
+          { section:"P&L",         icon:"ti-trending-up",    color:C.blue,
+            metric: pl.revenue?.actual || "—",
+            sub: `GP margin: ${pl.gpMargin?.actual || "—"}`,
+            page:"myreport" },
+          // Cash Flow
+          { section:"Cash Flow",    icon:"ti-building-bank",  color:C.green,
+            metric: latestCashVal,
+            sub: latestMonth?.month ? `as of ${latestMonth.month}` : "Latest",
+            page:"cashflow" },
+          // A/R
+          { section:"Receivables",  icon:"ti-receipt",        color:C.purple,
+            metric: arTotal2 > 0 ? (uaeClient?"AED ":"₹")+arTotal2.toLocaleString() : "—",
+            sub: ar90plus2 > 0 ? `⚠ ${Math.round(ar90plus2/arTotal2*100)}% overdue 90d+` : "All current",
+            page:"myreport" },
+          // Working Capital
+          { section:"Working Cap.", icon:"ti-clock",          color: dso2>45?C.amber:C.green,
+            metric: dso2 > 0 ? `DSO ${dso2}d` : (wc.currentRatio ? `${wc.currentRatio}x CR` : "—"),
+            sub: dso2 > 0 ? (dso2<=45?"On track":"Chase receivables") : "Current ratio",
+            page:"myreport" },
+          // Compliance / VAT
+          uaeClient
+            ? { section:"VAT",       icon:"ti-file-invoice",   color:"#00732F",
+                metric: reportData?.vat?.filingStatus || (reportData?.vat?.vatRegistered ? "Registered" : "—"),
+                sub: reportData?.vat?.trnNumber ? `TRN: ${reportData.vat.trnNumber}` : "Check VAT tab",
+                page:"uaetax" }
+            : { section:"Compliance", icon:"ti-shield-check",  color:checklistItems2.length>0&&checkDone2===checklistItems2.length?C.green:C.amber,
+                metric: checklistItems2.length > 0 ? `${checkDone2}/${checklistItems2.length}` : "—",
+                sub: checklistItems2.length > 0 ? (checkDone2===checklistItems2.length?"All complete":`${checklistItems2.length-checkDone2} pending`) : "No items",
+                page:"compliance" },
+          // Invoices
+          { section:"Invoices",    icon:"ti-file-text",       color:unpaidInv2>0?C.amber:C.green,
+            metric: unpaidInv2 > 0 ? `${unpaidInv2} unpaid` : "All paid",
+            sub: `${(invoices||[]).length} total · ${paidInv2} paid`,
+            page:"invoices" },
+        ].filter(Boolean);
+
+        return (
+          <div style={{ display:"grid", gap:10 }} className="ov-snap-grid">
+            <style>{`.ov-snap-grid{grid-template-columns:repeat(6,1fr)!important}@media(max-width:900px){.ov-snap-grid{grid-template-columns:repeat(3,1fr)!important}}@media(max-width:500px){.ov-snap-grid{grid-template-columns:repeat(2,1fr)!important}}`}</style>
+            {snaps.map((s,i) => (
+              <div key={i} onClick={() => setPage && setPage(s.page)}
+                style={{ padding:"14px 14px 12px", borderRadius:12, background:"#fff",
+                  border:`1px solid ${s.color}22`, cursor:"pointer",
+                  boxShadow:"0 1px 3px rgba(0,0,0,0.04)", transition:"box-shadow 0.15s, transform 0.1s" }}
+                onMouseEnter={e=>{ e.currentTarget.style.boxShadow="0 4px 14px rgba(0,0,0,0.09)"; e.currentTarget.style.transform="translateY(-1px)"; }}
+                onMouseLeave={e=>{ e.currentTarget.style.boxShadow="0 1px 3px rgba(0,0,0,0.04)"; e.currentTarget.style.transform="none"; }}>
+                <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
+                  <div style={{ width:24, height:24, borderRadius:6, background:`${s.color}15`,
+                    display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
+                    <i className={"ti "+s.icon} style={{ fontSize:12, color:s.color }}/>
+                  </div>
+                  <span style={{ fontFamily:F, fontSize:9, fontWeight:800, color:C.muted,
+                    textTransform:"uppercase", letterSpacing:"0.08em" }}>{s.section}</span>
+                </div>
+                <div style={{ fontFamily:FM, fontSize:14, fontWeight:900, color:s.color, marginBottom:3, lineHeight:1.2 }}>{s.metric}</div>
+                <div style={{ fontFamily:F, fontSize:10, color:C.muted, lineHeight:1.3 }}>{s.sub}</div>
+              </div>
+            ))}
+          </div>
+        );
+      })()}
+
       {/* ── AI CFO Brief ── */}
       <div className="ns-panel" style={{ borderLeft:`4px solid ${accentColor}` }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px 0", flexWrap:"wrap", gap:8 }}>
@@ -2036,7 +2115,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 
 function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, actions=[], invoices=[] }) {
   const displayKpis = kpis || KPIs;
-  const pack    = normalizePack(client?.client_pack || client?.clientPack);
+  const ovPack  = normalizePack(client?.client_pack || client?.clientPack);
   const uae     = isUAE(client);
   const isMobile = useMobile();
   const pl      = reportData?.pl || {};
@@ -2096,50 +2175,44 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
   ];
   const arTotal = arBuckets.reduce((s,b) => s+b.val, 0);
 
+  // Abbreviated P&L for screenshot-style table
+  const plRowsShort = [
+    { label:"Revenue",      curr:pl.revenue?.actual||"—",    prev:pl.revenue?.prev||"—",    key:"revenue" },
+    { label:"Gross Profit", curr:pl.grossProfit?.actual||"—", prev:pl.grossProfit?.prev||"—", key:"gp" },
+    { label:"EBITDA",       curr:pl.ebitda?.actual||"—",      prev:pl.ebitda?.prev||"—",      key:"ebitda" },
+    { label:"Net Profit",   curr:pl.pat?.actual||"—",         prev:pl.pat?.prev||"—",         key:"pat" },
+  ];
+  const cfChartData = cfData.map(m => {
+    const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
+    return { name: m.month, Actual: parse(m.actual)||null, Forecast: parse(m.forecast)||null };
+  });
+
   return (
     <div className="ns-page">
 
-      {/* ── Page header ── */}
+      {/* ── Row 1: Greeting + badges (matches screenshot) ── */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
         <div>
           <div className="ns-page-title">{greeting}, {client?.name?.split(" ")[0] || "there"}</div>
           <div className="ns-sub" style={{ marginTop:2 }}>
-            {client?.company} · {reportData?.monthLabel || new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"})}
+            {client?.company}
+            {uae ? " (DMCC)" : ""}
+            {" · "}{uae ? "UAE CFO Dashboard" : `${ovPack.charAt(0).toUpperCase()+ovPack.slice(1)} Pack`}
+            {reportData?.monthLabel ? ` · ${reportData.monthLabel}` : ""}
           </div>
         </div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           {highPriority.length > 0 && (
             <span className="ns-badge red"><i className="ti ti-alert-triangle" style={{ fontSize:11 }}/> {highPriority.length} High Priority</span>
           )}
-          <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
-            Health: {healthScore}/100 — {healthLabel}
+          <span style={{ padding:"5px 14px", borderRadius:20, border:`1px solid ${accentColor}50`, background:`${accentColor}08`,
+            fontFamily:F, fontSize:12, fontWeight:700, color:accentColor }}>
+            Health Score: {healthScore}/100 — {healthLabel}
           </span>
         </div>
       </div>
 
-      {/* ── Digest cards ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:10 }} className="dash-digest">
-        <style>{`.dash-digest{grid-template-columns:repeat(3,1fr)!important}@media(max-width:640px){.dash-digest{grid-template-columns:repeat(2,1fr)!important}}`}</style>
-        {digestCards.map((card,i) => (
-          <div key={i} onClick={() => setPage && setPage(card.page)}
-            style={{ padding:"14px 16px", borderRadius:12, background:"#fff",
-              border:`1px solid ${card.color}25`, cursor:setPage?"pointer":"default",
-              boxShadow:"0 1px 4px rgba(0,0,0,0.04)", transition:"box-shadow 0.15s" }}
-            onMouseEnter={e => e.currentTarget.style.boxShadow="0 4px 16px rgba(0,0,0,0.08)"}
-            onMouseLeave={e => e.currentTarget.style.boxShadow="0 1px 4px rgba(0,0,0,0.04)"}>
-            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:8 }}>
-              <div style={{ width:28, height:28, borderRadius:8, background:`${card.color}15`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <i className={"ti " + card.icon} style={{ fontSize:14, color:card.color }}/>
-              </div>
-              <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em" }}>{card.label}</span>
-            </div>
-            <div style={{ fontFamily:F, fontSize:14, fontWeight:700, color:C.text, marginBottom:2 }}>{card.value}</div>
-            <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{card.sub}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* ── KPI tiles ── */}
+      {/* ── Row 2: 6 KPI tiles (exactly like screenshot) ── */}
       <div className="ns-grid-6">
         {loading
           ? Array.from({length:6}).map((_,i) => (
@@ -2164,134 +2237,238 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
         }
       </div>
 
-      {/* ── Health score + Margins ── */}
-      <div style={{ display:"grid", gridTemplateColumns:isMobile?"1fr":"188px 1fr", gap:14 }}>
-        <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:16 }}>
-          <div className="ns-label" style={{ marginBottom:12 }}>Financial Health</div>
-          <svg width="116" height="66" viewBox="0 0 120 68">
-            <path d="M10,60 A50,50 0 0,1 110,60" stroke="#E5E7EB" strokeWidth="10" fill="none" strokeLinecap="round"/>
-            <path d="M10,60 A50,50 0 0,1 110,60" stroke={healthColor} strokeWidth="10" fill="none" strokeLinecap="round"
-              strokeDasharray={`${(healthScore/100)*157} 157`}/>
-            <text x="60" y="56" textAnchor="middle" fontSize="20" fontWeight="900" fill={healthColor} fontFamily="monospace">{healthScore}</text>
-          </svg>
-          <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:healthColor, marginTop:4 }}>{healthLabel}</div>
-        </div>
+      {/* ── Row 3: P&L Summary | Health Gauge | CFO Note (3-col, matches screenshot) ── */}
+      <div style={{ display:"grid", gap:14 }} className="dash-mid-grid">
+        <style>{`.dash-mid-grid{grid-template-columns:2.1fr 1fr 1.7fr!important}@media(max-width:760px){.dash-mid-grid{grid-template-columns:1fr!important}}`}</style>
+
+        {/* P&L Summary table */}
         <div className="ns-panel" style={{ margin:0 }}>
-          <div className="ns-panel-header"><h3>Key Margins</h3></div>
-          <div style={{ display:"flex", gap:0 }}>
-            {[
-              { label:"GP Margin",     value: pl.gpMargin?.actual    || "—" },
-              { label:"EBITDA Margin", value: pl.ebitdaMargin?.actual || "—" },
-              { label:"Net Margin",    value: pl.netMargin?.actual    || "—" },
-            ].map((m,i,arr) => (
-              <div key={i} style={{ flex:1, padding:"14px 18px", borderRight:i<arr.length-1?`1px solid ${C.border}`:"none" }}>
-                <div className="ns-label">{m.label}</div>
-                <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color:C.text, marginTop:4 }}>{m.value}</div>
-              </div>
-            ))}
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"13px 18px 0" }}>
+            <div style={{ fontFamily:F, fontWeight:800, fontSize:11, color:C.text, textTransform:"uppercase", letterSpacing:"0.09em" }}>P&L Summary</div>
+            <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{reportData?.monthLabel || "Current Period"}</div>
           </div>
-        </div>
-      </div>
-
-      {/* ── Cashflow trend ── */}
-      {cfData.length > 0 && (
-        <div className="ns-panel">
-          <div className="ns-panel-header"><h3>Cash Flow Trend</h3><span className="ns-label">Actual vs Forecast</span></div>
-          <div style={{ height:180, padding:"8px 0 4px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cfData.map(m => {
-                const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
-                return { name: m.month, Actual: parse(m.actual)||null, Forecast: parse(m.forecast)||null };
-              })} margin={{ top:5, right:10, left:0, bottom:0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false}/>
-                <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#94A3B8" }} axisLine={false} tickLine={false}/>
-                <YAxis tick={{ fontSize:9, fill:"#94A3B8" }} axisLine={false} tickLine={false} width={36}/>
-                <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, borderRadius:8, border:"1px solid #E5E7EB" }}/>
-                <Area type="monotone" dataKey="Actual" stroke={accentColor} strokeWidth={2} fill={`${accentColor}18`} connectNulls={false} dot={{ fill:accentColor, r:3, strokeWidth:0 }}/>
-                <Area type="monotone" dataKey="Forecast" stroke="#7C3AED" strokeWidth={2} fill="none" strokeDasharray="5 4" connectNulls={false} dot={{ fill:"#7C3AED", r:3, strokeWidth:0 }}/>
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
-
-      {/* ── Financials Overview strip ── */}
-      <div className="ns-panel">
-        <div className="ns-panel-header"><h3>Financials Overview</h3></div>
-        <div style={{ display:"flex", gap:0, borderBottom:"1px solid #E5E7EB" }}>
-          {[
-            { label:"Gross Profit %",          value:pl.gpMargin?.actual||"—" },
-            { label:"Net Income as % Revenue",  value:pl.netMargin?.actual||"—" },
-            { label:"EBITDA",                   value:pl.ebitda?.actual||"—" },
-            { label:"Cash Balance",             value:displayKpis.find(k=>k.label?.toLowerCase().includes("cash"))?.value||"—" },
-          ].map((m,i,arr) => (
-            <div key={i} style={{ flex:1, padding:"14px 18px", borderRight:i<arr.length-1?"1px solid #E5E7EB":"none" }}>
-              <div className="ns-label">{m.label}</div>
-              <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:"#111827", marginTop:4 }}>{m.value}</div>
-            </div>
-          ))}
-        </div>
-        <table className="ns-table">
-          <thead><tr><th>Indicator</th><th className="right">This Period</th><th className="right">Last Period</th></tr></thead>
-          <tbody>
-            {plRows.map((r,i) => {
-              const isSubtot = ["gp","ebitda","pat"].includes(r.key);
-              const isTotal  = r.key === "pat";
-              return (
-                <tr key={i} className={isTotal?"total":isSubtot?"subtotal":"striped"}>
-                  <td className={isTotal||isSubtot?"bold":""}>{r.label}</td>
+          <table className="ns-table">
+            <thead>
+              <tr><th>Line</th><th className="right">Current</th><th className="right">Prior</th></tr>
+            </thead>
+            <tbody>
+              {plRowsShort.map((r,i) => (
+                <tr key={i} className={r.key==="pat"?"total":r.key==="gp"||r.key==="ebitda"?"subtotal":"striped"}>
+                  <td className={r.key==="pat"||r.key==="gp"?"bold":""}>{r.label}</td>
                   <td className="right mono bold">{r.curr}</td>
                   <td className="right mono muted">{r.prev}</td>
                 </tr>
-              );
-            })}
-          </tbody>
-        </table>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Financial Health gauge — matches screenshot exactly */}
+        <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px 16px" }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:10, color:C.muted, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:16 }}>Financial Health</div>
+          <svg width="134" height="76" viewBox="0 0 134 76">
+            <path d="M10,68 A57,57 0 0,1 124,68" stroke="#E5E7EB" strokeWidth="11" fill="none" strokeLinecap="round"/>
+            <path d="M10,68 A57,57 0 0,1 124,68"
+              stroke={healthColor} strokeWidth="11" fill="none" strokeLinecap="round"
+              strokeDasharray={`${(healthScore/100)*179} 179`}/>
+            <text x="67" y="63" textAnchor="middle" fontSize="26" fontWeight="900" fill={healthColor} fontFamily="monospace">{healthScore}</text>
+          </svg>
+          <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:healthColor, marginTop:2 }}>{healthLabel}</div>
+          {highPriority.length > 0 && (
+            <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:5 }}>{highPriority.length} high-priority actions</div>
+          )}
+        </div>
+
+        {/* Garima's CFO Note — matches screenshot */}
+        <div className="ns-panel" style={{ margin:0, borderLeft:`4px solid ${accentColor}` }}>
+          <div style={{ padding:"14px 16px" }}>
+            <div style={{ fontFamily:F, fontWeight:800, fontSize:11, color:accentColor,
+              textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:10 }}>
+              Garima's CFO Note
+            </div>
+            <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.75, margin:"0 0 14px",
+              display:"-webkit-box", WebkitLineClamp:5, WebkitBoxOrient:"vertical", overflow:"hidden" }}>
+              {reportData?.aiNarration || garimaNote || "Your CFO note will appear once report data is uploaded."}
+            </p>
+            <button onClick={() => setPage && setPage("myreport")}
+              style={{ padding:"7px 16px", borderRadius:8, border:`1px solid ${accentColor}`,
+                background:"transparent", color:accentColor, fontFamily:F, fontSize:12,
+                fontWeight:700, cursor:"pointer" }}>
+              Full Report →
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* ── P&L bar chart ── */}
+      {/* ── Row 4: Action Items | A/R Aging | Cash Flow Trend (3-col, matches screenshot) ── */}
+      <div style={{ display:"grid", gap:14 }} className="dash-bot-grid">
+        <style>{`.dash-bot-grid{grid-template-columns:1fr 1fr 1fr!important}@media(max-width:700px){.dash-bot-grid{grid-template-columns:1fr!important}}`}</style>
+
+        {/* Action Items */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>Action Items</h3>
+            {pendingActions.length > 0 && <span className="ns-badge red">{pendingActions.length} pending</span>}
+          </div>
+          <div style={{ maxHeight:230, overflowY:"auto" }}>
+            {pendingActions.length === 0
+              ? <div style={{ padding:"20px 18px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>All caught up!</div>
+              : pendingActions.slice(0,6).map((a,i) => (
+                  <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:10, padding:"10px 16px",
+                    borderBottom:i<Math.min(pendingActions.length,6)-1?`1px solid ${C.border}`:"none" }}>
+                    <div style={{ width:7, height:7, borderRadius:"50%", flexShrink:0, marginTop:5,
+                      background:a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.dim }}/>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, lineHeight:1.4,
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{a.title||a.item||"—"}</div>
+                      {a.priority && (
+                        <span style={{ fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:10, marginTop:2, display:"inline-block",
+                          background:a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#F3F4F6",
+                          color:a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.muted }}>{a.priority}</span>
+                      )}
+                    </div>
+                  </div>
+                ))
+            }
+          </div>
+        </div>
+
+        {/* A/R Aging */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header">
+            <h3>A/R Aging</h3>
+            {arTotal > 0 && <span className="ns-label" style={{ fontFamily:FM }}>{currSym}{arTotal.toLocaleString()}</span>}
+          </div>
+          {arTotal === 0
+            ? <div style={{ padding:"20px 18px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>No A/R data</div>
+            : <div style={{ padding:"12px 16px 16px" }}>
+                {arBuckets.map((b,i) => {
+                  const pct = (b.val/arTotal*100);
+                  return (
+                    <div key={i} style={{ marginBottom:10 }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
+                        <span style={{ fontFamily:F, fontSize:11, color:C.text }}>{b.label}</span>
+                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
+                          {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400 }}>({pct.toFixed(0)}%)</span>
+                        </span>
+                      </div>
+                      <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10 }}/>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+          }
+        </div>
+
+        {/* Cash Flow Trend */}
+        <div className="ns-panel" style={{ margin:0 }}>
+          <div className="ns-panel-header"><h3>Cash Flow Trend</h3></div>
+          {cfChartData.length === 0
+            ? <div style={{ padding:"20px 18px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>No cashflow data</div>
+            : <div style={{ height:165, padding:"8px 0 4px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={cfChartData} margin={{ top:5, right:10, left:0, bottom:0 }}>
+                    <defs>
+                      <linearGradient id="cfG2" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor={accentColor} stopOpacity={0.2}/>
+                        <stop offset="95%" stopColor={accentColor} stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false}/>
+                    <XAxis dataKey="name" tick={{ fontSize:9, fill:"#9CA3AF" }} axisLine={false} tickLine={false}/>
+                    <YAxis tick={{ fontSize:8, fill:"#9CA3AF" }} axisLine={false} tickLine={false} width={28}/>
+                    <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:10, borderRadius:8, border:"1px solid #E5E7EB" }}/>
+                    <Area type="monotone" dataKey="Actual" stroke={accentColor} strokeWidth={2} fill="url(#cfG2)" connectNulls={false} dot={{ fill:accentColor, r:2.5, strokeWidth:0 }}/>
+                    <Area type="monotone" dataKey="Forecast" stroke="#7C3AED" strokeWidth={1.5} fill="none" strokeDasharray="4 3" connectNulls={false}/>
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+          }
+        </div>
+      </div>
+
+      {/* ── Full P&L + bar chart + Variance + Score (additional detail below) ── */}
       {(() => {
         const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
+        const plFull = [
+          { label:"Revenue",       curr:pl.revenue?.actual||"—",     prev:pl.revenue?.prev||"—",     key:"revenue"    },
+          { label:"Cost of Sales", curr:pl.cogs?.actual||"—",        prev:pl.cogs?.prev||"—",        key:"cogs"       },
+          { label:"Gross Profit",  curr:pl.grossProfit?.actual||"—", prev:pl.grossProfit?.prev||"—", key:"gp"         },
+          { label:"GP Margin %",   curr:pl.gpMargin?.actual||"—",    prev:pl.gpMargin?.prev||"—",    key:"gpmargin"   },
+          { label:"EBITDA",        curr:pl.ebitda?.actual||"—",      prev:pl.ebitda?.prev||"—",      key:"ebitda"     },
+          { label:"EBITDA Margin", curr:pl.ebitdaMargin?.actual||"—",prev:pl.ebitdaMargin?.prev||"—",key:"ebitdamargin"},
+          { label:"Net Profit",    curr:pl.pat?.actual||"—",         prev:pl.pat?.prev||"—",         key:"pat"        },
+          { label:"Net Margin %",  curr:pl.netMargin?.actual||"—",   prev:pl.netMargin?.prev||"—",   key:"netmargin"  },
+        ];
         const chartData = [
           { name:"Revenue",    Current:parse(pl.revenue?.actual),    Prior:parse(pl.revenue?.prev) },
           { name:"Gross P",    Current:parse(pl.grossProfit?.actual), Prior:parse(pl.grossProfit?.prev) },
           { name:"EBITDA",     Current:parse(pl.ebitda?.actual),      Prior:parse(pl.ebitda?.prev) },
           { name:"Net Profit", Current:parse(pl.pat?.actual),         Prior:parse(pl.pat?.prev) },
         ].filter(d => d.Current > 0 || d.Prior > 0);
-        if (!chartData.length) return null;
         return (
-          <div className="ns-panel">
-            <div className="ns-panel-header"><h3>P&L — Current vs Prior Period</h3></div>
-            <div style={{ height:200, padding:"8px 0" }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={chartData} margin={{ top:4, right:12, left:0, bottom:0 }} barGap={4}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false}/>
-                  <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#9CA3AF" }} axisLine={false} tickLine={false}/>
-                  <YAxis tick={{ fontSize:9, fill:"#9CA3AF" }} axisLine={false} tickLine={false} width={32}/>
-                  <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, borderRadius:8, border:"1px solid #E5E7EB" }}/>
-                  <Bar dataKey="Current" name="Current Period" fill={uae?"#00732F":"#2563EB"} radius={[3,3,0,0]}/>
-                  <Bar dataKey="Prior"   name="Prior Period"   fill="#E5E7EB"                 radius={[3,3,0,0]}/>
-                </BarChart>
-              </ResponsiveContainer>
+          <>
+            <div className="ns-panel">
+              <div className="ns-panel-header"><h3>Full P&L — {reportData?.monthLabel||"Current Period"}</h3></div>
+              <div style={{ display:"flex", gap:0, borderBottom:"1px solid #E5E7EB" }}>
+                {[
+                  { label:"GP Margin",   value:pl.gpMargin?.actual||"—"    },
+                  { label:"EBITDA Mrgn", value:pl.ebitdaMargin?.actual||"—" },
+                  { label:"Net Margin",  value:pl.netMargin?.actual||"—"    },
+                  { label:"EBITDA",      value:pl.ebitda?.actual||"—"       },
+                ].map((m,i,arr) => (
+                  <div key={i} style={{ flex:1, padding:"12px 16px", borderRight:i<arr.length-1?"1px solid #E5E7EB":"none" }}>
+                    <div className="ns-label">{m.label}</div>
+                    <div style={{ fontFamily:FM, fontSize:13, fontWeight:800, color:"#111827", marginTop:3 }}>{m.value}</div>
+                  </div>
+                ))}
+              </div>
+              <table className="ns-table">
+                <thead><tr><th>Indicator</th><th className="right">This Period</th><th className="right">Last Period</th></tr></thead>
+                <tbody>
+                  {plFull.map((r,i) => {
+                    const isSubtot = ["gp","ebitda","pat"].includes(r.key);
+                    const isTotal  = r.key === "pat";
+                    return (
+                      <tr key={i} className={isTotal?"total":isSubtot?"subtotal":"striped"}>
+                        <td className={isTotal||isSubtot?"bold":""}>{r.label}</td>
+                        <td className="right mono bold">{r.curr}</td>
+                        <td className="right mono muted">{r.prev}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
-          </div>
+
+            {chartData.length > 0 && (
+              <div className="ns-panel">
+                <div className="ns-panel-header"><h3>P&L — Current vs Prior Period</h3></div>
+                <div style={{ height:200, padding:"8px 0" }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} margin={{ top:4, right:12, left:0, bottom:0 }} barGap={4}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" vertical={false}/>
+                      <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#9CA3AF" }} axisLine={false} tickLine={false}/>
+                      <YAxis tick={{ fontSize:9, fill:"#9CA3AF" }} axisLine={false} tickLine={false} width={32}/>
+                      <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, borderRadius:8, border:"1px solid #E5E7EB" }}/>
+                      <Bar dataKey="Current" name="Current Period" fill={uae?"#00732F":"#2563EB"} radius={[3,3,0,0]}/>
+                      <Bar dataKey="Prior"   name="Prior Period"   fill="#E5E7EB"                 radius={[3,3,0,0]}/>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+          </>
         );
       })()}
 
-      {/* ── Budget vs Actual ── */}
       {varRows.length > 0 && (
         <div className="ns-panel">
-          <div className="ns-panel-header"><h3>Budget vs Actual — Key Performance Indicators</h3></div>
+          <div className="ns-panel-header"><h3>Budget vs Actual</h3></div>
           <table className="ns-table">
-            <thead>
-              <tr>
-                <th>Metric</th>
-                <th className="right">Budget</th>
-                <th className="right">Actual</th>
-                <th className="right">Variance</th>
-                <th style={{ textAlign:"center" }}>Status</th>
-              </tr>
-            </thead>
+            <thead><tr><th>Metric</th><th className="right">Budget</th><th className="right">Actual</th><th className="right">Variance</th><th style={{ textAlign:"center" }}>Status</th></tr></thead>
             <tbody>
               {varRows.map((v,i) => {
                 const diff = v.noCalc ? null : (() => {
@@ -2309,9 +2486,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                     <td className="right mono" style={{ color:diff===null?"#9CA3AF":fav?C.green:C.red, fontWeight:700 }}>
                       {diff===null?"—":(parseFloat(diff)>0?"+":"")+diff+"%"}
                     </td>
-                    <td style={{ textAlign:"center" }}>
-                      <span className={`ns-badge ${fav?"green":"red"}`}>{fav?"On Track":"✗ Watch"}</span>
-                    </td>
+                    <td style={{ textAlign:"center" }}><span className={`ns-badge ${fav?"green":"red"}`}>{fav?"On Track":"✗ Watch"}</span></td>
                   </tr>
                 );
               })}
@@ -2320,7 +2495,6 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
         </div>
       )}
 
-      {/* ── Score breakdown ── */}
       {(reportData?.scoreBreakdown||[]).length > 0 && (
         <div className="ns-panel">
           <div className="ns-panel-header">
@@ -2339,34 +2513,6 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
               ))}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {/* ── AR Aging ── */}
-      {arTotal > 0 && (
-        <div className="ns-panel">
-          <div className="ns-panel-header">
-            <h3>A/R Aging</h3>
-            <span className="ns-label" style={{ fontFamily:FM }}>Total: {currSym}{arTotal.toLocaleString()}</span>
-          </div>
-          <div style={{ padding:16 }}>
-            {arBuckets.map((b,i) => {
-              const pct = arTotal > 0 ? (b.val/arTotal*100) : 0;
-              return (
-                <div key={i} style={{ marginBottom:10 }}>
-                  <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                    <span style={{ fontFamily:F, fontSize:11, color:C.text }}>{b.label}</span>
-                    <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
-                      {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400 }}>({pct.toFixed(0)}%)</span>
-                    </span>
-                  </div>
-                  <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
-                    <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10 }}/>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       )}
 
@@ -14776,6 +14922,29 @@ function Portal({ client, onLogout }) {
       { label:"Runway",                  score:"52", comment:"4.4 months — urgent. Begin fundraise now." },
       { label:"Financial Documentation", score:"88", comment:"3yr audited P&L, MIS pack current, FEMA filed" },
       { label:"Unit Economics",          score:"78", comment:"CAC payback 8mo (was 18mo) — major improvement" },
+    ],
+    workingCapital: {
+      ar0_30: 3200000, ar31_60: 1800000, ar61_90: 800000, ar90plus: 400000,
+      currentRatio: 1.8, dso: 42, dio: 18, dpo: 35,
+      arAging: [
+        { customer:"Gulf Fresh Tech",      current:1500000, d30:500000, d60:0,      d90:0,      risk:"Low",    action:"On schedule" },
+        { customer:"Metro Services Ltd",   current:800000,  d30:600000, d60:200000, d90:0,      risk:"Medium", action:"Follow up call" },
+        { customer:"Sunrise Exports",      current:900000,  d30:0,      d60:600000, d90:0,      risk:"Medium", action:"Send reminder" },
+        { customer:"Alpha Tech Solutions", current:0,       d30:0,      d60:0,      d90:400000, risk:"High",   action:"Demand letter NOW" },
+        { customer:"Beta Consultants",     current:200000,  d30:0,      d60:0,      d90:0,      risk:"Low",    action:"On schedule" },
+      ],
+      apSchedule: [
+        { supplier:"Sunrise Vendors Pvt",  amount:850000, terms:"Net 30", due:"15 Apr 2026", daysLeft:15, priority:"Upcoming" },
+        { supplier:"Metro Paper Co",       amount:620000, terms:"Net 30", due:"20 Apr 2026", daysLeft:20, priority:"On Track" },
+        { supplier:"HDFC Bank Term Loan",  amount:450000, terms:"Monthly",due:"01 Apr 2026", daysLeft:-1, priority:"Overdue"  },
+        { supplier:"QuickFreight Soln",    amount:320000, terms:"Net 45", due:"30 Apr 2026", daysLeft:30, priority:"On Track" },
+        { supplier:"MSEB Utilities",       amount:95000,  terms:"Monthly",due:"10 Apr 2026", daysLeft:10, priority:"Upcoming" },
+      ],
+    },
+    connectedPersonsAdmin: [
+      { name:"Garima Agarwal", role:"CFO (Finzzup)", totalPayments:"₹1.8L/mo" },
+      { name:"Rohan Mehta",    role:"Co-founder & CEO", totalPayments:"₹3.5L/mo" },
+      { name:"Priya Shah",     role:"Lead Investor (Angel)", totalPayments:"₹22L" },
     ],
   };
  
