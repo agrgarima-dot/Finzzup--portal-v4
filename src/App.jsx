@@ -1427,6 +1427,364 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
       </div>
 
+      {/* ── Strategic Health Dimensions ── */}
+      {(() => {
+        // Compute 5 strategic dimension scores from available data
+        const pNum = s => parseFloat(String(s||"0").replace(/[^0-9.-]/g,"")) || 0;
+        const currentRatio = pNum(wc.currentRatio);
+        const dso          = Number(wc.dso || wc.debtorDays || wc.debtor_days || 0);
+        const netM         = pNum(pl.netMargin?.actual);
+        const gpM          = pNum(pl.gpMargin?.actual);
+        const checklistItems2 = reportData?.checklist || [];
+        const checkDone2   = checklistItems2.filter(c=>c.done||c.status==="done").length;
+        const revActual    = pNum(pl.revenue?.actual);
+        const revPrev      = pNum(pl.revenue?.prev);
+        const growthPct    = revPrev > 0 ? ((revActual-revPrev)/revPrev)*100 : null;
+
+        const liqScore  = currentRatio >= 2 ? 92 : currentRatio >= 1.5 ? 76 : currentRatio >= 1 ? 55 : currentRatio > 0 ? 32 : 50;
+        const profScore = netM >= 15 ? 90 : netM >= 10 ? 75 : netM >= 5 ? 58 : netM > 0 ? 38 : netM < 0 ? 15 : 50;
+        const effScore  = dso === 0 ? 55 : dso <= 30 ? 90 : dso <= 45 ? 74 : dso <= 60 ? 52 : dso <= 90 ? 32 : 15;
+        const compScore = checklistItems2.length === 0 ? 60 : Math.round((checkDone2/checklistItems2.length)*100);
+        const growScore = growthPct === null ? 60 : growthPct >= 20 ? 90 : growthPct >= 10 ? 76 : growthPct >= 0 ? 56 : growthPct >= -10 ? 36 : 16;
+
+        const dims = [
+          { label:"Liquidity",     score:liqScore,  icon:"ti-droplet",      desc:currentRatio>0?`Current ratio ${currentRatio.toFixed(1)}x`:"Enter balance sheet", benchmark:"Target ≥ 1.5x" },
+          { label:"Profitability", score:profScore, icon:"ti-trending-up",  desc:pl.netMargin?.actual?`Net margin ${pl.netMargin.actual}`:"Enter P&L data",        benchmark:"Target ≥ 10%" },
+          { label:"Efficiency",    score:effScore,  icon:"ti-clock",        desc:dso>0?`DSO ${dso} days`:"Enter working capital",                                  benchmark:"Target ≤ 45d" },
+          { label:"Compliance",    score:compScore, icon:"ti-shield-check", desc:checklistItems2.length>0?`${checkDone2}/${checklistItems2.length} items done`:"No checklist",   benchmark:"Target 100%" },
+          { label:"Growth",        score:growScore, icon:"ti-rocket",       desc:growthPct!==null?`Rev growth ${growthPct>=0?"+":""}${growthPct.toFixed(1)}%`:"Enter prev period", benchmark:"Target ≥ 10%" },
+        ];
+
+        const scoreColor = s => s >= 75 ? C.green : s >= 50 ? C.amber : C.red;
+        const scoreLabel = s => s >= 75 ? "Strong" : s >= 50 ? "Moderate" : "Needs Work";
+
+        // Pentagon SVG
+        const pSize = 140;
+        const cx = pSize/2, cy = pSize/2, r = pSize/2 * 0.72;
+        const angles = dims.map((_,i) => (i * 2*Math.PI/dims.length) - Math.PI/2);
+        const polyPts = (scale) => angles.map(a => `${cx+r*scale*Math.cos(a)},${cy+r*scale*Math.sin(a)}`).join(" ");
+        const dataPts = angles.map((a,i) => `${cx+r*(dims[i].score/100)*Math.cos(a)},${cy+r*(dims[i].score/100)*Math.sin(a)}`).join(" ");
+
+        return (
+          <div className="ns-panel">
+            <div className="ns-panel-header">
+              <h3>Strategic Health — 5 Dimensions</h3>
+              <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
+                {Math.round(dims.reduce((s,d)=>s+d.score,0)/dims.length)}/100 avg
+              </span>
+            </div>
+            <div style={{ display:"flex", gap:0, alignItems:"stretch", flexWrap:"wrap" }}>
+              {/* Pentagon radar */}
+              <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
+                padding:"16px 20px", borderRight:`1px solid ${C.border}`, minWidth:160, flexShrink:0 }}>
+                <svg width={pSize} height={pSize} viewBox={`0 0 ${pSize} ${pSize}`}>
+                  {[0.25,0.5,0.75,1].map(l => (
+                    <polygon key={l} points={polyPts(l)} fill="none" stroke="#E5E7EB" strokeWidth="0.8"/>
+                  ))}
+                  {angles.map((a,i) => (
+                    <line key={i} x1={cx} y1={cy} x2={cx+r*Math.cos(a)} y2={cy+r*Math.sin(a)} stroke="#E5E7EB" strokeWidth="0.8"/>
+                  ))}
+                  <polygon points={dataPts} fill={`${accentColor}20`} stroke={accentColor} strokeWidth="2"/>
+                  {dims.map((d,i) => {
+                    const lR = r+15;
+                    const lx = cx+lR*Math.cos(angles[i]);
+                    const ly = cy+lR*Math.sin(angles[i]);
+                    return (
+                      <text key={i} x={lx} y={ly} textAnchor="middle" dominantBaseline="middle"
+                        fontSize="7.5" fill={C.muted} fontFamily="Inter,sans-serif" fontWeight="600">{d.label}</text>
+                    );
+                  })}
+                </svg>
+              </div>
+              {/* Dimension score bars */}
+              <div style={{ flex:1, padding:"14px 18px", minWidth:220 }}>
+                {dims.map((d,i) => (
+                  <div key={i} style={{ marginBottom: i < dims.length-1 ? 14 : 0 }}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:5 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                        <i className={"ti "+d.icon} style={{ fontSize:12, color:scoreColor(d.score) }}/>
+                        <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text }}>{d.label}</span>
+                      </div>
+                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                        <span style={{ fontFamily:F, fontSize:10, color:C.muted }}>{d.desc}</span>
+                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:800, color:scoreColor(d.score), minWidth:26, textAlign:"right" }}>{d.score}</span>
+                      </div>
+                    </div>
+                    <div style={{ position:"relative", height:6, background:"#F3F4F6", borderRadius:10 }}>
+                      <div style={{ height:"100%", width:`${d.score}%`, background:scoreColor(d.score), borderRadius:10, transition:"width 0.6s ease" }}/>
+                    </div>
+                    <div style={{ fontFamily:F, fontSize:9, color:C.dim, marginTop:2 }}>{d.benchmark} · {scoreLabel(d.score)}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Key Ratios vs Benchmarks ── */}
+      {(() => {
+        const pNum = s => parseFloat(String(s||"0").replace(/[^0-9.-]/g,"")) || 0;
+        const dso  = Number(wc.dso || wc.debtorDays || wc.debtor_days || 0);
+        const dpo  = Number(wc.dpo || 0);
+        const cr   = pNum(wc.currentRatio);
+        const gpM  = pNum(pl.gpMargin?.actual);
+        const netM = pNum(pl.netMargin?.actual);
+
+        const ratios = [
+          {
+            label:"DSO (Days Sales Outstanding)",
+            value: dso > 0 ? `${dso} days` : "—",
+            raw: dso, benchmark:45, maxBar:120,
+            lowerBetter:true,
+            icon:"ti-clock",
+            color: dso===0?"#94A3B8":dso<=30?C.green:dso<=45?C.amber:C.red,
+            insight: dso===0?"Enter DSO in working capital":dso<=30?"Excellent collection speed":dso<=45?"Within industry norm":dso<=60?"Slightly slow — review collection policy":"High risk: chase overdue receivables",
+          },
+          {
+            label:"DPO (Days Payable Outstanding)",
+            value: dpo > 0 ? `${dpo} days` : "—",
+            raw: dpo, benchmark:30, maxBar:90,
+            lowerBetter:false,
+            icon:"ti-calendar",
+            color: dpo===0?"#94A3B8":dpo>=45?C.green:dpo>=30?C.amber:C.red,
+            insight: dpo===0?"Enter DPO in working capital":dpo>=45?"Good — using supplier credit well":dpo>=30?"Moderate — could extend terms":dpo<30?"Low — paying too fast, renegotiate terms":"",
+          },
+          {
+            label:"Gross Profit Margin",
+            value: pl.gpMargin?.actual || "—",
+            raw: gpM, benchmark:30, maxBar:100,
+            lowerBetter:false,
+            icon:"ti-percentage",
+            color: gpM===0?"#94A3B8":gpM>=40?C.green:gpM>=25?C.amber:C.red,
+            insight: gpM===0?"Enter gross profit data":gpM>=40?"Strong margins — pricing power":gpM>=25?"Healthy — room to improve":gpM>=15?"Watch COGS — margins under pressure":"Critical — review pricing and cost structure",
+          },
+          {
+            label:"Net Profit Margin",
+            value: pl.netMargin?.actual || "—",
+            raw: netM, benchmark:10, maxBar:40,
+            lowerBetter:false,
+            icon:"ti-trending-up",
+            color: netM===0?"#94A3B8":netM>=15?C.green:netM>=8?C.amber:netM>0?C.orange||"#F97316":C.red,
+            insight: netM===0?"Enter P&L data":netM>=15?"Excellent — strong bottom line":netM>=8?"Healthy profitability":netM>0?"Thin margins — control overheads":"Loss-making — urgent intervention needed",
+          },
+        ];
+
+        return (
+          <div className="ns-panel">
+            <div className="ns-panel-header">
+              <h3>Key Ratios vs Benchmarks</h3>
+              <span className="ns-label">Industry standard benchmarks</span>
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:0 }} className="ov-ratio-grid">
+              <style>{`.ov-ratio-grid{grid-template-columns:1fr 1fr!important}@media(max-width:540px){.ov-ratio-grid{grid-template-columns:1fr!important}}`}</style>
+              {ratios.map((r,i) => {
+                const barPct = r.raw > 0 ? Math.min((r.raw/r.maxBar)*100, 100) : 0;
+                const bmkPct = Math.min((r.benchmark/r.maxBar)*100, 100);
+                return (
+                  <div key={i} style={{ padding:"14px 18px", borderBottom:`1px solid ${C.border}`,
+                    borderRight: i%2===0 ? `1px solid ${C.border}` : "none" }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
+                      <i className={"ti "+r.icon} style={{ fontSize:13, color:r.color }}/>
+                      <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em" }}>{r.label}</span>
+                    </div>
+                    <div style={{ fontFamily:FM, fontSize:18, fontWeight:900, color:r.color, marginBottom:8 }}>{r.value}</div>
+                    {/* Bar with benchmark marker */}
+                    <div style={{ position:"relative", height:7, background:"#F3F4F6", borderRadius:10, marginBottom:6 }}>
+                      <div style={{ height:"100%", width:`${barPct}%`, background:r.color, borderRadius:10, transition:"width 0.6s ease" }}/>
+                      {/* Benchmark line */}
+                      <div style={{ position:"absolute", top:-3, bottom:-3, left:`${bmkPct}%`, width:2, background:"#94A3B8", borderRadius:2 }}/>
+                    </div>
+                    <div style={{ fontFamily:F, fontSize:10, color:C.muted }}>
+                      <span style={{ color:"#94A3B8" }}>▸ Benchmark: {r.benchmark}{r.label.includes("Day")?"d":"%"}</span>
+                    </div>
+                    <div style={{ fontFamily:F, fontSize:11, color:r.color, marginTop:4, fontWeight:600 }}>{r.insight}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Risk & Opportunity Flags ── */}
+      {(() => {
+        const pNum = s => parseFloat(String(s||"0").replace(/[^0-9.-]/g,"")) || 0;
+        const risks = [];
+        const opps  = [];
+
+        // Collection risk
+        const ar90 = Number(wc.ar90plus || reportData?.ar90plus || 0);
+        const arTot = arBuckets.reduce((s,b)=>s+b.val,0);
+        if (ar90 > 0 && arTot > 0) {
+          const pct = Math.round((ar90/arTot)*100);
+          risks.push({ icon:"ti-alert-circle", color:pct>30?C.red:C.amber, level:pct>30?"High":"Medium",
+            title:"Collection Risk", detail:`${pct}% of A/R is 90+ days overdue`, action:"Chase receivables" });
+        }
+
+        // Payables overdue
+        const apOv = (wc.apSchedule||[]).filter(r=>r.priority==="Overdue");
+        if (apOv.length > 0) {
+          const ovAmt = apOv.reduce((s,r)=>s+Number(r.amount||0),0);
+          risks.push({ icon:"ti-receipt-off", color:C.red, level:"High",
+            title:"Overdue Payables", detail:`${apOv.length} vendor${apOv.length>1?"s":""} overdue — ${uaeClient?"AED ":"₹"}${ovAmt.toLocaleString()}`, action:"Pay immediately" });
+        }
+
+        // Cash runway
+        const runwayKpi2 = (kpis||[]).find(k=>k.label?.toLowerCase().includes("runway"));
+        if (runwayKpi2?.value && runwayKpi2.value !== "—") {
+          const mo = parseFloat(String(runwayKpi2.value).replace(/[^0-9.]/g,""));
+          if (!isNaN(mo) && mo < 6)
+            risks.push({ icon:"ti-flame", color:mo<3?C.red:C.amber, level:mo<3?"Critical":"High",
+              title:"Cash Runway", detail:`${runwayKpi2.value} remaining`, action:mo<3?"Raise funds immediately":"Review burn rate" });
+        }
+
+        // Compliance overdue
+        const checklistItems3 = reportData?.checklist || [];
+        const overdueCL = checklistItems3.filter(c=>!c.done && c.status!=="done" && c.dueDate && new Date(c.dueDate)<new Date());
+        if (overdueCL.length > 0)
+          risks.push({ icon:"ti-shield-off", color:C.amber, level:"Medium",
+            title:"Overdue Compliance", detail:`${overdueCL.length} items past due date`, action:"Review compliance tab" });
+
+        // Revenue concentration
+        if (top5Clients.length > 0 && arTotal > 0) {
+          const topPct = Math.round((top5Clients[0].val/arTotal)*100);
+          if (topPct > 40)
+            risks.push({ icon:"ti-building", color:C.amber, level:"Medium",
+              title:"Revenue Concentration", detail:`Top client is ${topPct}% of receivables`, action:"Diversify client base" });
+        }
+
+        // Growth opportunity
+        const revActual = pNum(pl.revenue?.actual);
+        const revPrev   = pNum(pl.revenue?.prev);
+        if (revActual > revPrev && revPrev > 0) {
+          const g = ((revActual-revPrev)/revPrev*100).toFixed(1);
+          opps.push({ icon:"ti-rocket", color:C.green, title:"Revenue Growth", detail:`+${g}% vs prior period`, action:"Sustain momentum" });
+        }
+        if (pNum(pl.gpMargin?.actual) >= 35)
+          opps.push({ icon:"ti-percentage", color:C.green, title:"Strong Gross Margin", detail:`${pl.gpMargin.actual} — above industry avg`, action:"Reinvest in growth" });
+        if (Number(wc.dpo||0) < 30 && Number(wc.dpo||0) > 0)
+          opps.push({ icon:"ti-calendar-plus", color:C.blue, title:"Extend Supplier Terms", detail:`DPO at ${wc.dpo}d — room to negotiate`, action:"Renegotiate payment terms" });
+
+        if (risks.length === 0 && opps.length === 0) return null;
+
+        const levelColor = l => l==="Critical"?{ bg:"#FFF1F0", border:"#FCA5A5", text:C.red }:l==="High"?{ bg:"#FFF7ED", border:"#FED7AA", text:C.amber }:{ bg:"#FFFBEB", border:"#FDE68A", text:"#92400E" };
+
+        return (
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }} className="ov-risk-row">
+            <style>{`.ov-risk-row{grid-template-columns:1fr 1fr!important}@media(max-width:580px){.ov-risk-row{grid-template-columns:1fr!important}}`}</style>
+
+            {/* Risks */}
+            <div className="ns-panel" style={{ margin:0 }}>
+              <div className="ns-panel-header">
+                <h3>Risk Flags</h3>
+                {risks.length > 0 && <span className="ns-badge red">{risks.length} active</span>}
+              </div>
+              {risks.length === 0
+                ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
+                    <i className="ti ti-circle-check" style={{ fontSize:28, color:C.green, display:"block", marginBottom:6 }}/>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700 }}>No major risks detected</div>
+                  </div>
+                : <div style={{ padding:"10px 14px 14px" }}>
+                    {risks.map((risk,i) => {
+                      const lc = levelColor(risk.level);
+                      return (
+                        <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:9,
+                          background:lc.bg, border:`1px solid ${lc.border}`, marginBottom:8 }}>
+                          <i className={"ti "+risk.icon} style={{ fontSize:15, color:lc.text, flexShrink:0, marginTop:1 }}/>
+                          <div style={{ flex:1, minWidth:0 }}>
+                            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
+                              <span style={{ fontFamily:F, fontSize:11, fontWeight:800, color:lc.text }}>{risk.title}</span>
+                              <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:20,
+                                background:lc.border, color:lc.text }}>{risk.level}</span>
+                            </div>
+                            <div style={{ fontFamily:F, fontSize:11, color:lc.text, opacity:0.85 }}>{risk.detail}</div>
+                            <div style={{ fontFamily:F, fontSize:10, color:lc.text, fontWeight:700, marginTop:3 }}>→ {risk.action}</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+              }
+            </div>
+
+            {/* Opportunities */}
+            <div className="ns-panel" style={{ margin:0 }}>
+              <div className="ns-panel-header">
+                <h3>Opportunities</h3>
+                {opps.length > 0 && <span className="ns-badge green">{opps.length} identified</span>}
+              </div>
+              {opps.length === 0
+                ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
+                    <i className="ti ti-bulb" style={{ fontSize:28, color:C.dim, display:"block", marginBottom:6 }}/>
+                    <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>Add more data to surface opportunities</div>
+                  </div>
+                : <div style={{ padding:"10px 14px 14px" }}>
+                    {opps.map((opp,i) => (
+                      <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:9,
+                        background:"#F0FDF4", border:"1px solid #86EFAC", marginBottom:8 }}>
+                        <i className={"ti "+opp.icon} style={{ fontSize:15, color:opp.color, flexShrink:0, marginTop:1 }}/>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontFamily:F, fontSize:11, fontWeight:800, color:opp.color, marginBottom:2 }}>{opp.title}</div>
+                          <div style={{ fontFamily:F, fontSize:11, color:"#166534", opacity:0.9 }}>{opp.detail}</div>
+                          <div style={{ fontFamily:F, fontSize:10, color:opp.color, fontWeight:700, marginTop:3 }}>→ {opp.action}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+              }
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Cash Conversion Cycle ── */}
+      {(Number(wc.dso||0) > 0 || Number(wc.dpo||0) > 0 || Number(wc.dio||0) > 0) && (() => {
+        const dso2 = Number(wc.dso || wc.debtorDays || 0);
+        const dio2 = Number(wc.dio || 0);
+        const dpo2 = Number(wc.dpo || 0);
+        const ccc  = dso2 + dio2 - dpo2;
+        const cccColor = ccc <= 30 ? C.green : ccc <= 60 ? C.amber : C.red;
+        return (
+          <div className="ns-panel">
+            <div className="ns-panel-header">
+              <h3>Cash Conversion Cycle</h3>
+              <span style={{ fontFamily:FM, fontSize:12, fontWeight:800, color:cccColor }}>{ccc > 0 ? `${ccc} days` : `${ccc}d (negative = good)`}</span>
+            </div>
+            <div style={{ padding:"14px 18px 18px" }}>
+              {/* Pipeline visual */}
+              <div style={{ display:"flex", alignItems:"stretch", gap:0, marginBottom:14, borderRadius:10, overflow:"hidden" }}>
+                {[
+                  { label:"DSO", sublabel:"Collect from clients", val:dso2, color:C.blue,  icon:"ti-user-dollar"  },
+                  { label:"DIO", sublabel:"Inventory holding",    val:dio2, color:C.purple, icon:"ti-package"      },
+                  { label:"DPO", sublabel:"Pay suppliers",        val:dpo2, color:C.green,  icon:"ti-building-bank", minus:true },
+                ].map((seg,i) => (
+                  <div key={i} style={{ flex:Math.max(seg.val||20,20), background:`${seg.color}15`, borderRight:i<2?`1px solid ${seg.color}30`:"none",
+                    padding:"12px 14px", display:"flex", flexDirection:"column", gap:3 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                      {seg.minus && <span style={{ fontFamily:FM, fontSize:11, color:seg.color, fontWeight:800 }}>−</span>}
+                      <i className={"ti "+seg.icon} style={{ fontSize:12, color:seg.color }}/>
+                      <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:seg.color, textTransform:"uppercase", letterSpacing:"0.06em" }}>{seg.label}</span>
+                    </div>
+                    <div style={{ fontFamily:FM, fontSize:18, fontWeight:900, color:seg.color }}>{seg.val > 0 ? `${seg.val}d` : "—"}</div>
+                    <div style={{ fontFamily:F, fontSize:9, color:C.muted }}>{seg.sublabel}</div>
+                  </div>
+                ))}
+                {/* CCC result */}
+                <div style={{ flex:Math.max(Math.abs(ccc)||20,20), background:`${cccColor}18`, padding:"12px 14px", display:"flex", flexDirection:"column", gap:3, borderLeft:`2px solid ${cccColor}` }}>
+                  <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:cccColor, textTransform:"uppercase", letterSpacing:"0.06em" }}>= CCC</div>
+                  <div style={{ fontFamily:FM, fontSize:18, fontWeight:900, color:cccColor }}>{ccc}d</div>
+                  <div style={{ fontFamily:F, fontSize:9, color:C.muted }}>{ccc<=30?"Efficient":ccc<=60?"Moderate":"High — cash locked up"}</div>
+                </div>
+              </div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted, lineHeight:1.6 }}>
+                CCC = DSO + DIO − DPO. A lower or negative CCC means the business collects cash before paying suppliers — a sign of strong working capital management.
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Cash Flow Story ── */}
       {cfData.length > 0 && (
         <div className="ns-panel">
