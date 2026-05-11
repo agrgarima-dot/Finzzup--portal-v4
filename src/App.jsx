@@ -2852,18 +2852,10 @@ function CashFlow({ reportData, client, kpis }) {
           </Card>
         )}
  
-        <Card style={{ borderLeft:`4px solid ${C.amber}` }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.amber, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
-            Garima's Analysis
-          </div>
-          <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
-            {reportData?.cashflowNote || reportData?.packNote || garimaDefaults.startup}
-          </p>
-        </Card>
       </div>
     );
   }
- 
+
   // ───────────────────────────────────────────────────────────────────────────
   // MSME PACK
   // ───────────────────────────────────────────────────────────────────────────
@@ -2975,18 +2967,10 @@ function CashFlow({ reportData, client, kpis }) {
           ))}
         </Card>
  
-        <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
-          <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
-            Garima's Analysis
-          </div>
-          <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
-            {reportData?.cashflowNote || reportData?.packNote || garimaDefaults.msme}
-          </p>
-        </Card>
       </div>
     );
   }
- 
+
   // ───────────────────────────────────────────────────────────────────────────
   // CORPORATE PACK
   // ───────────────────────────────────────────────────────────────────────────
@@ -3123,18 +3107,10 @@ function CashFlow({ reportData, client, kpis }) {
         </div>
       </Card>
  
-      <Card style={{ borderLeft:`4px solid ${C.purple}` }}>
-        <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
-          Garima's Analysis
-        </div>
-        <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
-          {reportData?.cashflowNote || reportData?.packNote || garimaDefaults.corporate}
-        </p>
-      </Card>
     </div>
   );
 }
- 
+
 // ─── ACTION ITEMS ─────────────────────────────────────────────────────────────
 function ActionItems({ actions: actionsProp, kpis, reportData }) {
   const [items, setItems] = useState(actionsProp || ACTIONS);
@@ -19185,6 +19161,133 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   )}
                 </Card>}
  
+                {/* ══ OVERVIEW & DASHBOARD DATA ══════════════════════════════ */}
+                <Card style={{ marginBottom:20, border:`1px solid ${C.blue}30`, background:`${C.blue}04` }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-layout-dashboard" style={{fontSize:16,color:C.blue}}/>Overview &amp; Dashboard Data
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
+                    Powers the <strong>Overview infographics</strong> (AR aging chart, top clients, vendors, CCC) and <strong>Dashboard AR bar</strong>.
+                    Enter <em>raw numeric amounts</em> — e.g. <code style={{background:"#fff",padding:"1px 6px",borderRadius:8,fontFamily:FM}}>3200000</code> not ₹32L.
+                  </p>
+
+                  {/* ── AR Aging Buckets ── */}
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.07em" }}>A/R Aging Buckets (raw ₹)</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:18 }}>
+                    {[
+                      {label:"0–30 Days",key:"ar0_30"},
+                      {label:"31–60 Days",key:"ar31_60"},
+                      {label:"61–90 Days",key:"ar61_90"},
+                      {label:"90+ Days",  key:"ar90plus"},
+                    ].map(f=>(
+                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label} mono
+                        val={reportData?.workingCapital?.[f.key]||""}
+                        onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),[f.key]:Number(v)||0}}))}
+                        placeholder="e.g. 1800000"/>
+                    ))}
+                  </div>
+
+                  {/* ── CCC Inputs ── */}
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.07em" }}>Cash Conversion Cycle Inputs</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:10, marginBottom:18 }}>
+                    {[
+                      {label:"DSO (days)",     key:"dso",          ph:"e.g. 42"},
+                      {label:"DIO (days)",     key:"dio",          ph:"e.g. 18"},
+                      {label:"DPO (days)",     key:"dpo",          ph:"e.g. 35"},
+                      {label:"Current Ratio",  key:"currentRatio", ph:"e.g. 1.8"},
+                    ].map(f=>(
+                      <AdminInput key={f.key} C={C} F={F} FM={FM} label={f.label} mono
+                        val={reportData?.workingCapital?.[f.key]||""}
+                        onChange={v=>setReportData(r=>({...r,workingCapital:{...(r.workingCapital||{}),[f.key]:Number(v)||v}}))}
+                        placeholder={f.ph}/>
+                    ))}
+                  </div>
+
+                  {/* ── AR Aging by Customer ── */}
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.07em" }}>Top 5 Clients — A/R Aging by Customer</div>
+                  <p style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:10, lineHeight:1.6 }}>Shown on Overview's Top 5 Clients section and Working Capital AR table. Raw ₹ amounts.</p>
+                  {[0,1,2,3,4].map(i=>(
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:14, padding:14, marginBottom:8 }}>
+                      <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>Client {i+1}</div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="Client Name"
+                          val={reportData?.workingCapital?.arAging?.[i]?.customer||""}
+                          onChange={v=>setReportData(r=>{const a=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];a[i]={...a[i],customer:v};return{...r,workingCapital:{...(r.workingCapital||{}),arAging:a}};})}
+                          placeholder="e.g. ABC Enterprises Pvt Ltd"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Action Required"
+                          val={reportData?.workingCapital?.arAging?.[i]?.action||""}
+                          onChange={v=>setReportData(r=>{const a=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];a[i]={...a[i],action:v};return{...r,workingCapital:{...(r.workingCapital||{}),arAging:a}};})}
+                          placeholder="e.g. On schedule / Send reminder / Demand letter"/>
+                      </div>
+                      <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:8, marginBottom:8 }}>
+                        {[{lbl:"0–30d (₹)",fk:"current"},{lbl:"31–60d (₹)",fk:"d30"},{lbl:"61–90d (₹)",fk:"d60"},{lbl:"90d+ (₹)",fk:"d90"}].map(f=>(
+                          <AdminInput key={f.fk} C={C} F={F} FM={FM} label={f.lbl} mono
+                            val={reportData?.workingCapital?.arAging?.[i]?.[f.fk]||""}
+                            onChange={v=>setReportData(r=>{const a=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];a[i]={...a[i],[f.fk]:Number(v)||0};return{...r,workingCapital:{...(r.workingCapital||{}),arAging:a}};})}
+                            placeholder="0"/>
+                        ))}
+                      </div>
+                      <AdminSelect C={C} F={F} label="Risk Level"
+                        val={reportData?.workingCapital?.arAging?.[i]?.risk||"Low"}
+                        onChange={v=>setReportData(r=>{const a=[...((r.workingCapital?.arAging)||[{},{},{},{},{}])];a[i]={...a[i],risk:v};return{...r,workingCapital:{...(r.workingCapital||{}),arAging:a}};})}
+                        options={[{value:"Low",label:"Low — current, on schedule"},{value:"Medium",label:"Medium — 30–60d, follow up"},{value:"High",label:"High — 90d+, escalate now"}]}/>
+                    </div>
+                  ))}
+
+                  {/* ── AP Schedule ── */}
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, marginBottom:6, marginTop:8, textTransform:"uppercase", letterSpacing:"0.07em" }}>Top 5 Vendors — AP Payment Schedule</div>
+                  <p style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:10, lineHeight:1.6 }}>Outstanding payables per vendor — shown in Overview's Top 5 Vendors section.</p>
+                  {[0,1,2,3,4].map(i=>(
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:14, padding:14, marginBottom:8 }}>
+                      <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>Vendor {i+1}</div>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8, marginBottom:8 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="Supplier Name"
+                          val={reportData?.workingCapital?.apSchedule?.[i]?.supplier||""}
+                          onChange={v=>setReportData(r=>{const a=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];a[i]={...a[i],supplier:v};return{...r,workingCapital:{...(r.workingCapital||{}),apSchedule:a}};})}
+                          placeholder="e.g. Sunrise Vendors Pvt Ltd"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Amount (₹)" mono
+                          val={reportData?.workingCapital?.apSchedule?.[i]?.amount||""}
+                          onChange={v=>setReportData(r=>{const a=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];a[i]={...a[i],amount:Number(v)||0};return{...r,workingCapital:{...(r.workingCapital||{}),apSchedule:a}};})}
+                          placeholder="e.g. 850000"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Payment Terms"
+                          val={reportData?.workingCapital?.apSchedule?.[i]?.terms||""}
+                          onChange={v=>setReportData(r=>{const a=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];a[i]={...a[i],terms:v};return{...r,workingCapital:{...(r.workingCapital||{}),apSchedule:a}};})}
+                          placeholder="e.g. Net 30"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Due Date"
+                          val={reportData?.workingCapital?.apSchedule?.[i]?.due||""}
+                          onChange={v=>setReportData(r=>{const a=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];a[i]={...a[i],due:v};return{...r,workingCapital:{...(r.workingCapital||{}),apSchedule:a}};})}
+                          placeholder="e.g. 15 Apr 2026"/>
+                      </div>
+                      <AdminSelect C={C} F={F} label="Payment Status"
+                        val={reportData?.workingCapital?.apSchedule?.[i]?.priority||"On Track"}
+                        onChange={v=>setReportData(r=>{const a=[...((r.workingCapital?.apSchedule)||[{},{},{},{},{}])];a[i]={...a[i],priority:v};return{...r,workingCapital:{...(r.workingCapital||{}),apSchedule:a}};})}
+                        options={[{value:"On Track",label:"On Track"},{value:"Upcoming",label:"Upcoming — pay soon"},{value:"Overdue",label:"Overdue — pay now"}]}/>
+                    </div>
+                  ))}
+
+                  {/* ── Connected Persons ── */}
+                  <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, marginBottom:6, marginTop:8, textTransform:"uppercase", letterSpacing:"0.07em" }}>Connected Persons (shown in Overview page)</div>
+                  <p style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:10, lineHeight:1.6 }}>Key founders, directors, investors — shown at the bottom of the Overview page.</p>
+                  {[0,1,2].map(i=>(
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:14, padding:14, marginBottom:8 }}>
+                      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
+                        <AdminInput C={C} F={F} FM={FM} label="Name"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.name||""}
+                          onChange={v=>setReportData(r=>{const a=[...(r.connectedPersonsAdmin||[{},{},{}])];a[i]={...a[i],name:v};return{...r,connectedPersonsAdmin:a};})}
+                          placeholder="e.g. Rohan Mehta"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Role / Designation"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.role||""}
+                          onChange={v=>setReportData(r=>{const a=[...(r.connectedPersonsAdmin||[{},{},{}])];a[i]={...a[i],role:v};return{...r,connectedPersonsAdmin:a};})}
+                          placeholder="e.g. Co-founder &amp; CEO"/>
+                        <AdminInput C={C} F={F} FM={FM} label="Payments / Notes"
+                          val={reportData?.connectedPersonsAdmin?.[i]?.totalPayments||""}
+                          onChange={v=>setReportData(r=>{const a=[...(r.connectedPersonsAdmin||[{},{},{}])];a[i]={...a[i],totalPayments:v};return{...r,connectedPersonsAdmin:a};})}
+                          placeholder="e.g. ₹3.5L/mo"/>
+                      </div>
+                    </div>
+                  ))}
+                </Card>
+
                 {reportData && <AdminSaveBtn loading={loading} saved={saved} F={F} onClick={saveReportData} label="Save All Report Data"/>}
                 {reportData && (
                   <div style={{ marginTop:12 }}>
