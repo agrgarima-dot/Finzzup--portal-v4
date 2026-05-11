@@ -51,6 +51,30 @@
         navigator.serviceWorker.register('/sw.js').catch(() => {});
       });
     }
+
+    // Global error logger — sends unhandled errors to Supabase via /api/log-error
+    function sendError(message, stack) {
+      try {
+        fetch('/api/log-error', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message,
+            stack,
+            url: window.location.href,
+            userAgent: navigator.userAgent,
+            clientId: window.__finzzup_client_id__ || null,
+          }),
+        }).catch(() => {});
+      } catch {}
+    }
+    window.addEventListener('error', e => {
+      sendError(e.message, e.error?.stack || '');
+    });
+    window.addEventListener('unhandledrejection', e => {
+      const msg = e.reason?.message || String(e.reason || 'Unhandled promise rejection');
+      sendError(msg, e.reason?.stack || '');
+    });
   </script>
 </body>
 </html>
