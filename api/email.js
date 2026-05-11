@@ -16,7 +16,7 @@ export default async function handler(req, res) {
   const { type, to, name, company, month, inviteCode, portalUrl } = body;
 
   const from = process.env.NOTIFY_FROM || "Garima · Finzzup <garima@finzzup.org>";
-  const loginUrl = portalUrl || "https://finzzup-portal-v4.vercel.app";
+  const loginUrl = portalUrl || "https://portal.finzzup.org";
 
   let subject, html;
 
