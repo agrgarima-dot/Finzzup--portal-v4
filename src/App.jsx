@@ -2590,28 +2590,9 @@ function CashFlow({ reportData, client, kpis }) {
  
   // ── FIXED: Garima note — always shown at top, unique forward-looking insight ──
   const GarimaNoteCF = ({ note }) => (
-    <Card style={{ marginBottom:14, background:"#FFFBF0", border:"1px solid #FDE68A", borderLeft:`4px solid #F59E0B` }}>
-      <div style={{ display:"flex", gap:12, alignItems:"flex-start" }}>
-        <div style={{ width:38, height:38, borderRadius:"50%", flexShrink:0,
-          background:"linear-gradient(135deg,#F59E0B,#D97706)",
-          display:"flex", alignItems:"center", justifyContent:"center",
-          fontFamily:F, fontWeight:800, fontSize:15, color:"white" }}>G</div>
-        <div style={{ flex:1 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.warning, marginBottom:2 }}>
-            Note from Garima — Cash Flow Forecast
-          </div>
-          <div style={{ fontFamily:F, fontSize:11, color:"#B45309", marginBottom:8 }}>
-            Forward-looking cash position · {reportData?.monthLabel || "Current Period"}
-          </div>
-          <p style={{ fontFamily:F, fontSize:13, color:"#78350F", lineHeight:1.85, margin:"0 0 10px" }}>{note}</p>
-          <a href={WA} target="_blank" rel="noopener noreferrer"
-            style={{ display:"inline-flex", alignItems:"center", gap:6, background:"#25D366",
-              color:"white", borderRadius:16, padding:"7px 14px", fontFamily:F,
-              fontWeight:700, fontSize:12, textDecoration:"none" }}>
-            WhatsApp Garima
-          </a>
-        </div>
-      </div>
+    <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
+      <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
+      <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>{note}</p>
     </Card>
   );
  
