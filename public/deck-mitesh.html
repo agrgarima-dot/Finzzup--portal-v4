@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Finzzup — Fractional CFO Services · Garima Agarwal CA</title>
+<style>
+  :root {
+    --blue: #2563EB;
+    --purple: #7C3AED;
+    --green: #059669;
+    --text: #111827;
+    --muted: #6B7280;
+    --border: #E5E7EB;
+    --bg: #F8FAFC;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0F172A; color: var(--text); }
+
+  /* NAV */
+  .nav {
+    position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 14px 40px; background: rgba(15,23,42,0.95);
+    backdrop-filter: blur(8px); border-bottom: 1px solid rgba(255,255,255,0.08);
+  }
+  .nav-brand { font-size: 18px; font-weight: 900; color: white; letter-spacing: -0.03em; }
+  .nav-brand span { opacity: 0.6; }
+  .nav-sub { font-size: 11px; color: rgba(255,255,255,0.4); letter-spacing: 0.12em; text-transform: uppercase; }
+  .nav-contact { font-size: 12px; color: rgba(255,255,255,0.5); text-align: right; line-height: 1.6; }
+  .nav-contact a { color: #60A5FA; text-decoration: none; }
+
+  /* SLIDES */
+  .slide {
+    min-height: 100vh; display: flex; flex-direction: column; justify-content: center;
+    padding: 100px 80px 60px;
+    position: relative; overflow: hidden;
+  }
+  .slide-number {
+    position: absolute; bottom: 28px; right: 40px;
+    font-size: 11px; color: rgba(255,255,255,0.2); letter-spacing: 0.1em;
+  }
+
+  /* SLIDE 1 — HERO */
+  .slide-hero {
+    background: linear-gradient(135deg, #0F172A 0%, #1E1B4B 50%, #0F172A 100%);
+    text-align: center; align-items: center;
+  }
+  .hero-tag {
+    display: inline-block; padding: 6px 16px; border-radius: 20px;
+    background: rgba(37,99,235,0.15); border: 1px solid rgba(37,99,235,0.3);
+    font-size: 12px; font-weight: 700; color: #60A5FA;
+    letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 28px;
+  }
+  .hero-h1 {
+    font-size: clamp(36px, 5vw, 64px); font-weight: 900; color: white;
+    letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 20px;
+    max-width: 800px;
+  }
+  .hero-h1 .grad {
+    background: linear-gradient(135deg, #60A5FA, #A78BFA);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .hero-sub {
+    font-size: 18px; color: rgba(255,255,255,0.55); max-width: 560px;
+    line-height: 1.7; margin-bottom: 48px;
+  }
+  .hero-chips { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .chip {
+    padding: 8px 18px; border-radius: 8px; font-size: 13px; font-weight: 600;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: rgba(255,255,255,0.7);
+  }
+  .chip-blue { background: rgba(37,99,235,0.15); border-color: rgba(37,99,235,0.3); color: #93C5FD; }
+
+  /* SLIDE 2 — PROBLEM */
+  .slide-dark { background: #0F172A; }
+  .slide-light { background: #ffffff; }
+  .slide-accent { background: linear-gradient(135deg, #1E3A8A, #4C1D95); }
+
+  .section-tag {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+  .tag-blue { color: #60A5FA; }
+  .tag-purple { color: #A78BFA; }
+  .tag-green { color: #34D399; }
+  .tag-orange { color: #FBBF24; }
+  .tag-dark { color: var(--blue); }
+
+  .slide-h2 {
+    font-size: clamp(28px, 3.5vw, 44px); font-weight: 900; line-height: 1.15;
+    letter-spacing: -0.02em; margin-bottom: 48px;
+  }
+  .h2-white { color: white; }
+  .h2-dark { color: var(--text); }
+
+  .pain-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .pain-card {
+    padding: 28px; border-radius: 12px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  }
+  .pain-icon { font-size: 28px; margin-bottom: 12px; }
+  .pain-title { font-size: 15px; font-weight: 700; color: white; margin-bottom: 8px; }
+  .pain-text { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.7; }
+
+  /* SLIDE 3 — WHO IS GARIMA */
+  .profile-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: start; }
+  .profile-name { font-size: 36px; font-weight: 900; color: var(--text); letter-spacing: -0.02em; margin-bottom: 6px; }
+  .profile-title { font-size: 14px; color: var(--blue); font-weight: 700; letter-spacing: 0.05em; margin-bottom: 24px; text-transform: uppercase; }
+  .profile-bio { font-size: 15px; color: #374151; line-height: 1.8; margin-bottom: 28px; }
+  .cred-list { display: flex; flex-direction: column; gap: 14px; }
+  .cred-item { display: flex; align-items: flex-start; gap: 12px; }
+  .cred-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--blue); margin-top: 6px; flex-shrink: 0; }
+  .cred-text { font-size: 14px; color: #374151; line-height: 1.6; }
+  .cred-text strong { color: var(--text); }
+  .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .stat-box {
+    padding: 24px; border-radius: 12px; text-align: center;
+    background: var(--bg); border: 1px solid var(--border);
+  }
+  .stat-num { font-size: 32px; font-weight: 900; color: var(--blue); letter-spacing: -0.03em; }
+  .stat-label { font-size: 12px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+
+  /* SLIDE 4 — WHAT IS FRACTIONAL CFO */
+  .compare-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .compare-card {
+    padding: 28px; border-radius: 12px; position: relative;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  }
+  .compare-card.highlight {
+    background: rgba(37,99,235,0.12); border-color: rgba(37,99,235,0.4);
+  }
+  .compare-badge {
+    position: absolute; top: -12px; left: 50%; transform: translateX(-50%);
+    padding: 4px 14px; border-radius: 20px; font-size: 11px; font-weight: 700;
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    color: white; white-space: nowrap;
+  }
+  .compare-title { font-size: 14px; font-weight: 800; color: white; margin-bottom: 16px; text-align: center; }
+  .compare-item { font-size: 13px; color: rgba(255,255,255,0.55); margin-bottom: 10px; padding-left: 16px; position: relative; line-height: 1.5; }
+  .compare-item::before { content: "·"; position: absolute; left: 4px; color: rgba(255,255,255,0.3); }
+  .compare-card.highlight .compare-item { color: rgba(255,255,255,0.8); }
+  .compare-card.highlight .compare-item::before { color: #60A5FA; }
+
+  /* SLIDE 5 — SERVICES */
+  .services-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+  .service-card {
+    padding: 28px 28px 24px; border-radius: 12px;
+    background: white; border: 1px solid var(--border);
+    border-top: 3px solid var(--blue);
+  }
+  .service-card.green { border-top-color: var(--green); }
+  .service-card.purple { border-top-color: #7C3AED; }
+  .service-card.orange { border-top-color: #D97706; }
+  .service-icon { font-size: 26px; margin-bottom: 12px; }
+  .service-title { font-size: 16px; font-weight: 800; color: var(--text); margin-bottom: 8px; }
+  .service-desc { font-size: 13px; color: var(--muted); line-height: 1.7; margin-bottom: 14px; }
+  .service-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .service-tag {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600;
+    background: #EFF6FF; color: var(--blue); border: 1px solid #DBEAFE;
+  }
+
+  /* SLIDE 6 — PACKS */
+  .pack-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .pack-card {
+    padding: 24px 20px; border-radius: 14px; text-align: center;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    transition: transform 0.2s;
+  }
+  .pack-card.featured {
+    background: linear-gradient(135deg, rgba(37,99,235,0.2), rgba(124,58,237,0.2));
+    border-color: rgba(37,99,235,0.4);
+  }
+  .pack-emoji { font-size: 32px; margin-bottom: 12px; }
+  .pack-name { font-size: 14px; font-weight: 800; color: white; margin-bottom: 6px; }
+  .pack-target { font-size: 12px; color: rgba(255,255,255,0.4); margin-bottom: 16px; line-height: 1.5; }
+  .pack-price { font-size: 26px; font-weight: 900; color: white; letter-spacing: -0.02em; }
+  .pack-price-sub { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+  .pack-divider { height: 1px; background: rgba(255,255,255,0.08); margin: 16px 0; }
+  .pack-feature { font-size: 12px; color: rgba(255,255,255,0.55); margin-bottom: 7px; }
+
+  /* SLIDE 7 — HOW IT WORKS */
+  .process-steps { display: flex; flex-direction: column; gap: 0; max-width: 680px; }
+  .process-step { display: flex; gap: 28px; align-items: flex-start; position: relative; padding-bottom: 36px; }
+  .process-step:last-child { padding-bottom: 0; }
+  .process-step::after {
+    content: ""; position: absolute; left: 20px; top: 48px; bottom: 0;
+    width: 2px; background: rgba(37,99,235,0.2);
+  }
+  .process-step:last-child::after { display: none; }
+  .step-num {
+    width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; font-weight: 800;
+    background: rgba(37,99,235,0.15); border: 2px solid rgba(37,99,235,0.4);
+    color: #60A5FA; z-index: 1;
+  }
+  .step-content { padding-top: 8px; }
+  .step-title { font-size: 17px; font-weight: 800; color: white; margin-bottom: 6px; }
+  .step-desc { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.7; }
+
+  /* SLIDE 8 — PORTAL DIFFERENTIATOR */
+  .portal-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: start; }
+  .portal-intro { font-size: 16px; color: #374151; line-height: 1.8; margin-bottom: 28px; }
+  .portal-features { display: flex; flex-direction: column; gap: 16px; }
+  .portal-feat { display: flex; gap: 14px; align-items: flex-start; }
+  .portal-feat-icon {
+    width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 18px;
+    background: #EFF6FF; border: 1px solid #DBEAFE;
+  }
+  .portal-feat-title { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .portal-feat-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+  .screen-mock {
+    background: #0F172A; border-radius: 14px; padding: 20px;
+    border: 1px solid rgba(37,99,235,0.3);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .mock-bar {
+    display: flex; gap: 6px; margin-bottom: 16px;
+  }
+  .mock-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .mock-dot:nth-child(1) { background: #FF5F57; }
+  .mock-dot:nth-child(2) { background: #FEBC2E; }
+  .mock-dot:nth-child(3) { background: #28C840; }
+  .mock-row {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;
+  }
+  .mock-tile {
+    background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px;
+    border: 1px solid rgba(255,255,255,0.06);
+  }
+  .mock-tile-label { font-size: 9px; color: rgba(255,255,255,0.3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+  .mock-tile-val { font-size: 18px; font-weight: 800; color: white; letter-spacing: -0.02em; }
+  .mock-tile-sub { font-size: 9px; color: rgba(255,255,255,0.25); margin-top: 2px; }
+  .mock-bar-chart { height: 48px; background: rgba(255,255,255,0.03); border-radius: 6px; margin-bottom: 10px; display: flex; align-items: flex-end; gap: 4px; padding: 8px 8px 0; }
+  .mock-bar-item { border-radius: 3px 3px 0 0; flex: 1; }
+  .mock-note { background: rgba(37,99,235,0.1); border-left: 3px solid #2563EB; border-radius: 0 6px 6px 0; padding: 8px 10px; }
+  .mock-note-label { font-size: 9px; font-weight: 700; color: #60A5FA; text-transform: uppercase; letter-spacing: 0.08em; }
+  .mock-note-text { font-size: 10px; color: rgba(255,255,255,0.4); margin-top: 3px; line-height: 1.5; }
+
+  /* SLIDE 9 — ROI */
+  .roi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px; }
+  .roi-card {
+    padding: 28px; border-radius: 14px; text-align: center;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  }
+  .roi-num { font-size: 42px; font-weight: 900; letter-spacing: -0.03em; margin-bottom: 8px; }
+  .roi-num.blue { color: #60A5FA; }
+  .roi-num.green { color: #34D399; }
+  .roi-num.purple { color: #A78BFA; }
+  .roi-label { font-size: 13px; color: rgba(255,255,255,0.5); line-height: 1.6; }
+  .roi-callout {
+    padding: 24px 32px; border-radius: 12px; text-align: center;
+    background: rgba(37,99,235,0.1); border: 1px solid rgba(37,99,235,0.25);
+  }
+  .roi-callout-text { font-size: 16px; color: rgba(255,255,255,0.7); line-height: 1.7; }
+  .roi-callout-text strong { color: white; }
+
+  /* SLIDE 10 — NEXT STEPS / CTA */
+  .cta-center { text-align: center; align-items: center; }
+  .cta-steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin: 40px 0; max-width: 720px; }
+  .cta-step {
+    padding: 24px; border-radius: 14px; text-align: center;
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+  }
+  .cta-step-num { font-size: 11px; font-weight: 700; color: #60A5FA; letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 8px; }
+  .cta-step-title { font-size: 15px; font-weight: 700; color: white; margin-bottom: 6px; }
+  .cta-step-desc { font-size: 12px; color: rgba(255,255,255,0.45); line-height: 1.6; }
+  .cta-contact-row { display: flex; gap: 32px; justify-content: center; flex-wrap: wrap; }
+  .cta-contact-item { text-align: center; }
+  .cta-contact-label { font-size: 11px; color: rgba(255,255,255,0.35); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 6px; }
+  .cta-contact-val { font-size: 15px; font-weight: 600; color: white; }
+  .cta-contact-val a { color: #60A5FA; text-decoration: none; }
+
+  /* TABLE OF CONTENTS — slide dots */
+  .toc {
+    position: fixed; right: 20px; top: 50%; transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 8px; z-index: 50;
+  }
+  .toc-dot {
+    width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.2);
+    cursor: pointer; transition: background 0.2s, transform 0.2s;
+  }
+  .toc-dot:hover { background: rgba(255,255,255,0.6); transform: scale(1.5); }
+
+  /* PRINT */
+  @media print {
+    .nav, .toc, .slide-number { display: none; }
+    .slide { page-break-after: always; min-height: auto; padding: 60px; }
+    body { background: white; }
+    .slide-dark, .slide-accent { background: #1E1B4B !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav class="nav">
+  <div>
+    <div class="nav-brand">Finz<span>zup</span></div>
+    <div class="nav-sub">Your CFO · On Demand</div>
+  </div>
+  <div class="nav-contact">
+    Garima Agarwal · CA · <a href="mailto:garima@finzzup.org">garima@finzzup.org</a><br/>
+    <a href="https://portal.finzzup.org">portal.finzzup.org</a>
+  </div>
+</nav>
+
+<!-- TOC DOTS -->
+<div class="toc">
+  <a href="#s1"><div class="toc-dot"></div></a>
+  <a href="#s2"><div class="toc-dot"></div></a>
+  <a href="#s3"><div class="toc-dot"></div></a>
+  <a href="#s4"><div class="toc-dot"></div></a>
+  <a href="#s5"><div class="toc-dot"></div></a>
+  <a href="#s6"><div class="toc-dot"></div></a>
+  <a href="#s7"><div class="toc-dot"></div></a>
+  <a href="#s8"><div class="toc-dot"></div></a>
+  <a href="#s9"><div class="toc-dot"></div></a>
+  <a href="#s10"><div class="toc-dot"></div></a>
+</div>
+
+<!-- ─── SLIDE 1: HERO ─── -->
+<section class="slide slide-hero" id="s1">
+  <div class="hero-tag">Fractional CFO Services · Confidential · May 2026</div>
+  <h1 class="hero-h1">Your business needs<br/><span class="grad">CFO-level thinking.</span><br/>Not a ₹60L salary.</h1>
+  <p class="hero-sub">Garima Agarwal CA brings boardroom-grade financial strategy, reporting, and control to growth-stage businesses — at a fraction of the cost.</p>
+  <div class="hero-chips">
+    <div class="chip chip-blue">Chartered Accountant</div>
+    <div class="chip chip-blue">QFZP Qualified · UAE</div>
+    <div class="chip">Startups · MSMEs · Corporates</div>
+    <div class="chip">India &amp; UAE Markets</div>
+  </div>
+  <div class="slide-number">01 / 10</div>
+</section>
+
+<!-- ─── SLIDE 2: THE PROBLEM ─── -->
+<section class="slide slide-dark" id="s2">
+  <div class="section-tag tag-blue">The Problem</div>
+  <h2 class="slide-h2 h2-white">Growth-stage businesses are<br/>flying blind financially.</h2>
+  <div class="pain-grid">
+    <div class="pain-card">
+      <div class="pain-icon">📉</div>
+      <div class="pain-title">No real-time visibility</div>
+      <div class="pain-text">P&amp;L is available only at year-end when the CA files returns. Decisions are made on gut feel, not numbers.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">🏦</div>
+      <div class="pain-title">Cash surprises</div>
+      <div class="pain-text">Revenue looks healthy on paper but the bank account is empty. Working capital crises catch founders off-guard.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">🧾</div>
+      <div class="pain-title">Compliance chaos</div>
+      <div class="pain-text">TDS, GST, ROC, FEMA — deadlines missed, penalties paid, and no single person accountable for the full picture.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">💸</div>
+      <div class="pain-title">Can't afford full-time CFO</div>
+      <div class="pain-text">A seasoned CFO costs ₹40–80L per year in CTC. Pre-profitability businesses simply can't justify that burn.</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">📊</div>
+      <div class="pain-title">Investor-ready gap</div>
+      <div class="pain-text">When a VC or PE firm asks for financial models, MIS, or data room documents — the answer is "we'll get back to you."</div>
+    </div>
+    <div class="pain-card">
+      <div class="pain-icon">🌐</div>
+      <div class="pain-title">Cross-border complexity</div>
+      <div class="pain-text">India↔UAE structuring, FEMA compliance, VAT, transfer pricing — requires specialist knowledge most CAs don't have.</div>
+    </div>
+  </div>
+  <div class="slide-number">02 / 10</div>
+</section>
+
+<!-- ─── SLIDE 3: WHO IS GARIMA ─── -->
+<section class="slide slide-light" id="s3">
+  <div class="section-tag tag-dark">Who You're Working With</div>
+  <div class="profile-layout">
+    <div>
+      <div class="profile-name">Garima Agarwal</div>
+      <div class="profile-title">CA · QFZP · Fractional CFO</div>
+      <p class="profile-bio">
+        A Chartered Accountant with deep expertise in financial reporting, MIS design, statutory compliance, and cross-border India–UAE structuring.
+        Garima's practice is built around one conviction: every business — at every stage — deserves CFO-grade financial leadership.
+      </p>
+      <div class="cred-list">
+        <div class="cred-item">
+          <div class="cred-dot"></div>
+          <div class="cred-text"><strong>Institute of Chartered Accountants of India (ICAI)</strong> — qualified CA with full-spectrum practice across audit, tax, and advisory</div>
+        </div>
+        <div class="cred-item">
+          <div class="cred-dot"></div>
+          <div class="cred-text"><strong>QFZP Qualified</strong> — UAE Qualifying Free Zone Persons framework, enabling tax-efficient UAE structures and VAT advisory</div>
+        </div>
+        <div class="cred-item">
+          <div class="cred-dot"></div>
+          <div class="cred-text"><strong>India–UAE corridor specialist</strong> — FEMA, ECB, ODI/FDI, cross-border invoicing, and dual-jurisdiction compliance</div>
+        </div>
+        <div class="cred-item">
+          <div class="cred-dot"></div>
+          <div class="cred-text"><strong>Multi-sector experience</strong> — served clients across SaaS, manufacturing, trading, professional services, and real estate</div>
+        </div>
+        <div class="cred-item">
+          <div class="cred-dot"></div>
+          <div class="cred-text"><strong>Founder-first approach</strong> — translates complex financials into clear, decision-ready language for non-finance leadership</div>
+        </div>
+      </div>
+    </div>
+    <div class="stat-grid">
+      <div class="stat-box">
+        <div class="stat-num">10+</div>
+        <div class="stat-label">Years in practice<br/>across audit, tax, advisory</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">25+</div>
+        <div class="stat-label">Companies served<br/>across India &amp; UAE</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">2</div>
+        <div class="stat-label">Jurisdictions<br/>India · UAE</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-num">₹100Cr+</div>
+        <div class="stat-label">Aggregate revenue<br/>under advisory</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number" style="color:var(--muted)">03 / 10</div>
+</section>
+
+<!-- ─── SLIDE 4: WHAT IS A FRACTIONAL CFO ─── -->
+<section class="slide slide-dark" id="s4">
+  <div class="section-tag tag-purple">The Model Explained</div>
+  <h2 class="slide-h2 h2-white">Fractional CFO vs. the alternatives</h2>
+  <div class="compare-grid">
+    <div class="compare-card">
+      <div class="compare-title">Your CA / Accountant</div>
+      <div class="compare-item">Files returns and handles compliance</div>
+      <div class="compare-item">Historical view — tells you what happened</div>
+      <div class="compare-item">No MIS, no forecasting, no strategy</div>
+      <div class="compare-item">Reactive — engaged only at year-end</div>
+      <div class="compare-item">Does not attend board meetings</div>
+      <div class="compare-item" style="color:rgba(255,255,255,0.2)">No ownership of financial outcomes</div>
+    </div>
+    <div class="compare-card highlight">
+      <div class="compare-badge">Garima · Fractional CFO</div>
+      <div class="compare-title" style="margin-top:12px">Fractional CFO</div>
+      <div class="compare-item">Full CFO mandate — on a retainer model</div>
+      <div class="compare-item">Monthly MIS, P&amp;L, cashflow &amp; variance analysis</div>
+      <div class="compare-item">Forward-looking — plans, forecasts, scenarios</div>
+      <div class="compare-item">Proactive monthly touchpoints &amp; briefs</div>
+      <div class="compare-item">Available for investor / board conversations</div>
+      <div class="compare-item">Owns the financial narrative of your business</div>
+    </div>
+    <div class="compare-card">
+      <div class="compare-title">Full-time CFO</div>
+      <div class="compare-item">₹40–80L CTC + equity + perks</div>
+      <div class="compare-item">3–6 months to hire, 6+ months to ramp</div>
+      <div class="compare-item">Overhead justified only at ₹50Cr+ scale</div>
+      <div class="compare-item">Single-company breadth — limited outside exposure</div>
+      <div class="compare-item">Long notice period if wrong hire</div>
+      <div class="compare-item" style="color:rgba(255,255,255,0.2)">Overkill for most growth-stage businesses</div>
+    </div>
+  </div>
+  <div class="slide-number">04 / 10</div>
+</section>
+
+<!-- ─── SLIDE 5: SERVICES ─── -->
+<section class="slide slide-light" id="s5">
+  <div class="section-tag tag-dark">What Garima Does</div>
+  <h2 class="slide-h2 h2-dark">Four pillars of the engagement</h2>
+  <div class="services-grid">
+    <div class="service-card">
+      <div class="service-icon">📊</div>
+      <div class="service-title">Monthly MIS &amp; CFO Brief</div>
+      <div class="service-desc">A structured monthly package covering P&amp;L performance, revenue vs. target variance, cost analysis, and forward-looking commentary — delivered in plain language.</div>
+      <div class="service-tags">
+        <span class="service-tag">P&amp;L Report</span>
+        <span class="service-tag">Variance Analysis</span>
+        <span class="service-tag">CFO Brief PDF</span>
+        <span class="service-tag">KPI Dashboard</span>
+      </div>
+    </div>
+    <div class="service-card green">
+      <div class="service-icon">💰</div>
+      <div class="service-title">Cashflow &amp; Working Capital</div>
+      <div class="service-desc">Cashflow forecasting 3–6 months out, debtor/creditor ageing management, DSO/DPO optimisation, and early warning on liquidity pressure.</div>
+      <div class="service-tags">
+        <span class="service-tag" style="background:#ECFDF5;color:#059669;border-color:#A7F3D0">13-Week Cashflow</span>
+        <span class="service-tag" style="background:#ECFDF5;color:#059669;border-color:#A7F3D0">AR Ageing</span>
+        <span class="service-tag" style="background:#ECFDF5;color:#059669;border-color:#A7F3D0">CCC Tracking</span>
+      </div>
+    </div>
+    <div class="service-card purple">
+      <div class="service-icon">🏛️</div>
+      <div class="service-title">Compliance &amp; Statutory</div>
+      <div class="service-desc">End-to-end compliance calendar management — GST, TDS, ROC, PF, ESI, advance tax, audit coordination — so nothing falls through the cracks.</div>
+      <div class="service-tags">
+        <span class="service-tag" style="background:#F5F3FF;color:#7C3AED;border-color:#DDD6FE">GST / TDS</span>
+        <span class="service-tag" style="background:#F5F3FF;color:#7C3AED;border-color:#DDD6FE">ROC Filings</span>
+        <span class="service-tag" style="background:#F5F3FF;color:#7C3AED;border-color:#DDD6FE">Audit Liaison</span>
+      </div>
+    </div>
+    <div class="service-card orange">
+      <div class="service-icon">🌐</div>
+      <div class="service-title">India–UAE Advisory</div>
+      <div class="service-desc">Cross-border structuring, FEMA compliance, UAE entity setup, VAT advisory, QFZP qualification, and transfer pricing documentation for India–UAE groups.</div>
+      <div class="service-tags">
+        <span class="service-tag" style="background:#FFFBEB;color:#D97706;border-color:#FDE68A">FEMA / QFZP</span>
+        <span class="service-tag" style="background:#FFFBEB;color:#D97706;border-color:#FDE68A">UAE VAT</span>
+        <span class="service-tag" style="background:#FFFBEB;color:#D97706;border-color:#FDE68A">Entity Setup</span>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number" style="color:var(--muted)">05 / 10</div>
+</section>
+
+<!-- ─── SLIDE 6: ENGAGEMENT PACKS ─── -->
+<section class="slide slide-dark" id="s6">
+  <div class="section-tag tag-purple">Engagement Packs</div>
+  <h2 class="slide-h2 h2-white">Structured for your stage &amp; complexity</h2>
+  <div class="pack-grid">
+    <div class="pack-card">
+      <div class="pack-emoji">🚀</div>
+      <div class="pack-name">Startup</div>
+      <div class="pack-target">Seed–Series A<br/>₹0–5Cr revenue</div>
+      <div class="pack-price">₹15,000<br/><span style="font-size:13px;opacity:0.6">/month</span></div>
+      <div class="pack-price-sub">+ GST</div>
+      <div class="pack-divider"></div>
+      <div class="pack-feature">Monthly P&amp;L + CFO Brief</div>
+      <div class="pack-feature">Cashflow review</div>
+      <div class="pack-feature">Compliance calendar</div>
+      <div class="pack-feature">2 review calls/month</div>
+      <div class="pack-feature">Portal access</div>
+    </div>
+    <div class="pack-card featured">
+      <div class="pack-emoji">🏭</div>
+      <div class="pack-name">MSME</div>
+      <div class="pack-target">Established business<br/>₹5–50Cr revenue</div>
+      <div class="pack-price">₹30,000<br/><span style="font-size:13px;opacity:0.6">/month</span></div>
+      <div class="pack-price-sub">+ GST · Most Popular</div>
+      <div class="pack-divider"></div>
+      <div class="pack-feature">Full MIS + variance report</div>
+      <div class="pack-feature">Working capital deep-dive</div>
+      <div class="pack-feature">Tally / ERP reconciliation</div>
+      <div class="pack-feature">GST + statutory oversight</div>
+      <div class="pack-feature">Unlimited portal access</div>
+    </div>
+    <div class="pack-card">
+      <div class="pack-emoji">🏢</div>
+      <div class="pack-name">Corporate</div>
+      <div class="pack-target">₹50Cr+ · Multi-entity<br/>Board-level reporting</div>
+      <div class="pack-price">Custom</div>
+      <div class="pack-price-sub">Scoped on engagement</div>
+      <div class="pack-divider"></div>
+      <div class="pack-feature">Board MIS + commentary</div>
+      <div class="pack-feature">Subsidiary consolidation</div>
+      <div class="pack-feature">Investor / lender decks</div>
+      <div class="pack-feature">Audit committee support</div>
+      <div class="pack-feature">On-site days available</div>
+    </div>
+    <div class="pack-card">
+      <div class="pack-emoji">🇦🇪</div>
+      <div class="pack-name">UAE</div>
+      <div class="pack-target">UAE entity or<br/>India–UAE group</div>
+      <div class="pack-price">AED 3,000<br/><span style="font-size:13px;opacity:0.6">/month</span></div>
+      <div class="pack-price-sub">+ VAT</div>
+      <div class="pack-divider"></div>
+      <div class="pack-feature">UAE MIS in AED</div>
+      <div class="pack-feature">VAT return workings</div>
+      <div class="pack-feature">QFZP compliance</div>
+      <div class="pack-feature">Cross-border advisory</div>
+      <div class="pack-feature">Dual-jurisdiction coverage</div>
+    </div>
+  </div>
+  <p style="font-size:12px;color:rgba(255,255,255,0.3);margin-top:20px;text-align:center">All packs are on 3-month minimum engagement. One-time setup fee may apply for data migration and onboarding.</p>
+  <div class="slide-number">06 / 10</div>
+</section>
+
+<!-- ─── SLIDE 7: HOW IT WORKS ─── -->
+<section class="slide slide-accent" id="s7">
+  <div class="section-tag tag-blue">How It Works</div>
+  <h2 class="slide-h2 h2-white">From onboarding to<br/>ongoing financial clarity</h2>
+  <div class="process-steps">
+    <div class="process-step">
+      <div class="step-num">1</div>
+      <div class="step-content">
+        <div class="step-title">Discovery call &amp; scoping</div>
+        <div class="step-desc">30-minute call to understand your business model, current financial state, key pain points, and what decisions you need better data to make. Garima proposes the right pack and scope.</div>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">2</div>
+      <div class="step-content">
+        <div class="step-title">Onboarding &amp; data setup</div>
+        <div class="step-desc">Garima maps your chart of accounts, connects to your accounting software (Tally, Zoho Books, QuickBooks), and sets up MIS templates calibrated to your business. Portal access is provisioned.</div>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">3</div>
+      <div class="step-content">
+        <div class="step-title">Monthly operating rhythm</div>
+        <div class="step-desc">By the 7th of each month: you upload the previous month's data. By the 15th: your CFO Brief, P&amp;L, and cashflow report are ready on the portal. Monthly review call to walk through findings and actions.</div>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">4</div>
+      <div class="step-content">
+        <div class="step-title">Strategic support on demand</div>
+        <div class="step-desc">Board decks, investor data rooms, banker negotiations, compliance notices, new entity structuring — Garima is available throughout the month via WhatsApp and email, not just on scheduled calls.</div>
+      </div>
+    </div>
+    <div class="process-step">
+      <div class="step-num">5</div>
+      <div class="step-content">
+        <div class="step-title">Quarterly business review</div>
+        <div class="step-desc">Every quarter, a deeper session covering trailing 3-month performance, forward plan vs. actuals, compliance health check, and a refresh of the 12-month financial model.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">07 / 10</div>
+</section>
+
+<!-- ─── SLIDE 8: PORTAL AS DIFFERENTIATOR ─── -->
+<section class="slide slide-light" id="s8">
+  <div class="section-tag tag-dark">Your Unfair Advantage</div>
+  <h2 class="slide-h2 h2-dark">The client portal: your<br/>financial command centre</h2>
+  <div class="portal-layout">
+    <div>
+      <p class="portal-intro">Every Finzzup client gets access to a private, branded portal — a live view of their business finances that no other boutique CFO practice offers.</p>
+      <div class="portal-features">
+        <div class="portal-feat">
+          <div class="portal-feat-icon">📈</div>
+          <div>
+            <div class="portal-feat-title">Live KPI Dashboard</div>
+            <div class="portal-feat-desc">Revenue, gross margin, runway, and 6 key metrics updated every month. No spreadsheet hunting.</div>
+          </div>
+        </div>
+        <div class="portal-feat">
+          <div class="portal-feat-icon">📋</div>
+          <div>
+            <div class="portal-feat-title">Monthly CFO Brief</div>
+            <div class="portal-feat-desc">Garima's written analysis — P&amp;L, variance, cashflow outlook, top 3 action items — always accessible.</div>
+          </div>
+        </div>
+        <div class="portal-feat">
+          <div class="portal-feat-icon">📁</div>
+          <div>
+            <div class="portal-feat-title">Document Vault</div>
+            <div class="portal-feat-desc">All financial reports, compliance filings, and board documents — organised and searchable in one place.</div>
+          </div>
+        </div>
+        <div class="portal-feat">
+          <div class="portal-feat-icon">⚠️</div>
+          <div>
+            <div class="portal-feat-title">Action Items &amp; Compliance Calendar</div>
+            <div class="portal-feat-desc">Upcoming deadlines, pending actions, and reminders — so nothing is missed.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="screen-mock">
+      <div class="mock-bar">
+        <div class="mock-dot"></div><div class="mock-dot"></div><div class="mock-dot"></div>
+        <span style="font-size:10px;color:rgba(255,255,255,0.2);margin-left:8px">Client Portal · Finzzup</span>
+      </div>
+      <div class="mock-row">
+        <div class="mock-tile">
+          <div class="mock-tile-label">Revenue (MTD)</div>
+          <div class="mock-tile-val">₹18.4L</div>
+          <div class="mock-tile-sub">+12% vs last month</div>
+        </div>
+        <div class="mock-tile">
+          <div class="mock-tile-label">Gross Margin</div>
+          <div class="mock-tile-val">62.3%</div>
+          <div class="mock-tile-sub">Target: 65%</div>
+        </div>
+      </div>
+      <div class="mock-row">
+        <div class="mock-tile">
+          <div class="mock-tile-label">Cash in Bank</div>
+          <div class="mock-tile-val">₹9.2L</div>
+          <div class="mock-tile-sub">4.2 months runway</div>
+        </div>
+        <div class="mock-tile">
+          <div class="mock-tile-label">DSO</div>
+          <div class="mock-tile-val">38 days</div>
+          <div class="mock-tile-sub">Target: &lt;30 days</div>
+        </div>
+      </div>
+      <div class="mock-bar-chart">
+        <div class="mock-bar-item" style="height:60%;background:rgba(37,99,235,0.5)"></div>
+        <div class="mock-bar-item" style="height:75%;background:rgba(37,99,235,0.5)"></div>
+        <div class="mock-bar-item" style="height:55%;background:rgba(37,99,235,0.5)"></div>
+        <div class="mock-bar-item" style="height:80%;background:rgba(37,99,235,0.5)"></div>
+        <div class="mock-bar-item" style="height:90%;background:rgba(37,99,235,0.7)"></div>
+        <div class="mock-bar-item" style="height:70%;background:rgba(124,58,237,0.4);border:1px dashed rgba(124,58,237,0.6)"></div>
+      </div>
+      <div class="mock-note">
+        <div class="mock-note-label">Note from Garima</div>
+        <div class="mock-note-text">Revenue is 8% ahead of plan but DSO has crept up. Action: chase the top 3 debtors before month-end to bring cash in.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number" style="color:var(--muted)">08 / 10</div>
+</section>
+
+<!-- ─── SLIDE 9: ROI / WHY NOW ─── -->
+<section class="slide slide-dark" id="s9">
+  <div class="section-tag tag-green">The Return</div>
+  <h2 class="slide-h2 h2-white">What this engagement<br/>actually delivers</h2>
+  <div class="roi-grid">
+    <div class="roi-card">
+      <div class="roi-num blue">30%</div>
+      <div class="roi-label">Reduction in DSO for clients who actively manage AR ageing with Garima's monthly coaching</div>
+    </div>
+    <div class="roi-card">
+      <div class="roi-num green">2–3×</div>
+      <div class="roi-label">Faster fundraise timelines when financial data room is clean, current, and auditable</div>
+    </div>
+    <div class="roi-card">
+      <div class="roi-num purple">Zero</div>
+      <div class="roi-label">Compliance notices or late-filing penalties for clients on full-service engagement (target)</div>
+    </div>
+  </div>
+  <div class="roi-callout">
+    <div class="roi-callout-text">
+      A ₹30,000/month engagement is <strong>₹3.6L/year.</strong><br/>
+      A single missed GST assessment costs more. A delayed fundraise round costs 10×.<br/>
+      <strong>This is the highest-ROI hire a growth-stage business can make.</strong>
+    </div>
+  </div>
+  <div class="slide-number">09 / 10</div>
+</section>
+
+<!-- ─── SLIDE 10: CTA ─── -->
+<section class="slide slide-dark cta-center" id="s10">
+  <div class="section-tag tag-blue" style="text-align:center">Let's Begin</div>
+  <h2 class="slide-h2 h2-white" style="text-align:center;max-width:600px">Ready to bring CFO-level<br/>clarity to your business?</h2>
+  <div class="cta-steps">
+    <div class="cta-step">
+      <div class="cta-step-num">Step 01</div>
+      <div class="cta-step-title">Discovery Call</div>
+      <div class="cta-step-desc">30-minute session to understand your current situation, key decisions, and what good looks like</div>
+    </div>
+    <div class="cta-step">
+      <div class="cta-step-num">Step 02</div>
+      <div class="cta-step-title">Scope &amp; Proposal</div>
+      <div class="cta-step-desc">Garima prepares a tailored engagement proposal within 48 hours including pack, scope, and timeline</div>
+    </div>
+    <div class="cta-step">
+      <div class="cta-step-num">Step 03</div>
+      <div class="cta-step-title">Onboard &amp; Start</div>
+      <div class="cta-step-desc">3–5 day onboarding. First CFO Brief delivered within 3 weeks of engagement start</div>
+    </div>
+  </div>
+  <div class="cta-contact-row">
+    <div class="cta-contact-item">
+      <div class="cta-contact-label">Email</div>
+      <div class="cta-contact-val"><a href="mailto:garima@finzzup.org">garima@finzzup.org</a></div>
+    </div>
+    <div class="cta-contact-item">
+      <div class="cta-contact-label">Portal</div>
+      <div class="cta-contact-val"><a href="https://portal.finzzup.org">portal.finzzup.org</a></div>
+    </div>
+    <div class="cta-contact-item">
+      <div class="cta-contact-label">Practice</div>
+      <div class="cta-contact-val">Finzzup Advisory LLP</div>
+    </div>
+    <div class="cta-contact-item">
+      <div class="cta-contact-label">Markets</div>
+      <div class="cta-contact-val">India · UAE</div>
+    </div>
+  </div>
+  <p style="font-size:11px;color:rgba(255,255,255,0.2);margin-top:40px;text-align:center">
+    Confidential — prepared for Mitesh Shah · May 2026 · Finzzup Advisory LLP
+  </p>
+  <div class="slide-number">10 / 10</div>
+</section>
+
+</body>
+</html>
