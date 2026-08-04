@@ -162,6 +162,420 @@ const KPIs_UAE = [
   { label:"CT Effective Rate", value:"0%", prev:"9% (std rate)", trend:"up", color:C.green, bg:"#E8FAF3", icon:"chart_pie"},
   { label:"QFZP Score",        value:"82/100",      prev:"75/100",     trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"star"     },
 ];
+
+// MSME demo tiles — mirror the labels live MSME clients get
+const KPIs_MSME = [
+  { label:"Revenue",               value:"₹8.4 Cr",  prev:"₹7.9 Cr",  trend:"up",   color:C.blue,   bg:"#EEF3FE", emoji:"ti-trending-up" },
+  { label:"Working Capital",       value:"₹1.9 Cr",  prev:"₹1.7 Cr",  trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin" },
+  { label:"Cash Balance",          value:"₹2.1 Cr",  prev:"₹2.6 Cr",  trend:"down", color:C.amber,  bg:"#FEF7E7", icon:"cash"   },
+  { label:"Debtor Days",           value:"42d",       prev:"47d",      trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"runway" },
+  { label:"CC Utilisation",        value:"68%",       prev:"74%",      trend:"up",   color:C.pink,   bg:"#FEF0F7", icon:"bank"   },
+  { label:"Cash Conversion Cycle", value:"65d",       prev:"72d",      trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"cashflow" },
+];
+
+// ─── DRILL-DOWN DATA (Tally-style: KPI → breakup → transactions) ─────────────
+// Live clients read the same shape from reportData.drill.{key}; demo accounts
+// fall back to these. `asOn` omitted → panel stamps the current date/time.
+const DEMO_DRILL = {
+  revenue: {
+    label:"Revenue", total:"₹8.40 Cr", period:"FY26 YTD",
+    note:"Top 2 customers are 48% of revenue — concentration risk. Nimbus renewal (₹2.1 Cr) is due Oct — start the conversation now, not in Sep.",
+    dims:[
+      { key:"customer", title:"By Customer", rows:[
+        { name:"Nimbus Retail Pvt Ltd",  value:21800000, sub:"SaaS + Support · Mumbai", txns:[
+          { id:"INV-1041", date:"28 Jul 2026", desc:"SaaS subscription — Jul", amount:"₹9.6L",  status:"paid"    },
+          { id:"INV-1032", date:"28 Jun 2026", desc:"SaaS subscription — Jun", amount:"₹9.6L",  status:"paid"    },
+          { id:"INV-1029", date:"12 Jun 2026", desc:"Implementation support",  amount:"₹4.2L",  status:"paid"    },
+        ]},
+        { name:"Vertex Health Group",    value:18500000, sub:"Enterprise licence · Delhi NCR", txns:[
+          { id:"INV-1043", date:"01 Aug 2026", desc:"Enterprise licence — Q2", amount:"₹15.5L", status:"unpaid"  },
+          { id:"INV-1021", date:"02 May 2026", desc:"Enterprise licence — Q1", amount:"₹15.5L", status:"paid"    },
+        ]},
+        { name:"Gulf Distribution FZE",  value:13400000, sub:"Export · GCC", txns:[
+          { id:"INV-1038", date:"15 Jul 2026", desc:"Export order #88",        amount:"₹6.8L",  status:"overdue" },
+          { id:"INV-1027", date:"30 May 2026", desc:"Export order #81",        amount:"₹7.1L",  status:"paid"    },
+        ]},
+        { name:"Orbit Logistics",        value:9200000,  sub:"Annual contract · Bengaluru", txns:[
+          { id:"INV-1040", date:"22 Jul 2026", desc:"Monthly retainer — Jul",  amount:"₹3.1L",  status:"paid"    },
+          { id:"INV-1035", date:"22 Jun 2026", desc:"Monthly retainer — Jun",  amount:"₹3.1L",  status:"paid"    },
+        ]},
+        { name:"TechSpring Solutions",   value:7600000,  sub:"Project + AMC · Pune", txns:[
+          { id:"INV-1039", date:"18 Jul 2026", desc:"AMC renewal FY27",        amount:"₹4.4L",  status:"unpaid"  },
+        ]},
+        { name:"Others (11 customers)",  value:13500000, sub:"Avg ₹1.2L/customer", txns:[] },
+      ]},
+      { key:"location", title:"By Location", rows:[
+        { name:"Mumbai",      value:36000000, sub:"43% of revenue", txns:[] },
+        { name:"Delhi NCR",   value:21000000, sub:"25% of revenue", txns:[] },
+        { name:"Bengaluru",   value:15000000, sub:"18% of revenue", txns:[] },
+        { name:"GCC Exports", value:12000000, sub:"14% of revenue", txns:[] },
+      ]},
+    ],
+  },
+  cash: {
+    label:"Cash Balance", total:"₹2.10 Cr", period:"across 4 accounts",
+    note:"₹50L is idle in current accounts earning 0% — move ₹30L to sweep-in FD without touching operating liquidity.",
+    dims:[
+      { key:"account", title:"By Account", rows:[
+        { name:"HDFC Bank — Current",  value:9000000, sub:"Primary operating account", txns:[
+          { id:"NEFT-8812", date:"03 Aug 2026", desc:"Vertex Health — collection", amount:"+₹15.5L", status:"paid" },
+          { id:"RTGS-8807", date:"01 Aug 2026", desc:"Payroll — Jul salaries",     amount:"−₹27.0L", status:"paid" },
+        ]},
+        { name:"ICICI Bank — Current", value:6000000, sub:"Collections account", txns:[
+          { id:"UPI-4432",  date:"02 Aug 2026", desc:"Orbit Logistics — retainer", amount:"+₹3.1L",  status:"paid" },
+        ]},
+        { name:"Fixed Deposits",       value:5000000, sub:"2 FDs · avg 7.1% p.a.", txns:[] },
+        { name:"Petty Cash & Wallets", value:1000000, sub:"Office + digital wallets", txns:[] },
+      ]},
+    ],
+  },
+  burn: {
+    label:"Burn Rate", total:"₹48L /mo", period:"Jul 2026",
+    note:"Cloud spend is up 18% in 2 months with flat usage — the committed-use discount with AWS is unsigned. Signing it saves ₹1.1L/mo.",
+    dims:[
+      { key:"category", title:"By Category", rows:[
+        { name:"Salaries & Benefits",   value:2700000, sub:"38 headcount", txns:[
+          { id:"PAY-JUL",  date:"01 Aug 2026", desc:"Jul payroll (net)",       amount:"₹24.2L", status:"paid" },
+          { id:"PF-JUL",   date:"01 Aug 2026", desc:"PF + gratuity + insurance", amount:"₹2.8L", status:"paid" },
+        ]},
+        { name:"Cloud & Infrastructure", value:650000, sub:"AWS, GCP, SaaS tools", txns:[
+          { id:"AWS-0726", date:"28 Jul 2026", desc:"AWS — Jul usage",         amount:"₹4.1L",  status:"paid" },
+          { id:"SAAS-JUL", date:"25 Jul 2026", desc:"SaaS subscriptions (14)", amount:"₹2.4L",  status:"paid" },
+        ]},
+        { name:"Marketing & Sales",      value:500000, sub:"Performance + events", txns:[] },
+        { name:"Rent & Admin",           value:450000, sub:"2 offices", txns:[] },
+        { name:"Professional Fees",      value:250000, sub:"Legal, audit, CFO", txns:[] },
+        { name:"Other Operating",        value:250000, sub:"Travel, misc", txns:[] },
+      ]},
+    ],
+  },
+  arr: {
+    label:"ARR", total:"₹6.20 Cr", period:"contracted, annualised",
+    note:"NRR is 112% but 2 renewals worth ₹1.8 Cr land in Q3 — both champions have changed jobs. De-risk with exec sponsor calls this month.",
+    dims:[
+      { key:"customer", title:"By Customer", rows:[
+        { name:"Nimbus Retail Pvt Ltd", value:21000000, sub:"Renews Oct 2026", txns:[] },
+        { name:"Vertex Health Group",   value:15500000, sub:"Renews Jan 2027", txns:[] },
+        { name:"Orbit Logistics",       value:9300000,  sub:"Renews Mar 2027", txns:[] },
+        { name:"TechSpring Solutions",  value:6200000,  sub:"Renews Sep 2026", txns:[] },
+        { name:"Others",                value:10000000, sub:"9 accounts", txns:[] },
+      ]},
+    ],
+  },
+  margin: {
+    label:"Gross Margin", total:"41%", period:"blended, FY26 YTD",
+    note:"Services drag blended GM down 9 points. Every 5% of revenue shifted from services to SaaS adds ~₹4L/yr of gross profit.",
+    dims:[
+      { key:"line", title:"By Business Line", rows:[
+        { name:"SaaS Subscriptions",   value:52, sub:"GM 52% · 61% of revenue", unit:"%", txns:[] },
+        { name:"Implementation Services", value:28, sub:"GM 28% · 24% of revenue", unit:"%", txns:[] },
+        { name:"Support & AMC",        value:44, sub:"GM 44% · 15% of revenue", unit:"%", txns:[] },
+      ]},
+    ],
+  },
+  receivables: {
+    label:"Receivables", total:"", period:"outstanding invoices",
+    note:"₹4.8L from Gulf Distribution is 92 days overdue and is 60% of your 90d+ bucket — escalate to a director-level call this week.",
+    dims:[
+      { key:"aging", title:"By Age", rows:[
+        { name:"Current",  value:920000, sub:"5 invoices, not yet due", txns:[
+          { id:"INV-1043", date:"01 Aug 2026", desc:"Vertex Health — Q2 licence", amount:"₹15.5L", status:"unpaid" },
+          { id:"INV-1039", date:"18 Jul 2026", desc:"TechSpring — AMC renewal",   amount:"₹4.4L",  status:"unpaid" },
+        ]},
+        { name:"31–60d",   value:610000, sub:"3 invoices", txns:[
+          { id:"INV-1036", date:"25 Jun 2026", desc:"Meridian Foods — Jun order", amount:"₹3.6L", status:"unpaid" },
+          { id:"INV-1034", date:"20 Jun 2026", desc:"Kayra Textiles — retainer",  amount:"₹2.5L", status:"unpaid" },
+        ]},
+        { name:"61–90d",   value:340000, sub:"2 invoices", txns:[
+          { id:"INV-1030", date:"28 May 2026", desc:"Bluestone Traders — order",  amount:"₹3.4L", status:"overdue" },
+        ]},
+        { name:"90d+",     value:480000, sub:"1 invoice — escalate", txns:[
+          { id:"INV-1038", date:"15 Jul 2026", desc:"Gulf Distribution — order #88", amount:"₹4.8L", status:"overdue" },
+        ]},
+      ]},
+    ],
+  },
+};
+
+const DEMO_DRILL_UAE = {
+  revenue: {
+    label:"Revenue", total:"AED 1.85M", period:"FY26 YTD",
+    note:"Al Noor is 35% of revenue and pays in 75 days — one delayed cycle costs you a month of payroll cover. Negotiate 45-day terms at renewal.",
+    dims:[
+      { key:"customer", title:"By Customer", rows:[
+        { name:"Al Noor Trading LLC",     value:650000, sub:"Distribution · Dubai", txns:[
+          { id:"INV-U-221", date:"25 Jul 2026", desc:"Jul supply contract",  amount:"AED 95K",  status:"unpaid"  },
+          { id:"INV-U-214", date:"25 Jun 2026", desc:"Jun supply contract",  amount:"AED 95K",  status:"paid"    },
+        ]},
+        { name:"Marina Hospitality Group", value:420000, sub:"F&B services · Dubai Marina", txns:[
+          { id:"INV-U-219", date:"15 Jul 2026", desc:"Catering services — Jul", amount:"AED 62K", status:"paid"  },
+        ]},
+        { name:"Falcon Logistics FZE",     value:330000, sub:"JAFZA", txns:[
+          { id:"INV-U-217", date:"08 Jul 2026", desc:"Freight handling — Jul",  amount:"AED 48K", status:"overdue" },
+        ]},
+        { name:"Desert Rose Interiors",    value:250000, sub:"Fit-out projects", txns:[] },
+        { name:"Others (6 customers)",     value:200000, sub:"Avg AED 33K/customer", txns:[] },
+      ]},
+      { key:"emirate", title:"By Emirate", rows:[
+        { name:"Dubai",      value:1180000, sub:"64% of revenue", txns:[] },
+        { name:"Abu Dhabi",  value:390000,  sub:"21% of revenue", txns:[] },
+        { name:"Sharjah",    value:280000,  sub:"15% of revenue", txns:[] },
+      ]},
+    ],
+  },
+  cash: {
+    label:"Cash Balance", total:"AED 620K", period:"across 3 accounts",
+    note:"CT provision of AED 54K should sit in a separate account — right now it's mixed with operating cash and reads as runway you don't have.",
+    dims:[
+      { key:"account", title:"By Account", rows:[
+        { name:"Emirates NBD — Current", value:380000, sub:"Primary operating", txns:[
+          { id:"TRF-9921", date:"02 Aug 2026", desc:"Marina Hospitality — collection", amount:"+AED 62K", status:"paid" },
+          { id:"TRF-9915", date:"28 Jul 2026", desc:"Jul payroll",                     amount:"−AED 58K", status:"paid" },
+        ]},
+        { name:"ADCB — Current",         value:180000, sub:"Collections", txns:[] },
+        { name:"Wio — Digital",          value:60000,  sub:"Cards + subscriptions", txns:[] },
+      ]},
+    ],
+  },
+  burn: {
+    label:"Burn Rate", total:"AED 75K /mo", period:"Jul 2026",
+    note:"Office rent is 16% of burn for space at 40% desk utilisation — a flexi-desk move saves AED 7K/mo without losing the Trade Licence address.",
+    dims:[
+      { key:"category", title:"By Category", rows:[
+        { name:"Salaries & Visas",  value:42000, sub:"8 staff + visa costs", txns:[] },
+        { name:"Office & Rent",     value:12000, sub:"Business Bay office", txns:[] },
+        { name:"Marketing",         value:9000,  sub:"Digital + events", txns:[] },
+        { name:"Software & Cloud",  value:7000,  sub:"SaaS stack", txns:[] },
+        { name:"Professional Fees", value:5000,  sub:"PRO, audit, tax agent", txns:[] },
+      ]},
+    ],
+  },
+  vat: {
+    label:"VAT Payable", total:"AED 92.5K", period:"current quarter, accrued to date",
+    note:"Filing due 28 Aug. Input VAT on the Falcon invoice (AED 2.4K) is unclaimed — book it before filing to reduce the payable.",
+    dims:[
+      { key:"component", title:"Breakup", rows:[
+        { name:"Output VAT (on sales)",     value:145000, sub:"5% on taxable supplies", txns:[] },
+        { name:"Input VAT (recoverable)",   value:52500,  sub:"On purchases & expenses", txns:[] },
+      ]},
+    ],
+  },
+  receivables: {
+    label:"Receivables", total:"", period:"outstanding invoices",
+    note:"Falcon Logistics (AED 48K) is 60+ days overdue — under their JAFZA licence renewal in Sep they'll want a clean vendor ledger; use that timing.",
+    dims:[
+      { key:"aging", title:"By Age", rows:[
+        { name:"Current", value:95000, sub:"2 invoices", txns:[
+          { id:"INV-U-221", date:"25 Jul 2026", desc:"Al Noor — Jul supply", amount:"AED 95K", status:"unpaid" },
+        ]},
+        { name:"31–60d",  value:34000, sub:"1 invoice", txns:[
+          { id:"INV-U-212", date:"12 Jun 2026", desc:"Desert Rose — fit-out milestone", amount:"AED 34K", status:"unpaid" },
+        ]},
+        { name:"61–90d",  value:48000, sub:"1 invoice — escalate", txns:[
+          { id:"INV-U-217", date:"08 Jul 2026", desc:"Falcon Logistics — freight", amount:"AED 48K", status:"overdue" },
+        ]},
+        { name:"90d+",    value:0, sub:"None", txns:[] },
+      ]},
+    ],
+  },
+};
+
+// ─── OUTSTANDING COMPLIANCES (Dashboard panel) ───────────────────────────────
+// Live clients: reportData.compliance [{item, detail, dueDate, owner, done}]
+// or the existing reportData.checklist. Demo: dates relative to today.
+const _inDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
+const DEMO_COMPLIANCE = [
+  { item:"TDS Return — Q1 (Form 24Q/26Q)",  detail:"Quarterly TDS return — was due 31 Jul", due:_inDays(-4),  owner:"CA"          },
+  { item:"TDS Payment — Jul deductions",     detail:"Challan ITNS-281",                     due:_inDays(3),   owner:"Accounts"    },
+  { item:"GSTR-1 — Jul 2026",                detail:"Outward supplies return",              due:_inDays(7),   owner:"GST Consultant" },
+  { item:"GSTR-3B — Jul 2026",               detail:"Summary return + tax payment",         due:_inDays(16),  owner:"GST Consultant" },
+  { item:"Advance Tax — 2nd Instalment",     detail:"45% of estimated FY27 liability",      due:_inDays(42),  owner:"Finance"     },
+  { item:"DIR-3 KYC — All Directors",        detail:"MCA annual director KYC",              due:_inDays(57),  owner:"CS"          },
+];
+const DEMO_COMPLIANCE_UAE = [
+  { item:"ESR Notification — FY25",          detail:"Economic Substance Regulation filing", due:_inDays(-8),  owner:"Tax Agent" },
+  { item:"VAT Return — Q2 2026",             detail:"Net payable AED 92.5K · FTA portal",   due:_inDays(24),  owner:"Tax Agent" },
+  { item:"WPS — August Salary File",         detail:"Wages Protection System submission",   due:_inDays(26),  owner:"HR"        },
+  { item:"Corporate Tax Return — FY25",      detail:"First CT filing · 9-month deadline",   due:_inDays(57),  owner:"Tax Agent" },
+  { item:"Trade Licence Renewal — DMCC",     detail:"Licence expires Mar 2027",             due:_inDays(210), owner:"PRO"       },
+];
+function getOutstandingCompliances(reportData, client) {
+  let items = null;
+  if (Array.isArray(reportData?.compliance) && reportData.compliance.length) {
+    items = reportData.compliance;
+  } else if (Array.isArray(reportData?.checklist) && reportData.checklist.length) {
+    items = reportData.checklist;
+  } else if (client?.isDemo) {
+    items = isUAE(client) ? DEMO_COMPLIANCE_UAE : DEMO_COMPLIANCE;
+  }
+  if (!items) return [];
+  return items
+    .filter(c => !c.done && c.status !== "done")
+    .map(c => {
+      const due = c.due instanceof Date ? c.due : (c.dueDate || c.due) ? new Date(c.dueDate || c.due) : null;
+      const days = due ? Math.ceil((due - new Date()) / 864e5) : null;
+      return {
+        item:   c.item || c.title || c.name || "—",
+        detail: c.detail || c.sub || "",
+        owner:  c.owner || "",
+        due, days,
+        state:  days == null ? "upcoming" : days < 0 ? "overdue" : days <= 7 ? "due-soon" : "upcoming",
+      };
+    })
+    .sort((a, b) => (a.days ?? 9999) - (b.days ?? 9999));
+}
+
+// MSME variant — trading/exports flavour (Gupta Exports demo)
+const DEMO_DRILL_MSME = {
+  revenue: {
+    label:"Revenue", total:"₹8.40 Cr", period:"FY26 YTD",
+    note:"Al Madina alone is 28% of revenue and pays at 51 days against 45-day terms. One delayed shipment payment = a CC drawdown. Push for an LC on the next order.",
+    dims:[
+      { key:"buyer", title:"By Buyer", rows:[
+        { name:"Al Madina Trading LLC",       value:23500000, sub:"Export · Dubai", txns:[
+          { id:"EXP-2214", date:"22 Jul 2026", desc:"Shipment #88 — home textiles", amount:"₹42.0L", status:"unpaid"  },
+          { id:"EXP-2201", date:"18 Jun 2026", desc:"Shipment #84 — home textiles", amount:"₹38.5L", status:"paid"    },
+        ]},
+        { name:"HomeStyle Retail Inc",        value:18500000, sub:"Export · USA", txns:[
+          { id:"EXP-2210", date:"10 Jul 2026", desc:"PO #4471 — bed linen",         amount:"₹31.2L", status:"paid"    },
+        ]},
+        { name:"Reliance Retail",             value:14200000, sub:"Domestic · Modern trade", txns:[
+          { id:"INV-3315", date:"28 Jul 2026", desc:"Jul supply — 14 stores",       amount:"₹19.0L", status:"unpaid"  },
+        ]},
+        { name:"DMart Distribution",          value:9800000,  sub:"Domestic · Modern trade", txns:[
+          { id:"INV-3308", date:"15 Jul 2026", desc:"Jul supply — west zone",       amount:"₹12.4L", status:"paid"    },
+        ]},
+        { name:"Jaipur Handloom Distributors",value:6500000,  sub:"Domestic · Distributor", txns:[
+          { id:"INV-3288", date:"02 May 2026", desc:"Summer stock order",            amount:"₹4.0L",  status:"overdue" },
+        ]},
+        { name:"Others (14 buyers)",          value:11500000, sub:"Avg ₹82K/buyer", txns:[] },
+      ]},
+      { key:"market", title:"By Market", rows:[
+        { name:"Exports — GCC",            value:29000000, sub:"35% of revenue", txns:[] },
+        { name:"Exports — US & EU",        value:22000000, sub:"26% of revenue", txns:[] },
+        { name:"Domestic — Modern Trade",  value:24000000, sub:"29% of revenue", txns:[] },
+        { name:"Domestic — Distributors",  value:9000000,  sub:"11% of revenue", txns:[] },
+      ]},
+    ],
+  },
+  workingcap: {
+    label:"Working Capital", total:"₹1.90 Cr net", period:"as on date",
+    note:"₹1.42 Cr sits in inventory — 58 days of stock. The yarn category alone holds ₹38L against 21 days of demand. Liquidating half of it funds the next export cycle without touching the CC.",
+    dims:[
+      { key:"component", title:"Components", rows:[
+        { name:"Debtors (receivables)",   value:9800000,  sub:"42-day average collection", txns:[] },
+        { name:"Inventory",               value:14200000, sub:"58 days of stock",          txns:[] },
+        { name:"Advances to Suppliers",   value:1800000,  sub:"Against confirmed orders",  txns:[] },
+        { name:"Creditors (payable)",     value:8500000,  sub:"Deducted · 35-day terms",   txns:[] },
+      ]},
+    ],
+  },
+  cash: {
+    label:"Cash Balance", total:"₹2.10 Cr", period:"across accounts",
+    note:"CC is 68% drawn (₹2.04 Cr of ₹3 Cr) while ₹85L sits in FDs earning 7%. The CC costs 11% — breaking one FD to cut the CC saves ~₹2.8L/yr in net interest.",
+    dims:[
+      { key:"account", title:"By Account", rows:[
+        { name:"HDFC Bank — Current",     value:6800000, sub:"Primary operating account", txns:[
+          { id:"NEFT-7712", date:"01 Aug 2026", desc:"DMart — collection",     amount:"+₹12.4L", status:"paid" },
+          { id:"RTGS-7708", date:"28 Jul 2026", desc:"Yarn supplier payment",  amount:"−₹18.2L", status:"paid" },
+        ]},
+        { name:"ICICI — EEFC (USD)",      value:5200000, sub:"Export proceeds account", txns:[
+          { id:"SWIFT-102", date:"12 Jul 2026", desc:"HomeStyle — PO #4471",   amount:"+₹31.2L", status:"paid" },
+        ]},
+        { name:"Fixed Deposits",          value:8500000, sub:"3 FDs · avg 7.0% p.a.", txns:[] },
+        { name:"Petty Cash",              value:500000,  sub:"Factory + office", txns:[] },
+      ]},
+    ],
+  },
+  debtors: {
+    label:"Debtor Days", total:"₹98L", period:"outstanding · 42-day average",
+    note:"Al Madina averages 51 days against 45-day terms — that 6-day slip on ₹38L is a permanent ₹6L+ hole in your cash. Jaipur Handloom at 94 days needs a stop-supply decision.",
+    dims:[
+      { key:"customer", title:"By Customer", rows:[
+        { name:"Al Madina Trading LLC",        value:3800000, sub:"Avg 51 days · terms 45d", txns:[
+          { id:"EXP-2214", date:"22 Jul 2026", desc:"Shipment #88",            amount:"₹42.0L", status:"unpaid"  },
+        ]},
+        { name:"HomeStyle Retail Inc",         value:2400000, sub:"Avg 38 days · on terms", txns:[] },
+        { name:"Reliance Retail",              value:1900000, sub:"Avg 35 days · on terms", txns:[
+          { id:"INV-3315", date:"28 Jul 2026", desc:"Jul supply",               amount:"₹19.0L", status:"unpaid"  },
+        ]},
+        { name:"DMart Distribution",           value:1200000, sub:"Avg 29 days", txns:[] },
+        { name:"Jaipur Handloom Distributors", value:500000,  sub:"94 days — escalate", txns:[
+          { id:"INV-3288", date:"02 May 2026", desc:"Summer stock order",       amount:"₹4.0L",  status:"overdue" },
+        ]},
+      ]},
+    ],
+  },
+  cc: {
+    label:"CC Utilisation", total:"68%", period:"₹2.04 Cr drawn of ₹3 Cr limit",
+    note:"Headroom is ₹96L. Peak season purchases start in Oct — at current burn you enter it with ~₹60L headroom, which is one large shipment away from the limit. Renew the enhancement request now.",
+    dims:[
+      { key:"facility", title:"By Facility", rows:[
+        { name:"SBI — Cash Credit",        value:20400000, sub:"₹3 Cr limit · 11.0% p.a. · 68% drawn", txns:[] },
+        { name:"HDFC — Export Packing Credit", value:4500000, sub:"₹80L limit · 8.2% p.a. · 56% drawn", txns:[] },
+      ]},
+    ],
+  },
+  ccc: {
+    label:"Cash Conversion Cycle", total:"65 days", period:"Inventory + Debtors − Creditors",
+    note:"65 days means every rupee of sales is locked for over two months before it returns as cash. Cutting inventory to 45 days brings CCC to 52 — that alone frees ~₹32L.",
+    dims:[
+      { key:"component", title:"Components", rows:[
+        { name:"Inventory Days",  value:58, sub:"Stock held before sale",        unit:"d", txns:[] },
+        { name:"Debtor Days",     value:42, sub:"Collection period after sale",  unit:"d", txns:[] },
+        { name:"Creditor Days",   value:35, sub:"Deducted — supplier credit",    unit:"d", txns:[] },
+      ]},
+    ],
+  },
+  receivables: {
+    label:"Receivables", total:"₹62L", period:"outstanding invoices",
+    note:"₹4L from Jaipur Handloom is 94 days old — 6% of receivables but 100% of your write-off risk. Take the stop-supply call this week.",
+    dims:[
+      { key:"aging", title:"By Age", rows:[
+        { name:"Current",  value:3200000, sub:"Not yet due", txns:[
+          { id:"INV-3315", date:"28 Jul 2026", desc:"Reliance Retail — Jul supply", amount:"₹19.0L", status:"unpaid" },
+          { id:"EXP-2218", date:"30 Jul 2026", desc:"HomeStyle — PO #4489",         amount:"₹13.0L", status:"unpaid" },
+        ]},
+        { name:"31–60d",   value:1800000, sub:"1 buyer", txns:[
+          { id:"EXP-2214", date:"22 Jun 2026", desc:"Al Madina — Shipment #88",     amount:"₹18.0L", status:"unpaid" },
+        ]},
+        { name:"61–90d",   value:800000,  sub:"1 buyer", txns:[
+          { id:"INV-3296", date:"20 May 2026", desc:"DMart — May supply balance",   amount:"₹8.0L",  status:"overdue" },
+        ]},
+        { name:"90d+",     value:400000,  sub:"1 buyer — escalate", txns:[
+          { id:"INV-3288", date:"02 May 2026", desc:"Jaipur Handloom — summer stock", amount:"₹4.0L", status:"overdue" },
+        ]},
+      ]},
+    ],
+  },
+};
+
+// Demo drill set for a client: UAE, MSME (trading flavour), or startup default.
+function demoDrillSet(client) {
+  if (isUAE(client)) return DEMO_DRILL_UAE;
+  const pack = normalizePack(client?.client_pack || client?.clientPack);
+  return pack === "msme" ? { ...DEMO_DRILL, ...DEMO_DRILL_MSME } : DEMO_DRILL;
+}
+
+// Resolve drill data for a KPI label: live reportData.drill first, demo fallback.
+function getDrill(label, reportData, client) {
+  const l = String(label || "").toLowerCase();
+  const key =
+    l.includes("conversion") || l.includes("cycle") ? "ccc" :
+    l.includes("working")    ? "workingcap" :
+    l.includes("debtor")     ? "debtors"    :
+    l.includes("utilisation") || l.includes("utilization") || l.includes("cc ") || l.startsWith("cc") ? "cc" :
+    l.includes("revenue") ? "revenue" :
+    l.includes("arr")     ? "arr"     :
+    l.includes("cash")    ? "cash"    :
+    l.includes("burn")    ? "burn"    :
+    l.includes("vat")     ? "vat"     :
+    l.includes("margin")  ? "margin"  : null;
+  if (!key) return null;
+  if (reportData?.drill?.[key]) return reportData.drill[key];
+  if (client?.isDemo) return demoDrillSet(client)[key] || null;
+  return null;
+}
  
 // ─── SVG ICON SYSTEM ──────────────────────────────────────────────────────────
 // Replaces all emojis with clean SVG icons throughout the portal
@@ -2113,6 +2527,175 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 }
 
 
+// ─── DRILL-DOWN PANEL ─────────────────────────────────────────────────────────
+// Tally-style drill: click a KPI → breakup by dimension → transaction detail.
+function DrillDownPanel({ drill, onClose, uae }) {
+  const [dimIdx, setDimIdx] = useState(0);
+  const [sel, setSel] = useState(null);
+
+  useEffect(() => {
+    setDimIdx(0);
+    if (drill?._selectIdx != null) {
+      const row = drill.dims?.[0]?.rows?.[drill._selectIdx];
+      setSel(row && row.txns?.length ? row : null);
+    } else setSel(null);
+  }, [drill]);
+
+  if (!drill) return null;
+
+  const dims  = drill.dims || [];
+  const dim   = dims[Math.min(dimIdx, Math.max(dims.length - 1, 0))] || { rows: [] };
+  const rows  = dim.rows || [];
+  const unit  = rows.find(r => r.unit)?.unit || null;   // "%" | "d" | null (currency)
+  const isPct = !!unit;                                  // non-currency: hide share %, scale bars to max
+  const totalNum = rows.reduce((s, r) => s + (r.value || 0), 0);
+  const maxVal   = Math.max(...rows.map(r => r.value || 0), 1);
+  const fmtV  = v => unit === "%" ? `${v}%` : unit === "d" ? `${v} days` : (uae ? fmtAED2(v) : fmtINR(v));
+  const now   = new Date();
+  const stamp = drill.asOn || `${now.toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" })}, ${now.toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" })}`;
+  const stColor = s => s === "paid" ? C.green : s === "overdue" ? C.red : C.amber;
+  const stBg    = s => s === "paid" ? "#DCFCE7" : s === "overdue" ? "#FEF2F2" : "#FEF3C7";
+
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:3000,
+      background:"rgba(15,23,42,0.45)", display:"flex", justifyContent:"flex-end" }}>
+      <style>{`@keyframes drillIn{from{transform:translateX(48px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
+      <div onClick={e => e.stopPropagation()} style={{ width:"min(560px,100vw)", height:"100%",
+        background:C.bg, boxShadow:"-8px 0 40px rgba(0,0,0,0.20)", display:"flex",
+        flexDirection:"column", animation:"drillIn .22s ease" }}>
+
+        {/* Header */}
+        <div style={{ padding:"18px 22px 14px", borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <div style={{ fontFamily:F, fontSize:10, fontWeight:800, color:C.accent,
+                textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
+                {drill.label} Breakup
+              </div>
+              <div style={{ fontFamily:F, fontSize:24, fontWeight:900, color:C.text, letterSpacing:"-0.5px" }}>
+                {drill.total || (totalNum ? fmtV(totalNum) : "—")}
+                {drill.period && <span style={{ fontSize:12, fontWeight:600, color:C.dim, marginLeft:8 }}>{drill.period}</span>}
+              </div>
+            </div>
+            <button onClick={onClose} style={{ width:30, height:30, borderRadius:8, border:`1px solid ${C.border}`,
+              background:C.bg, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <Icon name="close" size={14} color={C.muted}/>
+            </button>
+          </div>
+          {/* Live "as on" stamp */}
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8 }}>
+            <span style={{ width:7, height:7, borderRadius:"50%", background:C.green, flexShrink:0 }}/>
+            <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>
+              Live from books · as on <b style={{ color:C.text }}>{stamp}</b>
+            </span>
+          </div>
+        </div>
+
+        {/* Breadcrumb / dimension toggle */}
+        <div style={{ padding:"12px 22px 0" }}>
+          {sel ? (
+            <button onClick={() => setSel(null)} style={{ display:"inline-flex", alignItems:"center", gap:6,
+              padding:"6px 12px", borderRadius:8, border:`1px solid ${C.border}`, background:C.bg2,
+              fontFamily:F, fontSize:12, fontWeight:600, color:C.muted, cursor:"pointer" }}>
+              ← {drill.label} <span style={{ color:C.dim }}>/</span> <b style={{ color:C.text }}>{sel.name}</b>
+            </button>
+          ) : dims.length > 1 && (
+            <div style={{ display:"flex", gap:6 }}>
+              {dims.map((d, i) => (
+                <button key={i} onClick={() => setDimIdx(i)} style={{ padding:"6px 14px", borderRadius:16,
+                  border:`1px solid ${i === dimIdx ? C.accent : C.border}`,
+                  background:i === dimIdx ? C.accentLight : C.bg,
+                  fontFamily:F, fontSize:12, fontWeight:700,
+                  color:i === dimIdx ? C.accent : C.muted, cursor:"pointer" }}>
+                  {d.title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Body */}
+        <div style={{ flex:1, overflowY:"auto", padding:"14px 22px 20px" }}>
+          {!sel ? (
+            // ── Level 1: breakup rows with share bars ──
+            rows.map((r, i) => {
+              const pct = isPct ? r.value : totalNum ? (r.value / totalNum) * 100 : 0;
+              const barPct = isPct ? (r.value / maxVal) * 100 : pct;
+              const clickable = (r.txns || []).length > 0;
+              return (
+                <div key={i} onClick={clickable ? () => setSel(r) : undefined}
+                  style={{ padding:"12px 14px", borderRadius:10, border:`1px solid ${C.border}`,
+                    marginBottom:8, cursor:clickable ? "pointer" : "default",
+                    background:C.bg, transition:"border-color .15s" }}
+                  onMouseEnter={e => { if (clickable) e.currentTarget.style.borderColor = C.accent; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
+                    <div style={{ minWidth:0 }}>
+                      <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text }}>{r.name}</span>
+                      {clickable && <span style={{ fontFamily:F, fontSize:11, color:C.accent, marginLeft:8, fontWeight:600 }}>{r.txns.length} txns ›</span>}
+                    </div>
+                    <div style={{ fontFamily:FM, fontSize:13, fontWeight:800, color:C.text, whiteSpace:"nowrap" }}>
+                      {fmtV(r.value)}
+                      {!isPct && <span style={{ fontSize:11, fontWeight:500, color:C.dim, marginLeft:6 }}>{pct.toFixed(0)}%</span>}
+                    </div>
+                  </div>
+                  {r.sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:6 }}>{r.sub}</div>}
+                  <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${Math.max(barPct, 2)}%`, background:C.grad, borderRadius:10 }}/>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            // ── Level 2: transaction detail ──
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline",
+                padding:"4px 2px 12px", borderBottom:`1px solid ${C.border}`, marginBottom:4 }}>
+                <div>
+                  <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:C.text }}>{sel.name}</div>
+                  {sel.sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>{sel.sub}</div>}
+                </div>
+                <div style={{ fontFamily:FM, fontSize:16, fontWeight:900, color:C.accent }}>{fmtV(sel.value)}</div>
+              </div>
+              {(sel.txns || []).map((t, i) => (
+                <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                  gap:10, padding:"11px 4px", borderBottom:`1px solid #F3F4F6` }}>
+                  <div style={{ minWidth:0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:2 }}>
+                      <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.muted }}>{t.id}</span>
+                      <span style={{ fontFamily:F, fontSize:10, color:C.dim }}>{t.date}</span>
+                    </div>
+                    <div style={{ fontFamily:F, fontSize:12.5, color:C.text, overflow:"hidden",
+                      textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{t.desc}</div>
+                  </div>
+                  <div style={{ textAlign:"right", flexShrink:0 }}>
+                    <div style={{ fontFamily:FM, fontSize:13, fontWeight:800, color:C.text }}>{t.amount}</div>
+                    {t.status && (
+                      <span style={{ fontSize:9.5, fontWeight:800, padding:"2px 8px", borderRadius:10,
+                        textTransform:"uppercase", letterSpacing:"0.04em",
+                        background:stBg(t.status), color:stColor(t.status) }}>{t.status}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* CFO note — the layer Tally dashboards don't have */}
+        {drill.note && (
+          <div style={{ margin:"0 22px 20px", padding:"12px 16px", background:C.accentLight,
+            borderLeft:`3px solid ${C.accent}`, borderRadius:"0 10px 10px 0" }}>
+            <div style={{ fontFamily:F, fontSize:10, fontWeight:800, color:C.accent,
+              textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:5 }}>Garima's Note</div>
+            <div style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.6 }}>{drill.note}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, actions=[], invoices=[] }) {
   const displayKpis = kpis || KPIs;
   const ovPack  = normalizePack(client?.client_pack || client?.clientPack);
@@ -2130,6 +2713,12 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
 
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  // ── Drill-down state (Tally-style: KPI → breakup → transactions) ──────────
+  const [drill, setDrill] = useState(null);
+  const drillFor = (label) => getDrill(label, reportData, client);
+  const recvDrill = reportData?.drill?.receivables
+    || (client?.isDemo ? demoDrillSet(client).receivables : null);
 
   // ── Summary digest cards ──────────────────────────────────────────────────
   const wc = reportData?.workingCapital || {};
@@ -2222,18 +2811,25 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                 <Skeleton width="45%" height={10}/>
               </div>
             ))
-          : displayKpis.slice(0,6).map((k,i) => (
-              <div key={i} className="ns-kpi-tile">
-                <div className="label">{k.label}</div>
-                <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
-                {k.prev && k.prev!=="—" && (
-                  <div className="trend">
-                    <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>{k.trend==="up"?"↑":"↓"}</span>
-                    <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
-                  </div>
-                )}
-              </div>
-            ))
+          : displayKpis.slice(0,6).map((k,i) => {
+              const d = drillFor(k.label);
+              return (
+                <div key={i} className={`ns-kpi-tile${d ? " drillable" : ""}`}
+                  onClick={d ? () => setDrill(d) : undefined}
+                  title={d ? `View ${k.label} breakup` : undefined}
+                  style={{ position:"relative" }}>
+                  {d && <span className="drill-hint">›</span>}
+                  <div className="label">{k.label}</div>
+                  <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
+                  {k.prev && k.prev!=="—" && (
+                    <div className="trend">
+                      <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>{k.trend==="up"?"↑":"↓"}</span>
+                      <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })
         }
       </div>
 
@@ -2252,13 +2848,21 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
               <tr><th>Line</th><th className="right">Current</th><th className="right">Prior</th></tr>
             </thead>
             <tbody>
-              {plRowsShort.map((r,i) => (
-                <tr key={i} className={r.key==="pat"?"total":r.key==="gp"||r.key==="ebitda"?"subtotal":"striped"}>
-                  <td className={r.key==="pat"||r.key==="gp"?"bold":""}>{r.label}</td>
-                  <td className="right mono bold">{r.curr}</td>
-                  <td className="right mono muted">{r.prev}</td>
-                </tr>
-              ))}
+              {plRowsShort.map((r,i) => {
+                const rowDrill = r.key === "revenue" ? drillFor("revenue") : null;
+                return (
+                  <tr key={i} className={r.key==="pat"?"total":r.key==="gp"||r.key==="ebitda"?"subtotal":"striped"}
+                    onClick={rowDrill ? () => setDrill(rowDrill) : undefined}
+                    title={rowDrill ? "View revenue breakup" : undefined}
+                    style={rowDrill ? { cursor:"pointer" } : undefined}>
+                    <td className={r.key==="pat"||r.key==="gp"?"bold":""}>
+                      {r.label}{rowDrill && <span style={{ color:C.accent, fontWeight:700, marginLeft:5 }}>›</span>}
+                    </td>
+                    <td className="right mono bold">{r.curr}</td>
+                    <td className="right mono muted">{r.prev}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -2299,6 +2903,71 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
           </div>
         </div>
       </div>
+
+      {/* ── Outstanding Compliances (full-width) ── */}
+      {(() => {
+        const comps = getOutstandingCompliances(reportData, client);
+        if (comps.length === 0) return null;
+        const overdue = comps.filter(c => c.state === "overdue");
+        const dueSoon = comps.filter(c => c.state === "due-soon");
+        const stateStyle = {
+          "overdue":  { bg:"#FEF2F2", color:C.red,   label:d => `Overdue ${Math.abs(d)}d` },
+          "due-soon": { bg:"#FEF3C7", color:C.amber, label:d => `Due in ${d}d`            },
+          "upcoming": { bg:"#F3F4F6", color:C.muted, label:d => d != null ? `In ${d}d` : "Upcoming" },
+        };
+        return (
+          <div className="ns-panel" style={{ margin:0 }}>
+            <div className="ns-panel-header">
+              <h3>Outstanding Compliances</h3>
+              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                {overdue.length > 0 && <span className="ns-badge red">{overdue.length} overdue</span>}
+                {dueSoon.length > 0 && <span className="ns-badge amber">{dueSoon.length} due this week</span>}
+                <span className="ns-badge blue">{comps.length} total</span>
+              </div>
+            </div>
+            <div>
+              {comps.slice(0, 6).map((c, i) => {
+                const st = stateStyle[c.state];
+                return (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
+                    padding:"10px 18px", borderBottom:i < Math.min(comps.length, 6) - 1 ? `1px solid ${C.border}` : "none",
+                    background: c.state === "overdue" ? "#FFFBFB" : "transparent" }}>
+                    <span style={{ width:8, height:8, borderRadius:"50%", flexShrink:0, background:st.color }}/>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontFamily:F, fontSize:12.5, fontWeight:700, color:C.text,
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.item}</div>
+                      {c.detail && <div style={{ fontFamily:F, fontSize:11, color:C.muted,
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.detail}</div>}
+                    </div>
+                    {c.owner && (
+                      <span style={{ fontFamily:F, fontSize:10.5, color:C.dim, flexShrink:0 }} className="comp-owner">{c.owner}</span>
+                    )}
+                    {c.due && (
+                      <span style={{ fontFamily:F, fontSize:11, color:C.muted, flexShrink:0, minWidth:56, textAlign:"right" }}>
+                        {c.due.toLocaleDateString("en-GB", { day:"numeric", month:"short" })}
+                      </span>
+                    )}
+                    <span style={{ fontFamily:F, fontSize:10, fontWeight:800, padding:"3px 10px",
+                      borderRadius:12, background:st.bg, color:st.color, flexShrink:0,
+                      minWidth:76, textAlign:"center" }}>
+                      {st.label(c.days)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {comps.length > 6 && (
+              <div style={{ padding:"8px 18px", borderTop:`1px solid ${C.border}` }}>
+                <button onClick={() => setPage && setPage("compliance")}
+                  style={{ background:"none", border:"none", cursor:"pointer", fontFamily:F,
+                    fontSize:12, fontWeight:700, color:C.accent, padding:0 }}>
+                  View all {comps.length} in Compliance Calendar →
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Row 4: Action Items | A/R Aging | Cash Flow Trend (3-col, matches screenshot) ── */}
       <div style={{ display:"grid", gap:14 }} className="dash-bot-grid">
@@ -2344,10 +3013,17 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
             : <div style={{ padding:"12px 16px 16px" }}>
                 {arBuckets.map((b,i) => {
                   const pct = (b.val/arTotal*100);
+                  const canDrill = !!recvDrill && (recvDrill.dims?.[0]?.rows?.[i]?.txns || []).length > 0;
                   return (
-                    <div key={i} style={{ marginBottom:10 }}>
+                    <div key={i} style={{ marginBottom:10, cursor:canDrill?"pointer":"default", borderRadius:6, padding:"2px 4px", margin:"0 -4px 10px" }}
+                      onClick={canDrill ? () => setDrill({ ...recvDrill, _selectIdx:i }) : undefined}
+                      title={canDrill ? "View invoices in this bucket" : undefined}
+                      onMouseEnter={e => { if (canDrill) e.currentTarget.style.background = "#F8FAFF"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                        <span style={{ fontFamily:F, fontSize:11, color:C.text }}>{b.label}</span>
+                        <span style={{ fontFamily:F, fontSize:11, color:C.text }}>
+                          {b.label}{canDrill && <span style={{ color:C.accent, fontWeight:700, marginLeft:5 }}>›</span>}
+                        </span>
                         <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
                           {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400 }}>({pct.toFixed(0)}%)</span>
                         </span>
@@ -2515,6 +3191,9 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
           </table>
         </div>
       )}
+
+      {/* ── Drill-down panel (Tally-style breakup → transactions) ── */}
+      <DrillDownPanel drill={drill} onClose={() => setDrill(null)} uae={uae}/>
 
     </div>
   );
@@ -9418,11 +10097,36 @@ function Invoices({ client, liveInvoices }) {
 // ─── MY DOCUMENTS ────────────────────────────────────────────────────────────
  
  
+// ─── DOCUMENT REPOSITORY ─────────────────────────────────────────────────────
+// Every client document in one place — categorised, searchable, filterable.
+const DOC_CATEGORIES = [
+  { key:"reports",  label:"Reports & MIS",         color:"#2563EB", kw:["mis","board","report","p&l","pnl","valuation","cfo","budget","forecast","cash flow","cashflow"] },
+  { key:"tax",      label:"Tax & Compliance",      color:"#D97706", kw:["itr","gst","tds","vat","corporate tax"," ct ","ct-","advance tax","form 16","26as","challan","return","filing","assessment","tax"] },
+  { key:"banking",  label:"Banking & Finance",     color:"#0891B2", kw:["bank","statement","sanction","loan","facility","fd ","fixed deposit"] },
+  { key:"legal",    label:"Legal & Agreements",    color:"#7C3AED", kw:["agreement","contract","nda","mou","engagement","resolution","letter","deed"] },
+  { key:"licences", label:"Licences & Certificates", color:"#059669", kw:["licence","license","certificate","registration","trn","pan","tan","incorporation","moa","aoa","trade","coi"] },
+  { key:"other",    label:"Other",                 color:"#64748B", kw:[] },
+];
+const docCatByKey = key => DOC_CATEGORIES.find(c => c.key === key) || DOC_CATEGORIES[DOC_CATEGORIES.length - 1];
+function categorizeDoc(doc) {
+  if (doc.category) return docCatByKey(doc.category);
+  if (doc.doc_type === "engagement_letter") return docCatByKey("legal");
+  if (doc.doc_type === "report") return docCatByKey("reports");
+  const n = ` ${String(doc.name || "").toLowerCase()} `;
+  for (const c of DOC_CATEGORIES) {
+    if (c.kw.some(k => n.includes(k))) return c;
+  }
+  return docCatByKey("other");
+}
+
 function MyDocuments({ client }) {
   const [docs,       setDocs]       = useState([]);
   const [uploading,  setUploading]  = useState(false);
   const [loading,    setLoading]    = useState(true);
   const [dragOver,   setDragOver]   = useState(false);
+  const [query,      setQuery]      = useState("");
+  const [cat,        setCat]        = useState("all");
+  const [year,       setYear]       = useState("all");
   const isDemo = client?.isDemo === true;
  
   // Load documents from Supabase on mount
@@ -9497,18 +10201,44 @@ function MyDocuments({ client }) {
     return "ti-file";
   };
  
-  // DEMO placeholder docs so the page isn't empty
-  const DEMO_DOCS = [
-    { id:"d1", name:"Board Pack — February 2026.pdf",     file_size:"2.4 MB", uploaded_by:"garima", created_at:"2026-02-20", file_url: null },
-    { id:"d2", name:"DCF Valuation Report — Jan 2026.pdf",file_size:"1.8 MB", uploaded_by:"garima", created_at:"2026-01-22", file_url: null },
-    { id:"d3", name:"MIS Pack — Q3 FY26.xlsx",           file_size:"0.9 MB", uploaded_by:"garima", created_at:"2026-01-05", file_url: null },
-    { id:"d4", name:"Cap Table — v4.xlsx",               file_size:"0.3 MB", uploaded_by:client?.name, created_at:"2026-01-10", file_url: null },
+  // DEMO repository — shows the "everything in one place" vision
+  const DEMO_DOCS = isUAE(client) ? [
+    { id:"d1",  name:"MIS Pack — July 2026.pdf",                 file_size:"1.6 MB", uploaded_by:"garima", created_at:"2026-08-02", file_url:null },
+    { id:"d2",  name:"VAT Return — Q2 2026 (Filed).pdf",         file_size:"0.8 MB", uploaded_by:"garima", created_at:"2026-07-28", file_url:null },
+    { id:"d3",  name:"Corporate Tax Computation — FY25.xlsx",    file_size:"0.5 MB", uploaded_by:"garima", created_at:"2026-06-15", file_url:null },
+    { id:"d4",  name:"Trade Licence — DMCC (valid to Mar 2027).pdf", file_size:"1.1 MB", uploaded_by:client?.name, created_at:"2026-04-02", file_url:null },
+    { id:"d5",  name:"VAT Registration Certificate (TRN).pdf",   file_size:"0.4 MB", uploaded_by:client?.name, created_at:"2026-03-20", file_url:null },
+    { id:"d6",  name:"Emirates NBD — Bank Statement Jun 2026.pdf", file_size:"2.2 MB", uploaded_by:client?.name, created_at:"2026-07-05", file_url:null },
+    { id:"d7",  name:"Engagement Letter — FY27.pdf",             file_size:"0.3 MB", uploaded_by:"garima", created_at:"2026-04-01", file_url:null, doc_type:"engagement_letter" },
+    { id:"d8",  name:"Audit Report — FY25 (Signed).pdf",         file_size:"3.1 MB", uploaded_by:"garima", created_at:"2026-05-30", file_url:null },
+  ] : [
+    { id:"d1",  name:"Board Pack — February 2026.pdf",           file_size:"2.4 MB", uploaded_by:"garima", created_at:"2026-02-20", file_url:null },
+    { id:"d2",  name:"DCF Valuation Report — Jan 2026.pdf",      file_size:"1.8 MB", uploaded_by:"garima", created_at:"2026-01-22", file_url:null },
+    { id:"d3",  name:"MIS Pack — Q3 FY26.xlsx",                  file_size:"0.9 MB", uploaded_by:"garima", created_at:"2026-01-05", file_url:null },
+    { id:"d4",  name:"GSTR-3B — June 2026 (Filed).pdf",          file_size:"0.6 MB", uploaded_by:"garima", created_at:"2026-07-20", file_url:null },
+    { id:"d5",  name:"ITR — AY 2025-26 Acknowledgement.pdf",     file_size:"0.4 MB", uploaded_by:"garima", created_at:"2025-10-28", file_url:null },
+    { id:"d6",  name:"Advance Tax Challan — Q1 FY27.pdf",        file_size:"0.2 MB", uploaded_by:"garima", created_at:"2026-06-14", file_url:null },
+    { id:"d7",  name:"Certificate of Incorporation.pdf",         file_size:"0.7 MB", uploaded_by:client?.name, created_at:"2025-09-12", file_url:null },
+    { id:"d8",  name:"Shareholders Agreement — v3 (Signed).pdf", file_size:"1.5 MB", uploaded_by:client?.name, created_at:"2025-11-03", file_url:null },
+    { id:"d9",  name:"HDFC Bank — Sanction Letter (WC Facility).pdf", file_size:"0.9 MB", uploaded_by:client?.name, created_at:"2026-03-18", file_url:null },
+    { id:"d10", name:"Cap Table — v4.xlsx",                      file_size:"0.3 MB", uploaded_by:client?.name, created_at:"2026-01-10", file_url:null },
   ];
   const displayDocs = isDemo ? DEMO_DOCS : docs;
+
+  // ── Repository filters: category chips + search + year ──
+  const catCounts = DOC_CATEGORIES.reduce((m, c) => { m[c.key] = 0; return m; }, {});
+  displayDocs.forEach(d => { catCounts[categorizeDoc(d).key]++; });
+  const years = [...new Set(displayDocs.map(d => d.created_at ? String(new Date(d.created_at).getFullYear()) : null).filter(Boolean))].sort().reverse();
+  const filteredDocs = displayDocs.filter(d => {
+    if (cat !== "all" && categorizeDoc(d).key !== cat) return false;
+    if (year !== "all" && (!d.created_at || String(new Date(d.created_at).getFullYear()) !== year)) return false;
+    if (query.trim() && !String(d.name || "").toLowerCase().includes(query.trim().toLowerCase())) return false;
+    return true;
+  });
  
   return (
-    <div className="ns-page" style={{ maxWidth:700 }}>
-      <SectionTitle sub="Documents shared by Garima, and files you've uploaded.">My Documents</SectionTitle>
+    <div className="ns-page" style={{ maxWidth:860 }}>
+      <SectionTitle sub="Your complete document repository — reports, tax filings, agreements, licences and bank records, all in one place.">My Documents</SectionTitle>
  
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:12, background:`${C.amber}0A`,
@@ -9557,11 +10287,11 @@ function MyDocuments({ client }) {
         </Card>
       )}
  
-      {/* Document list */}
+      {/* Document repository */}
       <Card>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, flexWrap:"wrap", gap:10 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>
-            All Documents ({displayDocs.length})
+            Document Repository ({filteredDocs.length}{filteredDocs.length !== displayDocs.length ? ` of ${displayDocs.length}` : ""})
           </div>
           {!isDemo && !loading && displayDocs.length > 0 && (
             <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>
@@ -9569,6 +10299,54 @@ function MyDocuments({ client }) {
             </div>
           )}
         </div>
+
+        {/* Search + year filter */}
+        {displayDocs.length > 0 && (
+          <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search documents…"
+              style={{ flex:1, minWidth:180, padding:"9px 14px", borderRadius:10, fontSize:13,
+                border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                background:C.bg, outline:"none" }}
+              onFocus={e => e.target.style.borderColor = C.blue}
+              onBlur={e  => e.target.style.borderColor = C.border}
+            />
+            {years.length > 1 && (
+              <select value={year} onChange={e => setYear(e.target.value)}
+                style={{ padding:"9px 12px", borderRadius:10, fontSize:12.5, fontFamily:F,
+                  border:`1.5px solid ${C.border}`, color:C.text, background:C.bg, cursor:"pointer" }}>
+                <option value="all">All years</option>
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            )}
+          </div>
+        )}
+
+        {/* Category chips */}
+        {displayDocs.length > 0 && (
+          <div style={{ display:"flex", gap:6, marginBottom:16, flexWrap:"wrap" }}>
+            <button onClick={() => setCat("all")}
+              style={{ padding:"5px 13px", borderRadius:16, cursor:"pointer",
+                border:`1.5px solid ${cat === "all" ? C.blue : C.border}`,
+                background: cat === "all" ? C.accentLight : C.bg,
+                fontFamily:F, fontSize:12, fontWeight:700,
+                color: cat === "all" ? C.blue : C.muted }}>
+              All ({displayDocs.length})
+            </button>
+            {DOC_CATEGORIES.filter(c => catCounts[c.key] > 0).map(c => (
+              <button key={c.key} onClick={() => setCat(cat === c.key ? "all" : c.key)}
+                style={{ padding:"5px 13px", borderRadius:16, cursor:"pointer",
+                  border:`1.5px solid ${cat === c.key ? c.color : C.border}`,
+                  background: cat === c.key ? `${c.color}12` : C.bg,
+                  fontFamily:F, fontSize:12, fontWeight:700,
+                  color: cat === c.key ? c.color : C.muted }}>
+                {c.label} ({catCounts[c.key]})
+              </button>
+            ))}
+          </div>
+        )}
  
         {loading && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -9588,10 +10366,15 @@ function MyDocuments({ client }) {
         {!loading && displayDocs.length === 0 && (
           <EmptyState icon="ti-folder-off" title="No documents yet" sub="Garima will upload your reports here."/>
         )}
- 
+
+        {!loading && displayDocs.length > 0 && filteredDocs.length === 0 && (
+          <EmptyState icon="ti-search-off" title="No matching documents" sub="Try a different search term or clear the filters."/>
+        )}
+
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {displayDocs.map((doc, i) => {
+          {filteredDocs.map((doc, i) => {
             const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
+            const docCat = categorizeDoc(doc);
             const isEL = doc.doc_type === "engagement_letter";
             const rowBg = isEL ? "#F0FDF4" : byGarima ? `${C.blue}08` : C.bg;
             const rowBorder = isEL ? "#00732F30" : byGarima ? C.blue+"25" : C.border;
@@ -9616,10 +10399,15 @@ function MyDocuments({ client }) {
                         wordBreak:"break-word", lineHeight:1.4 }}>
                         {doc.name}
                       </div>
-                      {isEL && (
+                      {isEL ? (
                         <span style={{ fontSize:10, fontWeight:700, color:"#00732F", background:"#DCFCE7",
                           padding:"2px 8px", borderRadius:20, letterSpacing:"0.06em", textTransform:"uppercase" }}>
                           Engagement Letter
+                        </span>
+                      ) : (
+                        <span style={{ fontSize:9.5, fontWeight:700, color:docCat.color, background:`${docCat.color}12`,
+                          padding:"2px 8px", borderRadius:20, letterSpacing:"0.04em" }}>
+                          {docCat.label}
                         </span>
                       )}
                     </div>
@@ -14715,7 +15503,7 @@ function Portal({ client, onLogout }) {
       value:liveKpis.runway||"—", prev:prevK.runway||"—", trend:"down", color:C.pink, bg:"#FEF0F7", icon:"runway" },
     { label: client?.client_pack==="msme"?"Cash Conversion Cycle":"ARR",
       value:liveKpis.arr||"—", prev:prevK.arr||"—", trend:"up", color:C.green, bg:"#E8FAF3", icon: "ti-target" },
-  ] : KPIs;
+  ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
  
   const resolvedActions = isUAE(client)
     ? ACTIONS_BY_PACK.uae
@@ -15023,6 +15811,14 @@ function Portal({ client, onLogout }) {
         .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
         .ns-kpi-tile .value { font-size:13px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
         .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
+        .ns-kpi-tile.drillable { cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; }
+        .ns-kpi-tile.drillable:hover { border-color:#2563EB; box-shadow:0 3px 10px rgba(37,99,235,0.14); transform:translateY(-1px); }
+        .ns-kpi-tile .drill-hint {
+          position:absolute; top:8px; right:10px;
+          font-size:13px; font-weight:800; color:#2563EB; opacity:0.35;
+          transition:opacity .15s;
+        }
+        .ns-kpi-tile.drillable:hover .drill-hint { opacity:1; }
  
         /* Badges */
         .ns-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:700; }
