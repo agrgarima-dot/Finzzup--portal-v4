@@ -9840,11 +9840,36 @@ function Invoices({ client, liveInvoices }) {
 // ─── MY DOCUMENTS ────────────────────────────────────────────────────────────
  
  
+// ─── DOCUMENT REPOSITORY ─────────────────────────────────────────────────────
+// Every client document in one place — categorised, searchable, filterable.
+const DOC_CATEGORIES = [
+  { key:"reports",  label:"Reports & MIS",         color:"#2563EB", kw:["mis","board","report","p&l","pnl","valuation","cfo","budget","forecast","cash flow","cashflow"] },
+  { key:"tax",      label:"Tax & Compliance",      color:"#D97706", kw:["itr","gst","tds","vat","corporate tax"," ct ","ct-","advance tax","form 16","26as","challan","return","filing","assessment","tax"] },
+  { key:"banking",  label:"Banking & Finance",     color:"#0891B2", kw:["bank","statement","sanction","loan","facility","fd ","fixed deposit"] },
+  { key:"legal",    label:"Legal & Agreements",    color:"#7C3AED", kw:["agreement","contract","nda","mou","engagement","resolution","letter","deed"] },
+  { key:"licences", label:"Licences & Certificates", color:"#059669", kw:["licence","license","certificate","registration","trn","pan","tan","incorporation","moa","aoa","trade","coi"] },
+  { key:"other",    label:"Other",                 color:"#64748B", kw:[] },
+];
+const docCatByKey = key => DOC_CATEGORIES.find(c => c.key === key) || DOC_CATEGORIES[DOC_CATEGORIES.length - 1];
+function categorizeDoc(doc) {
+  if (doc.category) return docCatByKey(doc.category);
+  if (doc.doc_type === "engagement_letter") return docCatByKey("legal");
+  if (doc.doc_type === "report") return docCatByKey("reports");
+  const n = ` ${String(doc.name || "").toLowerCase()} `;
+  for (const c of DOC_CATEGORIES) {
+    if (c.kw.some(k => n.includes(k))) return c;
+  }
+  return docCatByKey("other");
+}
+
 function MyDocuments({ client }) {
   const [docs,       setDocs]       = useState([]);
   const [uploading,  setUploading]  = useState(false);
   const [loading,    setLoading]    = useState(true);
   const [dragOver,   setDragOver]   = useState(false);
+  const [query,      setQuery]      = useState("");
+  const [cat,        setCat]        = useState("all");
+  const [year,       setYear]       = useState("all");
   const isDemo = client?.isDemo === true;
  
   // Load documents from Supabase on mount
@@ -9919,18 +9944,44 @@ function MyDocuments({ client }) {
     return "ti-file";
   };
  
-  // DEMO placeholder docs so the page isn't empty
-  const DEMO_DOCS = [
-    { id:"d1", name:"Board Pack — February 2026.pdf",     file_size:"2.4 MB", uploaded_by:"garima", created_at:"2026-02-20", file_url: null },
-    { id:"d2", name:"DCF Valuation Report — Jan 2026.pdf",file_size:"1.8 MB", uploaded_by:"garima", created_at:"2026-01-22", file_url: null },
-    { id:"d3", name:"MIS Pack — Q3 FY26.xlsx",           file_size:"0.9 MB", uploaded_by:"garima", created_at:"2026-01-05", file_url: null },
-    { id:"d4", name:"Cap Table — v4.xlsx",               file_size:"0.3 MB", uploaded_by:client?.name, created_at:"2026-01-10", file_url: null },
+  // DEMO repository — shows the "everything in one place" vision
+  const DEMO_DOCS = isUAE(client) ? [
+    { id:"d1",  name:"MIS Pack — July 2026.pdf",                 file_size:"1.6 MB", uploaded_by:"garima", created_at:"2026-08-02", file_url:null },
+    { id:"d2",  name:"VAT Return — Q2 2026 (Filed).pdf",         file_size:"0.8 MB", uploaded_by:"garima", created_at:"2026-07-28", file_url:null },
+    { id:"d3",  name:"Corporate Tax Computation — FY25.xlsx",    file_size:"0.5 MB", uploaded_by:"garima", created_at:"2026-06-15", file_url:null },
+    { id:"d4",  name:"Trade Licence — DMCC (valid to Mar 2027).pdf", file_size:"1.1 MB", uploaded_by:client?.name, created_at:"2026-04-02", file_url:null },
+    { id:"d5",  name:"VAT Registration Certificate (TRN).pdf",   file_size:"0.4 MB", uploaded_by:client?.name, created_at:"2026-03-20", file_url:null },
+    { id:"d6",  name:"Emirates NBD — Bank Statement Jun 2026.pdf", file_size:"2.2 MB", uploaded_by:client?.name, created_at:"2026-07-05", file_url:null },
+    { id:"d7",  name:"Engagement Letter — FY27.pdf",             file_size:"0.3 MB", uploaded_by:"garima", created_at:"2026-04-01", file_url:null, doc_type:"engagement_letter" },
+    { id:"d8",  name:"Audit Report — FY25 (Signed).pdf",         file_size:"3.1 MB", uploaded_by:"garima", created_at:"2026-05-30", file_url:null },
+  ] : [
+    { id:"d1",  name:"Board Pack — February 2026.pdf",           file_size:"2.4 MB", uploaded_by:"garima", created_at:"2026-02-20", file_url:null },
+    { id:"d2",  name:"DCF Valuation Report — Jan 2026.pdf",      file_size:"1.8 MB", uploaded_by:"garima", created_at:"2026-01-22", file_url:null },
+    { id:"d3",  name:"MIS Pack — Q3 FY26.xlsx",                  file_size:"0.9 MB", uploaded_by:"garima", created_at:"2026-01-05", file_url:null },
+    { id:"d4",  name:"GSTR-3B — June 2026 (Filed).pdf",          file_size:"0.6 MB", uploaded_by:"garima", created_at:"2026-07-20", file_url:null },
+    { id:"d5",  name:"ITR — AY 2025-26 Acknowledgement.pdf",     file_size:"0.4 MB", uploaded_by:"garima", created_at:"2025-10-28", file_url:null },
+    { id:"d6",  name:"Advance Tax Challan — Q1 FY27.pdf",        file_size:"0.2 MB", uploaded_by:"garima", created_at:"2026-06-14", file_url:null },
+    { id:"d7",  name:"Certificate of Incorporation.pdf",         file_size:"0.7 MB", uploaded_by:client?.name, created_at:"2025-09-12", file_url:null },
+    { id:"d8",  name:"Shareholders Agreement — v3 (Signed).pdf", file_size:"1.5 MB", uploaded_by:client?.name, created_at:"2025-11-03", file_url:null },
+    { id:"d9",  name:"HDFC Bank — Sanction Letter (WC Facility).pdf", file_size:"0.9 MB", uploaded_by:client?.name, created_at:"2026-03-18", file_url:null },
+    { id:"d10", name:"Cap Table — v4.xlsx",                      file_size:"0.3 MB", uploaded_by:client?.name, created_at:"2026-01-10", file_url:null },
   ];
   const displayDocs = isDemo ? DEMO_DOCS : docs;
+
+  // ── Repository filters: category chips + search + year ──
+  const catCounts = DOC_CATEGORIES.reduce((m, c) => { m[c.key] = 0; return m; }, {});
+  displayDocs.forEach(d => { catCounts[categorizeDoc(d).key]++; });
+  const years = [...new Set(displayDocs.map(d => d.created_at ? String(new Date(d.created_at).getFullYear()) : null).filter(Boolean))].sort().reverse();
+  const filteredDocs = displayDocs.filter(d => {
+    if (cat !== "all" && categorizeDoc(d).key !== cat) return false;
+    if (year !== "all" && (!d.created_at || String(new Date(d.created_at).getFullYear()) !== year)) return false;
+    if (query.trim() && !String(d.name || "").toLowerCase().includes(query.trim().toLowerCase())) return false;
+    return true;
+  });
  
   return (
-    <div className="ns-page" style={{ maxWidth:700 }}>
-      <SectionTitle sub="Documents shared by Garima, and files you've uploaded.">My Documents</SectionTitle>
+    <div className="ns-page" style={{ maxWidth:860 }}>
+      <SectionTitle sub="Your complete document repository — reports, tax filings, agreements, licences and bank records, all in one place.">My Documents</SectionTitle>
  
       {isDemo && (
         <div style={{ padding:"10px 16px", borderRadius:12, background:`${C.amber}0A`,
@@ -9979,11 +10030,11 @@ function MyDocuments({ client }) {
         </Card>
       )}
  
-      {/* Document list */}
+      {/* Document repository */}
       <Card>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:12, flexWrap:"wrap", gap:10 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>
-            All Documents ({displayDocs.length})
+            Document Repository ({filteredDocs.length}{filteredDocs.length !== displayDocs.length ? ` of ${displayDocs.length}` : ""})
           </div>
           {!isDemo && !loading && displayDocs.length > 0 && (
             <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>
@@ -9991,6 +10042,54 @@ function MyDocuments({ client }) {
             </div>
           )}
         </div>
+
+        {/* Search + year filter */}
+        {displayDocs.length > 0 && (
+          <div style={{ display:"flex", gap:8, marginBottom:12, flexWrap:"wrap" }}>
+            <input
+              value={query}
+              onChange={e => setQuery(e.target.value)}
+              placeholder="Search documents…"
+              style={{ flex:1, minWidth:180, padding:"9px 14px", borderRadius:10, fontSize:13,
+                border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                background:C.bg, outline:"none" }}
+              onFocus={e => e.target.style.borderColor = C.blue}
+              onBlur={e  => e.target.style.borderColor = C.border}
+            />
+            {years.length > 1 && (
+              <select value={year} onChange={e => setYear(e.target.value)}
+                style={{ padding:"9px 12px", borderRadius:10, fontSize:12.5, fontFamily:F,
+                  border:`1.5px solid ${C.border}`, color:C.text, background:C.bg, cursor:"pointer" }}>
+                <option value="all">All years</option>
+                {years.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            )}
+          </div>
+        )}
+
+        {/* Category chips */}
+        {displayDocs.length > 0 && (
+          <div style={{ display:"flex", gap:6, marginBottom:16, flexWrap:"wrap" }}>
+            <button onClick={() => setCat("all")}
+              style={{ padding:"5px 13px", borderRadius:16, cursor:"pointer",
+                border:`1.5px solid ${cat === "all" ? C.blue : C.border}`,
+                background: cat === "all" ? C.accentLight : C.bg,
+                fontFamily:F, fontSize:12, fontWeight:700,
+                color: cat === "all" ? C.blue : C.muted }}>
+              All ({displayDocs.length})
+            </button>
+            {DOC_CATEGORIES.filter(c => catCounts[c.key] > 0).map(c => (
+              <button key={c.key} onClick={() => setCat(cat === c.key ? "all" : c.key)}
+                style={{ padding:"5px 13px", borderRadius:16, cursor:"pointer",
+                  border:`1.5px solid ${cat === c.key ? c.color : C.border}`,
+                  background: cat === c.key ? `${c.color}12` : C.bg,
+                  fontFamily:F, fontSize:12, fontWeight:700,
+                  color: cat === c.key ? c.color : C.muted }}>
+                {c.label} ({catCounts[c.key]})
+              </button>
+            ))}
+          </div>
+        )}
  
         {loading && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
@@ -10010,10 +10109,15 @@ function MyDocuments({ client }) {
         {!loading && displayDocs.length === 0 && (
           <EmptyState icon="ti-folder-off" title="No documents yet" sub="Garima will upload your reports here."/>
         )}
- 
+
+        {!loading && displayDocs.length > 0 && filteredDocs.length === 0 && (
+          <EmptyState icon="ti-search-off" title="No matching documents" sub="Try a different search term or clear the filters."/>
+        )}
+
         <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-          {displayDocs.map((doc, i) => {
+          {filteredDocs.map((doc, i) => {
             const byGarima = doc.uploaded_by === "garima" || doc.uploaded_by === "Garima Agarwal";
+            const docCat = categorizeDoc(doc);
             const isEL = doc.doc_type === "engagement_letter";
             const rowBg = isEL ? "#F0FDF4" : byGarima ? `${C.blue}08` : C.bg;
             const rowBorder = isEL ? "#00732F30" : byGarima ? C.blue+"25" : C.border;
@@ -10038,10 +10142,15 @@ function MyDocuments({ client }) {
                         wordBreak:"break-word", lineHeight:1.4 }}>
                         {doc.name}
                       </div>
-                      {isEL && (
+                      {isEL ? (
                         <span style={{ fontSize:10, fontWeight:700, color:"#00732F", background:"#DCFCE7",
                           padding:"2px 8px", borderRadius:20, letterSpacing:"0.06em", textTransform:"uppercase" }}>
                           Engagement Letter
+                        </span>
+                      ) : (
+                        <span style={{ fontSize:9.5, fontWeight:700, color:docCat.color, background:`${docCat.color}12`,
+                          padding:"2px 8px", borderRadius:20, letterSpacing:"0.04em" }}>
+                          {docCat.label}
                         </span>
                       )}
                     </div>
