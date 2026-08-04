@@ -162,6 +162,229 @@ const KPIs_UAE = [
   { label:"CT Effective Rate", value:"0%", prev:"9% (std rate)", trend:"up", color:C.green, bg:"#E8FAF3", icon:"chart_pie"},
   { label:"QFZP Score",        value:"82/100",      prev:"75/100",     trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"star"     },
 ];
+
+// ─── DRILL-DOWN DATA (Tally-style: KPI → breakup → transactions) ─────────────
+// Live clients read the same shape from reportData.drill.{key}; demo accounts
+// fall back to these. `asOn` omitted → panel stamps the current date/time.
+const DEMO_DRILL = {
+  revenue: {
+    label:"Revenue", total:"₹8.40 Cr", period:"FY26 YTD",
+    note:"Top 2 customers are 48% of revenue — concentration risk. Nimbus renewal (₹2.1 Cr) is due Oct — start the conversation now, not in Sep.",
+    dims:[
+      { key:"customer", title:"By Customer", rows:[
+        { name:"Nimbus Retail Pvt Ltd",  value:21800000, sub:"SaaS + Support · Mumbai", txns:[
+          { id:"INV-1041", date:"28 Jul 2026", desc:"SaaS subscription — Jul", amount:"₹9.6L",  status:"paid"    },
+          { id:"INV-1032", date:"28 Jun 2026", desc:"SaaS subscription — Jun", amount:"₹9.6L",  status:"paid"    },
+          { id:"INV-1029", date:"12 Jun 2026", desc:"Implementation support",  amount:"₹4.2L",  status:"paid"    },
+        ]},
+        { name:"Vertex Health Group",    value:18500000, sub:"Enterprise licence · Delhi NCR", txns:[
+          { id:"INV-1043", date:"01 Aug 2026", desc:"Enterprise licence — Q2", amount:"₹15.5L", status:"unpaid"  },
+          { id:"INV-1021", date:"02 May 2026", desc:"Enterprise licence — Q1", amount:"₹15.5L", status:"paid"    },
+        ]},
+        { name:"Gulf Distribution FZE",  value:13400000, sub:"Export · GCC", txns:[
+          { id:"INV-1038", date:"15 Jul 2026", desc:"Export order #88",        amount:"₹6.8L",  status:"overdue" },
+          { id:"INV-1027", date:"30 May 2026", desc:"Export order #81",        amount:"₹7.1L",  status:"paid"    },
+        ]},
+        { name:"Orbit Logistics",        value:9200000,  sub:"Annual contract · Bengaluru", txns:[
+          { id:"INV-1040", date:"22 Jul 2026", desc:"Monthly retainer — Jul",  amount:"₹3.1L",  status:"paid"    },
+          { id:"INV-1035", date:"22 Jun 2026", desc:"Monthly retainer — Jun",  amount:"₹3.1L",  status:"paid"    },
+        ]},
+        { name:"TechSpring Solutions",   value:7600000,  sub:"Project + AMC · Pune", txns:[
+          { id:"INV-1039", date:"18 Jul 2026", desc:"AMC renewal FY27",        amount:"₹4.4L",  status:"unpaid"  },
+        ]},
+        { name:"Others (11 customers)",  value:13500000, sub:"Avg ₹1.2L/customer", txns:[] },
+      ]},
+      { key:"location", title:"By Location", rows:[
+        { name:"Mumbai",      value:36000000, sub:"43% of revenue", txns:[] },
+        { name:"Delhi NCR",   value:21000000, sub:"25% of revenue", txns:[] },
+        { name:"Bengaluru",   value:15000000, sub:"18% of revenue", txns:[] },
+        { name:"GCC Exports", value:12000000, sub:"14% of revenue", txns:[] },
+      ]},
+    ],
+  },
+  cash: {
+    label:"Cash Balance", total:"₹2.10 Cr", period:"across 4 accounts",
+    note:"₹50L is idle in current accounts earning 0% — move ₹30L to sweep-in FD without touching operating liquidity.",
+    dims:[
+      { key:"account", title:"By Account", rows:[
+        { name:"HDFC Bank — Current",  value:9000000, sub:"Primary operating account", txns:[
+          { id:"NEFT-8812", date:"03 Aug 2026", desc:"Vertex Health — collection", amount:"+₹15.5L", status:"paid" },
+          { id:"RTGS-8807", date:"01 Aug 2026", desc:"Payroll — Jul salaries",     amount:"−₹27.0L", status:"paid" },
+        ]},
+        { name:"ICICI Bank — Current", value:6000000, sub:"Collections account", txns:[
+          { id:"UPI-4432",  date:"02 Aug 2026", desc:"Orbit Logistics — retainer", amount:"+₹3.1L",  status:"paid" },
+        ]},
+        { name:"Fixed Deposits",       value:5000000, sub:"2 FDs · avg 7.1% p.a.", txns:[] },
+        { name:"Petty Cash & Wallets", value:1000000, sub:"Office + digital wallets", txns:[] },
+      ]},
+    ],
+  },
+  burn: {
+    label:"Burn Rate", total:"₹48L /mo", period:"Jul 2026",
+    note:"Cloud spend is up 18% in 2 months with flat usage — the committed-use discount with AWS is unsigned. Signing it saves ₹1.1L/mo.",
+    dims:[
+      { key:"category", title:"By Category", rows:[
+        { name:"Salaries & Benefits",   value:2700000, sub:"38 headcount", txns:[
+          { id:"PAY-JUL",  date:"01 Aug 2026", desc:"Jul payroll (net)",       amount:"₹24.2L", status:"paid" },
+          { id:"PF-JUL",   date:"01 Aug 2026", desc:"PF + gratuity + insurance", amount:"₹2.8L", status:"paid" },
+        ]},
+        { name:"Cloud & Infrastructure", value:650000, sub:"AWS, GCP, SaaS tools", txns:[
+          { id:"AWS-0726", date:"28 Jul 2026", desc:"AWS — Jul usage",         amount:"₹4.1L",  status:"paid" },
+          { id:"SAAS-JUL", date:"25 Jul 2026", desc:"SaaS subscriptions (14)", amount:"₹2.4L",  status:"paid" },
+        ]},
+        { name:"Marketing & Sales",      value:500000, sub:"Performance + events", txns:[] },
+        { name:"Rent & Admin",           value:450000, sub:"2 offices", txns:[] },
+        { name:"Professional Fees",      value:250000, sub:"Legal, audit, CFO", txns:[] },
+        { name:"Other Operating",        value:250000, sub:"Travel, misc", txns:[] },
+      ]},
+    ],
+  },
+  arr: {
+    label:"ARR", total:"₹6.20 Cr", period:"contracted, annualised",
+    note:"NRR is 112% but 2 renewals worth ₹1.8 Cr land in Q3 — both champions have changed jobs. De-risk with exec sponsor calls this month.",
+    dims:[
+      { key:"customer", title:"By Customer", rows:[
+        { name:"Nimbus Retail Pvt Ltd", value:21000000, sub:"Renews Oct 2026", txns:[] },
+        { name:"Vertex Health Group",   value:15500000, sub:"Renews Jan 2027", txns:[] },
+        { name:"Orbit Logistics",       value:9300000,  sub:"Renews Mar 2027", txns:[] },
+        { name:"TechSpring Solutions",  value:6200000,  sub:"Renews Sep 2026", txns:[] },
+        { name:"Others",                value:10000000, sub:"9 accounts", txns:[] },
+      ]},
+    ],
+  },
+  margin: {
+    label:"Gross Margin", total:"41%", period:"blended, FY26 YTD",
+    note:"Services drag blended GM down 9 points. Every 5% of revenue shifted from services to SaaS adds ~₹4L/yr of gross profit.",
+    dims:[
+      { key:"line", title:"By Business Line", rows:[
+        { name:"SaaS Subscriptions",   value:52, sub:"GM 52% · 61% of revenue", unit:"%", txns:[] },
+        { name:"Implementation Services", value:28, sub:"GM 28% · 24% of revenue", unit:"%", txns:[] },
+        { name:"Support & AMC",        value:44, sub:"GM 44% · 15% of revenue", unit:"%", txns:[] },
+      ]},
+    ],
+  },
+  receivables: {
+    label:"Receivables", total:"", period:"outstanding invoices",
+    note:"₹4.8L from Gulf Distribution is 92 days overdue and is 60% of your 90d+ bucket — escalate to a director-level call this week.",
+    dims:[
+      { key:"aging", title:"By Age", rows:[
+        { name:"Current",  value:920000, sub:"5 invoices, not yet due", txns:[
+          { id:"INV-1043", date:"01 Aug 2026", desc:"Vertex Health — Q2 licence", amount:"₹15.5L", status:"unpaid" },
+          { id:"INV-1039", date:"18 Jul 2026", desc:"TechSpring — AMC renewal",   amount:"₹4.4L",  status:"unpaid" },
+        ]},
+        { name:"31–60d",   value:610000, sub:"3 invoices", txns:[
+          { id:"INV-1036", date:"25 Jun 2026", desc:"Meridian Foods — Jun order", amount:"₹3.6L", status:"unpaid" },
+          { id:"INV-1034", date:"20 Jun 2026", desc:"Kayra Textiles — retainer",  amount:"₹2.5L", status:"unpaid" },
+        ]},
+        { name:"61–90d",   value:340000, sub:"2 invoices", txns:[
+          { id:"INV-1030", date:"28 May 2026", desc:"Bluestone Traders — order",  amount:"₹3.4L", status:"overdue" },
+        ]},
+        { name:"90d+",     value:480000, sub:"1 invoice — escalate", txns:[
+          { id:"INV-1038", date:"15 Jul 2026", desc:"Gulf Distribution — order #88", amount:"₹4.8L", status:"overdue" },
+        ]},
+      ]},
+    ],
+  },
+};
+
+const DEMO_DRILL_UAE = {
+  revenue: {
+    label:"Revenue", total:"AED 1.85M", period:"FY26 YTD",
+    note:"Al Noor is 35% of revenue and pays in 75 days — one delayed cycle costs you a month of payroll cover. Negotiate 45-day terms at renewal.",
+    dims:[
+      { key:"customer", title:"By Customer", rows:[
+        { name:"Al Noor Trading LLC",     value:650000, sub:"Distribution · Dubai", txns:[
+          { id:"INV-U-221", date:"25 Jul 2026", desc:"Jul supply contract",  amount:"AED 95K",  status:"unpaid"  },
+          { id:"INV-U-214", date:"25 Jun 2026", desc:"Jun supply contract",  amount:"AED 95K",  status:"paid"    },
+        ]},
+        { name:"Marina Hospitality Group", value:420000, sub:"F&B services · Dubai Marina", txns:[
+          { id:"INV-U-219", date:"15 Jul 2026", desc:"Catering services — Jul", amount:"AED 62K", status:"paid"  },
+        ]},
+        { name:"Falcon Logistics FZE",     value:330000, sub:"JAFZA", txns:[
+          { id:"INV-U-217", date:"08 Jul 2026", desc:"Freight handling — Jul",  amount:"AED 48K", status:"overdue" },
+        ]},
+        { name:"Desert Rose Interiors",    value:250000, sub:"Fit-out projects", txns:[] },
+        { name:"Others (6 customers)",     value:200000, sub:"Avg AED 33K/customer", txns:[] },
+      ]},
+      { key:"emirate", title:"By Emirate", rows:[
+        { name:"Dubai",      value:1180000, sub:"64% of revenue", txns:[] },
+        { name:"Abu Dhabi",  value:390000,  sub:"21% of revenue", txns:[] },
+        { name:"Sharjah",    value:280000,  sub:"15% of revenue", txns:[] },
+      ]},
+    ],
+  },
+  cash: {
+    label:"Cash Balance", total:"AED 620K", period:"across 3 accounts",
+    note:"CT provision of AED 54K should sit in a separate account — right now it's mixed with operating cash and reads as runway you don't have.",
+    dims:[
+      { key:"account", title:"By Account", rows:[
+        { name:"Emirates NBD — Current", value:380000, sub:"Primary operating", txns:[
+          { id:"TRF-9921", date:"02 Aug 2026", desc:"Marina Hospitality — collection", amount:"+AED 62K", status:"paid" },
+          { id:"TRF-9915", date:"28 Jul 2026", desc:"Jul payroll",                     amount:"−AED 58K", status:"paid" },
+        ]},
+        { name:"ADCB — Current",         value:180000, sub:"Collections", txns:[] },
+        { name:"Wio — Digital",          value:60000,  sub:"Cards + subscriptions", txns:[] },
+      ]},
+    ],
+  },
+  burn: {
+    label:"Burn Rate", total:"AED 75K /mo", period:"Jul 2026",
+    note:"Office rent is 16% of burn for space at 40% desk utilisation — a flexi-desk move saves AED 7K/mo without losing the Trade Licence address.",
+    dims:[
+      { key:"category", title:"By Category", rows:[
+        { name:"Salaries & Visas",  value:42000, sub:"8 staff + visa costs", txns:[] },
+        { name:"Office & Rent",     value:12000, sub:"Business Bay office", txns:[] },
+        { name:"Marketing",         value:9000,  sub:"Digital + events", txns:[] },
+        { name:"Software & Cloud",  value:7000,  sub:"SaaS stack", txns:[] },
+        { name:"Professional Fees", value:5000,  sub:"PRO, audit, tax agent", txns:[] },
+      ]},
+    ],
+  },
+  vat: {
+    label:"VAT Payable", total:"AED 92.5K", period:"current quarter, accrued to date",
+    note:"Filing due 28 Aug. Input VAT on the Falcon invoice (AED 2.4K) is unclaimed — book it before filing to reduce the payable.",
+    dims:[
+      { key:"component", title:"Breakup", rows:[
+        { name:"Output VAT (on sales)",     value:145000, sub:"5% on taxable supplies", txns:[] },
+        { name:"Input VAT (recoverable)",   value:52500,  sub:"On purchases & expenses", txns:[] },
+      ]},
+    ],
+  },
+  receivables: {
+    label:"Receivables", total:"", period:"outstanding invoices",
+    note:"Falcon Logistics (AED 48K) is 60+ days overdue — under their JAFZA licence renewal in Sep they'll want a clean vendor ledger; use that timing.",
+    dims:[
+      { key:"aging", title:"By Age", rows:[
+        { name:"Current", value:95000, sub:"2 invoices", txns:[
+          { id:"INV-U-221", date:"25 Jul 2026", desc:"Al Noor — Jul supply", amount:"AED 95K", status:"unpaid" },
+        ]},
+        { name:"31–60d",  value:34000, sub:"1 invoice", txns:[
+          { id:"INV-U-212", date:"12 Jun 2026", desc:"Desert Rose — fit-out milestone", amount:"AED 34K", status:"unpaid" },
+        ]},
+        { name:"61–90d",  value:48000, sub:"1 invoice — escalate", txns:[
+          { id:"INV-U-217", date:"08 Jul 2026", desc:"Falcon Logistics — freight", amount:"AED 48K", status:"overdue" },
+        ]},
+        { name:"90d+",    value:0, sub:"None", txns:[] },
+      ]},
+    ],
+  },
+};
+
+// Resolve drill data for a KPI label: live reportData.drill first, demo fallback.
+function getDrill(label, reportData, client) {
+  const l = String(label || "").toLowerCase();
+  const key =
+    l.includes("revenue") ? "revenue" :
+    l.includes("arr")     ? "arr"     :
+    l.includes("cash")    ? "cash"    :
+    l.includes("burn")    ? "burn"    :
+    l.includes("vat")     ? "vat"     :
+    l.includes("margin")  ? "margin"  : null;
+  if (!key) return null;
+  if (reportData?.drill?.[key]) return reportData.drill[key];
+  if (client?.isDemo) return (isUAE(client) ? DEMO_DRILL_UAE : DEMO_DRILL)[key] || null;
+  return null;
+}
  
 // ─── SVG ICON SYSTEM ──────────────────────────────────────────────────────────
 // Replaces all emojis with clean SVG icons throughout the portal
@@ -2113,6 +2336,174 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 }
 
 
+// ─── DRILL-DOWN PANEL ─────────────────────────────────────────────────────────
+// Tally-style drill: click a KPI → breakup by dimension → transaction detail.
+function DrillDownPanel({ drill, onClose, uae }) {
+  const [dimIdx, setDimIdx] = useState(0);
+  const [sel, setSel] = useState(null);
+
+  useEffect(() => {
+    setDimIdx(0);
+    if (drill?._selectIdx != null) {
+      const row = drill.dims?.[0]?.rows?.[drill._selectIdx];
+      setSel(row && row.txns?.length ? row : null);
+    } else setSel(null);
+  }, [drill]);
+
+  if (!drill) return null;
+
+  const dims  = drill.dims || [];
+  const dim   = dims[Math.min(dimIdx, Math.max(dims.length - 1, 0))] || { rows: [] };
+  const rows  = dim.rows || [];
+  const isPct = rows.some(r => r.unit === "%");
+  const totalNum = rows.reduce((s, r) => s + (r.value || 0), 0);
+  const maxVal   = Math.max(...rows.map(r => r.value || 0), 1);
+  const fmtV  = v => isPct ? `${v}%` : (uae ? fmtAED2(v) : fmtINR(v));
+  const now   = new Date();
+  const stamp = drill.asOn || `${now.toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" })}, ${now.toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" })}`;
+  const stColor = s => s === "paid" ? C.green : s === "overdue" ? C.red : C.amber;
+  const stBg    = s => s === "paid" ? "#DCFCE7" : s === "overdue" ? "#FEF2F2" : "#FEF3C7";
+
+  return (
+    <div onClick={onClose} style={{ position:"fixed", inset:0, zIndex:3000,
+      background:"rgba(15,23,42,0.45)", display:"flex", justifyContent:"flex-end" }}>
+      <style>{`@keyframes drillIn{from{transform:translateX(48px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
+      <div onClick={e => e.stopPropagation()} style={{ width:"min(560px,100vw)", height:"100%",
+        background:C.bg, boxShadow:"-8px 0 40px rgba(0,0,0,0.20)", display:"flex",
+        flexDirection:"column", animation:"drillIn .22s ease" }}>
+
+        {/* Header */}
+        <div style={{ padding:"18px 22px 14px", borderBottom:`1px solid ${C.border}` }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+            <div>
+              <div style={{ fontFamily:F, fontSize:10, fontWeight:800, color:C.accent,
+                textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:4 }}>
+                {drill.label} Breakup
+              </div>
+              <div style={{ fontFamily:F, fontSize:24, fontWeight:900, color:C.text, letterSpacing:"-0.5px" }}>
+                {drill.total || (totalNum ? fmtV(totalNum) : "—")}
+                {drill.period && <span style={{ fontSize:12, fontWeight:600, color:C.dim, marginLeft:8 }}>{drill.period}</span>}
+              </div>
+            </div>
+            <button onClick={onClose} style={{ width:30, height:30, borderRadius:8, border:`1px solid ${C.border}`,
+              background:C.bg, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <Icon name="close" size={14} color={C.muted}/>
+            </button>
+          </div>
+          {/* Live "as on" stamp */}
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginTop:8 }}>
+            <span style={{ width:7, height:7, borderRadius:"50%", background:C.green, flexShrink:0 }}/>
+            <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>
+              Live from books · as on <b style={{ color:C.text }}>{stamp}</b>
+            </span>
+          </div>
+        </div>
+
+        {/* Breadcrumb / dimension toggle */}
+        <div style={{ padding:"12px 22px 0" }}>
+          {sel ? (
+            <button onClick={() => setSel(null)} style={{ display:"inline-flex", alignItems:"center", gap:6,
+              padding:"6px 12px", borderRadius:8, border:`1px solid ${C.border}`, background:C.bg2,
+              fontFamily:F, fontSize:12, fontWeight:600, color:C.muted, cursor:"pointer" }}>
+              ← {drill.label} <span style={{ color:C.dim }}>/</span> <b style={{ color:C.text }}>{sel.name}</b>
+            </button>
+          ) : dims.length > 1 && (
+            <div style={{ display:"flex", gap:6 }}>
+              {dims.map((d, i) => (
+                <button key={i} onClick={() => setDimIdx(i)} style={{ padding:"6px 14px", borderRadius:16,
+                  border:`1px solid ${i === dimIdx ? C.accent : C.border}`,
+                  background:i === dimIdx ? C.accentLight : C.bg,
+                  fontFamily:F, fontSize:12, fontWeight:700,
+                  color:i === dimIdx ? C.accent : C.muted, cursor:"pointer" }}>
+                  {d.title}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Body */}
+        <div style={{ flex:1, overflowY:"auto", padding:"14px 22px 20px" }}>
+          {!sel ? (
+            // ── Level 1: breakup rows with share bars ──
+            rows.map((r, i) => {
+              const pct = isPct ? r.value : totalNum ? (r.value / totalNum) * 100 : 0;
+              const barPct = isPct ? (r.value / maxVal) * 100 : pct;
+              const clickable = (r.txns || []).length > 0;
+              return (
+                <div key={i} onClick={clickable ? () => setSel(r) : undefined}
+                  style={{ padding:"12px 14px", borderRadius:10, border:`1px solid ${C.border}`,
+                    marginBottom:8, cursor:clickable ? "pointer" : "default",
+                    background:C.bg, transition:"border-color .15s" }}
+                  onMouseEnter={e => { if (clickable) e.currentTarget.style.borderColor = C.accent; }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; }}>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline", marginBottom:4 }}>
+                    <div style={{ minWidth:0 }}>
+                      <span style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text }}>{r.name}</span>
+                      {clickable && <span style={{ fontFamily:F, fontSize:11, color:C.accent, marginLeft:8, fontWeight:600 }}>{r.txns.length} txns ›</span>}
+                    </div>
+                    <div style={{ fontFamily:FM, fontSize:13, fontWeight:800, color:C.text, whiteSpace:"nowrap" }}>
+                      {fmtV(r.value)}
+                      {!isPct && <span style={{ fontSize:11, fontWeight:500, color:C.dim, marginLeft:6 }}>{pct.toFixed(0)}%</span>}
+                    </div>
+                  </div>
+                  {r.sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:6 }}>{r.sub}</div>}
+                  <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${Math.max(barPct, 2)}%`, background:C.grad, borderRadius:10 }}/>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            // ── Level 2: transaction detail ──
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline",
+                padding:"4px 2px 12px", borderBottom:`1px solid ${C.border}`, marginBottom:4 }}>
+                <div>
+                  <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:C.text }}>{sel.name}</div>
+                  {sel.sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:2 }}>{sel.sub}</div>}
+                </div>
+                <div style={{ fontFamily:FM, fontSize:16, fontWeight:900, color:C.accent }}>{fmtV(sel.value)}</div>
+              </div>
+              {(sel.txns || []).map((t, i) => (
+                <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
+                  gap:10, padding:"11px 4px", borderBottom:`1px solid #F3F4F6` }}>
+                  <div style={{ minWidth:0 }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:2 }}>
+                      <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:C.muted }}>{t.id}</span>
+                      <span style={{ fontFamily:F, fontSize:10, color:C.dim }}>{t.date}</span>
+                    </div>
+                    <div style={{ fontFamily:F, fontSize:12.5, color:C.text, overflow:"hidden",
+                      textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{t.desc}</div>
+                  </div>
+                  <div style={{ textAlign:"right", flexShrink:0 }}>
+                    <div style={{ fontFamily:FM, fontSize:13, fontWeight:800, color:C.text }}>{t.amount}</div>
+                    {t.status && (
+                      <span style={{ fontSize:9.5, fontWeight:800, padding:"2px 8px", borderRadius:10,
+                        textTransform:"uppercase", letterSpacing:"0.04em",
+                        background:stBg(t.status), color:stColor(t.status) }}>{t.status}</span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* CFO note — the layer Tally dashboards don't have */}
+        {drill.note && (
+          <div style={{ margin:"0 22px 20px", padding:"12px 16px", background:C.accentLight,
+            borderLeft:`3px solid ${C.accent}`, borderRadius:"0 10px 10px 0" }}>
+            <div style={{ fontFamily:F, fontSize:10, fontWeight:800, color:C.accent,
+              textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:5 }}>Garima's Note</div>
+            <div style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.6 }}>{drill.note}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, actions=[], invoices=[] }) {
   const displayKpis = kpis || KPIs;
   const ovPack  = normalizePack(client?.client_pack || client?.clientPack);
@@ -2130,6 +2521,12 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
 
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  // ── Drill-down state (Tally-style: KPI → breakup → transactions) ──────────
+  const [drill, setDrill] = useState(null);
+  const drillFor = (label) => getDrill(label, reportData, client);
+  const recvDrill = reportData?.drill?.receivables
+    || (client?.isDemo ? (uae ? DEMO_DRILL_UAE : DEMO_DRILL).receivables : null);
 
   // ── Summary digest cards ──────────────────────────────────────────────────
   const wc = reportData?.workingCapital || {};
@@ -2222,18 +2619,25 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                 <Skeleton width="45%" height={10}/>
               </div>
             ))
-          : displayKpis.slice(0,6).map((k,i) => (
-              <div key={i} className="ns-kpi-tile">
-                <div className="label">{k.label}</div>
-                <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
-                {k.prev && k.prev!=="—" && (
-                  <div className="trend">
-                    <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>{k.trend==="up"?"↑":"↓"}</span>
-                    <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
-                  </div>
-                )}
-              </div>
-            ))
+          : displayKpis.slice(0,6).map((k,i) => {
+              const d = drillFor(k.label);
+              return (
+                <div key={i} className={`ns-kpi-tile${d ? " drillable" : ""}`}
+                  onClick={d ? () => setDrill(d) : undefined}
+                  title={d ? `View ${k.label} breakup` : undefined}
+                  style={{ position:"relative" }}>
+                  {d && <span className="drill-hint">›</span>}
+                  <div className="label">{k.label}</div>
+                  <div className="value" style={{ color: k.color || "#111827" }}>{k.value}</div>
+                  {k.prev && k.prev!=="—" && (
+                    <div className="trend">
+                      <span style={{ color:k.trend==="up"?C.green:C.red, fontWeight:700 }}>{k.trend==="up"?"↑":"↓"}</span>
+                      <span style={{ color:"#9CA3AF" }}>prev: {k.prev}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })
         }
       </div>
 
@@ -2252,13 +2656,21 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
               <tr><th>Line</th><th className="right">Current</th><th className="right">Prior</th></tr>
             </thead>
             <tbody>
-              {plRowsShort.map((r,i) => (
-                <tr key={i} className={r.key==="pat"?"total":r.key==="gp"||r.key==="ebitda"?"subtotal":"striped"}>
-                  <td className={r.key==="pat"||r.key==="gp"?"bold":""}>{r.label}</td>
-                  <td className="right mono bold">{r.curr}</td>
-                  <td className="right mono muted">{r.prev}</td>
-                </tr>
-              ))}
+              {plRowsShort.map((r,i) => {
+                const rowDrill = r.key === "revenue" ? drillFor("revenue") : null;
+                return (
+                  <tr key={i} className={r.key==="pat"?"total":r.key==="gp"||r.key==="ebitda"?"subtotal":"striped"}
+                    onClick={rowDrill ? () => setDrill(rowDrill) : undefined}
+                    title={rowDrill ? "View revenue breakup" : undefined}
+                    style={rowDrill ? { cursor:"pointer" } : undefined}>
+                    <td className={r.key==="pat"||r.key==="gp"?"bold":""}>
+                      {r.label}{rowDrill && <span style={{ color:C.accent, fontWeight:700, marginLeft:5 }}>›</span>}
+                    </td>
+                    <td className="right mono bold">{r.curr}</td>
+                    <td className="right mono muted">{r.prev}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -2344,10 +2756,17 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
             : <div style={{ padding:"12px 16px 16px" }}>
                 {arBuckets.map((b,i) => {
                   const pct = (b.val/arTotal*100);
+                  const canDrill = !!recvDrill && (recvDrill.dims?.[0]?.rows?.[i]?.txns || []).length > 0;
                   return (
-                    <div key={i} style={{ marginBottom:10 }}>
+                    <div key={i} style={{ marginBottom:10, cursor:canDrill?"pointer":"default", borderRadius:6, padding:"2px 4px", margin:"0 -4px 10px" }}
+                      onClick={canDrill ? () => setDrill({ ...recvDrill, _selectIdx:i }) : undefined}
+                      title={canDrill ? "View invoices in this bucket" : undefined}
+                      onMouseEnter={e => { if (canDrill) e.currentTarget.style.background = "#F8FAFF"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}>
                       <div style={{ display:"flex", justifyContent:"space-between", marginBottom:4 }}>
-                        <span style={{ fontFamily:F, fontSize:11, color:C.text }}>{b.label}</span>
+                        <span style={{ fontFamily:F, fontSize:11, color:C.text }}>
+                          {b.label}{canDrill && <span style={{ color:C.accent, fontWeight:700, marginLeft:5 }}>›</span>}
+                        </span>
                         <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
                           {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400 }}>({pct.toFixed(0)}%)</span>
                         </span>
@@ -2515,6 +2934,9 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
           </table>
         </div>
       )}
+
+      {/* ── Drill-down panel (Tally-style breakup → transactions) ── */}
+      <DrillDownPanel drill={drill} onClose={() => setDrill(null)} uae={uae}/>
 
     </div>
   );
@@ -15023,6 +15445,14 @@ function Portal({ client, onLogout }) {
         .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
         .ns-kpi-tile .value { font-size:13px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
         .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
+        .ns-kpi-tile.drillable { cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; }
+        .ns-kpi-tile.drillable:hover { border-color:#2563EB; box-shadow:0 3px 10px rgba(37,99,235,0.14); transform:translateY(-1px); }
+        .ns-kpi-tile .drill-hint {
+          position:absolute; top:8px; right:10px;
+          font-size:13px; font-weight:800; color:#2563EB; opacity:0.35;
+          transition:opacity .15s;
+        }
+        .ns-kpi-tile.drillable:hover .drill-hint { opacity:1; }
  
         /* Badges */
         .ns-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:700; }
