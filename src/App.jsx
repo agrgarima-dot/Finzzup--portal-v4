@@ -163,6 +163,16 @@ const KPIs_UAE = [
   { label:"QFZP Score",        value:"82/100",      prev:"75/100",     trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"star"     },
 ];
 
+// MSME demo tiles — mirror the labels live MSME clients get
+const KPIs_MSME = [
+  { label:"Revenue",               value:"₹8.4 Cr",  prev:"₹7.9 Cr",  trend:"up",   color:C.blue,   bg:"#EEF3FE", emoji:"ti-trending-up" },
+  { label:"Working Capital",       value:"₹1.9 Cr",  prev:"₹1.7 Cr",  trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin" },
+  { label:"Cash Balance",          value:"₹2.1 Cr",  prev:"₹2.6 Cr",  trend:"down", color:C.amber,  bg:"#FEF7E7", icon:"cash"   },
+  { label:"Debtor Days",           value:"42d",       prev:"47d",      trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"runway" },
+  { label:"CC Utilisation",        value:"68%",       prev:"74%",      trend:"up",   color:C.pink,   bg:"#FEF0F7", icon:"bank"   },
+  { label:"Cash Conversion Cycle", value:"65d",       prev:"72d",      trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"cashflow" },
+];
+
 // ─── DRILL-DOWN DATA (Tally-style: KPI → breakup → transactions) ─────────────
 // Live clients read the same shape from reportData.drill.{key}; demo accounts
 // fall back to these. `asOn` omitted → panel stamps the current date/time.
@@ -415,10 +425,146 @@ function getOutstandingCompliances(reportData, client) {
     .sort((a, b) => (a.days ?? 9999) - (b.days ?? 9999));
 }
 
+// MSME variant — trading/exports flavour (Gupta Exports demo)
+const DEMO_DRILL_MSME = {
+  revenue: {
+    label:"Revenue", total:"₹8.40 Cr", period:"FY26 YTD",
+    note:"Al Madina alone is 28% of revenue and pays at 51 days against 45-day terms. One delayed shipment payment = a CC drawdown. Push for an LC on the next order.",
+    dims:[
+      { key:"buyer", title:"By Buyer", rows:[
+        { name:"Al Madina Trading LLC",       value:23500000, sub:"Export · Dubai", txns:[
+          { id:"EXP-2214", date:"22 Jul 2026", desc:"Shipment #88 — home textiles", amount:"₹42.0L", status:"unpaid"  },
+          { id:"EXP-2201", date:"18 Jun 2026", desc:"Shipment #84 — home textiles", amount:"₹38.5L", status:"paid"    },
+        ]},
+        { name:"HomeStyle Retail Inc",        value:18500000, sub:"Export · USA", txns:[
+          { id:"EXP-2210", date:"10 Jul 2026", desc:"PO #4471 — bed linen",         amount:"₹31.2L", status:"paid"    },
+        ]},
+        { name:"Reliance Retail",             value:14200000, sub:"Domestic · Modern trade", txns:[
+          { id:"INV-3315", date:"28 Jul 2026", desc:"Jul supply — 14 stores",       amount:"₹19.0L", status:"unpaid"  },
+        ]},
+        { name:"DMart Distribution",          value:9800000,  sub:"Domestic · Modern trade", txns:[
+          { id:"INV-3308", date:"15 Jul 2026", desc:"Jul supply — west zone",       amount:"₹12.4L", status:"paid"    },
+        ]},
+        { name:"Jaipur Handloom Distributors",value:6500000,  sub:"Domestic · Distributor", txns:[
+          { id:"INV-3288", date:"02 May 2026", desc:"Summer stock order",            amount:"₹4.0L",  status:"overdue" },
+        ]},
+        { name:"Others (14 buyers)",          value:11500000, sub:"Avg ₹82K/buyer", txns:[] },
+      ]},
+      { key:"market", title:"By Market", rows:[
+        { name:"Exports — GCC",            value:29000000, sub:"35% of revenue", txns:[] },
+        { name:"Exports — US & EU",        value:22000000, sub:"26% of revenue", txns:[] },
+        { name:"Domestic — Modern Trade",  value:24000000, sub:"29% of revenue", txns:[] },
+        { name:"Domestic — Distributors",  value:9000000,  sub:"11% of revenue", txns:[] },
+      ]},
+    ],
+  },
+  workingcap: {
+    label:"Working Capital", total:"₹1.90 Cr net", period:"as on date",
+    note:"₹1.42 Cr sits in inventory — 58 days of stock. The yarn category alone holds ₹38L against 21 days of demand. Liquidating half of it funds the next export cycle without touching the CC.",
+    dims:[
+      { key:"component", title:"Components", rows:[
+        { name:"Debtors (receivables)",   value:9800000,  sub:"42-day average collection", txns:[] },
+        { name:"Inventory",               value:14200000, sub:"58 days of stock",          txns:[] },
+        { name:"Advances to Suppliers",   value:1800000,  sub:"Against confirmed orders",  txns:[] },
+        { name:"Creditors (payable)",     value:8500000,  sub:"Deducted · 35-day terms",   txns:[] },
+      ]},
+    ],
+  },
+  cash: {
+    label:"Cash Balance", total:"₹2.10 Cr", period:"across accounts",
+    note:"CC is 68% drawn (₹2.04 Cr of ₹3 Cr) while ₹85L sits in FDs earning 7%. The CC costs 11% — breaking one FD to cut the CC saves ~₹2.8L/yr in net interest.",
+    dims:[
+      { key:"account", title:"By Account", rows:[
+        { name:"HDFC Bank — Current",     value:6800000, sub:"Primary operating account", txns:[
+          { id:"NEFT-7712", date:"01 Aug 2026", desc:"DMart — collection",     amount:"+₹12.4L", status:"paid" },
+          { id:"RTGS-7708", date:"28 Jul 2026", desc:"Yarn supplier payment",  amount:"−₹18.2L", status:"paid" },
+        ]},
+        { name:"ICICI — EEFC (USD)",      value:5200000, sub:"Export proceeds account", txns:[
+          { id:"SWIFT-102", date:"12 Jul 2026", desc:"HomeStyle — PO #4471",   amount:"+₹31.2L", status:"paid" },
+        ]},
+        { name:"Fixed Deposits",          value:8500000, sub:"3 FDs · avg 7.0% p.a.", txns:[] },
+        { name:"Petty Cash",              value:500000,  sub:"Factory + office", txns:[] },
+      ]},
+    ],
+  },
+  debtors: {
+    label:"Debtor Days", total:"₹98L", period:"outstanding · 42-day average",
+    note:"Al Madina averages 51 days against 45-day terms — that 6-day slip on ₹38L is a permanent ₹6L+ hole in your cash. Jaipur Handloom at 94 days needs a stop-supply decision.",
+    dims:[
+      { key:"customer", title:"By Customer", rows:[
+        { name:"Al Madina Trading LLC",        value:3800000, sub:"Avg 51 days · terms 45d", txns:[
+          { id:"EXP-2214", date:"22 Jul 2026", desc:"Shipment #88",            amount:"₹42.0L", status:"unpaid"  },
+        ]},
+        { name:"HomeStyle Retail Inc",         value:2400000, sub:"Avg 38 days · on terms", txns:[] },
+        { name:"Reliance Retail",              value:1900000, sub:"Avg 35 days · on terms", txns:[
+          { id:"INV-3315", date:"28 Jul 2026", desc:"Jul supply",               amount:"₹19.0L", status:"unpaid"  },
+        ]},
+        { name:"DMart Distribution",           value:1200000, sub:"Avg 29 days", txns:[] },
+        { name:"Jaipur Handloom Distributors", value:500000,  sub:"94 days — escalate", txns:[
+          { id:"INV-3288", date:"02 May 2026", desc:"Summer stock order",       amount:"₹4.0L",  status:"overdue" },
+        ]},
+      ]},
+    ],
+  },
+  cc: {
+    label:"CC Utilisation", total:"68%", period:"₹2.04 Cr drawn of ₹3 Cr limit",
+    note:"Headroom is ₹96L. Peak season purchases start in Oct — at current burn you enter it with ~₹60L headroom, which is one large shipment away from the limit. Renew the enhancement request now.",
+    dims:[
+      { key:"facility", title:"By Facility", rows:[
+        { name:"SBI — Cash Credit",        value:20400000, sub:"₹3 Cr limit · 11.0% p.a. · 68% drawn", txns:[] },
+        { name:"HDFC — Export Packing Credit", value:4500000, sub:"₹80L limit · 8.2% p.a. · 56% drawn", txns:[] },
+      ]},
+    ],
+  },
+  ccc: {
+    label:"Cash Conversion Cycle", total:"65 days", period:"Inventory + Debtors − Creditors",
+    note:"65 days means every rupee of sales is locked for over two months before it returns as cash. Cutting inventory to 45 days brings CCC to 52 — that alone frees ~₹32L.",
+    dims:[
+      { key:"component", title:"Components", rows:[
+        { name:"Inventory Days",  value:58, sub:"Stock held before sale",        unit:"d", txns:[] },
+        { name:"Debtor Days",     value:42, sub:"Collection period after sale",  unit:"d", txns:[] },
+        { name:"Creditor Days",   value:35, sub:"Deducted — supplier credit",    unit:"d", txns:[] },
+      ]},
+    ],
+  },
+  receivables: {
+    label:"Receivables", total:"₹62L", period:"outstanding invoices",
+    note:"₹4L from Jaipur Handloom is 94 days old — 6% of receivables but 100% of your write-off risk. Take the stop-supply call this week.",
+    dims:[
+      { key:"aging", title:"By Age", rows:[
+        { name:"Current",  value:3200000, sub:"Not yet due", txns:[
+          { id:"INV-3315", date:"28 Jul 2026", desc:"Reliance Retail — Jul supply", amount:"₹19.0L", status:"unpaid" },
+          { id:"EXP-2218", date:"30 Jul 2026", desc:"HomeStyle — PO #4489",         amount:"₹13.0L", status:"unpaid" },
+        ]},
+        { name:"31–60d",   value:1800000, sub:"1 buyer", txns:[
+          { id:"EXP-2214", date:"22 Jun 2026", desc:"Al Madina — Shipment #88",     amount:"₹18.0L", status:"unpaid" },
+        ]},
+        { name:"61–90d",   value:800000,  sub:"1 buyer", txns:[
+          { id:"INV-3296", date:"20 May 2026", desc:"DMart — May supply balance",   amount:"₹8.0L",  status:"overdue" },
+        ]},
+        { name:"90d+",     value:400000,  sub:"1 buyer — escalate", txns:[
+          { id:"INV-3288", date:"02 May 2026", desc:"Jaipur Handloom — summer stock", amount:"₹4.0L", status:"overdue" },
+        ]},
+      ]},
+    ],
+  },
+};
+
+// Demo drill set for a client: UAE, MSME (trading flavour), or startup default.
+function demoDrillSet(client) {
+  if (isUAE(client)) return DEMO_DRILL_UAE;
+  const pack = normalizePack(client?.client_pack || client?.clientPack);
+  return pack === "msme" ? { ...DEMO_DRILL, ...DEMO_DRILL_MSME } : DEMO_DRILL;
+}
+
 // Resolve drill data for a KPI label: live reportData.drill first, demo fallback.
 function getDrill(label, reportData, client) {
   const l = String(label || "").toLowerCase();
   const key =
+    l.includes("conversion") || l.includes("cycle") ? "ccc" :
+    l.includes("working")    ? "workingcap" :
+    l.includes("debtor")     ? "debtors"    :
+    l.includes("utilisation") || l.includes("utilization") || l.includes("cc ") || l.startsWith("cc") ? "cc" :
     l.includes("revenue") ? "revenue" :
     l.includes("arr")     ? "arr"     :
     l.includes("cash")    ? "cash"    :
@@ -427,7 +573,7 @@ function getDrill(label, reportData, client) {
     l.includes("margin")  ? "margin"  : null;
   if (!key) return null;
   if (reportData?.drill?.[key]) return reportData.drill[key];
-  if (client?.isDemo) return (isUAE(client) ? DEMO_DRILL_UAE : DEMO_DRILL)[key] || null;
+  if (client?.isDemo) return demoDrillSet(client)[key] || null;
   return null;
 }
  
@@ -2400,10 +2546,11 @@ function DrillDownPanel({ drill, onClose, uae }) {
   const dims  = drill.dims || [];
   const dim   = dims[Math.min(dimIdx, Math.max(dims.length - 1, 0))] || { rows: [] };
   const rows  = dim.rows || [];
-  const isPct = rows.some(r => r.unit === "%");
+  const unit  = rows.find(r => r.unit)?.unit || null;   // "%" | "d" | null (currency)
+  const isPct = !!unit;                                  // non-currency: hide share %, scale bars to max
   const totalNum = rows.reduce((s, r) => s + (r.value || 0), 0);
   const maxVal   = Math.max(...rows.map(r => r.value || 0), 1);
-  const fmtV  = v => isPct ? `${v}%` : (uae ? fmtAED2(v) : fmtINR(v));
+  const fmtV  = v => unit === "%" ? `${v}%` : unit === "d" ? `${v} days` : (uae ? fmtAED2(v) : fmtINR(v));
   const now   = new Date();
   const stamp = drill.asOn || `${now.toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" })}, ${now.toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" })}`;
   const stColor = s => s === "paid" ? C.green : s === "overdue" ? C.red : C.amber;
@@ -2571,7 +2718,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
   const [drill, setDrill] = useState(null);
   const drillFor = (label) => getDrill(label, reportData, client);
   const recvDrill = reportData?.drill?.receivables
-    || (client?.isDemo ? (uae ? DEMO_DRILL_UAE : DEMO_DRILL).receivables : null);
+    || (client?.isDemo ? demoDrillSet(client).receivables : null);
 
   // ── Summary digest cards ──────────────────────────────────────────────────
   const wc = reportData?.workingCapital || {};
@@ -15356,7 +15503,7 @@ function Portal({ client, onLogout }) {
       value:liveKpis.runway||"—", prev:prevK.runway||"—", trend:"down", color:C.pink, bg:"#FEF0F7", icon:"runway" },
     { label: client?.client_pack==="msme"?"Cash Conversion Cycle":"ARR",
       value:liveKpis.arr||"—", prev:prevK.arr||"—", trend:"up", color:C.green, bg:"#E8FAF3", icon: "ti-target" },
-  ] : KPIs;
+  ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
  
   const resolvedActions = isUAE(client)
     ? ACTIONS_BY_PACK.uae
