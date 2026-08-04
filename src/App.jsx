@@ -370,6 +370,51 @@ const DEMO_DRILL_UAE = {
   },
 };
 
+// ─── OUTSTANDING COMPLIANCES (Dashboard panel) ───────────────────────────────
+// Live clients: reportData.compliance [{item, detail, dueDate, owner, done}]
+// or the existing reportData.checklist. Demo: dates relative to today.
+const _inDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
+const DEMO_COMPLIANCE = [
+  { item:"TDS Return — Q1 (Form 24Q/26Q)",  detail:"Quarterly TDS return — was due 31 Jul", due:_inDays(-4),  owner:"CA"          },
+  { item:"TDS Payment — Jul deductions",     detail:"Challan ITNS-281",                     due:_inDays(3),   owner:"Accounts"    },
+  { item:"GSTR-1 — Jul 2026",                detail:"Outward supplies return",              due:_inDays(7),   owner:"GST Consultant" },
+  { item:"GSTR-3B — Jul 2026",               detail:"Summary return + tax payment",         due:_inDays(16),  owner:"GST Consultant" },
+  { item:"Advance Tax — 2nd Instalment",     detail:"45% of estimated FY27 liability",      due:_inDays(42),  owner:"Finance"     },
+  { item:"DIR-3 KYC — All Directors",        detail:"MCA annual director KYC",              due:_inDays(57),  owner:"CS"          },
+];
+const DEMO_COMPLIANCE_UAE = [
+  { item:"ESR Notification — FY25",          detail:"Economic Substance Regulation filing", due:_inDays(-8),  owner:"Tax Agent" },
+  { item:"VAT Return — Q2 2026",             detail:"Net payable AED 92.5K · FTA portal",   due:_inDays(24),  owner:"Tax Agent" },
+  { item:"WPS — August Salary File",         detail:"Wages Protection System submission",   due:_inDays(26),  owner:"HR"        },
+  { item:"Corporate Tax Return — FY25",      detail:"First CT filing · 9-month deadline",   due:_inDays(57),  owner:"Tax Agent" },
+  { item:"Trade Licence Renewal — DMCC",     detail:"Licence expires Mar 2027",             due:_inDays(210), owner:"PRO"       },
+];
+function getOutstandingCompliances(reportData, client) {
+  let items = null;
+  if (Array.isArray(reportData?.compliance) && reportData.compliance.length) {
+    items = reportData.compliance;
+  } else if (Array.isArray(reportData?.checklist) && reportData.checklist.length) {
+    items = reportData.checklist;
+  } else if (client?.isDemo) {
+    items = isUAE(client) ? DEMO_COMPLIANCE_UAE : DEMO_COMPLIANCE;
+  }
+  if (!items) return [];
+  return items
+    .filter(c => !c.done && c.status !== "done")
+    .map(c => {
+      const due = c.due instanceof Date ? c.due : (c.dueDate || c.due) ? new Date(c.dueDate || c.due) : null;
+      const days = due ? Math.ceil((due - new Date()) / 864e5) : null;
+      return {
+        item:   c.item || c.title || c.name || "—",
+        detail: c.detail || c.sub || "",
+        owner:  c.owner || "",
+        due, days,
+        state:  days == null ? "upcoming" : days < 0 ? "overdue" : days <= 7 ? "due-soon" : "upcoming",
+      };
+    })
+    .sort((a, b) => (a.days ?? 9999) - (b.days ?? 9999));
+}
+
 // Resolve drill data for a KPI label: live reportData.drill first, demo fallback.
 function getDrill(label, reportData, client) {
   const l = String(label || "").toLowerCase();
@@ -2711,6 +2756,71 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
           </div>
         </div>
       </div>
+
+      {/* ── Outstanding Compliances (full-width) ── */}
+      {(() => {
+        const comps = getOutstandingCompliances(reportData, client);
+        if (comps.length === 0) return null;
+        const overdue = comps.filter(c => c.state === "overdue");
+        const dueSoon = comps.filter(c => c.state === "due-soon");
+        const stateStyle = {
+          "overdue":  { bg:"#FEF2F2", color:C.red,   label:d => `Overdue ${Math.abs(d)}d` },
+          "due-soon": { bg:"#FEF3C7", color:C.amber, label:d => `Due in ${d}d`            },
+          "upcoming": { bg:"#F3F4F6", color:C.muted, label:d => d != null ? `In ${d}d` : "Upcoming" },
+        };
+        return (
+          <div className="ns-panel" style={{ margin:0 }}>
+            <div className="ns-panel-header">
+              <h3>Outstanding Compliances</h3>
+              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                {overdue.length > 0 && <span className="ns-badge red">{overdue.length} overdue</span>}
+                {dueSoon.length > 0 && <span className="ns-badge amber">{dueSoon.length} due this week</span>}
+                <span className="ns-badge blue">{comps.length} total</span>
+              </div>
+            </div>
+            <div>
+              {comps.slice(0, 6).map((c, i) => {
+                const st = stateStyle[c.state];
+                return (
+                  <div key={i} style={{ display:"flex", alignItems:"center", gap:12,
+                    padding:"10px 18px", borderBottom:i < Math.min(comps.length, 6) - 1 ? `1px solid ${C.border}` : "none",
+                    background: c.state === "overdue" ? "#FFFBFB" : "transparent" }}>
+                    <span style={{ width:8, height:8, borderRadius:"50%", flexShrink:0, background:st.color }}/>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontFamily:F, fontSize:12.5, fontWeight:700, color:C.text,
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.item}</div>
+                      {c.detail && <div style={{ fontFamily:F, fontSize:11, color:C.muted,
+                        overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.detail}</div>}
+                    </div>
+                    {c.owner && (
+                      <span style={{ fontFamily:F, fontSize:10.5, color:C.dim, flexShrink:0 }} className="comp-owner">{c.owner}</span>
+                    )}
+                    {c.due && (
+                      <span style={{ fontFamily:F, fontSize:11, color:C.muted, flexShrink:0, minWidth:56, textAlign:"right" }}>
+                        {c.due.toLocaleDateString("en-GB", { day:"numeric", month:"short" })}
+                      </span>
+                    )}
+                    <span style={{ fontFamily:F, fontSize:10, fontWeight:800, padding:"3px 10px",
+                      borderRadius:12, background:st.bg, color:st.color, flexShrink:0,
+                      minWidth:76, textAlign:"center" }}>
+                      {st.label(c.days)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {comps.length > 6 && (
+              <div style={{ padding:"8px 18px", borderTop:`1px solid ${C.border}` }}>
+                <button onClick={() => setPage && setPage("compliance")}
+                  style={{ background:"none", border:"none", cursor:"pointer", fontFamily:F,
+                    fontSize:12, fontWeight:700, color:C.accent, padding:0 }}>
+                  View all {comps.length} in Compliance Calendar →
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ── Row 4: Action Items | A/R Aging | Cash Flow Trend (3-col, matches screenshot) ── */}
       <div style={{ display:"grid", gap:14 }} className="dash-bot-grid">
