@@ -907,10 +907,11 @@ const ENGAGEMENT = {
 };
  
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
-const Card = ({ children, style={}, accent, hover=true }) => {
+const Card = ({ children, style={}, accent, hover=true, ...rest }) => {
   const [hov, setHov] = React.useState(false);
   return (
     <div
+      {...rest}
       onMouseEnter={hover ? ()=>setHov(true) : undefined}
       onMouseLeave={hover ? ()=>setHov(false) : undefined}
       style={{
@@ -2415,34 +2416,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         );
       })()}
 
-      {/* ── Cash Flow Story ── */}
-      {cfData.length > 0 && (
-        <div className="ns-panel">
-          <div className="ns-panel-header">
-            <h3>Cash Flow Trend</h3>
-            <span className="ns-label">Actual vs Forecast</span>
-          </div>
-          <div style={{ height:200, padding:"8px 0 4px" }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={cfData} margin={{ top:5, right:12, left:0, bottom:0 }}>
-                <defs>
-                  <linearGradient id="cfGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={accentColor} stopOpacity={0.18}/>
-                    <stop offset="95%" stopColor={accentColor} stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" vertical={false}/>
-                <XAxis dataKey="name" tick={{ fontFamily:"Inter,sans-serif", fontSize:10, fill:"#94A3B8" }} axisLine={false} tickLine={false}/>
-                <YAxis tick={{ fontSize:9, fill:"#94A3B8" }} axisLine={false} tickLine={false} width={36}/>
-                <Tooltip contentStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, borderRadius:8, border:"1px solid #E5E7EB" }}/>
-                <Area type="monotone" dataKey="Actual" stroke={accentColor} strokeWidth={2.5} fill="url(#cfGrad)" connectNulls={false} dot={{ fill:accentColor, r:3, strokeWidth:0 }}/>
-                <Area type="monotone" dataKey="Forecast" stroke="#7C3AED" strokeWidth={2} fill="none" strokeDasharray="5 4" connectNulls={false} dot={{ fill:"#7C3AED", r:3, strokeWidth:0 }}/>
-                <Legend iconType="line" iconSize={12} wrapperStyle={{ fontFamily:"Inter,sans-serif", fontSize:11, paddingTop:6 }}/>
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-      )}
+      {/* Cash Flow Trend removed here — the same chart appears on the Dashboard
+          and the dedicated Cash Flow page has the full forecast view. */}
 
       {/* ── AR Aging + Payables Aging row ── */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }} className="ov-aging-row">
@@ -2898,6 +2873,30 @@ function DrillDownPanel({ drill, onClose, uae }) {
   );
 }
 
+// ─── useDrill ─────────────────────────────────────────────────────────────────
+// Gives any page drill-down with three lines of wiring:
+//   const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
+//   ...<td onClick={() => openDrill("revenue")}>       // or openDrill(drillObj)
+//   ...<DrillPortal/>
+// Returns drillFor(label) => drill object | null, so callers can hide the
+// affordance when a client has no data for that metric.
+function useDrill(client, reportData) {
+  const [drill, setDrill] = useState(null);
+  const drillFor  = (label) => getDrill(label, reportData, client);
+  const openDrill = (labelOrDrill) => {
+    const d = typeof labelOrDrill === "string" ? drillFor(labelOrDrill) : labelOrDrill;
+    if (d) setDrill(d);
+  };
+  const uae = isUAE(client);
+  const DrillPortal = () => <DrillDownPanel drill={drill} onClose={() => setDrill(null)} uae={uae}/>;
+  return { drill, setDrill, drillFor, openDrill, DrillPortal };
+}
+
+// Small affordance shown next to a drillable number.
+const DrillChevron = () => (
+  <span style={{ color:C.accent, fontWeight:700, marginLeft:5 }}>›</span>
+);
+
 function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, actions=[], invoices=[] }) {
   const displayKpis = kpis || KPIs;
   const ovPack  = normalizePack(client?.client_pack || client?.clientPack);
@@ -3063,76 +3062,10 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
         }
       </div>
 
-      {/* ── Row 3: P&L Summary | Health Gauge | CFO Note (3-col, matches screenshot) ── */}
-      <div style={{ display:"grid", gap:14 }} className="dash-mid-grid">
-        <style>{`.dash-mid-grid{grid-template-columns:2.1fr 1fr 1.7fr!important}@media(max-width:760px){.dash-mid-grid{grid-template-columns:1fr!important}}`}</style>
-
-        {/* P&L Summary table */}
-        <div className="ns-panel" style={{ margin:0 }}>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"13px 18px 0" }}>
-            <div style={{ fontFamily:F, fontWeight:800, fontSize:11, color:C.text, textTransform:"uppercase", letterSpacing:"0.09em" }}>P&L Summary</div>
-            <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{reportData?.monthLabel || "Current Period"}</div>
-          </div>
-          <table className="ns-table">
-            <thead>
-              <tr><th>Line</th><th className="right">Current</th><th className="right">Prior</th></tr>
-            </thead>
-            <tbody>
-              {plRowsShort.map((r,i) => {
-                const rowDrill = r.key === "revenue" ? drillFor("revenue") : null;
-                return (
-                  <tr key={i} className={r.key==="pat"?"total":r.key==="gp"||r.key==="ebitda"?"subtotal":"striped"}
-                    onClick={rowDrill ? () => setDrill(rowDrill) : undefined}
-                    title={rowDrill ? "View revenue breakup" : undefined}
-                    style={rowDrill ? { cursor:"pointer" } : undefined}>
-                    <td className={r.key==="pat"||r.key==="gp"?"bold":""}>
-                      {r.label}{rowDrill && <span style={{ color:C.accent, fontWeight:700, marginLeft:5 }}>›</span>}
-                    </td>
-                    <td className="right mono bold">{r.curr}</td>
-                    <td className="right mono muted">{r.prev}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Financial Health gauge — matches screenshot exactly */}
-        <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"20px 16px" }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:10, color:C.muted, textTransform:"uppercase", letterSpacing:"0.12em", marginBottom:16 }}>Financial Health</div>
-          <svg width="134" height="76" viewBox="0 0 134 76">
-            <path d="M10,68 A57,57 0 0,1 124,68" stroke="#E5E7EB" strokeWidth="11" fill="none" strokeLinecap="round"/>
-            <path d="M10,68 A57,57 0 0,1 124,68"
-              stroke={healthColor} strokeWidth="11" fill="none" strokeLinecap="round"
-              strokeDasharray={`${(healthScore/100)*179} 179`}/>
-            <text x="67" y="63" textAnchor="middle" fontSize="26" fontWeight="900" fill={healthColor} fontFamily="monospace">{healthScore}</text>
-          </svg>
-          <div style={{ fontFamily:F, fontSize:15, fontWeight:800, color:healthColor, marginTop:2 }}>{healthLabel}</div>
-          {highPriority.length > 0 && (
-            <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:5 }}>{highPriority.length} high-priority actions</div>
-          )}
-        </div>
-
-        {/* Garima's CFO Note — matches screenshot */}
-        <div className="ns-panel" style={{ margin:0, borderLeft:`4px solid ${accentColor}` }}>
-          <div style={{ padding:"14px 16px" }}>
-            <div style={{ fontFamily:F, fontWeight:800, fontSize:11, color:accentColor,
-              textTransform:"uppercase", letterSpacing:"0.1em", marginBottom:10 }}>
-              Garima's CFO Note
-            </div>
-            <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.75, margin:"0 0 14px",
-              display:"-webkit-box", WebkitLineClamp:5, WebkitBoxOrient:"vertical", overflow:"hidden" }}>
-              {reportData?.aiNarration || garimaNote || "Your CFO note will appear once report data is uploaded."}
-            </p>
-            <button onClick={() => setPage && setPage("myreport")}
-              style={{ padding:"7px 16px", borderRadius:8, border:`1px solid ${accentColor}`,
-                background:"transparent", color:accentColor, fontFamily:F, fontSize:12,
-                fontWeight:700, cursor:"pointer" }}>
-              Full Report →
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* Row 3 (P&L Summary | Health gauge | CFO Note) removed — each was a
+          duplicate: Full P&L below is the complete table, the health badge sits
+          in the header with a full breakdown further down, and the CFO note is
+          shown on Overview. */}
 
       {/* ── What needs your attention (alert strip) ── */}
       {(() => {
@@ -3547,6 +3480,7 @@ const CASHFLOW_MSME = [
 ];
  
 function CashFlow({ reportData, client, kpis }) {
+  const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
   const pack = normalizePack(client?.client_pack || client?.clientPack);
  
   // ── Shared tooltip ──────────────────────────────────────────────────────────
@@ -3569,9 +3503,12 @@ function CashFlow({ reportData, client, kpis }) {
   const KpiBar = ({ items }) => (
     <div style={{ display:"grid", gap:12, marginBottom:20 }} className="cf-kpi">
       {items.map((k,i) => (
-        <Card key={i} style={{ padding:"14px 16px" }}>
+        <Card key={i} style={{ padding:"14px 16px", cursor:k.drill?"pointer":"default" }}
+          onClick={k.drill ? () => openDrill(k.drill) : undefined}
+          title={k.drill ? `View ${String(k.label).toLowerCase()} breakup` : undefined}>
           <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted,
-            textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>{k.label}</div>
+            textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>
+            {k.label}{k.drill && <DrillChevron/>}</div>
           <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:k.color||C.text, lineHeight:1.2 }}>{k.value}</div>
           {k.sub && (
             <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginTop:4, display:"flex", alignItems:"center", gap:3 }}>
@@ -3586,6 +3523,8 @@ function CashFlow({ reportData, client, kpis }) {
         </Card>
       ))}
       <style>{`.cf-kpi{grid-template-columns:repeat(4,1fr)!important}@media(max-width:500px){.cf-kpi{grid-template-columns:1fr 1fr!important}}`}</style>
+      {/* Drill panel is a fixed overlay, so mounting it here covers every branch of this page */}
+      <DrillPortal/>
     </div>
   );
  
@@ -3644,8 +3583,8 @@ function CashFlow({ reportData, client, kpis }) {
         </div>
  
         <KpiBar items={[
-          { label:"Current Cash",  value:"₹2.1 Cr", color:C.blue,   bg:"#EEF3FE", sub:"▼ vs ₹2.6 Cr last month", trend:"down" },
-          { label:"Monthly Burn",  value:"₹48L/mo", color:C.purple, bg:"#F3EFFF", sub:"▲ Improved from ₹52L", trend:"up" },
+          { label:"Current Cash",  value:"₹2.1 Cr", color:C.blue,   bg:"#EEF3FE", sub:"▼ vs ₹2.6 Cr last month", trend:"down", drill:drillFor("cash balance") },
+          { label:"Monthly Burn",  value:"₹48L/mo", color:C.purple, bg:"#F3EFFF", sub:"▲ Improved from ₹52L", trend:"up", drill:drillFor("burn") },
           { label:"Runway",        value:"4.4 mo",  color:C.red,    bg:"#FEF2F2", border:`${C.red}30`, sub:" Below 6 months", trend:"down" },
           { label:"Mar Forecast",  value: nextForecast ? `₹${nextForecast.forecast}L` : "₹175L", color:C.muted, bg:C.bg, sub:"Next month cash" },
         ]}/>
@@ -3865,10 +3804,10 @@ function CashFlow({ reportData, client, kpis }) {
         </div>
  
         <KpiBar items={[
-          { label:"Cash Inflows (Feb)",   value:"₹84L",    color:C.green,  bg:"#ECFDF5", sub:"▲ +6.1% vs Jan", trend:"up" },
-          { label:"Cash Outflows (Feb)",  value:"₹67L",    color:C.red,    bg:"#FEF2F2", sub:"▼ −4.3% vs Jan", trend:"up" },
+          { label:"Cash Inflows (Feb)",   value:"₹84L",    color:C.green,  bg:"#ECFDF5", sub:"▲ +6.1% vs Jan", trend:"up", drill:drillFor("cash flow") },
+          { label:"Cash Outflows (Feb)",  value:"₹67L",    color:C.red,    bg:"#FEF2F2", sub:"▼ −4.3% vs Jan", trend:"up", drill:drillFor("cash flow") },
           { label:"Net Cash Flow",        value:"+₹17L",   color:C.blue,   bg:"#EEF3FE", sub:"Feb closing" },
-          { label:"Cash Conv. Cycle",     value:"37 days", color:C.amber,  bg:"#FFFBEB", border:`${C.amber}30`, sub:" Target <30 days", trend:"down" },
+          { label:"Cash Conv. Cycle",     value:"37 days", color:C.amber,  bg:"#FFFBEB", border:`${C.amber}30`, sub:" Target <30 days", trend:"down", drill:drillFor("cash conversion cycle") },
         ]}/>
  
         {/* Inflow vs Outflow chart */}
@@ -3979,8 +3918,8 @@ function CashFlow({ reportData, client, kpis }) {
         </div>
  
       <KpiBar items={[
-        { label:"Operating CF (Feb)",  value:"₹45L",   color:C.green,  bg:"#ECFDF5", sub:"▲ Best month YTD", trend:"up" },
-        { label:"Free Cash Flow",      value:"₹38L",   color:C.blue,   bg:"#EEF3FE", sub:"After capex" },
+        { label:"Operating CF (Feb)",  value:"₹45L",   color:C.green,  bg:"#ECFDF5", sub:"▲ Best month YTD", trend:"up", drill:drillFor("cash flow") },
+        { label:"Free Cash Flow",      value:"₹38L",   color:C.blue,   bg:"#EEF3FE", sub:"After capex", drill:drillFor("cash flow") },
         { label:"EBITDA→Cash Conv.",   value:"82%",    color:C.purple, bg:"#F3EFFF", sub:"▲ Above sector avg", trend:"up" },
         { label:"Net Debt",            value:"₹1.8 Cr",color:C.muted,  bg:C.bg,      sub:"D/E ratio: 0.8x" },
       ]}/>
@@ -4722,10 +4661,15 @@ function ArchiveRow({ p, label }) {
   );
 }
  
-const StatRow = ({ label, value, pct, trend, sub }) => (
-  <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:8 }}>
+const StatRow = ({ label, value, pct, trend, sub, onDrill }) => (
+  <div onClick={onDrill}
+    title={onDrill ? `View ${String(label).toLowerCase()} breakup` : undefined}
+    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"10px 0", borderBottom:`1px solid ${C.border}`, flexWrap:"wrap", gap:8,
+      cursor: onDrill ? "pointer" : "default" }}>
     <div>
-      <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>{label}</div>
+      <div style={{ fontFamily:F, fontSize:13, color:C.text, fontWeight:600 }}>
+        {label}{onDrill && <DrillChevron/>}
+      </div>
       {sub && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2 }}>{sub}</div>}
     </div>
     <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -6136,6 +6080,7 @@ const CFO_PACK_DATA = {
 };
  
 function MSMEPackContent({ reportData, kpis, client }) {
+  const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
   const [tab, setTab] = useState("monthly");
   const data = CFO_PACK_DATA.msme;
  
@@ -6176,7 +6121,7 @@ function MSMEPackContent({ reportData, kpis, client }) {
 
   const archiveDocs = useLiveDocs(client);
 
-  return (
+  return (<>
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.teal}>
       <div>
  
@@ -6210,12 +6155,17 @@ function MSMEPackContent({ reportData, kpis, client }) {
               { key:"grossProfit", label:"Gross Profit"      },
               { key:"ebitda",      label:"EBITDA"            },
               { key:"pat",         label:"Net Profit"        },
-            ].filter(r => pl[r.key]?.actual).map((r,i) => (
-              <StatRow key={i} label={r.label}
-                value={pl[r.key].actual}
-                sub={pl[r.key].prev ? `vs ${pl[r.key].prev} last month` : ""}
-                trend="up"/>
-            ));
+            ].filter(r => pl[r.key]?.actual).map((r,i) => {
+              const d = r.key === "revenue" ? drillFor("revenue")
+                      : r.key === "cogs"    ? drillFor("cost") : null;
+              return (
+                <StatRow key={i} label={r.label}
+                  value={pl[r.key].actual}
+                  sub={pl[r.key].prev ? `vs ${pl[r.key].prev} last month` : ""}
+                  trend="up"
+                  onDrill={d ? () => openDrill(d) : undefined}/>
+              );
+            });
           }
           return [
             { label:"Revenue",            value:"₹84.2L", pct:"6.1%",  trend:"up",   sub:"vs ₹79.4L last month" },
@@ -6714,10 +6664,13 @@ function MSMEPackContent({ reportData, kpis, client }) {
       )}
       </div>
     </PackLayout>
+    <DrillPortal/>
+    </>
   );
 }
  
 function CorporatePackContent({ reportData, kpis, client }) {
+  const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
   const [tab, setTab] = useState("monthly");
  
   const groups = [
@@ -6761,7 +6714,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
  
   const archiveDocs = useLiveDocs(client);
  
-  return (
+  return (<>
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.purple}>
       <div>
  
@@ -7318,6 +7271,8 @@ function CorporatePackContent({ reportData, kpis, client }) {
       )}
       </div>
     </PackLayout>
+    <DrillPortal/>
+    </>
   );
 }
  
@@ -8643,6 +8598,7 @@ function VerticalPnL({ reportData, accentColor }) {
  
 function CFOPackContent({ reportData, client, kpis }) {
   const [tab, setTab] = useState("monthly");
+  const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
  
   const groups = [
     {
@@ -8686,7 +8642,7 @@ function CFOPackContent({ reportData, client, kpis }) {
 
   const archiveDocs = useLiveDocs(client);
 
-  return (
+  return (<>
     <PackLayout tab={tab} setTab={setTab} groups={groups} accent={C.blue}>
       <div>
       {/* FIXED: Monthly Report tab — historical profitability ONLY.
@@ -8724,12 +8680,17 @@ function CFOPackContent({ reportData, client, kpis }) {
                   { key:"grossProfit", label:"Gross Profit" },
                   { key:"ebitda",      label:"EBITDA"       },
                   { key:"pat",         label:"Net Profit / PAT" },
-                ].filter(r => pl[r.key]?.actual).map((r,i) => (
-                  <StatRow key={i} label={r.label}
-                    value={pl[r.key].actual}
-                    sub={pl[r.key].prev ? `vs ${pl[r.key].prev} last month` : ""}
-                    trend="up"/>
-                ));
+                ].filter(r => pl[r.key]?.actual).map((r,i) => {
+                  const d = r.key === "revenue" ? drillFor("revenue")
+                          : r.key === "cogs"    ? drillFor("cost") : null;
+                  return (
+                    <StatRow key={i} label={r.label}
+                      value={pl[r.key].actual}
+                      sub={pl[r.key].prev ? `vs ${pl[r.key].prev} last month` : ""}
+                      trend="up"
+                      onDrill={d ? () => openDrill(d) : undefined}/>
+                  );
+                });
               }
               return (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.plRows || PACK_CONFIG.startup.plRows).map((r,i) => <StatRow key={i} {...r}/>);
             }())}
@@ -9419,6 +9380,8 @@ function CFOPackContent({ reportData, client, kpis }) {
       )}
       </div>
     </PackLayout>
+    <DrillPortal/>
+    </>
   );
 }
  
@@ -15392,6 +15355,7 @@ async function saveReportAsDocument({ client, kpis, garimaNote, reportData, acti
 // FIXED: UAE CFO Report — all UAE modules in one dropdown, no India reports, no duplicate metrics
 // CashFlow styled like Related Party report (clean table layout, colored cards)
 function UAECFOReport({ client, reportData, kpis }) {
+  const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
   const [tab, setTab] = useState("cashflow");
   const freezone = client?.freezone || "DMCC";
   const period   = reportData?.monthLabel || "Current Period";
@@ -15464,13 +15428,16 @@ function UAECFOReport({ client, reportData, kpis }) {
               {/* Forecast KPIs — future only, styled like Related Party report */}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
                 {[
-                  { label:"Projected Cash — End of Quarter", value:reportData?.projectedCash    || reportData?.treasury?.totalCash || "AED 580K", color:C.teal,   icon:"ti-cash" },
-                  { label:"VAT Reserve Required",            value:reportData?.vatReserve       || "AED 92.5K",                                   color:C.amber,  icon:"ti-receipt" },
-                  { label:"Net Cash After Obligations",      value:reportData?.netCashAfterObl  || "AED 487K",                                    color:C.green,  icon:"ti-circle-check" },
+                  { label:"Projected Cash — End of Quarter", value:reportData?.projectedCash    || reportData?.treasury?.totalCash || "AED 580K", color:C.teal,   icon:"ti-cash",          drill:drillFor("cash balance") },
+                  { label:"VAT Reserve Required",            value:reportData?.vatReserve       || "AED 92.5K",                                   color:C.amber,  icon:"ti-receipt",       drill:drillFor("vat") },
+                  { label:"Net Cash After Obligations",      value:reportData?.netCashAfterObl  || "AED 487K",                                    color:C.green,  icon:"ti-circle-check",  drill:drillFor("cash flow") },
                 ].map((s,i) => (
-                  <Card key={i} style={{ padding:18,  }}>
+                  <Card key={i} style={{ padding:18, cursor:s.drill?"pointer":"default" }}
+                    onClick={s.drill ? () => openDrill(s.drill) : undefined}
+                    title={s.drill ? `View ${String(s.label).toLowerCase()} breakup` : undefined}>
                     <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
-                    <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>{s.label}</div>
+                    <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:4 }}>
+                      {s.label}{s.drill && <DrillChevron/>}</div>
                     <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:s.color }}>{s.value}</div>
                   </Card>
                 ))}
@@ -15619,6 +15586,7 @@ function UAECFOReport({ client, reportData, kpis }) {
  
         </div>
       </PackLayout>
+      <DrillPortal/>
     </div>
   );
 }

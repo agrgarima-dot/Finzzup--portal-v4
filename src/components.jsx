@@ -2,10 +2,11 @@ import React from 'react';
 import { C, F, FM } from './tokens';
 
 // ─── SHARED UI ────────────────────────────────────────────────────────────────
-export const Card = ({ children, style={}, accent, hover=true }) => {
+export const Card = ({ children, style={}, accent, hover=true, ...rest }) => {
   const [hov, setHov] = React.useState(false);
   return (
     <div
+      {...rest}
       onMouseEnter={hover ? ()=>setHov(true) : undefined}
       onMouseLeave={hover ? ()=>setHov(false) : undefined}
       style={{
