@@ -179,31 +179,31 @@ const KPIs_MSME = [
 // fall back to these. `asOn` omitted → panel stamps the current date/time.
 const DEMO_DRILL = {
   revenue: {
-    label:"Revenue", total:"₹8.40 Cr", period:"FY26 YTD",
+    label:"Revenue", total:"₹8.40 Cr", period:"FY26 YTD", prevPeriod:"FY25 same period",
     note:"Top 2 customers are 48% of revenue — concentration risk. Nimbus renewal (₹2.1 Cr) is due Oct — start the conversation now, not in Sep.",
     dims:[
       { key:"customer", title:"By Customer", rows:[
-        { name:"Nimbus Retail Pvt Ltd",  value:21800000, sub:"SaaS + Support · Mumbai", txns:[
+        { name:"Nimbus Retail Pvt Ltd",  value:21800000, prev:19400000, sub:"SaaS + Support · Mumbai", txns:[
           { id:"INV-1041", date:"28 Jul 2026", desc:"SaaS subscription — Jul", amount:"₹9.6L",  status:"paid"    },
           { id:"INV-1032", date:"28 Jun 2026", desc:"SaaS subscription — Jun", amount:"₹9.6L",  status:"paid"    },
           { id:"INV-1029", date:"12 Jun 2026", desc:"Implementation support",  amount:"₹4.2L",  status:"paid"    },
         ]},
-        { name:"Vertex Health Group",    value:18500000, sub:"Enterprise licence · Delhi NCR", txns:[
+        { name:"Vertex Health Group",    value:18500000, prev:15500000, sub:"Enterprise licence · Delhi NCR", txns:[
           { id:"INV-1043", date:"01 Aug 2026", desc:"Enterprise licence — Q2", amount:"₹15.5L", status:"unpaid"  },
           { id:"INV-1021", date:"02 May 2026", desc:"Enterprise licence — Q1", amount:"₹15.5L", status:"paid"    },
         ]},
-        { name:"Gulf Distribution FZE",  value:13400000, sub:"Export · GCC", txns:[
+        { name:"Gulf Distribution FZE",  value:13400000, prev:16200000, sub:"Export · GCC", txns:[
           { id:"INV-1038", date:"15 Jul 2026", desc:"Export order #88",        amount:"₹6.8L",  status:"overdue" },
           { id:"INV-1027", date:"30 May 2026", desc:"Export order #81",        amount:"₹7.1L",  status:"paid"    },
         ]},
-        { name:"Orbit Logistics",        value:9200000,  sub:"Annual contract · Bengaluru", txns:[
+        { name:"Orbit Logistics",        value:9200000,  prev:8800000,  sub:"Annual contract · Bengaluru", txns:[
           { id:"INV-1040", date:"22 Jul 2026", desc:"Monthly retainer — Jul",  amount:"₹3.1L",  status:"paid"    },
           { id:"INV-1035", date:"22 Jun 2026", desc:"Monthly retainer — Jun",  amount:"₹3.1L",  status:"paid"    },
         ]},
-        { name:"TechSpring Solutions",   value:7600000,  sub:"Project + AMC · Pune", txns:[
+        { name:"TechSpring Solutions",   value:7600000,  prev:7400000,  sub:"Project + AMC · Pune", txns:[
           { id:"INV-1039", date:"18 Jul 2026", desc:"AMC renewal FY27",        amount:"₹4.4L",  status:"unpaid"  },
         ]},
-        { name:"Others (11 customers)",  value:13500000, sub:"Avg ₹1.2L/customer", txns:[] },
+        { name:"Others (11 customers)",  value:13500000, prev:11900000, sub:"Avg ₹1.2L/customer", txns:[] },
       ]},
       { key:"location", title:"By Location", rows:[
         { name:"Mumbai",      value:36000000, sub:"43% of revenue", txns:[] },
@@ -231,15 +231,15 @@ const DEMO_DRILL = {
     ],
   },
   burn: {
-    label:"Burn Rate", total:"₹48L /mo", period:"Jul 2026",
+    label:"Burn Rate", total:"₹48L /mo", period:"Jul 2026", prevPeriod:"Jun 2026", betterWhen:"lower",
     note:"Cloud spend is up 18% in 2 months with flat usage — the committed-use discount with AWS is unsigned. Signing it saves ₹1.1L/mo.",
     dims:[
       { key:"category", title:"By Category", rows:[
-        { name:"Salaries & Benefits",   value:2700000, sub:"38 headcount", txns:[
+        { name:"Salaries & Benefits",   value:2700000, prev:2650000, sub:"38 headcount", txns:[
           { id:"PAY-JUL",  date:"01 Aug 2026", desc:"Jul payroll (net)",       amount:"₹24.2L", status:"paid" },
           { id:"PF-JUL",   date:"01 Aug 2026", desc:"PF + gratuity + insurance", amount:"₹2.8L", status:"paid" },
         ]},
-        { name:"Cloud & Infrastructure", value:650000, sub:"AWS, GCP, SaaS tools", txns:[
+        { name:"Cloud & Infrastructure", value:650000, prev:550000, sub:"AWS, GCP, SaaS tools", txns:[
           { id:"AWS-0726", date:"28 Jul 2026", desc:"AWS — Jul usage",         amount:"₹4.1L",  status:"paid" },
           { id:"SAAS-JUL", date:"25 Jul 2026", desc:"SaaS subscriptions (14)", amount:"₹2.4L",  status:"paid" },
         ]},
@@ -300,22 +300,22 @@ const DEMO_DRILL = {
 
 const DEMO_DRILL_UAE = {
   revenue: {
-    label:"Revenue", total:"AED 1.85M", period:"FY26 YTD",
+    label:"Revenue", total:"AED 1.85M", period:"FY26 YTD", prevPeriod:"FY25 same period",
     note:"Al Noor is 35% of revenue and pays in 75 days — one delayed cycle costs you a month of payroll cover. Negotiate 45-day terms at renewal.",
     dims:[
       { key:"customer", title:"By Customer", rows:[
-        { name:"Al Noor Trading LLC",     value:650000, sub:"Distribution · Dubai", txns:[
+        { name:"Al Noor Trading LLC",     value:650000, prev:520000, sub:"Distribution · Dubai", txns:[
           { id:"INV-U-221", date:"25 Jul 2026", desc:"Jul supply contract",  amount:"AED 95K",  status:"unpaid"  },
           { id:"INV-U-214", date:"25 Jun 2026", desc:"Jun supply contract",  amount:"AED 95K",  status:"paid"    },
         ]},
-        { name:"Marina Hospitality Group", value:420000, sub:"F&B services · Dubai Marina", txns:[
+        { name:"Marina Hospitality Group", value:420000, prev:390000, sub:"F&B services · Dubai Marina", txns:[
           { id:"INV-U-219", date:"15 Jul 2026", desc:"Catering services — Jul", amount:"AED 62K", status:"paid"  },
         ]},
-        { name:"Falcon Logistics FZE",     value:330000, sub:"JAFZA", txns:[
+        { name:"Falcon Logistics FZE",     value:330000, prev:365000, sub:"JAFZA", txns:[
           { id:"INV-U-217", date:"08 Jul 2026", desc:"Freight handling — Jul",  amount:"AED 48K", status:"overdue" },
         ]},
-        { name:"Desert Rose Interiors",    value:250000, sub:"Fit-out projects", txns:[] },
-        { name:"Others (6 customers)",     value:200000, sub:"Avg AED 33K/customer", txns:[] },
+        { name:"Desert Rose Interiors",    value:250000, prev:180000, sub:"Fit-out projects", txns:[] },
+        { name:"Others (6 customers)",     value:200000, prev:245000, sub:"Avg AED 33K/customer", txns:[] },
       ]},
       { key:"emirate", title:"By Emirate", rows:[
         { name:"Dubai",      value:1180000, sub:"64% of revenue", txns:[] },
@@ -440,23 +440,23 @@ const DEMO_DRILL_MSME = {
     note:"Al Madina alone is 28% of revenue and pays at 51 days against 45-day terms. One delayed shipment payment = a CC drawdown. Push for an LC on the next order.",
     dims:[
       { key:"buyer", title:"By Buyer", rows:[
-        { name:"Al Madina Trading LLC",       value:23500000, sub:"Export · Dubai", txns:[
+        { name:"Al Madina Trading LLC",       value:23500000, prev:19800000, sub:"Export · Dubai", txns:[
           { id:"EXP-2214", date:"22 Jul 2026", desc:"Shipment #88 — home textiles", amount:"₹42.0L", status:"unpaid"  },
           { id:"EXP-2201", date:"18 Jun 2026", desc:"Shipment #84 — home textiles", amount:"₹38.5L", status:"paid"    },
         ]},
-        { name:"HomeStyle Retail Inc",        value:18500000, sub:"Export · USA", txns:[
+        { name:"HomeStyle Retail Inc",        value:18500000, prev:21000000, sub:"Export · USA", txns:[
           { id:"EXP-2210", date:"10 Jul 2026", desc:"PO #4471 — bed linen",         amount:"₹31.2L", status:"paid"    },
         ]},
-        { name:"Reliance Retail",             value:14200000, sub:"Domestic · Modern trade", txns:[
+        { name:"Reliance Retail",             value:14200000, prev:12400000, sub:"Domestic · Modern trade", txns:[
           { id:"INV-3315", date:"28 Jul 2026", desc:"Jul supply — 14 stores",       amount:"₹19.0L", status:"unpaid"  },
         ]},
-        { name:"DMart Distribution",          value:9800000,  sub:"Domestic · Modern trade", txns:[
+        { name:"DMart Distribution",          value:9800000,  prev:9100000,  sub:"Domestic · Modern trade", txns:[
           { id:"INV-3308", date:"15 Jul 2026", desc:"Jul supply — west zone",       amount:"₹12.4L", status:"paid"    },
         ]},
-        { name:"Jaipur Handloom Distributors",value:6500000,  sub:"Domestic · Distributor", txns:[
+        { name:"Jaipur Handloom Distributors",value:6500000,  prev:8900000,  sub:"Domestic · Distributor", txns:[
           { id:"INV-3288", date:"02 May 2026", desc:"Summer stock order",            amount:"₹4.0L",  status:"overdue" },
         ]},
-        { name:"Others (14 buyers)",          value:11500000, sub:"Avg ₹82K/buyer", txns:[] },
+        { name:"Others (14 buyers)",          value:11500000, prev:10600000, sub:"Avg ₹82K/buyer", txns:[] },
       ]},
       { key:"market", title:"By Market", rows:[
         { name:"Exports — GCC",            value:29000000, sub:"35% of revenue", txns:[] },
@@ -496,19 +496,19 @@ const DEMO_DRILL_MSME = {
     ],
   },
   debtors: {
-    label:"Debtor Days", total:"₹98L", period:"outstanding · 42-day average",
+    label:"Debtor Days", total:"₹98L", period:"outstanding · 42-day average", prevPeriod:"last quarter", betterWhen:"lower",
     note:"Al Madina averages 51 days against 45-day terms — that 6-day slip on ₹38L is a permanent ₹6L+ hole in your cash. Jaipur Handloom at 94 days needs a stop-supply decision.",
     dims:[
       { key:"customer", title:"By Customer", rows:[
-        { name:"Al Madina Trading LLC",        value:3800000, sub:"Avg 51 days · terms 45d", txns:[
+        { name:"Al Madina Trading LLC",        value:3800000, prev:3100000, sub:"Avg 51 days · terms 45d", txns:[
           { id:"EXP-2214", date:"22 Jul 2026", desc:"Shipment #88",            amount:"₹42.0L", status:"unpaid"  },
         ]},
-        { name:"HomeStyle Retail Inc",         value:2400000, sub:"Avg 38 days · on terms", txns:[] },
-        { name:"Reliance Retail",              value:1900000, sub:"Avg 35 days · on terms", txns:[
+        { name:"HomeStyle Retail Inc",         value:2400000, prev:2900000, sub:"Avg 38 days · on terms", txns:[] },
+        { name:"Reliance Retail",              value:1900000, prev:1750000, sub:"Avg 35 days · on terms", txns:[
           { id:"INV-3315", date:"28 Jul 2026", desc:"Jul supply",               amount:"₹19.0L", status:"unpaid"  },
         ]},
-        { name:"DMart Distribution",           value:1200000, sub:"Avg 29 days", txns:[] },
-        { name:"Jaipur Handloom Distributors", value:500000,  sub:"94 days — escalate", txns:[
+        { name:"DMart Distribution",           value:1200000, prev:1400000, sub:"Avg 29 days", txns:[] },
+        { name:"Jaipur Handloom Distributors", value:500000,  prev:200000,  sub:"94 days — escalate", txns:[
           { id:"INV-3288", date:"02 May 2026", desc:"Summer stock order",       amount:"₹4.0L",  status:"overdue" },
         ]},
       ]},
@@ -525,13 +525,13 @@ const DEMO_DRILL_MSME = {
     ],
   },
   ccc: {
-    label:"Cash Conversion Cycle", total:"65 days", period:"Inventory + Debtors − Creditors",
+    label:"Cash Conversion Cycle", total:"65 days", period:"Inventory + Debtors − Creditors", prevPeriod:"last quarter", betterWhen:"lower",
     note:"65 days means every rupee of sales is locked for over two months before it returns as cash. Cutting inventory to 45 days brings CCC to 52 — that alone frees ~₹32L.",
     dims:[
       { key:"component", title:"Components", rows:[
-        { name:"Inventory Days",  value:58, sub:"Stock held before sale",        unit:"d", txns:[] },
-        { name:"Debtor Days",     value:42, sub:"Collection period after sale",  unit:"d", txns:[] },
-        { name:"Creditor Days",   value:35, sub:"Deducted — supplier credit",    unit:"d", txns:[] },
+        { name:"Inventory Days",  value:58, prev:63, sub:"Stock held before sale",        unit:"d", txns:[] },
+        { name:"Debtor Days",     value:42, prev:47, sub:"Collection period after sale",  unit:"d", txns:[] },
+        { name:"Creditor Days",   value:35, prev:38, sub:"Deducted — supplier credit",    unit:"d", txns:[] },
       ]},
     ],
   },
@@ -2559,6 +2559,30 @@ function DrillDownPanel({ drill, onClose, uae }) {
   const totalNum = rows.reduce((s, r) => s + (r.value || 0), 0);
   const maxVal   = Math.max(...rows.map(r => r.value || 0), 1);
   const fmtV  = v => unit === "%" ? `${v}%` : unit === "d" ? `${v} days` : (uae ? fmtAED2(v) : fmtINR(v));
+
+  // ── Period comparison ─────────────────────────────────────────────────────
+  // Rows may carry `prev` (prior-period value). For metrics where lower is
+  // better (debtor days, burn, VAT, CCC) an increase is shown red, not green.
+  const lowerIsBetter = drill.betterWhen === "lower";
+  const prevTotalNum  = rows.reduce((s, r) => s + (Number(r.prev) || 0), 0);
+  const hasPrev       = rows.some(r => r.prev != null && r.prev !== "");
+  const delta = (curr, prev) => {
+    const c = Number(curr), p = Number(prev);
+    if (!isFinite(c) || !isFinite(p) || p === 0) return null;
+    const pctChange = ((c - p) / Math.abs(p)) * 100;
+    if (Math.abs(pctChange) < 0.5) {
+      return { flat: true, text: "no change", color: C.dim, bg: "#F3F4F6" };
+    }
+    const up   = c > p;
+    const good = lowerIsBetter ? !up : up;
+    return {
+      up, text: `${up ? "↑" : "↓"} ${Math.abs(pctChange).toFixed(0)}%`,
+      color: good ? C.green : C.red,
+      bg:    good ? "#ECFDF5" : "#FEF2F2",
+    };
+  };
+  const headerDelta = hasPrev ? delta(totalNum, prevTotalNum) : null;
+
   const now   = new Date();
   const stamp = drill.asOn || `${now.toLocaleDateString("en-GB", { day:"2-digit", month:"short", year:"numeric" })}, ${now.toLocaleTimeString("en-GB", { hour:"2-digit", minute:"2-digit" })}`;
   const stColor = s => s === "paid" ? C.green : s === "overdue" ? C.red : C.amber;
@@ -2584,6 +2608,17 @@ function DrillDownPanel({ drill, onClose, uae }) {
                 {drill.total || (totalNum ? fmtV(totalNum) : "—")}
                 {drill.period && <span style={{ fontSize:12, fontWeight:600, color:C.dim, marginLeft:8 }}>{drill.period}</span>}
               </div>
+              {headerDelta && (
+                <div style={{ display:"flex", alignItems:"center", gap:7, marginTop:5 }}>
+                  <span style={{ fontFamily:F, fontSize:11.5, fontWeight:800, color:headerDelta.color,
+                    background:headerDelta.bg, padding:"2px 9px", borderRadius:12 }}>
+                    {headerDelta.text}
+                  </span>
+                  <span style={{ fontFamily:F, fontSize:11.5, color:C.muted }}>
+                    vs {fmtV(prevTotalNum)}{drill.prevPeriod ? ` · ${drill.prevPeriod}` : " last period"}
+                  </span>
+                </div>
+              )}
             </div>
             <button onClick={onClose} style={{ width:30, height:30, borderRadius:8, border:`1px solid ${C.border}`,
               background:C.bg, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" }}>
@@ -2630,6 +2665,12 @@ function DrillDownPanel({ drill, onClose, uae }) {
               const pct = isPct ? r.value : totalNum ? (r.value / totalNum) * 100 : 0;
               const barPct = isPct ? (r.value / maxVal) * 100 : pct;
               const clickable = (r.txns || []).length > 0;
+              const rowDelta = (r.prev != null && r.prev !== "") ? delta(r.value, r.prev) : null;
+              // Prior-period bar sits on the same scale as the current one.
+              const prevBarPct = rowDelta
+                ? (isPct ? (Number(r.prev) / maxVal) * 100
+                         : (totalNum ? (Number(r.prev) / totalNum) * 100 : 0))
+                : null;
               return (
                 <div key={i} onClick={clickable ? () => setSel(r) : undefined}
                   style={{ padding:"12px 14px", borderRadius:10, border:`1px solid ${C.border}`,
@@ -2647,9 +2688,32 @@ function DrillDownPanel({ drill, onClose, uae }) {
                       {!isPct && <span style={{ fontSize:11, fontWeight:500, color:C.dim, marginLeft:6 }}>{pct.toFixed(0)}%</span>}
                     </div>
                   </div>
-                  {r.sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:6 }}>{r.sub}</div>}
-                  <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
-                    <div style={{ height:"100%", width:`${Math.max(barPct, 2)}%`, background:C.grad, borderRadius:10 }}/>
+                  <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline",
+                    gap:10, marginBottom:6 }}>
+                    {r.sub
+                      ? <span style={{ fontFamily:F, fontSize:11, color:C.muted, minWidth:0,
+                          overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.sub}</span>
+                      : <span/>}
+                    {rowDelta && (
+                      <span style={{ whiteSpace:"nowrap", flexShrink:0 }}>
+                        <span style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:rowDelta.color,
+                          background:rowDelta.bg, padding:"1px 7px", borderRadius:10 }}>
+                          {rowDelta.text}
+                        </span>
+                        <span style={{ fontFamily:F, fontSize:10.5, color:C.dim, marginLeft:5 }}>
+                          from {fmtV(Number(r.prev))}
+                        </span>
+                      </span>
+                    )}
+                  </div>
+                  {/* Current period bar, with the prior period as a faint marker behind it */}
+                  <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden", position:"relative" }}>
+                    {prevBarPct != null && (
+                      <div style={{ position:"absolute", left:0, top:0, height:"100%",
+                        width:`${Math.max(prevBarPct, 1)}%`, background:"#CBD5E1", borderRadius:10 }}/>
+                    )}
+                    <div style={{ position:"relative", height:"100%", width:`${Math.max(barPct, 2)}%`,
+                      background:C.grad, borderRadius:10 }}/>
                   </div>
                 </div>
               );
