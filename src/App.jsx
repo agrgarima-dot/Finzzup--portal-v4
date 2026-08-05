@@ -263,6 +263,53 @@ const DEMO_DRILL = {
       ]},
     ],
   },
+  cost: {
+    label:"Cost of Sales", total:"₹4.96 Cr", period:"FY26 YTD", prevPeriod:"FY25 same period", betterWhen:"lower",
+    note:"Cloud infrastructure is up 24% while revenue grew 6% — the AWS committed-use discount is still unsigned. Signing it removes ₹1.1L/mo without touching headcount.",
+    dims:[
+      { key:"category", title:"By Category", rows:[
+        { name:"Engineering Salaries",  value:24800000, prev:22100000, sub:"Delivery + product team", txns:[
+          { id:"PAY-JUL", date:"01 Aug 2026", desc:"Jul payroll — engineering", amount:"₹20.6L", status:"paid" },
+          { id:"PF-JUL",  date:"01 Aug 2026", desc:"PF, gratuity, insurance",   amount:"₹2.4L",  status:"paid" },
+        ]},
+        { name:"Cloud & Infrastructure", value:9600000, prev:7750000, sub:"AWS, GCP, data pipeline", txns:[
+          { id:"AWS-0726",  date:"28 Jul 2026", desc:"AWS — Jul usage",          amount:"₹4.1L", status:"paid" },
+          { id:"GCP-0726",  date:"28 Jul 2026", desc:"GCP — BigQuery + storage", amount:"₹1.6L", status:"paid" },
+        ]},
+        { name:"Third-party Licences",   value:7400000, prev:7100000, sub:"14 SaaS tools", txns:[
+          { id:"SAAS-JUL", date:"25 Jul 2026", desc:"SaaS subscriptions (14)",   amount:"₹2.4L", status:"paid" },
+        ]},
+        { name:"Contractor & Outsourced", value:4900000, prev:6300000, sub:"Reduced after in-housing", txns:[] },
+        { name:"Support & Hosting",       value:2900000, prev:2800000, sub:"Customer support tooling", txns:[] },
+      ]},
+      { key:"vendor", title:"By Vendor", rows:[
+        { name:"Amazon Web Services", value:7200000, prev:5600000, sub:"Largest single vendor", txns:[] },
+        { name:"In-house Payroll",    value:24800000, prev:22100000, sub:"Engineering headcount", txns:[] },
+        { name:"Google Cloud",        value:2400000, prev:2150000, sub:"Analytics workloads", txns:[] },
+        { name:"Others (23 vendors)", value:15200000, prev:15500000, sub:"Avg ₹66K/vendor", txns:[] },
+      ]},
+    ],
+  },
+  cashflow: {
+    label:"Cash Flow", total:"₹28L net", period:"Jul 2026", prevPeriod:"Jun 2026",
+    note:"Operating cash is positive but only because ₹19L of customer collections landed late in the month. Strip that timing out and July was roughly break-even.",
+    dims:[
+      { key:"movement", title:"Inflows & Outflows", rows:[
+        { name:"Customer Collections",  value:9200000, prev:8400000, sub:"Inflow · 11 receipts", txns:[
+          { id:"NEFT-8812", date:"03 Aug 2026", desc:"Vertex Health — Q2 licence", amount:"+₹15.5L", status:"paid" },
+          { id:"UPI-4432",  date:"02 Aug 2026", desc:"Orbit Logistics — retainer", amount:"+₹3.1L",  status:"paid" },
+        ]},
+        { name:"Payroll",               value:2700000, prev:2650000, betterWhen:"lower", sub:"Outflow · largest single item", txns:[
+          { id:"RTGS-8807", date:"01 Aug 2026", desc:"Jul payroll (net)", amount:"−₹24.2L", status:"paid" },
+        ]},
+        { name:"Vendor Payments",       value:1850000, prev:2100000, betterWhen:"lower", sub:"Outflow · 28 vendors", txns:[
+          { id:"AWS-0726", date:"28 Jul 2026", desc:"AWS — Jul usage", amount:"−₹4.1L", status:"paid" },
+        ]},
+        { name:"Statutory Payments",    value:980000,  prev:910000,  betterWhen:"lower", sub:"Outflow · TDS, GST, PF", txns:[] },
+        { name:"Interest & Charges",    value:240000,  prev:260000,  betterWhen:"lower", sub:"Outflow · banking costs", txns:[] },
+      ]},
+    ],
+  },
   margin: {
     label:"Gross Margin", total:"41%", period:"blended, FY26 YTD",
     note:"Services drag blended GM down 9 points. Every 5% of revenue shifted from services to SaaS adds ~₹4L/yr of gross profit.",
@@ -339,15 +386,49 @@ const DEMO_DRILL_UAE = {
     ],
   },
   burn: {
-    label:"Burn Rate", total:"AED 75K /mo", period:"Jul 2026",
+    label:"Burn Rate", total:"AED 75K /mo", period:"Jul 2026", prevPeriod:"Jun 2026", betterWhen:"lower",
     note:"Office rent is 16% of burn for space at 40% desk utilisation — a flexi-desk move saves AED 7K/mo without losing the Trade Licence address.",
     dims:[
       { key:"category", title:"By Category", rows:[
-        { name:"Salaries & Visas",  value:42000, sub:"8 staff + visa costs", txns:[] },
-        { name:"Office & Rent",     value:12000, sub:"Business Bay office", txns:[] },
-        { name:"Marketing",         value:9000,  sub:"Digital + events", txns:[] },
-        { name:"Software & Cloud",  value:7000,  sub:"SaaS stack", txns:[] },
-        { name:"Professional Fees", value:5000,  sub:"PRO, audit, tax agent", txns:[] },
+        { name:"Salaries & Visas",  value:42000, prev:41000, sub:"8 staff + visa costs", txns:[] },
+        { name:"Office & Rent",     value:12000, prev:12000, sub:"Business Bay office", txns:[] },
+        { name:"Marketing",         value:9000,  prev:11500, sub:"Digital + events", txns:[] },
+        { name:"Software & Cloud",  value:7000,  prev:6200,  sub:"SaaS stack", txns:[] },
+        { name:"Professional Fees", value:5000,  prev:5300,  sub:"PRO, audit, tax agent", txns:[] },
+      ]},
+    ],
+  },
+  cost: {
+    label:"Cost of Sales", total:"AED 1.02M", period:"FY26 YTD", prevPeriod:"FY25 same period", betterWhen:"lower",
+    note:"Freight is 31% of cost and rose 18% while volumes grew 9% — carrier rates were not renegotiated at renewal. Worth re-tendering before the Q4 peak.",
+    dims:[
+      { key:"category", title:"By Category", rows:[
+        { name:"Goods Purchased",     value:520000, prev:470000, sub:"Direct product cost", txns:[
+          { id:"PO-1182", date:"18 Jul 2026", desc:"Supplier shipment — Q3 stock", amount:"AED 96K", status:"paid" },
+        ]},
+        { name:"Freight & Logistics", value:316000, prev:268000, sub:"Sea + last mile", txns:[
+          { id:"FRT-4471", date:"22 Jul 2026", desc:"Sea freight — 2 containers", amount:"AED 58K", status:"paid" },
+        ]},
+        { name:"Customs & Duties",    value:104000, prev:98000,  sub:"Import duty", txns:[] },
+        { name:"Warehousing",         value:52000,  prev:56000,  sub:"JAFZA storage", txns:[] },
+        { name:"Direct Labour",       value:28000,  prev:26000,  sub:"Packing + handling", txns:[] },
+      ]},
+    ],
+  },
+  cashflow: {
+    label:"Cash Flow", total:"AED 62K net", period:"Jul 2026", prevPeriod:"Jun 2026",
+    note:"Positive on paper, but AED 95K of the Al Noor invoice is still unpaid at 75 days. Without it July would have been negative — this is a collections problem, not a profit problem.",
+    dims:[
+      { key:"movement", title:"Inflows & Outflows", rows:[
+        { name:"Customer Collections", value:248000, prev:212000, sub:"Inflow · 9 receipts", txns:[
+          { id:"TRF-9921", date:"02 Aug 2026", desc:"Marina Hospitality — Jul", amount:"+AED 62K", status:"paid" },
+        ]},
+        { name:"Supplier Payments",    value:118000, prev:104000, betterWhen:"lower", sub:"Outflow", txns:[] },
+        { name:"Payroll & WPS",        value:58000,  prev:57000,  betterWhen:"lower", sub:"Outflow · 8 staff", txns:[
+          { id:"TRF-9915", date:"28 Jul 2026", desc:"Jul payroll via WPS", amount:"−AED 58K", status:"paid" },
+        ]},
+        { name:"VAT Paid to FTA",      value:6800,   prev:9200,   betterWhen:"lower", sub:"Outflow · quarterly", txns:[] },
+        { name:"Rent & Overheads",     value:3200,   prev:3200,   betterWhen:"lower", sub:"Outflow", txns:[] },
       ]},
     ],
   },
@@ -466,6 +547,50 @@ const DEMO_DRILL_MSME = {
       ]},
     ],
   },
+  cost: {
+    label:"Cost of Sales", total:"₹5.88 Cr", period:"FY26 YTD", prevPeriod:"FY25 same period", betterWhen:"lower",
+    note:"Yarn is 43% of cost and rose 14% against 6% volume growth — you are buying spot instead of on contract. A 3-month forward book at current rates saves roughly ₹18L a year.",
+    dims:[
+      { key:"category", title:"By Category", rows:[
+        { name:"Raw Material — Yarn",   value:25300000, prev:22200000, sub:"Spot purchases", txns:[
+          { id:"PO-7741", date:"20 Jul 2026", desc:"Yarn — 8 tonnes",       amount:"₹18.2L", status:"paid"   },
+          { id:"PO-7729", date:"02 Jul 2026", desc:"Yarn — 6 tonnes",       amount:"₹13.6L", status:"paid"   },
+        ]},
+        { name:"Dyeing & Processing",   value:12400000, prev:11800000, sub:"3 job-work units", txns:[
+          { id:"JW-2218", date:"16 Jul 2026", desc:"Dyeing — Jul batch",    amount:"₹4.8L",  status:"unpaid" },
+        ]},
+        { name:"Factory Labour",        value:9600000,  prev:9100000,  sub:"Direct wages", txns:[] },
+        { name:"Packing & Freight",     value:7300000,  prev:6900000,  sub:"Export + domestic", txns:[
+          { id:"FRT-3390", date:"24 Jul 2026", desc:"Container — Jebel Ali", amount:"₹3.1L", status:"paid"   },
+        ]},
+        { name:"Power & Utilities",     value:4200000,  prev:4400000,  sub:"Factory consumption", txns:[] },
+      ]},
+      { key:"supplier", title:"By Supplier", rows:[
+        { name:"Shree Yarn Mills",      value:15800000, prev:12900000, sub:"Largest supplier · spot", txns:[] },
+        { name:"Nova Dyeing Works",     value:8100000,  prev:7600000,  sub:"Job work", txns:[] },
+        { name:"Rajesh Textiles",       value:9500000,  prev:9300000,  sub:"Yarn — contracted", txns:[] },
+        { name:"Others (31 suppliers)", value:25400000, prev:24600000, sub:"Avg ₹82K/supplier", txns:[] },
+      ]},
+    ],
+  },
+  cashflow: {
+    label:"Cash Flow", total:"₹34L net", period:"Jul 2026", prevPeriod:"Jun 2026",
+    note:"Net positive only because you drew ₹22L more on the CC. Operating cash was negative ₹8L — the business consumed cash in July, the facility covered it.",
+    dims:[
+      { key:"movement", title:"Inflows & Outflows", rows:[
+        { name:"Customer Collections",  value:6900000, prev:7400000, sub:"Inflow · 14 receipts", txns:[
+          { id:"NEFT-7712", date:"01 Aug 2026", desc:"DMart — Jul supply",     amount:"+₹12.4L", status:"paid" },
+          { id:"SWIFT-102", date:"12 Jul 2026", desc:"HomeStyle — PO #4471",   amount:"+₹31.2L", status:"paid" },
+        ]},
+        { name:"CC Drawdown",           value:2200000, prev:900000,  betterWhen:"lower", sub:"Inflow · borrowed, not earned", txns:[] },
+        { name:"Supplier Payments",     value:4100000, prev:3800000, betterWhen:"lower", sub:"Outflow", txns:[
+          { id:"RTGS-7708", date:"28 Jul 2026", desc:"Yarn supplier payment",  amount:"−₹18.2L", status:"paid" },
+        ]},
+        { name:"Wages & Salaries",      value:1600000, prev:1550000, betterWhen:"lower", sub:"Outflow", txns:[] },
+        { name:"Interest on CC",        value:190000,  prev:172000,  betterWhen:"lower", sub:"Outflow · 11% p.a.", txns:[] },
+      ]},
+    ],
+  },
   workingcap: {
     label:"Working Capital", total:"₹1.90 Cr net", period:"as on date",
     note:"₹1.42 Cr sits in inventory — 58 days of stock. The yarn category alone holds ₹38L against 21 days of demand. Liquidating half of it funds the next export cycle without touching the CC.",
@@ -573,6 +698,10 @@ function getDrill(label, reportData, client) {
     l.includes("working")    ? "workingcap" :
     l.includes("debtor")     ? "debtors"    :
     l.includes("utilisation") || l.includes("utilization") || l.includes("cc ") || l.startsWith("cc") ? "cc" :
+    // Cost of sales / COGS / direct costs
+    l.includes("cost") || l.includes("cogs") ? "cost" :
+    // "Cash flow" must be checked before plain "cash" (balance)
+    l.includes("cash flow") || l.includes("cashflow") || l === "net cash" ? "cashflow" :
     l.includes("revenue") ? "revenue" :
     l.includes("arr")     ? "arr"     :
     l.includes("cash")    ? "cash"    :
@@ -2563,10 +2692,11 @@ function DrillDownPanel({ drill, onClose, uae }) {
   // ── Period comparison ─────────────────────────────────────────────────────
   // Rows may carry `prev` (prior-period value). For metrics where lower is
   // better (debtor days, burn, VAT, CCC) an increase is shown red, not green.
-  const lowerIsBetter = drill.betterWhen === "lower";
   const prevTotalNum  = rows.reduce((s, r) => s + (Number(r.prev) || 0), 0);
   const hasPrev       = rows.some(r => r.prev != null && r.prev !== "");
-  const delta = (curr, prev) => {
+  // Row-level betterWhen overrides the drill-level default — e.g. inside a cash
+  // flow breakup, collections rising is good but CC drawdown rising is not.
+  const delta = (curr, prev, rowBetterWhen) => {
     const c = Number(curr), p = Number(prev);
     if (!isFinite(c) || !isFinite(p) || p === 0) return null;
     const pctChange = ((c - p) / Math.abs(p)) * 100;
@@ -2574,7 +2704,7 @@ function DrillDownPanel({ drill, onClose, uae }) {
       return { flat: true, text: "no change", color: C.dim, bg: "#F3F4F6" };
     }
     const up   = c > p;
-    const good = lowerIsBetter ? !up : up;
+    const good = (rowBetterWhen || drill.betterWhen) === "lower" ? !up : up;
     return {
       up, text: `${up ? "↑" : "↓"} ${Math.abs(pctChange).toFixed(0)}%`,
       color: good ? C.green : C.red,
@@ -2665,7 +2795,7 @@ function DrillDownPanel({ drill, onClose, uae }) {
               const pct = isPct ? r.value : totalNum ? (r.value / totalNum) * 100 : 0;
               const barPct = isPct ? (r.value / maxVal) * 100 : pct;
               const clickable = (r.txns || []).length > 0;
-              const rowDelta = (r.prev != null && r.prev !== "") ? delta(r.value, r.prev) : null;
+              const rowDelta = (r.prev != null && r.prev !== "") ? delta(r.value, r.prev, r.betterWhen) : null;
               // Prior-period bar sits on the same scale as the current one.
               const prevBarPct = rowDelta
                 ? (isPct ? (Number(r.prev) / maxVal) * 100
@@ -3215,7 +3345,16 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
 
         {/* Cash Flow Trend */}
         <div className="ns-panel" style={{ margin:0 }}>
-          <div className="ns-panel-header"><h3>Cash Flow Trend</h3></div>
+          <div className="ns-panel-header">
+            <h3>Cash Flow Trend</h3>
+            {drillFor("cash flow") && (
+              <button onClick={() => setDrill(drillFor("cash flow"))}
+                style={{ background:"none", border:"none", cursor:"pointer", fontFamily:F,
+                  fontSize:11, fontWeight:700, color:C.accent, padding:0 }}>
+                Breakup ›
+              </button>
+            )}
+          </div>
           {cfChartData.length === 0
             ? <div style={{ padding:"20px 18px", textAlign:"center", fontFamily:F, fontSize:12, color:C.muted }}>No cashflow data</div>
             : <div style={{ height:165, padding:"8px 0 4px" }}>
@@ -3282,9 +3421,17 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                   {plFull.map((r,i) => {
                     const isSubtot = ["gp","ebitda","pat"].includes(r.key);
                     const isTotal  = r.key === "pat";
+                    // Revenue and Cost of Sales drill into their composition.
+                    const rowDrill = r.key === "revenue" ? drillFor("revenue")
+                                   : r.key === "cogs"    ? drillFor("cost") : null;
                     return (
-                      <tr key={i} className={isTotal?"total":isSubtot?"subtotal":"striped"}>
-                        <td className={isTotal||isSubtot?"bold":""}>{r.label}</td>
+                      <tr key={i} className={isTotal?"total":isSubtot?"subtotal":"striped"}
+                        onClick={rowDrill ? () => setDrill(rowDrill) : undefined}
+                        title={rowDrill ? `View ${r.label.toLowerCase()} breakup` : undefined}
+                        style={rowDrill ? { cursor:"pointer" } : undefined}>
+                        <td className={isTotal||isSubtot?"bold":""}>
+                          {r.label}{rowDrill && <span style={{ color:C.accent, fontWeight:700, marginLeft:5 }}>›</span>}
+                        </td>
                         <td className="right mono bold">{r.curr}</td>
                         <td className="right mono muted">{r.prev}</td>
                       </tr>
