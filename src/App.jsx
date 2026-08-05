@@ -2419,42 +2419,12 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       {/* Cash Flow Trend removed here — the same chart appears on the Dashboard
           and the dedicated Cash Flow page has the full forecast view. */}
 
-      {/* ── AR Aging + Payables Aging row ── */}
-      <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }} className="ov-aging-row">
-        <style>{`.ov-aging-row{grid-template-columns:1fr 1fr!important}@media(max-width:580px){.ov-aging-row{grid-template-columns:1fr!important}}`}</style>
+      {/* ── Payables Aging row ── */}
+      <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:14 }} className="ov-aging-row">
+        <style>{`.ov-aging-row{grid-template-columns:1fr!important}`}</style>
 
-        {/* AR Aging */}
-        <div className="ns-panel" style={{ margin:0 }}>
-          <div className="ns-panel-header">
-            <h3>A/R Aging</h3>
-            {arTotal > 0 && <span className="ns-label" style={{ fontFamily:FM }}>{currSym}{arTotal.toLocaleString()}</span>}
-          </div>
-          {arTotal === 0
-            ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
-                <i className="ti ti-receipt" style={{ fontSize:28, color:C.dim, display:"block", marginBottom:6 }}/>
-                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>No receivables data</div>
-              </div>
-            : <div style={{ padding:"12px 18px 16px" }}>
-                {arBuckets.map((b,i) => {
-                  const pct = arTotal > 0 ? (b.val/arTotal*100) : 0;
-                  return (
-                    <div key={i} style={{ marginBottom:11 }}>
-                      <div style={{ display:"flex", justifyContent:"space-between", marginBottom:5 }}>
-                        <span style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:500 }}>{b.label}</span>
-                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:b.color }}>
-                          {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400, fontFamily:F }}>({pct.toFixed(0)}%)</span>
-                        </span>
-                      </div>
-                      <div style={{ height:6, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10, transition:"width 0.5s ease" }}/>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-          }
-        </div>
-
+        {/* A/R Aging removed — the Dashboard's version drills into the invoices
+            in each bucket, and Top Clients by A/R below covers the same ground. */}
         {/* Payables Aging */}
         <div className="ns-panel" style={{ margin:0 }}>
           <div className="ns-panel-header">
