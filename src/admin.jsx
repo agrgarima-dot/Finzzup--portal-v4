@@ -113,6 +113,65 @@ function InlineInput({ value, onCommit, placeholder="", style={} }) {
   );
 }
  
+// ─── DRILL & COMPLIANCE EDITOR HELPERS ───────────────────────────────────────
+// Transactions are edited as one-per-line text: "INV-101 | 12 Jul 2026 | Description | ₹4.2L | paid"
+export function parseTxnLines(txt) {
+  return String(txt || "").split("\n").map(l => l.trim()).filter(Boolean).map(l => {
+    const p = l.split("|").map(s => s.trim());
+    return { id:p[0]||"", date:p[1]||"", desc:p[2]||"", amount:p[3]||"", status:(p[4]||"unpaid").toLowerCase() };
+  });
+}
+export function txnLinesToText(txns) {
+  return (txns || []).map(t => [t.id, t.date, t.desc, t.amount, t.status].filter((_,i)=>i<5).join(" | ")).join("\n");
+}
+
+// Generic breakup-row editor: name / amount / sub-label / optional txns textarea
+function DrillRowsEditor({ rows, onChange, nameLabel="Name", fixedNames=null }) {
+  const list = rows || [];
+  const update = (i, patch) => onChange(list.map((r, j) => j === i ? { ...r, ...patch } : r));
+  const remove = (i) => onChange(list.filter((_, j) => j !== i));
+  const add = () => onChange([...list, { name:"", value:0, sub:"", txns:[] }]);
+  return (
+    <div>
+      <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1.6fr 30px", gap:6, marginBottom:4 }}>
+        {[nameLabel, "Amount (number)", "Sub-label", ""].map((h,i) => (
+          <div key={i} style={{ fontFamily:F, fontSize:10, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
+        ))}
+      </div>
+      {list.map((r, i) => (
+        <div key={i} style={{ marginBottom:8 }}>
+          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1.6fr 30px", gap:6 }}>
+            {fixedNames
+              ? <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, padding:"6px 4px" }}>{r.name}</div>
+              : <InlineInput value={r.name} onCommit={v => update(i, { name:v })} placeholder="Customer / account name"/>}
+            <InlineInput value={String(r.value ?? "")} onCommit={v => update(i, { value: Number(String(v).replace(/[^0-9.-]/g,"")) || 0 })} placeholder="4200000"/>
+            <InlineInput value={r.sub || ""} onCommit={v => update(i, { sub:v })} placeholder="e.g. Export · Dubai · 45d terms"/>
+            {!fixedNames ? (
+              <button onClick={() => remove(i)} style={{ border:`1px solid ${C.border}`, background:"none",
+                borderRadius:8, color:C.red, cursor:"pointer", fontSize:13 }}>×</button>
+            ) : <span/>}
+          </div>
+          <textarea
+            defaultValue={txnLinesToText(r.txns)}
+            key={`tx-${i}-${(r.txns||[]).length}`}
+            onBlur={e => update(i, { txns: parseTxnLines(e.target.value) })}
+            placeholder={"Invoices (optional, one per line):  INV-101 | 12 Jul 2026 | Description | ₹4.2L | paid/unpaid/overdue"}
+            rows={Math.max(1, (r.txns||[]).length)}
+            style={{ width:"100%", boxSizing:"border-box", marginTop:4, padding:"6px 8px", borderRadius:8,
+              fontSize:11, border:`1px dashed ${C.border}`, fontFamily:FM, color:C.muted,
+              background:C.bg2, outline:"none", resize:"vertical" }}/>
+        </div>
+      ))}
+      {!fixedNames && (
+        <button onClick={add} style={{ padding:"7px 14px", borderRadius:10, border:`1.5px dashed ${C.border}`,
+          background:"none", fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, cursor:"pointer" }}>
+          + Add row
+        </button>
+      )}
+    </div>
+  );
+}
+
 // ─── CSV IMPORT COMPONENT ─────────────────────────────────────────────────────
 // ─── CSV IMPORT — PARSERS & COMPONENT ────────────────────────────────────────
 
@@ -1220,6 +1279,7 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
     { id:"uaecashflow",icon:"ti-cash", label:"UAE Cash & Notes",   group:"UAE"   },
     // ── Shared ──
     { id:"invoices",   icon:"ti-receipt", label:"Invoices",       group:"Shared"     },
+    { id:"drilldata",  icon:"ti-git-merge", label:"Drill & Compliance", group:"Shared" },
     { id:"documents",  icon:"ti-folder", label:"Documents",      group:"Shared"     },
     { id:"requests",   icon:"ti-mail", label:"Requests",       group:"Shared"     },
     { id:"market",     icon:"ti-world", label:"Market Intel",   group:"Shared"     },
@@ -4925,6 +4985,136 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           )}
  
           {/* ── DOCUMENTS ── */}
+          {/* ── DRILL DATA & COMPLIANCE ── */}
+          {tab === "drilldata" && (
+            <div style={{ maxWidth:900 }}>
+              {!selected ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+                </Card>
+              ) : (() => {
+                const rd    = reportData || {};
+                const drill = rd.drill || {};
+                const setDrillKey = (key, patch) => setReportData(r => ({ ...(r||{}),
+                  drill: { ...(r?.drill||{}), [key]: { ...(r?.drill?.[key]||{}), ...patch } } }));
+                const getRows = (key, dimKey, dimTitle) => drill[key]?.dims?.[0]?.rows || [];
+                const setRows = (key, dimKey, dimTitle, label, rows) => setDrillKey(key, {
+                  label, dims:[{ key:dimKey, title:dimTitle, rows }] });
+                const AR_BUCKETS = ["Current", "31–60d", "61–90d", "90d+"];
+                const recvRows = (() => {
+                  const existing = drill.receivables?.dims?.[0]?.rows;
+                  if (existing?.length === 4) return existing;
+                  return AR_BUCKETS.map(n => ({ name:n, value:0, sub:"", txns:[] }));
+                })();
+                const compliance = rd.compliance || [];
+                const setCompliance = (list) => setReportData(r => ({ ...(r||{}), compliance:list }));
+                const updComp = (i, patch) => setCompliance(compliance.map((c,j) => j===i ? {...c, ...patch} : c));
+                return (<>
+                  {/* Compliance calendar */}
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      Compliance Calendar — {selected.name}
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      These show on the client's Dashboard as "Outstanding Compliances", overdue first. Tick done to hide an item.
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1.1fr 1fr 46px 30px", gap:6, marginBottom:4 }}>
+                      {["Item","Detail","Due date","Owner","Done",""].map((h,i) => (
+                        <div key={i} style={{ fontFamily:F, fontSize:10, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
+                      ))}
+                    </div>
+                    {compliance.map((c, i) => (
+                      <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1.1fr 1fr 46px 30px", gap:6, marginBottom:6, alignItems:"center" }}>
+                        <InlineInput value={c.item||""}   onCommit={v => updComp(i,{item:v})}   placeholder="GSTR-3B — Jul 2026"/>
+                        <InlineInput value={c.detail||""} onCommit={v => updComp(i,{detail:v})} placeholder="Summary return + payment"/>
+                        <input type="date" value={c.dueDate ? String(c.dueDate).slice(0,10) : ""} onChange={e => updComp(i,{dueDate:e.target.value})}
+                          style={{ padding:"6px 8px", borderRadius:8, fontSize:11.5, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none" }}/>
+                        <InlineInput value={c.owner||""}  onCommit={v => updComp(i,{owner:v})}  placeholder="CA / Client"/>
+                        <input type="checkbox" checked={!!c.done} onChange={e => updComp(i,{done:e.target.checked})} style={{ width:16, height:16, cursor:"pointer", justifySelf:"center" }}/>
+                        <button onClick={() => setCompliance(compliance.filter((_,j)=>j!==i))}
+                          style={{ border:`1px solid ${C.border}`, background:"none", borderRadius:8, color:C.red, cursor:"pointer", fontSize:13 }}>×</button>
+                      </div>
+                    ))}
+                    <div style={{ display:"flex", gap:10, marginTop:10 }}>
+                      <button onClick={() => setCompliance([...compliance, { item:"", detail:"", dueDate:"", owner:"", done:false }])}
+                        style={{ padding:"7px 14px", borderRadius:10, border:`1.5px dashed ${C.border}`, background:"none",
+                          fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, cursor:"pointer" }}>
+                        + Add compliance item
+                      </button>
+                    </div>
+                  </Card>
+
+                  {/* Revenue drill */}
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      Revenue Breakup (drill-down)
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      Shown when the client taps the Revenue tile. Amounts are raw numbers (e.g. 4200000 = ₹42L). Invoices are optional per row.
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+                      <InlineInput value={drill.revenue?.total||""}  onCommit={v => setDrillKey("revenue",{total:v})}  placeholder='Total shown in header, e.g. "₹8.40 Cr"'/>
+                      <InlineInput value={drill.revenue?.period||""} onCommit={v => setDrillKey("revenue",{period:v})} placeholder='Period label, e.g. "FY26 YTD"'/>
+                    </div>
+                    <DrillRowsEditor
+                      rows={getRows("revenue","customer","By Customer")}
+                      onChange={rows => setRows("revenue","customer","By Customer","Revenue",rows)}
+                      nameLabel="Customer"/>
+                    <textarea defaultValue={drill.revenue?.note||""} onBlur={e => setDrillKey("revenue",{note:e.target.value})}
+                      placeholder="Garima's note shown at the bottom of the drill panel (concentration risk, renewals due, etc.)"
+                      rows={2} style={{ width:"100%", boxSizing:"border-box", marginTop:10, padding:"8px 10px", borderRadius:8,
+                        fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+                  </Card>
+
+                  {/* Receivables drill */}
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      Receivables by Age (drill-down)
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      Powers the clickable A/R aging buckets. Keep the four buckets; add each outstanding invoice on its own line.
+                    </p>
+                    <DrillRowsEditor
+                      rows={recvRows}
+                      onChange={rows => setRows("receivables","aging","By Age","Receivables",rows)}
+                      nameLabel="Bucket" fixedNames/>
+                    <textarea defaultValue={drill.receivables?.note||""} onBlur={e => setDrillKey("receivables",{note:e.target.value})}
+                      placeholder="Garima's note (e.g. which debtor to escalate this week)"
+                      rows={2} style={{ width:"100%", boxSizing:"border-box", marginTop:10, padding:"8px 10px", borderRadius:8,
+                        fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+                  </Card>
+
+                  {/* Cash drill */}
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      Cash by Account (drill-down)
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      Shown when the client taps the Cash Balance tile. Rows = bank accounts / FDs; lines = recent movements (optional).
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
+                      <InlineInput value={drill.cash?.total||""}  onCommit={v => setDrillKey("cash",{total:v})}  placeholder='Total, e.g. "₹2.10 Cr"'/>
+                      <InlineInput value={drill.cash?.period||""} onCommit={v => setDrillKey("cash",{period:v})} placeholder='e.g. "across 4 accounts"'/>
+                    </div>
+                    <DrillRowsEditor
+                      rows={getRows("cash","account","By Account")}
+                      onChange={rows => setRows("cash","account","By Account","Cash Balance",rows)}
+                      nameLabel="Account"/>
+                    <textarea defaultValue={drill.cash?.note||""} onBlur={e => setDrillKey("cash",{note:e.target.value})}
+                      placeholder="Garima's note (idle cash, FD vs CC arbitrage, etc.)"
+                      rows={2} style={{ width:"100%", boxSizing:"border-box", marginTop:10, padding:"8px 10px", borderRadius:8,
+                        fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+                  </Card>
+
+                  <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                    <AdminSaveBtn onClick={saveReportData} loading={loading} saved={saved} label="Save Drill & Compliance" F={F}/>
+                  </div>
+                </>);
+              })()}
+            </div>
+          )}
+
           {tab === "documents" && (
             <div style={{ maxWidth:900 }}>
               {!selected ? (
@@ -4965,6 +5155,17 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                       <option value="legal">Legal / Compliance</option>
                     </select>
                   </div>
+                  {/* Expiry date — for licences, insurance, DSCs */}
+                  <div style={{ marginBottom:12 }}>
+                    <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+                      letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>
+                      Expiry Date (optional — trade licence, insurance, DSC)
+                    </label>
+                    <input id="doc-expiry-input" type="date"
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
+                        border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                        background:C.bg, outline:"none", boxSizing:"border-box" }}/>
+                  </div>
                   <label style={{ display:"block", padding:"28px 20px", borderRadius:12,
                     border:`2px dashed ${C.border}`, textAlign:"center", cursor:"pointer",
                     background:C.bg, transition:"border-color 0.2s" }}
@@ -4989,7 +5190,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                           .from("client-docs").getPublicUrl(path);
                         const docTypeEl = document.getElementById("doc-type-select");
                         const docType = docTypeEl ? docTypeEl.value : "general";
-                        const { data: docRow, error: insertErr } = await supabase.from("documents").insert({
+                        const expEl = document.getElementById("doc-expiry-input");
+                        const expiry = expEl && expEl.value ? expEl.value : null;
+                        const baseRow = {
                           client_id: selected.id,
                           name: file.name,
                           file_url: urlData.publicUrl,
@@ -4997,8 +5200,16 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                           uploaded_by: "garima",
                           doc_type: docType,
                           created_at: new Date().toISOString(),
-                        }).select().single();
+                        };
+                        let { data: docRow, error: insertErr } = await supabase.from("documents")
+                          .insert(expiry ? { ...baseRow, expiry_date: expiry } : baseRow).select().single();
+                        if (insertErr && expiry) {
+                          // expiry_date column may not exist yet — retry without it
+                          ({ data: docRow, error: insertErr } = await supabase.from("documents").insert(baseRow).select().single());
+                          if (!insertErr) alert("Document saved, but expiry was NOT stored.\nRun this once in Supabase SQL editor:\nALTER TABLE documents ADD COLUMN IF NOT EXISTS expiry_date date;");
+                        }
                         if (insertErr) { alert("Saved to storage but DB record failed: " + insertErr.message); }
+                        if (expEl) expEl.value = "";
                         if (docRow) setDocs(prev => [docRow, ...prev]);
                         setDocLoading(false);
                         e.target.value = "";
@@ -5049,6 +5260,16 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                                   {d.doc_type.replace("_"," ")}
                                 </span>
                               )}
+                              {d.expiry_date && (() => {
+                                const days = Math.ceil((new Date(d.expiry_date) - new Date()) / 864e5);
+                                const col = days < 0 ? C.red : days <= 30 ? C.red : days <= 60 ? C.amber : C.muted;
+                                return (
+                                  <span style={{ color:col, fontWeight:700, fontSize:10,
+                                    background:`${col}12`, padding:"1px 7px", borderRadius:60 }}>
+                                    {days < 0 ? `Expired ${Math.abs(days)}d ago` : `Expires in ${days}d`}
+                                  </span>
+                                );
+                              })()}
                             </div>
                           </div>
                         </div>

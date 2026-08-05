@@ -397,9 +397,8 @@ const DEMO_COMPLIANCE_UAE = [
   { item:"VAT Return — Q2 2026",             detail:"Net payable AED 92.5K · FTA portal",   due:_inDays(24),  owner:"Tax Agent" },
   { item:"WPS — August Salary File",         detail:"Wages Protection System submission",   due:_inDays(26),  owner:"HR"        },
   { item:"Corporate Tax Return — FY25",      detail:"First CT filing · 9-month deadline",   due:_inDays(57),  owner:"Tax Agent" },
-  { item:"Trade Licence Renewal — DMCC",     detail:"Licence expires Mar 2027",             due:_inDays(210), owner:"PRO"       },
 ];
-function getOutstandingCompliances(reportData, client) {
+function getOutstandingCompliances(reportData, client, expiringDocs = []) {
   let items = null;
   if (Array.isArray(reportData?.compliance) && reportData.compliance.length) {
     items = reportData.compliance;
@@ -408,8 +407,16 @@ function getOutstandingCompliances(reportData, client) {
   } else if (client?.isDemo) {
     items = isUAE(client) ? DEMO_COMPLIANCE_UAE : DEMO_COMPLIANCE;
   }
-  if (!items) return [];
-  return items
+  // Documents expiring within 60 days become compliance items — renewals are compliance.
+  const docItems = (expiringDocs || []).map(d => ({
+    item:   `Renewal — ${String(d.name || "Document").replace(/\.[a-z]+$/i, "")}`,
+    detail: "Document expiring — arrange renewal",
+    dueDate: d.expiry_date,
+    owner:  "Client",
+    done:   false,
+  }));
+  if (!items && !docItems.length) return [];
+  return [...(items || []), ...docItems]
     .filter(c => !c.done && c.status !== "done")
     .map(c => {
       const due = c.due instanceof Date ? c.due : (c.dueDate || c.due) ? new Date(c.dueDate || c.due) : null;
@@ -2714,6 +2721,27 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
 
+  // ── Documents expiring within 60 days → surfaced as compliance items ──────
+  const [expiringDocs, setExpiringDocs] = useState([]);
+  useEffect(() => {
+    if (client?.isDemo) {
+      const demo = isUAE(client)
+        ? [{ name:"Trade Licence — DMCC.pdf",                  expiry_date:_inDays(52).toISOString() }]
+        : [{ name:"HDFC Bank — Sanction Letter (WC Facility)", expiry_date:_inDays(25).toISOString() }];
+      setExpiringDocs(demo);
+      return;
+    }
+    if (!client?.id) return;
+    const cutoff = new Date(); cutoff.setDate(cutoff.getDate() + 60);
+    supabase.from("documents")
+      .select("name, expiry_date")
+      .eq("client_id", client.id)
+      .not("expiry_date", "is", null)
+      .lte("expiry_date", cutoff.toISOString().slice(0, 10))
+      .then(({ data }) => setExpiringDocs(data || []))
+      .catch(() => setExpiringDocs([]));   // column may not exist yet
+  }, [client?.id, client?.isDemo]);
+
   // ── Drill-down state (Tally-style: KPI → breakup → transactions) ──────────
   const [drill, setDrill] = useState(null);
   const drillFor = (label) => getDrill(label, reportData, client);
@@ -2906,7 +2934,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
 
       {/* ── Outstanding Compliances (full-width) ── */}
       {(() => {
-        const comps = getOutstandingCompliances(reportData, client);
+        const comps = getOutstandingCompliances(reportData, client, expiringDocs);
         if (comps.length === 0) return null;
         const overdue = comps.filter(c => c.state === "overdue");
         const dueSoon = comps.filter(c => c.state === "due-soon");
@@ -10108,6 +10136,15 @@ const DOC_CATEGORIES = [
   { key:"other",    label:"Other",                 color:"#64748B", kw:[] },
 ];
 const docCatByKey = key => DOC_CATEGORIES.find(c => c.key === key) || DOC_CATEGORIES[DOC_CATEGORIES.length - 1];
+// Expiry status for a document (trade licence, insurance, DSC…)
+function docExpiry(doc) {
+  if (!doc.expiry_date) return null;
+  const days = Math.ceil((new Date(doc.expiry_date) - new Date()) / 864e5);
+  if (days < 0)   return { days, label:`Expired ${Math.abs(days)}d ago`, color:"#DC2626", bg:"#FEF2F2" };
+  if (days <= 30) return { days, label:`Expires in ${days}d`,            color:"#DC2626", bg:"#FEF2F2" };
+  if (days <= 60) return { days, label:`Expires in ${days}d`,            color:"#D97706", bg:"#FFFBEB" };
+  return { days, label:`Valid till ${new Date(doc.expiry_date).toLocaleDateString("en-GB",{day:"numeric",month:"short",year:"numeric"})}`, color:"#64748B", bg:"#F3F4F6" };
+}
 function categorizeDoc(doc) {
   if (doc.category) return docCatByKey(doc.category);
   if (doc.doc_type === "engagement_letter") return docCatByKey("legal");
@@ -10206,7 +10243,7 @@ function MyDocuments({ client }) {
     { id:"d1",  name:"MIS Pack — July 2026.pdf",                 file_size:"1.6 MB", uploaded_by:"garima", created_at:"2026-08-02", file_url:null },
     { id:"d2",  name:"VAT Return — Q2 2026 (Filed).pdf",         file_size:"0.8 MB", uploaded_by:"garima", created_at:"2026-07-28", file_url:null },
     { id:"d3",  name:"Corporate Tax Computation — FY25.xlsx",    file_size:"0.5 MB", uploaded_by:"garima", created_at:"2026-06-15", file_url:null },
-    { id:"d4",  name:"Trade Licence — DMCC (valid to Mar 2027).pdf", file_size:"1.1 MB", uploaded_by:client?.name, created_at:"2026-04-02", file_url:null },
+    { id:"d4",  name:"Trade Licence — DMCC.pdf",              file_size:"1.1 MB", uploaded_by:client?.name, created_at:"2026-04-02", file_url:null, expiry_date:_inDays(52).toISOString() },
     { id:"d5",  name:"VAT Registration Certificate (TRN).pdf",   file_size:"0.4 MB", uploaded_by:client?.name, created_at:"2026-03-20", file_url:null },
     { id:"d6",  name:"Emirates NBD — Bank Statement Jun 2026.pdf", file_size:"2.2 MB", uploaded_by:client?.name, created_at:"2026-07-05", file_url:null },
     { id:"d7",  name:"Engagement Letter — FY27.pdf",             file_size:"0.3 MB", uploaded_by:"garima", created_at:"2026-04-01", file_url:null, doc_type:"engagement_letter" },
@@ -10220,7 +10257,7 @@ function MyDocuments({ client }) {
     { id:"d6",  name:"Advance Tax Challan — Q1 FY27.pdf",        file_size:"0.2 MB", uploaded_by:"garima", created_at:"2026-06-14", file_url:null },
     { id:"d7",  name:"Certificate of Incorporation.pdf",         file_size:"0.7 MB", uploaded_by:client?.name, created_at:"2025-09-12", file_url:null },
     { id:"d8",  name:"Shareholders Agreement — v3 (Signed).pdf", file_size:"1.5 MB", uploaded_by:client?.name, created_at:"2025-11-03", file_url:null },
-    { id:"d9",  name:"HDFC Bank — Sanction Letter (WC Facility).pdf", file_size:"0.9 MB", uploaded_by:client?.name, created_at:"2026-03-18", file_url:null },
+    { id:"d9",  name:"HDFC Bank — Sanction Letter (WC Facility).pdf", file_size:"0.9 MB", uploaded_by:client?.name, created_at:"2026-03-18", file_url:null, expiry_date:_inDays(25).toISOString() },
     { id:"d10", name:"Cap Table — v4.xlsx",                      file_size:"0.3 MB", uploaded_by:client?.name, created_at:"2026-01-10", file_url:null },
   ];
   const displayDocs = isDemo ? DEMO_DOCS : docs;
@@ -10410,6 +10447,15 @@ function MyDocuments({ client }) {
                           {docCat.label}
                         </span>
                       )}
+                      {(() => {
+                        const exp = docExpiry(doc);
+                        return exp && exp.days <= 60 ? (
+                          <span style={{ fontSize:9.5, fontWeight:800, color:exp.color, background:exp.bg,
+                            padding:"2px 8px", borderRadius:20, letterSpacing:"0.04em" }}>
+                            ⚠ {exp.label}
+                          </span>
+                        ) : null;
+                      })()}
                     </div>
                     <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:2, display:"flex", gap:8, flexWrap:"wrap" }}>
                       {doc.file_size && doc.file_size !== "—" && <><span>{doc.file_size}</span><span>·</span></>}
