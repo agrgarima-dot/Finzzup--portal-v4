@@ -131,20 +131,24 @@ function DrillRowsEditor({ rows, onChange, nameLabel="Name", fixedNames=null }) 
   const update = (i, patch) => onChange(list.map((r, j) => j === i ? { ...r, ...patch } : r));
   const remove = (i) => onChange(list.filter((_, j) => j !== i));
   const add = () => onChange([...list, { name:"", value:0, sub:"", txns:[] }]);
+  const COLS = "1.8fr 1fr 1fr 1.4fr 30px";
   return (
     <div>
-      <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1.6fr 30px", gap:6, marginBottom:4 }}>
-        {[nameLabel, "Amount (number)", "Sub-label", ""].map((h,i) => (
+      <div style={{ display:"grid", gridTemplateColumns:COLS, gap:6, marginBottom:4 }}>
+        {[nameLabel, "Amount (number)", "Prior period", "Sub-label", ""].map((h,i) => (
           <div key={i} style={{ fontFamily:F, fontSize:10, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
         ))}
       </div>
       {list.map((r, i) => (
         <div key={i} style={{ marginBottom:8 }}>
-          <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1.6fr 30px", gap:6 }}>
+          <div style={{ display:"grid", gridTemplateColumns:COLS, gap:6 }}>
             {fixedNames
               ? <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, padding:"6px 4px" }}>{r.name}</div>
               : <InlineInput value={r.name} onCommit={v => update(i, { name:v })} placeholder="Customer / account name"/>}
             <InlineInput value={String(r.value ?? "")} onCommit={v => update(i, { value: Number(String(v).replace(/[^0-9.-]/g,"")) || 0 })} placeholder="4200000"/>
+            <InlineInput value={r.prev == null ? "" : String(r.prev)}
+              onCommit={v => update(i, { prev: v === "" ? undefined : (Number(String(v).replace(/[^0-9.-]/g,"")) || 0) })}
+              placeholder="optional"/>
             <InlineInput value={r.sub || ""} onCommit={v => update(i, { sub:v })} placeholder="e.g. Export · Dubai · 45d terms"/>
             {!fixedNames ? (
               <button onClick={() => remove(i)} style={{ border:`1px solid ${C.border}`, background:"none",
@@ -5053,9 +5057,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
                       Shown when the client taps the Revenue tile. Amounts are raw numbers (e.g. 4200000 = ₹42L). Invoices are optional per row.
                     </p>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
-                      <InlineInput value={drill.revenue?.total||""}  onCommit={v => setDrillKey("revenue",{total:v})}  placeholder='Total shown in header, e.g. "₹8.40 Cr"'/>
-                      <InlineInput value={drill.revenue?.period||""} onCommit={v => setDrillKey("revenue",{period:v})} placeholder='Period label, e.g. "FY26 YTD"'/>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
+                      <InlineInput value={drill.revenue?.total||""}      onCommit={v => setDrillKey("revenue",{total:v})}      placeholder='Total, e.g. "₹8.40 Cr"'/>
+                      <InlineInput value={drill.revenue?.period||""}     onCommit={v => setDrillKey("revenue",{period:v})}     placeholder='Period, e.g. "FY26 YTD"'/>
+                      <InlineInput value={drill.revenue?.prevPeriod||""} onCommit={v => setDrillKey("revenue",{prevPeriod:v})} placeholder='Compare to, e.g. "FY25"'/>
                     </div>
                     <DrillRowsEditor
                       rows={getRows("revenue","customer","By Customer")}
@@ -5093,9 +5098,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
                       Shown when the client taps the Cash Balance tile. Rows = bank accounts / FDs; lines = recent movements (optional).
                     </p>
-                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10, marginBottom:10 }}>
-                      <InlineInput value={drill.cash?.total||""}  onCommit={v => setDrillKey("cash",{total:v})}  placeholder='Total, e.g. "₹2.10 Cr"'/>
-                      <InlineInput value={drill.cash?.period||""} onCommit={v => setDrillKey("cash",{period:v})} placeholder='e.g. "across 4 accounts"'/>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
+                      <InlineInput value={drill.cash?.total||""}      onCommit={v => setDrillKey("cash",{total:v})}      placeholder='Total, e.g. "₹2.10 Cr"'/>
+                      <InlineInput value={drill.cash?.period||""}     onCommit={v => setDrillKey("cash",{period:v})}     placeholder='e.g. "across 4 accounts"'/>
+                      <InlineInput value={drill.cash?.prevPeriod||""} onCommit={v => setDrillKey("cash",{prevPeriod:v})} placeholder='Compare to, e.g. "last month"'/>
                     </div>
                     <DrillRowsEditor
                       rows={getRows("cash","account","By Account")}
