@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
+import { computeAlerts } from "./alerts.js";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 // SimpleBarChart — used by legacy sparkline panels
 const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
@@ -2742,6 +2743,13 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
       .catch(() => setExpiringDocs([]));   // column may not exist yet
   }, [client?.id, client?.isDemo]);
 
+  // ── Alert strip state ─────────────────────────────────────────────────────
+  const [dismissedAlerts, setDismissedAlerts] = useState(new Set());
+  const [alertsExpanded, setAlertsExpanded]   = useState(false);
+
+  // Resolved once — feeds both the alert strip and the compliance panel below.
+  const outstandingComps = getOutstandingCompliances(reportData, client, expiringDocs);
+
   // ── Drill-down state (Tally-style: KPI → breakup → transactions) ──────────
   const [drill, setDrill] = useState(null);
   const drillFor = (label) => getDrill(label, reportData, client);
@@ -2932,9 +2940,84 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
         </div>
       </div>
 
+      {/* ── What needs your attention (alert strip) ── */}
+      {(() => {
+        const alerts = computeAlerts({
+          kpis: displayKpis, reportData, uae, expiringDocs, compliance: outstandingComps,
+        }).filter(a => !dismissedAlerts.has(a.id));
+        if (!alerts.length) return null;
+        const sevStyle = {
+          critical: { bg:"#FEF2F2", border:"#FCA5A5", color:C.red,   icon:"ti-alert-triangle", label:"Critical" },
+          warning:  { bg:"#FFFBEB", border:"#FCD34D", color:C.amber, icon:"ti-alert-circle",   label:"Watch"    },
+          info:     { bg:C.accentLight, border:"#BFDBFE", color:C.accent, icon:"ti-info-circle", label:"Note"   },
+        };
+        const shown = alertsExpanded ? alerts : alerts.slice(0, 3);
+        return (
+          <div className="ns-panel" style={{ margin:0 }}>
+            <div className="ns-panel-header">
+              <h3>What Needs Your Attention</h3>
+              <div style={{ display:"flex", gap:6, alignItems:"center" }}>
+                {alerts.filter(a=>a.severity==="critical").length > 0 &&
+                  <span className="ns-badge red">{alerts.filter(a=>a.severity==="critical").length} critical</span>}
+                {alerts.filter(a=>a.severity==="warning").length > 0 &&
+                  <span className="ns-badge amber">{alerts.filter(a=>a.severity==="warning").length} to watch</span>}
+              </div>
+            </div>
+            <div style={{ padding:"12px 16px", display:"flex", flexDirection:"column", gap:8 }}>
+              {shown.map(a => {
+                const st = sevStyle[a.severity] || sevStyle.info;
+                return (
+                  <div key={a.id} style={{ display:"flex", alignItems:"flex-start", gap:11,
+                    padding:"11px 13px", borderRadius:10,
+                    background:st.bg, border:`1px solid ${st.border}` }}>
+                    <i className={"ti " + st.icon} style={{ fontSize:16, color:st.color, flexShrink:0, marginTop:1 }}/>
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontFamily:F, fontSize:13, fontWeight:800, color:C.text, lineHeight:1.35 }}>
+                        {a.title}
+                      </div>
+                      {a.detail && (
+                        <div style={{ fontFamily:F, fontSize:11.5, color:C.muted, marginTop:2, lineHeight:1.5 }}>
+                          {a.detail}
+                        </div>
+                      )}
+                      {a.action && (
+                        <div style={{ fontFamily:F, fontSize:11.5, color:st.color, fontWeight:700, marginTop:4 }}>
+                          → {a.action}
+                        </div>
+                      )}
+                    </div>
+                    {a.page && setPage && (
+                      <button onClick={() => setPage(a.page)}
+                        style={{ padding:"5px 11px", borderRadius:8, border:`1px solid ${st.color}55`,
+                          background:"transparent", color:st.color, fontFamily:F, fontSize:11,
+                          fontWeight:700, cursor:"pointer", flexShrink:0, whiteSpace:"nowrap" }}>
+                        View
+                      </button>
+                    )}
+                    <button onClick={() => setDismissedAlerts(s => new Set([...s, a.id]))}
+                      title="Dismiss"
+                      style={{ padding:"4px 7px", borderRadius:6, border:"none", background:"rgba(0,0,0,0.05)",
+                        color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer", flexShrink:0, lineHeight:1 }}>
+                      ×
+                    </button>
+                  </div>
+                );
+              })}
+              {alerts.length > 3 && (
+                <button onClick={() => setAlertsExpanded(v => !v)}
+                  style={{ alignSelf:"flex-start", background:"none", border:"none", cursor:"pointer",
+                    fontFamily:F, fontSize:12, fontWeight:700, color:C.accent, padding:"2px 0" }}>
+                  {alertsExpanded ? "Show fewer" : `Show ${alerts.length - 3} more`}
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* ── Outstanding Compliances (full-width) ── */}
       {(() => {
-        const comps = getOutstandingCompliances(reportData, client, expiringDocs);
+        const comps = outstandingComps;
         if (comps.length === 0) return null;
         const overdue = comps.filter(c => c.state === "overdue");
         const dueSoon = comps.filter(c => c.state === "due-soon");
