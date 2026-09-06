@@ -3285,16 +3285,39 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
       {/* ── Full P&L + bar chart + Variance + Score (additional detail below) ── */}
       {(() => {
         const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
+        // Full P&L: current, prior, MoM, YTD, budget and % of revenue.
+        // Optional fields (ytd / budget) simply render "—" when not supplied.
+        const revBase = parse(pl.revenue?.actual);
+        const mkRow = (label, k, src, isPct=false) => ({
+          label, key:k, isPct,
+          curr: src?.actual || "—",
+          prev: src?.prev   || "—",
+          ytd:  src?.ytd    || "—",
+          budget: src?.budget || "—",
+        });
         const plFull = [
-          { label:"Revenue",       curr:pl.revenue?.actual||"—",     prev:pl.revenue?.prev||"—",     key:"revenue"    },
-          { label:"Cost of Sales", curr:pl.cogs?.actual||"—",        prev:pl.cogs?.prev||"—",        key:"cogs"       },
-          { label:"Gross Profit",  curr:pl.grossProfit?.actual||"—", prev:pl.grossProfit?.prev||"—", key:"gp"         },
-          { label:"GP Margin %",   curr:pl.gpMargin?.actual||"—",    prev:pl.gpMargin?.prev||"—",    key:"gpmargin"   },
-          { label:"EBITDA",        curr:pl.ebitda?.actual||"—",      prev:pl.ebitda?.prev||"—",      key:"ebitda"     },
-          { label:"EBITDA Margin", curr:pl.ebitdaMargin?.actual||"—",prev:pl.ebitdaMargin?.prev||"—",key:"ebitdamargin"},
-          { label:"Net Profit",    curr:pl.pat?.actual||"—",         prev:pl.pat?.prev||"—",         key:"pat"        },
-          { label:"Net Margin %",  curr:pl.netMargin?.actual||"—",   prev:pl.netMargin?.prev||"—",   key:"netmargin"  },
+          mkRow("Revenue",       "revenue",     pl.revenue),
+          mkRow("Cost of Sales", "cogs",        pl.cogs),
+          mkRow("Gross Profit",  "gp",          pl.grossProfit),
+          mkRow("GP Margin %",   "gpmargin",    pl.gpMargin, true),
+          mkRow("EBITDA",        "ebitda",      pl.ebitda),
+          mkRow("EBITDA Margin", "ebitdamargin",pl.ebitdaMargin, true),
+          mkRow("Net Profit",    "pat",         pl.pat),
+          mkRow("Net Margin %",  "netmargin",   pl.netMargin, true),
         ];
+        // Movement vs prior period, and share of revenue — computed, never stored.
+        const pctMove = (a,b) => {
+          const x=parse(a), y=parse(b);
+          if(!isFinite(x)||!isFinite(y)||y===0) return null;
+          return ((x-y)/Math.abs(y))*100;
+        };
+        const shareOfRev = v => {
+          const x=parse(v);
+          if(!isFinite(x)||!revBase) return null;
+          return (x/revBase)*100;
+        };
+        const anyYtd    = plFull.some(r => r.ytd    !== "—");
+        const anyBudget = plFull.some(r => r.budget !== "—");
         const chartData = [
           { name:"Revenue",    Current:parse(pl.revenue?.actual),    Prior:parse(pl.revenue?.prev) },
           { name:"Gross P",    Current:parse(pl.grossProfit?.actual), Prior:parse(pl.grossProfit?.prev) },
@@ -3319,7 +3342,16 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                 ))}
               </div>
               <table className="ns-table">
-                <thead><tr><th>Indicator</th><th className="right">This Period</th><th className="right">Last Period</th></tr></thead>
+                <thead><tr>
+                  <th>Line Item</th>
+                  <th className="right">This Period</th>
+                  <th className="right">Last Period</th>
+                  <th className="right">Change</th>
+                  {anyYtd    && <th className="right">YTD</th>}
+                  {anyBudget && <th className="right">Budget</th>}
+                  {anyBudget && <th className="right">Var</th>}
+                  <th className="right">% of Rev</th>
+                </tr></thead>
                 <tbody>
                   {plFull.map((r,i) => {
                     const isSubtot = ["gp","ebitda","pat"].includes(r.key);
@@ -3337,6 +3369,32 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                         </td>
                         <td className="right mono bold">{r.curr}</td>
                         <td className="right mono muted">{r.prev}</td>
+                        <td className="right mono">{(() => {
+                          const m = pctMove(r.curr, r.prev);
+                          if (m === null) return <span className="muted">—</span>;
+                          // For cost lines a rise is unfavourable, so colour it accordingly.
+                          const costLine = ["cogs"].includes(r.key);
+                          const good = costLine ? m < 0 : m > 0;
+                          return <span style={{ color: Math.abs(m) < 0.05 ? C.muted : good ? C.green : C.red, fontWeight:700 }}>
+                            {m > 0 ? "+" : ""}{m.toFixed(1)}{r.isPct ? " pts" : "%"}
+                          </span>;
+                        })()}</td>
+                        {anyYtd    && <td className="right mono muted">{r.ytd}</td>}
+                        {anyBudget && <td className="right mono muted">{r.budget}</td>}
+                        {anyBudget && <td className="right mono">{(() => {
+                          const v = pctMove(r.curr, r.budget);
+                          if (v === null) return <span className="muted">—</span>;
+                          const costLine = ["cogs"].includes(r.key);
+                          const good = costLine ? v < 0 : v > 0;
+                          return <span style={{ color: good ? C.green : C.red, fontWeight:700 }}>
+                            {v > 0 ? "+" : ""}{v.toFixed(1)}%
+                          </span>;
+                        })()}</td>}
+                        <td className="right mono muted">{(() => {
+                          if (r.isPct) return "—";
+                          const sh = shareOfRev(r.curr);
+                          return sh === null ? "—" : sh.toFixed(1) + "%";
+                        })()}</td>
                       </tr>
                     );
                   })}
@@ -4699,7 +4757,7 @@ function pdfBase(title, company, month, bodyHTML, accentColor="#2563EB", headerC
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+body{font-family:Arial,Helvetica,sans-serif;color:#111827;background:white;font-size:12px;}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 .banner{background:linear-gradient(135deg,${headerColor1},${headerColor2});padding:32px 48px;color:white;}
 .banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
@@ -4970,7 +5028,7 @@ function generateExecSummaryPDF({ client, reportData, kpis }) {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+body{font-family:Arial,Helvetica,sans-serif;color:#111827;background:white;font-size:12px;}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 .banner{background:linear-gradient(135deg,#1E3A8A,#2563EB);padding:32px 48px;color:white;}
 .banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
@@ -5457,7 +5515,7 @@ function generateCashPDF({ client, reportData, kpis }) {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+body{font-family:Arial,Helvetica,sans-serif;color:#111827;background:white;font-size:12px;}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 .banner{background:linear-gradient(135deg,#1E3A8A,#2563EB);padding:32px 48px;color:white;}
 .banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
@@ -5675,7 +5733,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px;}
+body{font-family:Arial,Helvetica,sans-serif;color:#111827;background:white;font-size:12px;}
 @media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}
 .banner{background:linear-gradient(135deg,#1E3A8A,#2563EB);padding:32px 48px;color:white;}
 .banner h1{font-size:26px;font-weight:900;margin-bottom:4px;}
@@ -9715,7 +9773,7 @@ function generateEngagementLetterHTML(client, details) {
 <html><head><meta charset="utf-8"/><title>Engagement Letter — ${client?.company}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:Arial,sans-serif; color:#111827; background:#fff; }
+  body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:#fff; }
   .banner { background:${gradient}; padding:28px 40px; }
   .banner-brand { font-size:24px; font-weight:900; color:#fff; letter-spacing:-0.03em; }
   .banner-brand span { opacity:0.75; }
@@ -9832,7 +9890,7 @@ function downloadInvoicePDF(inv, client) {
 <html><head><meta charset="utf-8"/><title>${inv.id}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Segoe UI',Arial,sans-serif;color:#0F1A38;padding:48px;font-size:13px}
+  body{font-family:Arial,Helvetica,sans-serif;color:#0F1A38;padding:48px;font-size:13px}
   .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
   .brand{font-size:26px;font-weight:800;color:#3B6FF7;letter-spacing:-0.5px}
   .brand-tag{font-size:11px;color:#6B7DB3;margin-top:2px}
@@ -12386,7 +12444,7 @@ function generateCTSummaryPDF({ client, reportData, ctData }) {
     "<td style='padding:9px 12px;font-size:11px;color:#6B7280'>" + (a.note||"") + "</td></tr>"
   ).join("");
   return "<!DOCTYPE html><html><head><meta charset='UTF-8'/><title>CT Summary — " + company + "</title>" +
-  "<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px}" +
+  "<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#111827;background:white;font-size:12px}" +
   "@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}" +
   ".hdr{background:linear-gradient(135deg,#4C1D95,#7C3AED);padding:32px 48px;color:white}" +
   ".hdr h1{font-size:24px;font-weight:900;margin-bottom:4px}.hdr .sub{font-size:12px;opacity:0.8}" +
@@ -12461,7 +12519,7 @@ function generateRevReconPDF({ client, reportData }) {
 <title>Revenue Reconciliation (IFRS vs VAT) — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 .header { background:linear-gradient(135deg,#1E3A5F,#0891B2); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -12481,7 +12539,7 @@ th { background:#1E3A5F; color:white; padding:10px 12px; text-align:left; font-s
 th.num { text-align:right; }
 td { border-bottom:1px solid #F3F4F6; }
 tr.total td { background:#F0FDF4; font-weight:800; color:#065f46; border-top:2px solid #059669; padding:10px 12px; font-family:monospace; }
-tr.total td:first-child { font-family:Arial,sans-serif; }
+tr.total td:first-child { font-family:Arial,Helvetica,sans-serif; }
 .garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:20px 0; font-size:12px; color:#78350F; line-height:1.85; }
 .garima strong { color:#92400E; }
 .disclaimer { font-size:10px; color:#9CA3AF; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:6px; padding:10px 12px; margin-top:16px; line-height:1.6; }
@@ -12890,7 +12948,7 @@ function generateWorkingCapitalPDF({ client, reportData }) {
 <title>Working Capital Report — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
 .header { background:linear-gradient(135deg,#065f46,#059669,#0891B2); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -12920,7 +12978,7 @@ th { background:#064E3B; color:white; padding:8px 10px; text-align:left; font-si
 th.num { text-align:right; }
 td { border-bottom:1px solid #F3F4F6; }
 tr.total-row td { background:#ECFDF5; font-weight:800; color:#065f46; border-top:2px solid #059669; padding:9px 10px; font-family:monospace; }
-tr.total-row td:first-child { font-family:Arial,sans-serif; }
+tr.total-row td:first-child { font-family:Arial,Helvetica,sans-serif; }
 .garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:16px 0; font-size:12px; color:#78350F; line-height:1.85; }
 .insight { background:#F0F9FF; border:1px solid #BAE6FD; border-left:4px solid #0891B2; border-radius:7px; padding:11px 14px; margin:10px 0; font-size:11px; color:#0C4A6E; line-height:1.6; }
 .alert  { background:#FEF2F2; border:1px solid #FCA5A5; border-left:4px solid #EF4444; border-radius:7px; padding:11px 14px; margin:10px 0; font-size:11px; color:#991B1B; line-height:1.6; }
@@ -13492,7 +13550,7 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
 <title>Vertical Analysis Report — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
 .header { background:linear-gradient(135deg,#1a3a8f,#2563EB,#7C3AED); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -14077,7 +14135,7 @@ function generateQFZPSubstancePDF({ client, reportData }) {
 <title>QFZP Substance Tracker — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
 .header { background:linear-gradient(135deg,#1E3A5F,#7C3AED,#4C1D95); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -14759,7 +14817,7 @@ function generateRPTPDF({ client, reportData }) {
 <title>Related Party & Connected Persons Report — ${company}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pagebreak { page-break-before:always; } }
 .cover { background:linear-gradient(135deg,#4C1D95,#7C3AED,#1E3A5F); padding:56px 56px 48px; color:white; min-height:200px; }
 .cover h1 { font-size:32px; font-weight:900; margin-bottom:8px; }
@@ -14882,7 +14940,7 @@ function generateVATPDF({ client, reportData }) {
 <title>VAT Compliance Report — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 .header { background:linear-gradient(135deg,#00732F,#0891B2); padding:36px 48px; color:white; }
 .header h1 { font-size:28px; font-weight:900; margin-bottom:6px; }
@@ -14995,7 +15053,7 @@ function generateQFZPPDF({ client, reportData }) {
 <title>QFZP & Corporate Tax Report — ${company}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 .header { background:linear-gradient(135deg,#1E3A5F,#7C3AED,#4C1D95); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -15139,7 +15197,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
 <title>${packLabel} — ${month} — ${client.company}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  body { font-family:'Helvetica Neue',Arial,sans-serif; color:#111827; background:#fff; font-size:12px; }
+  body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:#fff; font-size:12px; }
   @media print {
     body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .no-break { page-break-inside:avoid; break-inside:avoid; }
@@ -15792,14 +15850,14 @@ function Portal({ client, onLogout }) {
     healthScore: 72,
     varianceSummary: "Revenue beat plan by ₹4.2L driven by new Gulf client onboarded in Feb. COGS savings of ₹2.3L from vendor renegotiation boosted GP margin to 41.0%. Watch: HR costs up 12% due to 2 new hires — keep Q2 opex tight.",
     pl: {
-      revenue:      { actual:"₹84.2L",  prev:"₹79.1L"  },
-      cogs:         { actual:"₹49.7L",  prev:"₹48.3L"  },
-      grossProfit:  { actual:"₹34.5L",  prev:"₹30.8L"  },
-      ebitda:       { actual:"₹14.7L",  prev:"₹12.1L"  },
-      pat:          { actual:"₹10.2L",  prev:"₹8.4L"   },
-      gpMargin:     { actual:"41.0%",   prev:"38.9%"   },
-      ebitdaMargin: { actual:"17.5%",   prev:"15.3%"   },
-      netMargin:    { actual:"12.1%",   prev:"10.6%"   },
+      revenue:      { actual:"₹84.2L",  prev:"₹79.1L",  ytd:"₹8.40 Cr", budget:"₹80.0L" },
+      cogs:         { actual:"₹49.7L",  prev:"₹48.3L",  ytd:"₹4.96 Cr", budget:"₹52.0L" },
+      grossProfit:  { actual:"₹34.5L",  prev:"₹30.8L",  ytd:"₹3.44 Cr", budget:"₹28.0L" },
+      ebitda:       { actual:"₹14.7L",  prev:"₹12.1L",  ytd:"₹1.42 Cr", budget:"₹12.0L" },
+      pat:          { actual:"₹10.2L",  prev:"₹8.4L",   ytd:"₹99.0L",   budget:"₹8.0L"  },
+      gpMargin:     { actual:"41.0%",   prev:"38.9%",   ytd:"41.0%",    budget:"35.0%"  },
+      ebitdaMargin: { actual:"17.5%",   prev:"15.3%",   ytd:"16.9%",    budget:"15.0%"  },
+      netMargin:    { actual:"12.1%",   prev:"10.6%",   ytd:"11.8%",    budget:"10.0%"  },
     },
     variance: [
       { metric:"Revenue",          budget:"₹80L",   actual:"₹84.2L", fav:true  },
@@ -16017,7 +16075,7 @@ function Portal({ client, onLogout }) {
         .ns-page-title { font-size:15px; font-weight:800; color:#1a1a2e; letter-spacing:-0.01em; }
         .ns-section-title { font-size:11px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.08em; }
         .ns-label { font-size:10px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; }
-        .ns-value { font-size:20px; font-weight:900; color:#1a1a2e; font-family:'DM Mono',monospace; }
+        .ns-value { font-size:20px; font-weight:900; color:#1a1a2e; font-family:'JetBrains Mono','SF Mono',monospace; }
         .ns-sub { font-size:11px; color:#9CA3AF; }
  
         /* Panel / Card */
@@ -16078,6 +16136,10 @@ function Portal({ client, onLogout }) {
         .ns-table tbody tr.subtotal td { background: #F9FAFB; font-weight: 700; color: #111827; }
         .ns-table tbody tr.total td { background: #EEF2FF; font-weight: 800; color: #1E3A8A; border-top: 2px solid #C7D2FE; }
  
+        /* Form controls do not inherit font-family by default — force it so
+           buttons, inputs and selects match the rest of the portal. */
+        button, input, select, textarea, optgroup { font-family: inherit; }
+
         /* KPI Tiles */
         .ns-kpi-tile {
           background: white;
@@ -16111,7 +16173,7 @@ function Portal({ client, onLogout }) {
         .ns-stat-row:last-child { border-bottom:none; }
         .ns-stat-row .stat-label { color:#374151; flex:1; }
         .ns-stat-row .stat-period { color:#9CA3AF; font-size:11px; flex:1; }
-        .ns-stat-row .stat-value { font-family:'DM Mono',monospace; font-weight:700; color:#111827; min-width:80px; text-align:right; }
+        .ns-stat-row .stat-value { font-family:'JetBrains Mono','SF Mono',monospace; font-weight:700; color:#111827; min-width:80px; text-align:right; }
         .ns-stat-row .stat-change { min-width:50px; text-align:right; font-size:11px; font-weight:700; }
         .ns-stat-row .stat-change.up { color:#059669; }
         .ns-stat-row .stat-change.down { color:#EF4444; }
@@ -20553,7 +20615,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                       </div>
                     );
                   })}
-                  <div style={{ marginTop:16, marginBottom:4, fontFamily:"system-ui", fontWeight:700, fontSize:12, color:"#6B7280" }}>CT Substance Checklist (shown on CT Overview)</div>
+                  <div style={{ marginTop:16, marginBottom:4, fontFamily:F, fontWeight:700, fontSize:12, color:"#6B7280" }}>CT Substance Checklist (shown on CT Overview)</div>
                   {[
                     { key:"employees",   label:"Adequate employees in free zone" },
                     { key:"opex",        label:"Adequate operating expenditure" },
@@ -20562,7 +20624,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     { key:"auditedFS",   label:"Audited financial statements" },
                   ].map(item => (
                     <div key={item.key} style={{ display:"flex", alignItems:"center", gap:12, padding:"8px 0", borderBottom:`1px solid ${C.border}` }}>
-                      <span style={{ fontFamily:"system-ui", fontSize:13, color:C.text, flex:1 }}>{item.label}</span>
+                      <span style={{ fontFamily:F, fontSize:13, color:C.text, flex:1 }}>{item.label}</span>
                       <AdminSelect C={C} F={F} label=""
                         val={String(reportData?.ct?.substanceItems?.[item.key] ?? "false")}
                         onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),substanceItems:{...(r.ct?.substanceItems||{}), [item.key]:v==="true"}}}))}
