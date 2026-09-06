@@ -3901,7 +3901,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                       </div>
                     );
                   })}
-                  <div style={{ marginTop:16, marginBottom:4, fontFamily:"system-ui", fontWeight:700, fontSize:12, color:"#6B7280" }}>CT Substance Checklist (shown on CT Overview)</div>
+                  <div style={{ marginTop:16, marginBottom:4, fontFamily:F, fontWeight:700, fontSize:12, color:"#6B7280" }}>CT Substance Checklist (shown on CT Overview)</div>
                   {[
                     { key:"employees",   label:"Adequate employees in free zone" },
                     { key:"opex",        label:"Adequate operating expenditure" },
@@ -3910,7 +3910,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     { key:"auditedFS",   label:"Audited financial statements" },
                   ].map(item => (
                     <div key={item.key} style={{ display:"flex", alignItems:"center", gap:12, padding:"8px 0", borderBottom:`1px solid ${C.border}` }}>
-                      <span style={{ fontFamily:"system-ui", fontSize:13, color:C.text, flex:1 }}>{item.label}</span>
+                      <span style={{ fontFamily:F, fontSize:13, color:C.text, flex:1 }}>{item.label}</span>
                       <AdminSelect C={C} F={F} label=""
                         val={String(reportData?.ct?.substanceItems?.[item.key] ?? "false")}
                         onChange={v=>setReportData(r=>({...r,ct:{...(r.ct||{}),substanceItems:{...(r.ct?.substanceItems||{}), [item.key]:v==="true"}}}))}

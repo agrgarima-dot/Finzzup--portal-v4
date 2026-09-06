@@ -39,7 +39,7 @@ export function generateExecSummaryPDF({ client, reportData, kpis }) {
 <meta charset="UTF-8"/>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:Arial,sans-serif; color:#111827; background:white; }
+  body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; }
   .page { max-width:800px; margin:0 auto; padding:48px; }
   .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; padding-bottom:18px; border-bottom:3px solid #3B6FF7; }
   .logo { font-size:26px; font-weight:900; color:#3B6FF7; }
@@ -211,7 +211,7 @@ export function generateCashPDF({ client, reportData, kpis }) {
 <meta charset="UTF-8"/>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:13px; }
+  body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:13px; }
   .page { max-width:800px; margin:0 auto; padding:48px; }
   .header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:32px; padding-bottom:18px; border-bottom:2px solid #3B6FF7; }
   .logo { font-size:24px; font-weight:900; color:#3B6FF7; letter-spacing:-0.02em; }
@@ -601,7 +601,7 @@ export function downloadInvoicePDF(inv, client) {
 <html><head><meta charset="utf-8"/><title>${inv.id}</title>
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Segoe UI',Arial,sans-serif;color:#0F1A38;padding:48px;font-size:13px}
+  body{font-family:Arial,Helvetica,sans-serif;color:#0F1A38;padding:48px;font-size:13px}
   .hdr{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px}
   .brand{font-size:26px;font-weight:800;color:#3B6FF7;letter-spacing:-0.5px}
   .brand-tag{font-size:11px;color:#6B7DB3;margin-top:2px}
@@ -686,7 +686,7 @@ export function generateCTSummaryPDF({ client, reportData, ctData }) {
     "<td style='padding:9px 12px;font-size:11px;color:#6B7280'>" + (a.note||"") + "</td></tr>"
   ).join("");
   return "<!DOCTYPE html><html><head><meta charset='UTF-8'/><title>CT Summary — " + company + "</title>" +
-  "<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111827;background:white;font-size:12px}" +
+  "<style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;color:#111827;background:white;font-size:12px}" +
   "@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}" +
   ".hdr{background:linear-gradient(135deg,#4C1D95,#7C3AED);padding:32px 48px;color:white}" +
   ".hdr h1{font-size:24px;font-weight:900;margin-bottom:4px}.hdr .sub{font-size:12px;opacity:0.8}" +
@@ -761,7 +761,7 @@ export function generateRevReconPDF({ client, reportData }) {
 <title>Revenue Reconciliation (IFRS vs VAT) — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 .header { background:linear-gradient(135deg,#1E3A5F,#0891B2); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -781,7 +781,7 @@ th { background:#1E3A5F; color:white; padding:10px 12px; text-align:left; font-s
 th.num { text-align:right; }
 td { border-bottom:1px solid #F3F4F6; }
 tr.total td { background:#F0FDF4; font-weight:800; color:#065f46; border-top:2px solid #059669; padding:10px 12px; font-family:monospace; }
-tr.total td:first-child { font-family:Arial,sans-serif; }
+tr.total td:first-child { font-family:Arial,Helvetica,sans-serif; }
 .garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:20px 0; font-size:12px; color:#78350F; line-height:1.85; }
 .garima strong { color:#92400E; }
 .disclaimer { font-size:10px; color:#9CA3AF; background:#F9FAFB; border:1px solid #E5E7EB; border-radius:6px; padding:10px 12px; margin-top:16px; line-height:1.6; }
@@ -946,7 +946,7 @@ export function generateWorkingCapitalPDF({ client, reportData }) {
 <title>Working Capital Report — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
 .header { background:linear-gradient(135deg,#065f46,#059669,#0891B2); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -976,7 +976,7 @@ th { background:#064E3B; color:white; padding:8px 10px; text-align:left; font-si
 th.num { text-align:right; }
 td { border-bottom:1px solid #F3F4F6; }
 tr.total-row td { background:#ECFDF5; font-weight:800; color:#065f46; border-top:2px solid #059669; padding:9px 10px; font-family:monospace; }
-tr.total-row td:first-child { font-family:Arial,sans-serif; }
+tr.total-row td:first-child { font-family:Arial,Helvetica,sans-serif; }
 .garima { background:#FFFBF0; border:1px solid #FDE68A; border-left:4px solid #F59E0B; border-radius:8px; padding:14px 16px; margin:16px 0; font-size:12px; color:#78350F; line-height:1.85; }
 .insight { background:#F0F9FF; border:1px solid #BAE6FD; border-left:4px solid #0891B2; border-radius:7px; padding:11px 14px; margin:10px 0; font-size:11px; color:#0C4A6E; line-height:1.6; }
 .alert  { background:#FEF2F2; border:1px solid #FCA5A5; border-left:4px solid #EF4444; border-radius:7px; padding:11px 14px; margin:10px 0; font-size:11px; color:#991B1B; line-height:1.6; }
@@ -1189,7 +1189,7 @@ export function generateVerticalAnalysisPDF({ client, reportData }) {
 <title>Vertical Analysis Report — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
 .header { background:linear-gradient(135deg,#1a3a8f,#2563EB,#7C3AED); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -1372,7 +1372,7 @@ export function generateQFZPSubstancePDF({ client, reportData }) {
 <title>QFZP Substance Tracker — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pb { page-break-before:always; } }
 .header { background:linear-gradient(135deg,#1E3A5F,#7C3AED,#4C1D95); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -1514,7 +1514,7 @@ export function generateRPTPDF({ client, reportData }) {
 <title>Related Party & Connected Persons Report — ${company}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } .pagebreak { page-break-before:always; } }
 .cover { background:linear-gradient(135deg,#4C1D95,#7C3AED,#1E3A5F); padding:56px 56px 48px; color:white; min-height:200px; }
 .cover h1 { font-size:32px; font-weight:900; margin-bottom:8px; }
@@ -1638,7 +1638,7 @@ export function generateVATPDF({ client, reportData }) {
 <title>VAT Compliance Report — ${company} — ${period}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 .header { background:linear-gradient(135deg,#00732F,#0891B2); padding:36px 48px; color:white; }
 .header h1 { font-size:28px; font-weight:900; margin-bottom:6px; }
@@ -1752,7 +1752,7 @@ export function generateQFZPPDF({ client, reportData }) {
 <title>QFZP & Corporate Tax Report — ${company}</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
-body { font-family:Arial,sans-serif; color:#111827; background:white; font-size:12px; }
+body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:white; font-size:12px; }
 @media print { body { -webkit-print-color-adjust:exact; print-color-adjust:exact; } }
 .header { background:linear-gradient(135deg,#1E3A5F,#7C3AED,#4C1D95); padding:36px 48px; color:white; }
 .header h1 { font-size:26px; font-weight:900; margin-bottom:6px; }
@@ -1896,7 +1896,7 @@ export function generateReportPDF({ client, kpis, garimaNote, reportData, action
 <title>${packLabel} — ${month} — ${client.company}</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
-  body { font-family:'Helvetica Neue',Arial,sans-serif; color:#111827; background:#fff; font-size:12px; }
+  body { font-family:Arial,Helvetica,sans-serif; color:#111827; background:#fff; font-size:12px; }
   @media print {
     body { -webkit-print-color-adjust:exact; print-color-adjust:exact; }
     .no-break { page-break-inside:avoid; break-inside:avoid; }
