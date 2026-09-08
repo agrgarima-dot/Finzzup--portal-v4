@@ -699,6 +699,11 @@ function getDrill(label, reportData, client) {
     l.includes("working")    ? "workingcap" :
     l.includes("debtor")     ? "debtors"    :
     l.includes("utilisation") || l.includes("utilization") || l.includes("cc ") || l.startsWith("cc") ? "cc" :
+    // Section 43B(h) — MSME payment exposure
+    l.includes("43b") || l.includes("msme") ? "msme" :
+    // Payables / creditors outstanding
+    l.includes("payable") || l.includes("creditor") ? "payables" :
+    l.includes("supplier") || l.includes("vendor") ? "supplierSpend" :
     // Receivables / debtors outstanding
     l.includes("receivable") ? "receivables" :
     // Cost of sales / COGS / direct costs

@@ -3,7 +3,9 @@ import { C, F, FM, isUAE } from './tokens';
 import { supabase } from './supabase';
 import { Card, Skeleton, EmptyState, Logo, Badge, PriBadge } from './components';
 import { normalizePack, getPackLabel } from './tokens';
-import { parseLedger, buildReceivablesDrill, buildRevenueDrill, reconcile, validateLedger } from './ledgerimport.js';
+import { parseLedger, buildReceivablesDrill, buildRevenueDrill, buildPayablesDrill, buildSupplierSpendDrill,
+         computeMsmeExposure, buildMsmeDrill, extractVendorRegister, isMsme, MSME_LIMIT_DAYS,
+         reconcile, validateLedger } from './ledgerimport.js';
 import { parseTrialBalance, applySavedMapping, extractMapping, buildStatements, validate as tbValidate, COA_GROUPS, groupLabel } from './trialbalance.js';
 
 // MarketIntel is passed as a prop from App.jsx to avoid circular imports
@@ -186,7 +188,9 @@ function DrillRowsEditor({ rows, onChange, nameLabel="Name", fixedNames=null }) 
 // and reconciles it back to the trial balance before anything is published.
 function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tbPayables }) {
   const [raw, setRaw]   = React.useState("");
-  const [kind, setKind] = React.useState("receivables");   // receivables | revenue
+  const [kind, setKind] = React.useState("receivables");   // receivables | revenue | payables | supplierSpend
+  const [msmeFlags, setMsmeFlags] = React.useState(reportData?.vendorRegister || {});
+  const isPayableSide = kind === "payables" || kind === "supplierSpend";
   const [parsed, setParsed] = React.useState(null);
   const [msg, setMsg]   = React.useState("");
   const cur = isUAE(client) ? "AED " : "₹";
@@ -200,17 +204,40 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
 
   const recon = parsed && kind === "receivables"
     ? reconcile(parsed, tbReceivables, { label:"Sundry Debtors (trial balance)" })
+    : parsed && kind === "payables"
+    ? reconcile(parsed, tbPayables, { label:"Sundry Creditors (trial balance)" })
     : null;
+
+  // Section 43B(h) only applies to India — a UAE client has no equivalent rule.
+  const showMsme = isPayableSide && !isUAE(client);
+  const vendorNames = parsed && isPayableSide
+    ? [...new Set(parsed.rows.map(r => r.customer))].sort() : [];
+  const exposure = parsed && showMsme
+    ? computeMsmeExposure(parsed, { vendorRegister: msmeFlags, currency: cur }) : null;
   const checks  = parsed ? validateLedger(parsed, recon) : [];
   const blocking = checks.some(c => c.level === "error");
 
   const apply = () => {
     if (!parsed) return;
-    const drill = kind === "receivables"
-      ? buildReceivablesDrill(parsed, { currency:cur })
-      : buildRevenueDrill(parsed, { currency:cur, period: reportData?.monthLabel || "" });
-    setReportData(r => ({ ...(r||{}), drill: { ...(r?.drill||{}), [kind]: { ...(r?.drill?.[kind]||{}), ...drill } } }));
-    setMsg(`Applied to the ${kind === "receivables" ? "receivables" : "revenue"} drill — press Save to publish.`);
+    const period = reportData?.monthLabel || "";
+    const drill =
+        kind === "receivables"   ? buildReceivablesDrill(parsed, { currency:cur })
+      : kind === "payables"      ? buildPayablesDrill(parsed, { currency:cur, vendorRegister:msmeFlags })
+      : kind === "supplierSpend" ? buildSupplierSpendDrill(parsed, { currency:cur, period })
+      :                            buildRevenueDrill(parsed, { currency:cur, period });
+    setReportData(r => {
+      const next = { ...(r||{}), drill: { ...(r?.drill||{}), [kind]: { ...(r?.drill?.[kind]||{}), ...drill } } };
+      if (isPayableSide) next.vendorRegister = { ...(r?.vendorRegister||{}), ...msmeFlags };
+      if (showMsme && exposure) {
+        // Saved so the alert engine and weekly email can read it.
+        next.msmeExposure = { atRisk:exposure.atRisk, taxImpact:exposure.taxImpact,
+          approaching:exposure.approaching, approachingCount:exposure.approachingCount,
+          breachedCount:exposure.breachedCount, msmeVendors:exposure.msmeVendors };
+        next.drill = { ...next.drill, msme: buildMsmeDrill(exposure) };
+      }
+      return next;
+    });
+    setMsg("Applied — press Save to publish.");
   };
 
   const chk = { ok:{c:C.green,i:"ti-circle-check"}, warn:{c:C.amber,i:"ti-alert-triangle"}, error:{c:C.red,i:"ti-alert-circle"} };
@@ -222,11 +249,12 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
         Invoice detail — what clients drill into
       </div>
       <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:12, lineHeight:1.6 }}>
-        A trial balance gives totals only. Paste a <b>bill-wise outstanding report</b> for the receivables drill,
-        or a <b>sales register</b> for revenue by customer. Columns are detected automatically.
+        A trial balance gives totals only. Paste a <b>bill-wise outstanding report</b> for the receivables or payables
+        drill, or a <b>sales / purchase register</b> for revenue and spend by party. Columns are detected automatically.
       </p>
       <div style={{ display:"flex", gap:8, marginBottom:10 }}>
-        {[["receivables","Receivables ageing"],["revenue","Sales register"]].map(([k,l]) => (
+        {[["receivables","Receivables ageing"],["revenue","Sales register"],
+          ["payables","Payables ageing"],["supplierSpend","Purchase register"]].map(([k,l]) => (
           <button key={k} onClick={()=>{setKind(k); setParsed(null); setMsg("");}}
             style={{ padding:"6px 14px", borderRadius:16, cursor:"pointer",
               border:`1.5px solid ${kind===k?C.amber:C.border}`,
@@ -266,14 +294,53 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
             </div> );})}
         </div>
 
+        {/* Section 43B(h): which suppliers are MSME-registered */}
+        {showMsme && vendorNames.length > 0 && (
+          <div style={{ marginTop:14, padding:"12px 14px", borderRadius:9,
+            border:`1px solid ${exposure?.atRisk>0 ? C.red+"40" : C.border}`,
+            background: exposure?.atRisk>0 ? `${C.red}06` : C.bg }}>
+            <div style={{ fontFamily:F, fontSize:12.5, fontWeight:800, color:C.text, marginBottom:3 }}>
+              Section 43B(h) — MSME suppliers
+            </div>
+            <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:10, lineHeight:1.55 }}>
+              Tick every supplier registered under MSME. Payments to them not settled within {MSME_LIMIT_DAYS} days
+              are disallowed as an expense for the year. Saved against this client, so you only do this once.
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:6, maxHeight:180, overflowY:"auto" }}>
+              {vendorNames.map(v => {
+                const k = v.toLowerCase().trim();
+                return (
+                  <label key={k} style={{ display:"flex", alignItems:"center", gap:7, fontFamily:F, fontSize:11.5,
+                    color:C.text, cursor:"pointer", padding:"3px 0" }}>
+                    <input type="checkbox" checked={msmeFlags[k]===true}
+                      onChange={e=>setMsmeFlags(f=>({ ...f, [k]: e.target.checked }))}
+                      style={{ width:14, height:14, cursor:"pointer" }}/>
+                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {exposure && (exposure.atRisk > 0 || exposure.approaching > 0) && (
+              <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${C.border}`,
+                fontFamily:F, fontSize:12, color: exposure.atRisk>0 ? C.red : C.amber, fontWeight:700, lineHeight:1.6 }}>
+                {exposure.atRisk > 0
+                  ? `${cur}${money(exposure.atRisk)} is past ${MSME_LIMIT_DAYS} days across ${exposure.breachedCount} bill${exposure.breachedCount>1?"s":""} — roughly ${cur}${money(exposure.taxImpact)} of extra tax if unpaid at year end.`
+                  : `${cur}${money(exposure.approaching)} approaching the ${MSME_LIMIT_DAYS}-day limit (${exposure.approachingCount} bill${exposure.approachingCount>1?"s":""}).`}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* preview of what the client will see */}
         <div style={{ marginTop:12 }}>
           <div style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>
-            Preview — {kind === "receivables" ? "receivables by age" : "revenue by customer"}
+            Preview — {({receivables:"receivables by age", payables:"payables by age",
+                         revenue:"revenue by customer", supplierSpend:"spend by supplier"})[kind]}
           </div>
-          {(kind === "receivables"
-              ? buildReceivablesDrill(parsed,{currency:cur})
-              : buildRevenueDrill(parsed,{currency:cur})
+          {(kind === "receivables"   ? buildReceivablesDrill(parsed,{currency:cur})
+           : kind === "payables"      ? buildPayablesDrill(parsed,{currency:cur, vendorRegister:msmeFlags})
+           : kind === "supplierSpend" ? buildSupplierSpendDrill(parsed,{currency:cur})
+           :                            buildRevenueDrill(parsed,{currency:cur})
             ).dims[0].rows.map((r,i)=>(
             <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
               <span style={{ fontFamily:F, fontSize:12, color:C.text }}>{r.name} <span style={{ color:C.dim }}>· {r.sub}</span></span>
@@ -287,7 +354,8 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
             style={{ padding:"9px 20px", borderRadius:11, border:"none",
               background: blocking ? C.border : C.gradDiag, color:"#fff",
               fontFamily:F, fontWeight:700, fontSize:12.5, cursor: blocking?"not-allowed":"pointer" }}>
-            Apply to {kind === "receivables" ? "receivables" : "revenue"} drill
+            Apply to {({receivables:"receivables", payables:"payables",
+                        revenue:"revenue", supplierSpend:"supplier spend"})[kind]} drill
           </button>
         </div>
       </>)}
