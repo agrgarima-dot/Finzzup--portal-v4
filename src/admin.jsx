@@ -3,6 +3,7 @@ import { C, F, FM, isUAE } from './tokens';
 import { supabase } from './supabase';
 import { Card, Skeleton, EmptyState, Logo, Badge, PriBadge } from './components';
 import { normalizePack, getPackLabel } from './tokens';
+import { parseLedger, buildReceivablesDrill, buildRevenueDrill, reconcile, validateLedger } from './ledgerimport.js';
 import { parseTrialBalance, applySavedMapping, extractMapping, buildStatements, validate as tbValidate, COA_GROUPS, groupLabel } from './trialbalance.js';
 
 // MarketIntel is passed as a prop from App.jsx to avoid circular imports
@@ -178,6 +179,122 @@ function DrillRowsEditor({ rows, onChange, nameLabel="Name", fixedNames=null }) 
 }
 
 
+
+// ─── LEDGER IMPORT CARD ───────────────────────────────────────────────────────
+// A trial balance stops at the ledger total. This turns a bill-wise outstanding
+// report or a sales register into the invoice-level detail clients drill into —
+// and reconciles it back to the trial balance before anything is published.
+function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tbPayables }) {
+  const [raw, setRaw]   = React.useState("");
+  const [kind, setKind] = React.useState("receivables");   // receivables | revenue
+  const [parsed, setParsed] = React.useState(null);
+  const [msg, setMsg]   = React.useState("");
+  const cur = isUAE(client) ? "AED " : "₹";
+
+  const run = (text) => {
+    const p = parseLedger(text);
+    if (!p.rows.length) { setMsg("No invoices found — the first row must be a header naming the customer and amount columns."); setParsed(null); return; }
+    setParsed(p);
+    setMsg(`${p.rows.length} invoices read${p.skipped?` · ${p.skipped} rows skipped`:""}`);
+  };
+
+  const recon = parsed && kind === "receivables"
+    ? reconcile(parsed, tbReceivables, { label:"Sundry Debtors (trial balance)" })
+    : null;
+  const checks  = parsed ? validateLedger(parsed, recon) : [];
+  const blocking = checks.some(c => c.level === "error");
+
+  const apply = () => {
+    if (!parsed) return;
+    const drill = kind === "receivables"
+      ? buildReceivablesDrill(parsed, { currency:cur })
+      : buildRevenueDrill(parsed, { currency:cur, period: reportData?.monthLabel || "" });
+    setReportData(r => ({ ...(r||{}), drill: { ...(r?.drill||{}), [kind]: { ...(r?.drill?.[kind]||{}), ...drill } } }));
+    setMsg(`Applied to the ${kind === "receivables" ? "receivables" : "revenue"} drill — press Save to publish.`);
+  };
+
+  const chk = { ok:{c:C.green,i:"ti-circle-check"}, warn:{c:C.amber,i:"ti-alert-triangle"}, error:{c:C.red,i:"ti-alert-circle"} };
+  const money = n => (Math.round(n)||0).toLocaleString(isUAE(client)?"en-AE":"en-IN");
+
+  return (
+    <Card style={{ marginBottom:18 }}>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+        Invoice detail — what clients drill into
+      </div>
+      <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:12, lineHeight:1.6 }}>
+        A trial balance gives totals only. Paste a <b>bill-wise outstanding report</b> for the receivables drill,
+        or a <b>sales register</b> for revenue by customer. Columns are detected automatically.
+      </p>
+      <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+        {[["receivables","Receivables ageing"],["revenue","Sales register"]].map(([k,l]) => (
+          <button key={k} onClick={()=>{setKind(k); setParsed(null); setMsg("");}}
+            style={{ padding:"6px 14px", borderRadius:16, cursor:"pointer",
+              border:`1.5px solid ${kind===k?C.amber:C.border}`,
+              background: kind===k?`${C.amber}12`:C.bg,
+              fontFamily:F, fontSize:12, fontWeight:700, color:kind===k?C.amber:C.muted }}>{l}</button>
+        ))}
+      </div>
+      <textarea value={raw} onChange={e=>setRaw(e.target.value)} rows={6}
+        placeholder={"Party Name,Bill No,Bill Date,Due Date,Amount,Balance\nAl Madina Trading,EXP-2214,22/07/2026,05/09/2026,4200000,4200000"}
+        style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:9, fontSize:12,
+          border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+      <div style={{ display:"flex", gap:10, marginTop:10, alignItems:"center", flexWrap:"wrap" }}>
+        <button onClick={()=>run(raw)} disabled={!raw.trim()}
+          style={{ padding:"8px 18px", borderRadius:10, border:"none", background:C.gradDiag, color:"#fff",
+            fontFamily:F, fontWeight:700, fontSize:12.5, cursor:raw.trim()?"pointer":"not-allowed", opacity:raw.trim()?1:.5 }}>
+          Read file
+        </button>
+        <label style={{ padding:"8px 14px", borderRadius:10, border:`1.5px solid ${C.border}`, background:C.bg,
+          fontFamily:F, fontWeight:700, fontSize:12.5, color:C.muted, cursor:"pointer" }}>
+          Upload CSV
+          <input type="file" accept=".csv,.txt,.tsv" style={{ display:"none" }}
+            onChange={e=>{ const f=e.target.files[0]; if(!f) return;
+              const rd=new FileReader(); rd.onload=()=>{ setRaw(String(rd.result)); run(String(rd.result)); }; rd.readAsText(f); e.target.value=""; }}/>
+        </label>
+        {msg && <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>{msg}</span>}
+      </div>
+
+      {parsed && (<>
+        <div style={{ marginTop:14, padding:"10px 12px", background:C.bg2, borderRadius:9, border:`1px solid ${C.border}` }}>
+          {checks.map((c,i)=>{ const k=chk[c.level]; return (
+            <div key={i} style={{ display:"flex", gap:9, alignItems:"flex-start", padding:"5px 0" }}>
+              <i className={"ti "+k.i} style={{ fontSize:14, color:k.c, marginTop:1 }}/>
+              <div>
+                <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text }}>{c.label}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{c.detail}</div>
+              </div>
+            </div> );})}
+        </div>
+
+        {/* preview of what the client will see */}
+        <div style={{ marginTop:12 }}>
+          <div style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>
+            Preview — {kind === "receivables" ? "receivables by age" : "revenue by customer"}
+          </div>
+          {(kind === "receivables"
+              ? buildReceivablesDrill(parsed,{currency:cur})
+              : buildRevenueDrill(parsed,{currency:cur})
+            ).dims[0].rows.map((r,i)=>(
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
+              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>{r.name} <span style={{ color:C.dim }}>· {r.sub}</span></span>
+              <span style={{ fontFamily:FM, fontSize:12, fontWeight:700 }}>{cur}{money(r.value)}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display:"flex", justifyContent:"flex-end", marginTop:14 }}>
+          <button onClick={apply} disabled={blocking}
+            style={{ padding:"9px 20px", borderRadius:11, border:"none",
+              background: blocking ? C.border : C.gradDiag, color:"#fff",
+              fontFamily:F, fontWeight:700, fontSize:12.5, cursor: blocking?"not-allowed":"pointer" }}>
+            Apply to {kind === "receivables" ? "receivables" : "revenue"} drill
+          </button>
+        </div>
+      </>)}
+    </Card>
+  );
+}
+
 // ─── TRIAL BALANCE TAB ────────────────────────────────────────────────────────
 // Paste or upload a raw trial balance; accounts are mapped to statement lines,
 // the mapping is saved per client so next month is a review not a rebuild, and
@@ -267,6 +384,12 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
         {msg && <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>{msg}</span>}
       </div>
     </Card>
+
+    {/* ── Step 2: ageing / invoice register → drill detail ── */}
+    <LedgerImportCard
+      client={client} reportData={reportData} setReportData={setReportData}
+      tbReceivables={reportData?.workingCapital?.receivables}
+      tbPayables={reportData?.workingCapital?.payables}/>
 
     {view && (<>
       {/* Checks first — nothing publishes until these pass */}
