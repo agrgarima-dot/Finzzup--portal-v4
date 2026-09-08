@@ -155,6 +155,22 @@ export function computeAlerts({ kpis = [], reportData = {}, uae = false, expirin
       action: "Confirm the working papers are ready.", page: "compliance" });
   }
 
+  // ── 5b. Section 43B(h): MSME payments past 45 days ──────────────────────
+  // Unlike most alerts this one has a deadline attached to the financial year —
+  // pay before year end and the expense stays allowable.
+  const msme = reportData.msmeExposure;
+  if (msme && msme.atRisk > 0) {
+    out.push({ id:"msme-43bh", severity: "critical",
+      title: `${fmt(msme.atRisk)} owed to MSME suppliers past 45 days`,
+      detail: `Under Section 43B(h) this is disallowed as an expense unless paid before year end — adding roughly ${fmt(msme.taxImpact)} to your tax bill.`,
+      action: "Pay these suppliers before 31 March to keep the deduction.", page:"myreport" });
+  } else if (msme && msme.approaching > 0) {
+    out.push({ id:"msme-approaching", severity: "warning",
+      title: `${fmt(msme.approaching)} owed to MSME suppliers approaching the 45-day limit`,
+      detail: `${msme.approachingCount} bill${msme.approachingCount===1?"":"s"} within 15 days of the deadline.`,
+      action: "Schedule these payments now to stay inside the limit.", page:"myreport" });
+  }
+
   // ── 6. Expiring documents ───────────────────────────────────────────────
   (expiringDocs || []).forEach((d, i) => {
     const days = daysUntil(d.expiry_date);

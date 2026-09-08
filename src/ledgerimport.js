@@ -228,3 +228,110 @@ export function validateLedger(parsed, reconciliation) {
   if (reconciliation) out.push(reconciliation);
   return out;
 }
+
+// ─── PAYABLES ─────────────────────────────────────────────────────────────────
+// The mirror of receivables, plus the thing that makes it worth building:
+// Section 43B(h). Since FY 2023-24, a payment to an MSME-registered supplier
+// not settled within 45 days is disallowed as an expense in that year — the
+// taxable income rises and the tax bill follows. It is discovered at assessment,
+// months too late. Flagged live, it is still fixable.
+
+export const MSME_LIMIT_DAYS = 45;
+
+/**
+ * Payables by age — same shape as the receivables drill.
+ */
+export function buildPayablesDrill(parsed, { currency = "₹", label = "Payables", note = "", vendorRegister = {} } = {}) {
+  const open = parsed.rows.filter(r => r.status !== "paid");
+  const rows = AGE_BUCKETS.map((name, i) => {
+    const inBucket = open.filter(r => r.bucket === i);
+    return {
+      name,
+      value: inBucket.reduce((s,r)=>s+r.outstanding,0),
+      sub: inBucket.length ? `${inBucket.length} bill${inBucket.length>1?"s":""}` : "None",
+      betterWhen: "lower",
+      txns: inBucket
+        .sort((a,b)=>(b.days||0)-(a.days||0))
+        .slice(0,12)
+        .map(r => {
+          const msme = isMsme(r.customer, vendorRegister);
+          const breach = msme && r.days > MSME_LIMIT_DAYS;
+          return {
+            id: r.invoice, date: fmtDate(r.date),
+            desc: r.customer + (msme ? " · MSME" : "") + (breach ? ` · ${r.days - MSME_LIMIT_DAYS}d past 45-day limit` : ""),
+            amount: currency + Math.round(r.outstanding).toLocaleString(),
+            status: breach ? "overdue" : r.status,
+          };
+        }),
+    };
+  });
+  return { label, total:"", period:"outstanding bills", note, betterWhen:"lower",
+           dims:[{ key:"aging", title:"By Age", rows }] };
+}
+
+/** Spend by supplier — the cost-side equivalent of revenue by customer. */
+export function buildSupplierSpendDrill(parsed, { currency = "₹", label = "Supplier Spend", period = "", note = "" } = {}) {
+  const d = buildRevenueDrill(parsed, { currency, label, period, note });
+  d.betterWhen = "lower";
+  d.dims[0].title = "By Supplier";
+  d.dims[0].key = "supplier";
+  return d;
+}
+
+const vkey = n => String(n||"").toLowerCase().trim();
+/** A vendor is MSME when the saved register says so. */
+export function isMsme(vendor, register = {}) { return register[vkey(vendor)] === true; }
+
+/** Build the register to persist: { "vendor name": true|false }. */
+export function extractVendorRegister(rows, flags = {}) {
+  const reg = {};
+  rows.forEach(r => { const k = vkey(r.customer); if (k) reg[k] = flags[k] === true; });
+  return reg;
+}
+
+/**
+ * Section 43B(h) exposure.
+ * @param taxRate  effective rate applied to the disallowance (India: 0.25 / 0.30)
+ */
+export function computeMsmeExposure(parsed, { vendorRegister = {}, taxRate = 0.25, currency = "₹" } = {}) {
+  const open = parsed.rows.filter(r => r.status !== "paid");
+  const msmeRows = open.filter(r => isMsme(r.customer, vendorRegister));
+  const breached = msmeRows.filter(r => r.days != null && r.days > MSME_LIMIT_DAYS);
+  const approaching = msmeRows.filter(r => r.days != null && r.days > MSME_LIMIT_DAYS - 15 && r.days <= MSME_LIMIT_DAYS);
+
+  const atRisk = breached.reduce((s,r)=>s+r.outstanding,0);
+  const soon   = approaching.reduce((s,r)=>s+r.outstanding,0);
+  const byVendor = {};
+  breached.forEach(r => {
+    (byVendor[r.customer] ||= { name:r.customer, value:0, days:0, count:0 });
+    byVendor[r.customer].value += r.outstanding;
+    byVendor[r.customer].days = Math.max(byVendor[r.customer].days, r.days);
+    byVendor[r.customer].count++;
+  });
+
+  return {
+    msmeVendors: new Set(msmeRows.map(r => r.customer)).size,
+    atRisk, taxImpact: atRisk * taxRate,
+    approaching: soon, approachingCount: approaching.length,
+    breachedCount: breached.length,
+    vendors: Object.values(byVendor).sort((a,b)=>b.value-a.value),
+    currency,
+  };
+}
+
+/** Turn 43B(h) exposure into a drill panel. */
+export function buildMsmeDrill(exposure, { label = "MSME Payments — Section 43B(h)" } = {}) {
+  const c = exposure.currency;
+  return {
+    label, total: c + Math.round(exposure.atRisk).toLocaleString(),
+    period: `past ${MSME_LIMIT_DAYS} days · ${exposure.breachedCount} bill${exposure.breachedCount===1?"":"s"}`,
+    betterWhen: "lower",
+    note: exposure.atRisk > 0
+      ? `Paying these before year end keeps the expense allowable. Left unpaid, roughly ${c}${Math.round(exposure.taxImpact).toLocaleString()} is added to your tax bill.`
+      : "No MSME supplier is past the 45-day limit.",
+    dims: [{ key:"vendor", title:"By Supplier", rows: exposure.vendors.map(v => ({
+      name: v.name, value: v.value, betterWhen:"lower",
+      sub: `${v.count} bill${v.count>1?"s":""} · oldest ${v.days} days`, txns: [],
+    })) }],
+  };
+}
