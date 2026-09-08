@@ -3,6 +3,8 @@ import { C, F, FM, isUAE } from './tokens';
 import { supabase } from './supabase';
 import { Card, Skeleton, EmptyState, Logo, Badge, PriBadge } from './components';
 import { normalizePack, getPackLabel } from './tokens';
+import { parseLedger, buildReceivablesDrill, buildRevenueDrill, reconcile, validateLedger } from './ledgerimport.js';
+import { parseTrialBalance, applySavedMapping, extractMapping, buildStatements, validate as tbValidate, COA_GROUPS, groupLabel } from './trialbalance.js';
 
 // MarketIntel is passed as a prop from App.jsx to avoid circular imports
 // (MarketIntel is defined in App.jsx scope)
@@ -174,6 +176,326 @@ function DrillRowsEditor({ rows, onChange, nameLabel="Name", fixedNames=null }) 
       )}
     </div>
   );
+}
+
+
+
+// ─── LEDGER IMPORT CARD ───────────────────────────────────────────────────────
+// A trial balance stops at the ledger total. This turns a bill-wise outstanding
+// report or a sales register into the invoice-level detail clients drill into —
+// and reconciles it back to the trial balance before anything is published.
+function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tbPayables }) {
+  const [raw, setRaw]   = React.useState("");
+  const [kind, setKind] = React.useState("receivables");   // receivables | revenue
+  const [parsed, setParsed] = React.useState(null);
+  const [msg, setMsg]   = React.useState("");
+  const cur = isUAE(client) ? "AED " : "₹";
+
+  const run = (text) => {
+    const p = parseLedger(text);
+    if (!p.rows.length) { setMsg("No invoices found — the first row must be a header naming the customer and amount columns."); setParsed(null); return; }
+    setParsed(p);
+    setMsg(`${p.rows.length} invoices read${p.skipped?` · ${p.skipped} rows skipped`:""}`);
+  };
+
+  const recon = parsed && kind === "receivables"
+    ? reconcile(parsed, tbReceivables, { label:"Sundry Debtors (trial balance)" })
+    : null;
+  const checks  = parsed ? validateLedger(parsed, recon) : [];
+  const blocking = checks.some(c => c.level === "error");
+
+  const apply = () => {
+    if (!parsed) return;
+    const drill = kind === "receivables"
+      ? buildReceivablesDrill(parsed, { currency:cur })
+      : buildRevenueDrill(parsed, { currency:cur, period: reportData?.monthLabel || "" });
+    setReportData(r => ({ ...(r||{}), drill: { ...(r?.drill||{}), [kind]: { ...(r?.drill?.[kind]||{}), ...drill } } }));
+    setMsg(`Applied to the ${kind === "receivables" ? "receivables" : "revenue"} drill — press Save to publish.`);
+  };
+
+  const chk = { ok:{c:C.green,i:"ti-circle-check"}, warn:{c:C.amber,i:"ti-alert-triangle"}, error:{c:C.red,i:"ti-alert-circle"} };
+  const money = n => (Math.round(n)||0).toLocaleString(isUAE(client)?"en-AE":"en-IN");
+
+  return (
+    <Card style={{ marginBottom:18 }}>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+        Invoice detail — what clients drill into
+      </div>
+      <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:12, lineHeight:1.6 }}>
+        A trial balance gives totals only. Paste a <b>bill-wise outstanding report</b> for the receivables drill,
+        or a <b>sales register</b> for revenue by customer. Columns are detected automatically.
+      </p>
+      <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+        {[["receivables","Receivables ageing"],["revenue","Sales register"]].map(([k,l]) => (
+          <button key={k} onClick={()=>{setKind(k); setParsed(null); setMsg("");}}
+            style={{ padding:"6px 14px", borderRadius:16, cursor:"pointer",
+              border:`1.5px solid ${kind===k?C.amber:C.border}`,
+              background: kind===k?`${C.amber}12`:C.bg,
+              fontFamily:F, fontSize:12, fontWeight:700, color:kind===k?C.amber:C.muted }}>{l}</button>
+        ))}
+      </div>
+      <textarea value={raw} onChange={e=>setRaw(e.target.value)} rows={6}
+        placeholder={"Party Name,Bill No,Bill Date,Due Date,Amount,Balance\nAl Madina Trading,EXP-2214,22/07/2026,05/09/2026,4200000,4200000"}
+        style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:9, fontSize:12,
+          border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+      <div style={{ display:"flex", gap:10, marginTop:10, alignItems:"center", flexWrap:"wrap" }}>
+        <button onClick={()=>run(raw)} disabled={!raw.trim()}
+          style={{ padding:"8px 18px", borderRadius:10, border:"none", background:C.gradDiag, color:"#fff",
+            fontFamily:F, fontWeight:700, fontSize:12.5, cursor:raw.trim()?"pointer":"not-allowed", opacity:raw.trim()?1:.5 }}>
+          Read file
+        </button>
+        <label style={{ padding:"8px 14px", borderRadius:10, border:`1.5px solid ${C.border}`, background:C.bg,
+          fontFamily:F, fontWeight:700, fontSize:12.5, color:C.muted, cursor:"pointer" }}>
+          Upload CSV
+          <input type="file" accept=".csv,.txt,.tsv" style={{ display:"none" }}
+            onChange={e=>{ const f=e.target.files[0]; if(!f) return;
+              const rd=new FileReader(); rd.onload=()=>{ setRaw(String(rd.result)); run(String(rd.result)); }; rd.readAsText(f); e.target.value=""; }}/>
+        </label>
+        {msg && <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>{msg}</span>}
+      </div>
+
+      {parsed && (<>
+        <div style={{ marginTop:14, padding:"10px 12px", background:C.bg2, borderRadius:9, border:`1px solid ${C.border}` }}>
+          {checks.map((c,i)=>{ const k=chk[c.level]; return (
+            <div key={i} style={{ display:"flex", gap:9, alignItems:"flex-start", padding:"5px 0" }}>
+              <i className={"ti "+k.i} style={{ fontSize:14, color:k.c, marginTop:1 }}/>
+              <div>
+                <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text }}>{c.label}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{c.detail}</div>
+              </div>
+            </div> );})}
+        </div>
+
+        {/* preview of what the client will see */}
+        <div style={{ marginTop:12 }}>
+          <div style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>
+            Preview — {kind === "receivables" ? "receivables by age" : "revenue by customer"}
+          </div>
+          {(kind === "receivables"
+              ? buildReceivablesDrill(parsed,{currency:cur})
+              : buildRevenueDrill(parsed,{currency:cur})
+            ).dims[0].rows.map((r,i)=>(
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
+              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>{r.name} <span style={{ color:C.dim }}>· {r.sub}</span></span>
+              <span style={{ fontFamily:FM, fontSize:12, fontWeight:700 }}>{cur}{money(r.value)}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display:"flex", justifyContent:"flex-end", marginTop:14 }}>
+          <button onClick={apply} disabled={blocking}
+            style={{ padding:"9px 20px", borderRadius:11, border:"none",
+              background: blocking ? C.border : C.gradDiag, color:"#fff",
+              fontFamily:F, fontWeight:700, fontSize:12.5, cursor: blocking?"not-allowed":"pointer" }}>
+            Apply to {kind === "receivables" ? "receivables" : "revenue"} drill
+          </button>
+        </div>
+      </>)}
+    </Card>
+  );
+}
+
+// ─── TRIAL BALANCE TAB ────────────────────────────────────────────────────────
+// Paste or upload a raw trial balance; accounts are mapped to statement lines,
+// the mapping is saved per client so next month is a review not a rebuild, and
+// nothing can be published until the validation checks pass.
+function TrialBalanceTab({ client, reportData, setReportData, saveReportData, loading, saved }) {
+  const [raw, setRaw]   = React.useState("");
+  const [rows, setRows] = React.useState(null);
+  const [parsed, setParsed] = React.useState(null);
+  const [msg, setMsg]   = React.useState("");
+
+  const savedMap = reportData?.coaMap || {};
+  const money = n => (Math.round(n)||0).toLocaleString(isUAE(client) ? "en-AE" : "en-IN");
+
+  const run = (text) => {
+    const p = parseTrialBalance(text);
+    if (!p.rows.length) { setMsg("No ledger accounts found — check the paste includes account names and amounts."); setParsed(null); setRows(null); return; }
+    const mapped = applySavedMapping(p.rows, savedMap);
+    setParsed({ ...p, rows: mapped }); setRows(mapped);
+    setMsg(`${mapped.length} accounts read · ${mapped.filter(r=>r.fromSaved).length} mapped from your saved chart`);
+  };
+
+  const setGroup = (i, g) => setRows(rs => rs.map((r,j) => j===i ? { ...r, group:g, confident:true } : r));
+
+  const view = rows ? { ...parsed, rows } : null;
+  const st   = view ? buildStatements(view.rows) : null;
+  const checks = view ? tbValidate(view, st) : [];
+  const blocking = checks.some(c => c.level === "error");
+
+  const publish = () => {
+    if (!st) return;
+    const cur = v => (isUAE(client) ? "AED " : "₹") + money(v);
+    setReportData(r => ({
+      ...(r||{}),
+      coaMap: extractMapping(view.rows),          // remembered for next month
+      pl: {
+        ...(r?.pl||{}),
+        revenue:      { ...(r?.pl?.revenue||{}),      actual: cur(st.pl.revenue) },
+        cogs:         { ...(r?.pl?.cogs||{}),         actual: cur(st.pl.cogs) },
+        grossProfit:  { ...(r?.pl?.grossProfit||{}),  actual: cur(st.pl.grossProfit) },
+        ebitda:       { ...(r?.pl?.ebitda||{}),       actual: cur(st.pl.ebitda) },
+        pat:          { ...(r?.pl?.pat||{}),          actual: cur(st.pl.pat) },
+        gpMargin:     { ...(r?.pl?.gpMargin||{}),     actual: st.pl.gpMargin || "—" },
+        ebitdaMargin: { ...(r?.pl?.ebitdaMargin||{}), actual: st.pl.ebitdaMargin || "—" },
+        netMargin:    { ...(r?.pl?.netMargin||{}),    actual: st.pl.netMargin || "—" },
+      },
+      workingCapital: {
+        ...(r?.workingCapital||{}),
+        receivables: st.bs.receivables, inventory: st.bs.inventory,
+        payables: st.bs.payables, cashBank: st.bs.cash,
+      },
+      tbBuiltAt: new Date().toISOString(),
+    }));
+    setMsg("Written to this client's report data — press Save to publish.");
+  };
+
+  const chk = { ok:{c:C.green,i:"ti-circle-check"}, warn:{c:C.amber,i:"ti-alert-triangle"}, error:{c:C.red,i:"ti-alert-circle"} };
+
+  return (<>
+    <Card style={{ marginBottom:18 }}>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+        Trial Balance → Statements — {client.name}
+      </div>
+      <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+        Paste the trial balance from Tally, Zoho or Excel. Columns can be Account/Debit/Credit or Account/Balance.
+        Accounts are mapped automatically, your corrections are remembered, and next month only new accounts need attention.
+        {Object.keys(savedMap).length > 0 &&
+          <span style={{ color:C.green, fontWeight:700 }}> {Object.keys(savedMap).length} accounts already mapped for this client.</span>}
+      </p>
+      <textarea value={raw} onChange={e=>setRaw(e.target.value)}
+        placeholder={"Particulars,Debit,Credit\nSales Account,,22500000\nPurchase Account,13200000,\nSundry Debtors,9800000,"}
+        rows={7}
+        style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:9, fontSize:12,
+          border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+      <div style={{ display:"flex", gap:10, marginTop:12, alignItems:"center", flexWrap:"wrap" }}>
+        <button onClick={()=>run(raw)} disabled={!raw.trim()}
+          style={{ padding:"9px 20px", borderRadius:10, border:"none", background:C.gradDiag, color:"#fff",
+            fontFamily:F, fontWeight:700, fontSize:13, cursor:raw.trim()?"pointer":"not-allowed", opacity:raw.trim()?1:.5 }}>
+          Read trial balance
+        </button>
+        <label style={{ padding:"9px 16px", borderRadius:10, border:`1.5px solid ${C.border}`, background:C.bg,
+          fontFamily:F, fontWeight:700, fontSize:13, color:C.muted, cursor:"pointer" }}>
+          Upload CSV
+          <input type="file" accept=".csv,.txt,.tsv" style={{ display:"none" }}
+            onChange={e=>{ const f=e.target.files[0]; if(!f) return;
+              const rd=new FileReader(); rd.onload=()=>{ setRaw(String(rd.result)); run(String(rd.result)); }; rd.readAsText(f); e.target.value=""; }}/>
+        </label>
+        {msg && <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>{msg}</span>}
+      </div>
+    </Card>
+
+    {/* ── Step 2: ageing / invoice register → drill detail ── */}
+    <LedgerImportCard
+      client={client} reportData={reportData} setReportData={setReportData}
+      tbReceivables={reportData?.workingCapital?.receivables}
+      tbPayables={reportData?.workingCapital?.payables}/>
+
+    {view && (<>
+      {/* Checks first — nothing publishes until these pass */}
+      <Card style={{ marginBottom:18 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Validation</div>
+        {checks.map((c,i)=>{ const k=chk[c.level];
+          return (
+            <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start", padding:"8px 0",
+              borderBottom:i<checks.length-1?`1px solid ${C.border}`:"none" }}>
+              <i className={"ti "+k.i} style={{ fontSize:15, color:k.c, marginTop:1 }}/>
+              <div>
+                <div style={{ fontFamily:F, fontSize:12.5, fontWeight:700, color:C.text }}>{c.label}</div>
+                <div style={{ fontFamily:F, fontSize:11.5, color:C.muted, marginTop:1 }}>{c.detail}</div>
+              </div>
+            </div>
+          );})}
+      </Card>
+
+      {/* Mapping — unmapped and unsure float to the top */}
+      <Card style={{ marginBottom:18 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+          Account mapping ({view.rows.length})
+        </div>
+        <p style={{ fontFamily:F, fontSize:11.5, color:C.muted, marginBottom:12 }}>
+          Anything unmapped or uncertain is listed first. Corrections are saved against this client.
+        </p>
+        <div style={{ maxHeight:420, overflowY:"auto" }}>
+          {view.rows
+            .map((r,i)=>({ r, i, rank: r.group==="unmapped"?0 : !r.confident?1 : 2 }))
+            .sort((a,b)=>a.rank-b.rank)
+            .map(({r,i}) => (
+              <div key={i} style={{ display:"grid", gridTemplateColumns:"2.2fr 1fr 1.4fr 70px", gap:8,
+                alignItems:"center", padding:"7px 0", borderBottom:`1px solid ${C.border}` }}>
+                <div style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:r.group==="unmapped"?700:500 }}>{r.name}</div>
+                <div style={{ fontFamily:FM, fontSize:11.5, textAlign:"right",
+                  color:r.balance>=0?C.text:C.muted }}>
+                  {r.balance>=0 ? money(r.balance) : "("+money(-r.balance)+")"}
+                </div>
+                <select value={r.group} onChange={e=>setGroup(i, e.target.value)}
+                  style={{ padding:"5px 8px", borderRadius:7, fontSize:11.5, fontFamily:F,
+                    border:`1.5px solid ${r.group==="unmapped"?C.red:C.border}`,
+                    background:C.bg, color:C.text, cursor:"pointer" }}>
+                  {COA_GROUPS.map(g=><option key={g.key} value={g.key}>{g.label}</option>)}
+                </select>
+                <span style={{ fontFamily:F, fontSize:9.5, fontWeight:800, textAlign:"center",
+                  color: r.fromSaved?C.green : r.confident?C.muted : C.amber }}>
+                  {r.fromSaved ? "SAVED" : r.confident ? "" : "CHECK"}
+                </span>
+              </div>
+            ))}
+        </div>
+      </Card>
+
+      {/* Resulting statements */}
+      <Card style={{ marginBottom:18 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Statements produced</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
+          <div>
+            <div style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>Profit &amp; Loss</div>
+            {[["Revenue",st.pl.revenue],["Cost of Sales",st.pl.cogs],["Gross Profit",st.pl.grossProfit,1],
+              ["Operating Expenses",st.pl.opex],["EBITDA",st.pl.ebitda,1],["Depreciation",st.pl.depreciation],
+              ["Finance Cost",st.pl.finance],["Tax",st.pl.tax],["Net Profit",st.pl.pat,2]].map(([l,v,b],i)=>(
+              <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0",
+                borderBottom:`1px solid ${C.border}`, background:b===2?C.bg2:"transparent" }}>
+                <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:b?700:400 }}>{l}</span>
+                <span style={{ fontFamily:FM, fontSize:12, fontWeight:b?800:600, color:C.text }}>{money(v)}</span>
+              </div>
+            ))}
+            <div style={{ display:"flex", gap:12, marginTop:8, fontFamily:F, fontSize:11, color:C.muted }}>
+              <span>GP {st.pl.gpMargin||"—"}</span><span>EBITDA {st.pl.ebitdaMargin||"—"}</span><span>Net {st.pl.netMargin||"—"}</span>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>Balance Sheet</div>
+            {[["Fixed Assets",st.bs.fixedAssets],["Inventory",st.bs.inventory],["Receivables",st.bs.receivables],
+              ["Cash &amp; Bank",st.bs.cash],["Other Assets",st.bs.otherAssets],["Total Assets",st.bs.assets,1],
+              ["Payables",st.bs.payables],["Borrowings",st.bs.borrowings],["Other Liabilities",st.bs.otherLiab],
+              ["Equity &amp; Reserves",st.bs.equity],["Liabilities + Equity",st.bs.liabilities+st.bs.equity,1]].map(([l,v,b],i)=>(
+              <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0",
+                borderBottom:`1px solid ${C.border}` }}>
+                <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:b?700:400 }} dangerouslySetInnerHTML={{__html:l}}/>
+                <span style={{ fontFamily:FM, fontSize:12, fontWeight:b?800:600, color:C.text }}>{money(v)}</span>
+              </div>
+            ))}
+            <div style={{ marginTop:8, fontFamily:F, fontSize:11.5, fontWeight:700,
+              color: Math.abs(st.bs.tieOut)<1 ? C.green : C.red }}>
+              {Math.abs(st.bs.tieOut)<1 ? "Balance sheet ties to zero" : `Out by ${money(Math.abs(st.bs.tieOut))}`}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <div style={{ display:"flex", gap:12, justifyContent:"flex-end", alignItems:"center", flexWrap:"wrap" }}>
+        {blocking && <span style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:700 }}>
+          Resolve the errors above before publishing
+        </span>}
+        <button onClick={publish} disabled={blocking}
+          style={{ padding:"10px 22px", borderRadius:12, border:"none",
+            background: blocking ? C.border : C.gradDiag, color:"#fff",
+            fontFamily:F, fontWeight:700, fontSize:13, cursor: blocking?"not-allowed":"pointer" }}>
+          Apply to report data
+        </button>
+        <AdminSaveBtn onClick={saveReportData} loading={loading} saved={saved} label="Save &amp; Publish" F={F}/>
+      </div>
+    </>)}
+  </>);
 }
 
 // ─── CSV IMPORT COMPONENT ─────────────────────────────────────────────────────
@@ -1272,6 +1594,7 @@ export function AdminPanel({ admin, onLogout, MarketIntelComponent }) {
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
     // ── India Client Data ──
     { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"Shared"     },
+    { id:"trialbalance", icon:"ti-table-import", label:"Trial Balance", group:"Shared"   },
     { id:"kpis",       icon:"ti-chart-bar", label:"KPIs",           group:"India"      },
     { id:"actions",    icon:"ti-checkbox", label:"Action Items",   group:"India"      },
     { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",    group:"India"      },
@@ -2218,6 +2541,23 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           )}
  
           {/* ── CSV IMPORT ── */}
+          {/* ── TRIAL BALANCE → STATEMENTS ── */}
+          {tab === "trialbalance" && (
+            <div style={{ maxWidth:1000 }}>
+              {!selected ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+                </Card>
+              ) : <TrialBalanceTab
+                    client={selected}
+                    reportData={reportData}
+                    setReportData={setReportData}
+                    saveReportData={saveReportData}
+                    loading={loading} saved={saved}/>}
+            </div>
+          )}
+
           {tab === "import" && (
             <CsvImport
               selected={selected}

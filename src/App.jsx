@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
-import { computeAlerts } from "./alerts.js";
+import { computeAlerts, parseAmount } from "./alerts.js";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 // SimpleBarChart — used by legacy sparkline panels
 const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
@@ -468,17 +468,17 @@ const DEMO_DRILL_UAE = {
 const _inDays = n => { const d = new Date(); d.setDate(d.getDate() + n); return d; };
 const DEMO_COMPLIANCE = [
   { item:"TDS Return — Q1 (Form 24Q/26Q)",  detail:"Quarterly TDS return — was due 31 Jul", due:_inDays(-4),  owner:"CA"          },
-  { item:"TDS Payment — Jul deductions",     detail:"Challan ITNS-281",                     due:_inDays(3),   owner:"Accounts"    },
+  { item:"TDS Payment — Jul deductions",     detail:"Challan ITNS-281",                     due:_inDays(3),   owner:"Accounts",    amount:"₹2.4L"  },
   { item:"GSTR-1 — Jul 2026",                detail:"Outward supplies return",              due:_inDays(7),   owner:"GST Consultant" },
-  { item:"GSTR-3B — Jul 2026",               detail:"Summary return + tax payment",         due:_inDays(16),  owner:"GST Consultant" },
-  { item:"Advance Tax — 2nd Instalment",     detail:"45% of estimated FY27 liability",      due:_inDays(42),  owner:"Finance"     },
+  { item:"GSTR-3B — Jul 2026",               detail:"Summary return + tax payment",         due:_inDays(16),  owner:"GST Consultant", amount:"₹6.8L" },
+  { item:"Advance Tax — 2nd Instalment",     detail:"45% of estimated FY27 liability",      due:_inDays(42),  owner:"Finance",     amount:"₹18.0L" },
   { item:"DIR-3 KYC — All Directors",        detail:"MCA annual director KYC",              due:_inDays(57),  owner:"CS"          },
 ];
 const DEMO_COMPLIANCE_UAE = [
   { item:"ESR Notification — FY25",          detail:"Economic Substance Regulation filing", due:_inDays(-8),  owner:"Tax Agent" },
-  { item:"VAT Return — Q2 2026",             detail:"Net payable AED 92.5K · FTA portal",   due:_inDays(24),  owner:"Tax Agent" },
-  { item:"WPS — August Salary File",         detail:"Wages Protection System submission",   due:_inDays(26),  owner:"HR"        },
-  { item:"Corporate Tax Return — FY25",      detail:"First CT filing · 9-month deadline",   due:_inDays(57),  owner:"Tax Agent" },
+  { item:"VAT Return — Q2 2026",             detail:"Net payable AED 92.5K · FTA portal",   due:_inDays(24),  owner:"Tax Agent", amount:"AED 92.5K" },
+  { item:"WPS — August Salary File",         detail:"Wages Protection System submission",   due:_inDays(26),  owner:"HR",        amount:"AED 58K" },
+  { item:"Corporate Tax Return — FY25",      detail:"First CT filing · 9-month deadline",   due:_inDays(57),  owner:"Tax Agent", amount:"AED 112K" },
 ];
 function getOutstandingCompliances(reportData, client, expiringDocs = []) {
   let items = null;
@@ -507,6 +507,7 @@ function getOutstandingCompliances(reportData, client, expiringDocs = []) {
         item:   c.item || c.title || c.name || "—",
         detail: c.detail || c.sub || "",
         owner:  c.owner || "",
+        amount: c.amount || null,
         due, days,
         state:  days == null ? "upcoming" : days < 0 ? "overdue" : days <= 7 ? "due-soon" : "upcoming",
       };
@@ -698,6 +699,8 @@ function getDrill(label, reportData, client) {
     l.includes("working")    ? "workingcap" :
     l.includes("debtor")     ? "debtors"    :
     l.includes("utilisation") || l.includes("utilization") || l.includes("cc ") || l.startsWith("cc") ? "cc" :
+    // Receivables / debtors outstanding
+    l.includes("receivable") ? "receivables" :
     // Cost of sales / COGS / direct costs
     l.includes("cost") || l.includes("cogs") ? "cost" :
     // "Cash flow" must be checked before plain "cash" (balance)
@@ -1805,6 +1808,7 @@ PACK_CONFIG.premium  = PACK_CONFIG.corporate;
 // Removed: Revenue/Expenses chart, Cash Flow chart, KPI cards (all moved to Dashboard).
 // This page is the executive landing — no detailed tables or repeated metrics.
 function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[], isDemo=false, liveKpis=null, liveReportData=null }) {
+  const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
   const displayKpis  = kpis || KPIs;
   const ovPack       = normalizePack(client?.client_pack || client?.clientPack);
   const uaeClient    = isUAE(client);
@@ -1979,21 +1983,25 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         const snaps = [
           // P&L
           { section:"P&L",         icon:"ti-trending-up",    color:C.blue,
+            drill:"revenue",
             metric: pl.revenue?.actual || "—",
             sub: `GP margin: ${pl.gpMargin?.actual || "—"}`,
             page:"myreport" },
           // Cash Flow
           { section:"Cash Flow",    icon:"ti-building-bank",  color:C.green,
+            drill:"cash flow",
             metric: latestCashVal,
             sub: latestMonth?.month ? `as of ${latestMonth.month}` : "Latest",
             page:"cashflow" },
           // A/R
           { section:"Receivables",  icon:"ti-receipt",        color:C.purple,
+            drill:"receivables",
             metric: arTotal2 > 0 ? (uaeClient?"AED ":"₹")+arTotal2.toLocaleString() : "—",
             sub: ar90plus2 > 0 ? `⚠ ${Math.round(ar90plus2/arTotal2*100)}% overdue 90d+` : "All current",
             page:"myreport" },
           // Working Capital
           { section:"Working Cap.", icon:"ti-clock",          color: dso2>45?C.amber:C.green,
+            drill:"working capital",
             metric: dso2 > 0 ? `DSO ${dso2}d` : (wc.currentRatio ? `${wc.currentRatio}x CR` : "—"),
             sub: dso2 > 0 ? (dso2<=45?"On track":"Chase receivables") : "Current ratio",
             page:"myreport" },
@@ -2018,7 +2026,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           <div style={{ display:"grid", gap:10 }} className="ov-snap-grid">
             <style>{`.ov-snap-grid{grid-template-columns:repeat(6,1fr)!important}@media(max-width:900px){.ov-snap-grid{grid-template-columns:repeat(3,1fr)!important}}@media(max-width:500px){.ov-snap-grid{grid-template-columns:repeat(2,1fr)!important}}`}</style>
             {snaps.map((s,i) => (
-              <div key={i} onClick={() => setPage && setPage(s.page)}
+              <div key={i} onClick={() => {
+                  // Prefer opening the breakup in place; fall back to navigation.
+                  const d = s.drill && drillFor(s.drill);
+                  if (d) openDrill(d); else if (setPage) setPage(s.page);
+                }}
                 style={{ padding:"14px 14px 12px", borderRadius:12, background:"#fff",
                   border:`1px solid ${s.color}22`, cursor:"pointer",
                   boxShadow:"0 1px 3px rgba(0,0,0,0.04)", transition:"box-shadow 0.15s, transform 0.1s" }}
@@ -2031,6 +2043,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                   </div>
                   <span style={{ fontFamily:F, fontSize:9, fontWeight:800, color:C.muted,
                     textTransform:"uppercase", letterSpacing:"0.08em" }}>{s.section}</span>
+                  {s.drill && drillFor(s.drill) && <span style={{ marginLeft:"auto", color:C.accent, fontWeight:800, fontSize:11 }}>›</span>}
                 </div>
                 <div style={{ fontFamily:FM, fontSize:14, fontWeight:900, color:s.color, marginBottom:3, lineHeight:1.2 }}>{s.metric}</div>
                 <div style={{ fontFamily:F, fontSize:10, color:C.muted, lineHeight:1.3 }}>{s.sub}</div>
@@ -2482,7 +2495,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div className="ns-panel" style={{ margin:0 }}>
           <div className="ns-panel-header">
             <h3>Top Clients by A/R</h3>
-            <span className="ns-badge blue">{top5Clients.length} clients</span>
+            {drillFor("receivables")
+              ? <button onClick={() => openDrill("receivables")}
+                  style={{ background:"none", border:"none", cursor:"pointer", fontFamily:F,
+                    fontSize:11, fontWeight:700, color:C.accent, padding:0 }}>Breakup ›</button>
+              : <span className="ns-badge blue">{top5Clients.length} clients</span>}
           </div>
           {top5Clients.length === 0
             ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
@@ -2513,6 +2530,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div className="ns-panel" style={{ margin:0 }}>
           <div className="ns-panel-header">
             <h3>Top Vendors by Spend</h3>
+            {drillFor("cost") && (
+              <button onClick={() => openDrill("cost")}
+                style={{ background:"none", border:"none", cursor:"pointer", fontFamily:F,
+                  fontSize:11, fontWeight:700, color:C.accent, padding:0 }}>Breakup ›</button>
+            )}
             <span className="ns-badge" style={{ background:"#FFF7ED", color:C.amber, border:"1px solid #FED7AA" }}>{top5Vendors.length} vendors</span>
           </div>
           {top5Vendors.length === 0
@@ -2604,6 +2626,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
       </div>
 
+      <DrillPortal/>
     </div>
   );
 }
@@ -2841,6 +2864,44 @@ function DrillDownPanel({ drill, onClose, uae }) {
       </div>
     </div>
   );
+}
+
+// ─── CASH FORECAST ────────────────────────────────────────────────────────────
+// Projects cash at 30 / 60 / 90 days from data the portal already holds:
+//   opening cash + expected collections − burn − known tax & statutory outflows
+// Every horizon keeps its workings so the client can see how it was derived —
+// a forecast nobody can interrogate is not worth showing.
+function buildCashForecast({ cashNow, monthlyBurn, arBuckets = [], compliance = [] }) {
+  const open = parseAmount(cashNow);
+  const burn = Math.abs(parseAmount(monthlyBurn)) || 0;
+  if (!isFinite(open)) return null;
+
+  // Receivables are assumed to land in the month matching their age bucket;
+  // anything past 90 days is treated as doubtful and excluded entirely.
+  const b = n => Number(arBuckets[n]?.val) || 0;
+  const collections = { 30: b(0), 60: b(1), 90: b(2) };
+
+  // Compliance items carry an optional amount — only those count as outflows.
+  const outflowIn = (from, to) => compliance.reduce((sum, c) => {
+    const amt = parseAmount(c.amount);
+    if (!isFinite(amt) || !c.days == null) return sum;
+    return (c.days > from && c.days <= to) ? sum + amt : sum;
+  }, 0);
+
+  let running = open;
+  const horizons = [30, 60, 90].map((d, i) => {
+    const prev = i === 0 ? 0 : [30, 60][i - 1];
+    const inflow  = collections[d] || 0;
+    const outflow = outflowIn(prev, d);
+    running = running + inflow - burn - outflow;
+    return {
+      days: d, value: running,
+      opening: i === 0 ? open : null,
+      inflow, burn, outflow,
+      monthsCover: burn > 0 ? running / burn : null,
+    };
+  });
+  return { open, burn, horizons };
 }
 
 // ─── useDrill ─────────────────────────────────────────────────────────────────
@@ -3107,6 +3168,93 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                   {alertsExpanded ? "Show fewer" : `Show ${alerts.length - 3} more`}
                 </button>
               )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* ── Cash Forecast: where the money will be, not where it was ── */}
+      {(() => {
+        const burnKpi = displayKpis.find(k => /burn/i.test(k.label||""));
+        // Packs without a burn tile (MSME shows Debtor Days / CC instead) still have
+        // a monthly cash outflow: total costs = revenue − net profit, on a cash basis
+        // that pairs correctly with collections-based inflows.
+        const derivedOutflow = (() => {
+          const rev = parseAmount(pl.revenue?.actual), pat = parseAmount(pl.pat?.actual);
+          return (isFinite(rev) && isFinite(pat) && rev > pat) ? rev - pat : null;
+        })();
+        const cashKpi = displayKpis.find(k => /cash balance|cash position/i.test(k.label||""));
+        const fc = buildCashForecast({
+          cashNow: cashKpi?.value || cashVal,
+          monthlyBurn: burnKpi?.value ?? derivedOutflow,
+          arBuckets,
+          compliance: outstandingComps,
+        });
+        if (!fc || !fc.burn) return null;
+        const fmtC = v => uae ? fmtAED2(v) : fmtINR(v);
+        const tone = h => {
+          if (h.value < 0) return { c:C.red,   bg:"#FEF2F2", note:"Shortfall" };
+          if (h.monthsCover != null && h.monthsCover < 1) return { c:C.red,   bg:"#FEF2F2", note:"Under 1 month cover" };
+          if (h.monthsCover != null && h.monthsCover < 2) return { c:C.amber, bg:"#FFFBEB", note:"Tight" };
+          return { c:C.green, bg:"#ECFDF5", note:"Comfortable" };
+        };
+        const worst = fc.horizons.find(h => h.value < 0 || (h.monthsCover != null && h.monthsCover < 1));
+        return (
+          <div className="ns-panel" style={{ margin:0 }}>
+            <div className="ns-panel-header">
+              <h3>Cash Forecast — Next 90 Days</h3>
+              {worst
+                ? <span className="ns-badge red">Tight by day {worst.days}</span>
+                : <span className="ns-badge green">Covered through 90 days</span>}
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", borderBottom:`1px solid ${C.border}` }} className="fc-row">
+              <style>{`@media(max-width:760px){.fc-row{grid-template-columns:1fr 1fr!important}}`}</style>
+              <div style={{ padding:"14px 16px", borderRight:`1px solid ${C.border}` }}>
+                <div className="ns-label">Cash today</div>
+                <div style={{ fontFamily:FM, fontSize:19, fontWeight:800, color:C.text, marginTop:4 }}>{fmtC(fc.open)}</div>
+                <div style={{ fontFamily:F, fontSize:10.5, color:C.muted, marginTop:3 }}>
+                  Burn {fmtC(fc.burn)}/mo
+                </div>
+              </div>
+              {fc.horizons.map((h,i) => {
+                const t = tone(h);
+                return (
+                  <div key={i} style={{ padding:"14px 16px", borderRight:i<2?`1px solid ${C.border}`:"none", background:t.bg }}>
+                    <div className="ns-label">In {h.days} days</div>
+                    <div style={{ fontFamily:FM, fontSize:19, fontWeight:800, color:t.c, marginTop:4 }}>{fmtC(h.value)}</div>
+                    <div style={{ fontFamily:F, fontSize:10.5, color:t.c, fontWeight:700, marginTop:3 }}>
+                      {t.note}{h.monthsCover != null && h.value > 0 ? ` · ${h.monthsCover.toFixed(1)} mo cover` : ""}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            {/* Workings — a forecast you cannot interrogate is not worth showing */}
+            <div style={{ padding:"11px 16px" }}>
+              <div className="ns-label" style={{ marginBottom:7 }}>How this is calculated</div>
+              <table className="ns-table" style={{ marginBottom:0 }}>
+                <thead><tr>
+                  <th>Movement</th>
+                  {fc.horizons.map(h => <th key={h.days} className="right">By day {h.days}</th>)}
+                </tr></thead>
+                <tbody>
+                  <tr className="striped"><td>Expected collections</td>
+                    {fc.horizons.map(h => <td key={h.days} className="right mono" style={{ color:h.inflow?C.green:C.dim }}>{h.inflow?`+${fmtC(h.inflow)}`:"—"}</td>)}
+                  </tr>
+                  <tr className="striped"><td>Operating burn</td>
+                    {fc.horizons.map(h => <td key={h.days} className="right mono" style={{ color:C.red }}>−{fmtC(h.burn)}</td>)}
+                  </tr>
+                  <tr className="striped"><td>Tax &amp; statutory due</td>
+                    {fc.horizons.map(h => <td key={h.days} className="right mono" style={{ color:h.outflow?C.red:C.dim }}>{h.outflow?`−${fmtC(h.outflow)}`:"—"}</td>)}
+                  </tr>
+                  <tr className="total"><td className="bold">Closing cash</td>
+                    {fc.horizons.map(h => <td key={h.days} className="right mono bold">{fmtC(h.value)}</td>)}
+                  </tr>
+                </tbody>
+              </table>
+              <div style={{ fontFamily:F, fontSize:10.5, color:C.dim, marginTop:8, lineHeight:1.5 }}>
+                Collections assume each receivable is paid in the month matching its age. Anything already past 90 days is treated as doubtful and excluded.
+              </div>
             </div>
           </div>
         );
@@ -15974,6 +16122,14 @@ function Portal({ client, onLogout }) {
   // UAE-specific demo report data
   const DEMO_REPORT_DATA_UAE = {
     ...DEMO_REPORT_DATA,
+    // Receivables must be UAE-scale — spreading the India data gave this client
+    // AED 6.2M of debtors against AED 1.85M of annual revenue.
+    workingCapital: {
+      ...(DEMO_REPORT_DATA.workingCapital || {}),
+      ar0_30: 95000, ar31_60: 34000, ar61_90: 48000, ar90plus: 0,
+      debtorDays: 35,
+    },
+    ar0to30: 95000, ar31to60: 34000, ar61to90: 48000, ar90plus: 0,
     monthLabel: "Q1 2026 (Jan–Mar)",
     score: 79,
     packNote: "Q1 2026 was a strong quarter — revenue at AED 1.85M, up 32% YoY, and QFZP compliance score at 82/100. VAT return for Q1 is due 28 April (AED 92.5K payable — ensure this is ring-fenced now). Key priorities: elect Small Business Relief in your CT return, finalise the DMCC audited accounts by 30 April, and keep mainland sales below 5% of revenue to protect QFZP status.",
