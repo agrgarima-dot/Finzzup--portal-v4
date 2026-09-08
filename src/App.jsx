@@ -699,6 +699,8 @@ function getDrill(label, reportData, client) {
     l.includes("working")    ? "workingcap" :
     l.includes("debtor")     ? "debtors"    :
     l.includes("utilisation") || l.includes("utilization") || l.includes("cc ") || l.startsWith("cc") ? "cc" :
+    // Receivables / debtors outstanding
+    l.includes("receivable") ? "receivables" :
     // Cost of sales / COGS / direct costs
     l.includes("cost") || l.includes("cogs") ? "cost" :
     // "Cash flow" must be checked before plain "cash" (balance)
@@ -1806,6 +1808,7 @@ PACK_CONFIG.premium  = PACK_CONFIG.corporate;
 // Removed: Revenue/Expenses chart, Cash Flow chart, KPI cards (all moved to Dashboard).
 // This page is the executive landing — no detailed tables or repeated metrics.
 function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[], isDemo=false, liveKpis=null, liveReportData=null }) {
+  const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
   const displayKpis  = kpis || KPIs;
   const ovPack       = normalizePack(client?.client_pack || client?.clientPack);
   const uaeClient    = isUAE(client);
@@ -1980,21 +1983,25 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         const snaps = [
           // P&L
           { section:"P&L",         icon:"ti-trending-up",    color:C.blue,
+            drill:"revenue",
             metric: pl.revenue?.actual || "—",
             sub: `GP margin: ${pl.gpMargin?.actual || "—"}`,
             page:"myreport" },
           // Cash Flow
           { section:"Cash Flow",    icon:"ti-building-bank",  color:C.green,
+            drill:"cash flow",
             metric: latestCashVal,
             sub: latestMonth?.month ? `as of ${latestMonth.month}` : "Latest",
             page:"cashflow" },
           // A/R
           { section:"Receivables",  icon:"ti-receipt",        color:C.purple,
+            drill:"receivables",
             metric: arTotal2 > 0 ? (uaeClient?"AED ":"₹")+arTotal2.toLocaleString() : "—",
             sub: ar90plus2 > 0 ? `⚠ ${Math.round(ar90plus2/arTotal2*100)}% overdue 90d+` : "All current",
             page:"myreport" },
           // Working Capital
           { section:"Working Cap.", icon:"ti-clock",          color: dso2>45?C.amber:C.green,
+            drill:"working capital",
             metric: dso2 > 0 ? `DSO ${dso2}d` : (wc.currentRatio ? `${wc.currentRatio}x CR` : "—"),
             sub: dso2 > 0 ? (dso2<=45?"On track":"Chase receivables") : "Current ratio",
             page:"myreport" },
@@ -2019,7 +2026,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           <div style={{ display:"grid", gap:10 }} className="ov-snap-grid">
             <style>{`.ov-snap-grid{grid-template-columns:repeat(6,1fr)!important}@media(max-width:900px){.ov-snap-grid{grid-template-columns:repeat(3,1fr)!important}}@media(max-width:500px){.ov-snap-grid{grid-template-columns:repeat(2,1fr)!important}}`}</style>
             {snaps.map((s,i) => (
-              <div key={i} onClick={() => setPage && setPage(s.page)}
+              <div key={i} onClick={() => {
+                  // Prefer opening the breakup in place; fall back to navigation.
+                  const d = s.drill && drillFor(s.drill);
+                  if (d) openDrill(d); else if (setPage) setPage(s.page);
+                }}
                 style={{ padding:"14px 14px 12px", borderRadius:12, background:"#fff",
                   border:`1px solid ${s.color}22`, cursor:"pointer",
                   boxShadow:"0 1px 3px rgba(0,0,0,0.04)", transition:"box-shadow 0.15s, transform 0.1s" }}
@@ -2032,6 +2043,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                   </div>
                   <span style={{ fontFamily:F, fontSize:9, fontWeight:800, color:C.muted,
                     textTransform:"uppercase", letterSpacing:"0.08em" }}>{s.section}</span>
+                  {s.drill && drillFor(s.drill) && <span style={{ marginLeft:"auto", color:C.accent, fontWeight:800, fontSize:11 }}>›</span>}
                 </div>
                 <div style={{ fontFamily:FM, fontSize:14, fontWeight:900, color:s.color, marginBottom:3, lineHeight:1.2 }}>{s.metric}</div>
                 <div style={{ fontFamily:F, fontSize:10, color:C.muted, lineHeight:1.3 }}>{s.sub}</div>
@@ -2483,7 +2495,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div className="ns-panel" style={{ margin:0 }}>
           <div className="ns-panel-header">
             <h3>Top Clients by A/R</h3>
-            <span className="ns-badge blue">{top5Clients.length} clients</span>
+            {drillFor("receivables")
+              ? <button onClick={() => openDrill("receivables")}
+                  style={{ background:"none", border:"none", cursor:"pointer", fontFamily:F,
+                    fontSize:11, fontWeight:700, color:C.accent, padding:0 }}>Breakup ›</button>
+              : <span className="ns-badge blue">{top5Clients.length} clients</span>}
           </div>
           {top5Clients.length === 0
             ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
@@ -2514,6 +2530,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         <div className="ns-panel" style={{ margin:0 }}>
           <div className="ns-panel-header">
             <h3>Top Vendors by Spend</h3>
+            {drillFor("cost") && (
+              <button onClick={() => openDrill("cost")}
+                style={{ background:"none", border:"none", cursor:"pointer", fontFamily:F,
+                  fontSize:11, fontWeight:700, color:C.accent, padding:0 }}>Breakup ›</button>
+            )}
             <span className="ns-badge" style={{ background:"#FFF7ED", color:C.amber, border:"1px solid #FED7AA" }}>{top5Vendors.length} vendors</span>
           </div>
           {top5Vendors.length === 0
@@ -2605,6 +2626,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         </div>
       </div>
 
+      <DrillPortal/>
     </div>
   );
 }
