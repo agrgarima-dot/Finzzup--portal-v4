@@ -592,6 +592,21 @@ const DEMO_DRILL_MSME = {
       ]},
     ],
   },
+  msme: {
+    label:"MSME Payments — Section 43B(h)", total:"₹27.70L",
+    period:"past 45 days · 2 bills", betterWhen:"lower",
+    note:"Paying these before 31 March keeps the expense allowable. Left unpaid, roughly ₹6.93L is added to your tax bill — the disallowance is automatic and your return cannot claim it.",
+    dims:[
+      { key:"vendor", title:"By Supplier", rows:[
+        { name:"Jindal Steel & Alloys", value:1820000, betterWhen:"lower", sub:"1 bill · oldest 65 days · MSME registered", txns:[
+          { id:"PO-7741", date:"20 Jun 2026", desc:"CR coil — 42 tonnes · 65 days outstanding", amount:"₹18.2L", status:"overdue" },
+        ]},
+        { name:"Metro Forging Works",   value:950000,  betterWhen:"lower", sub:"1 bill · oldest 114 days · MSME registered", txns:[
+          { id:"PO-7702", date:"02 May 2026", desc:"Forgings — May schedule · 114 days outstanding", amount:"₹9.5L", status:"overdue" },
+        ]},
+      ]},
+    ],
+  },
   workingcap: {
     label:"Working Capital", total:"₹1.90 Cr net", period:"as on date",
     note:"₹1.42 Cr sits in inventory — 58 days of stock against schedules that run 30 days out. Steel alone holds ₹38L. Releasing half of it funds the festive build-up without touching the CC.",
@@ -16040,6 +16055,13 @@ function Portal({ client, onLogout }) {
     prevKpis: {
       revenue:"₹79.1L", gross_margin:"38.9%", cash_balance:"₹2.6 Cr",
       burn_rate:"₹52L/mo", runway:"5.0 mo", arr:"₹5.4 Cr"
+    },
+    // Section 43B(h) exposure — India only; the alert engine suppresses this
+    // for UAE clients, who have no equivalent rule.
+    msmeExposure: {
+      atRisk: 2770000, taxImpact: 692500,
+      approaching: 480000, approachingCount: 1,
+      breachedCount: 2, msmeVendors: 2,
     },
     metrics: [
       { label:"ARR",           value:"₹6.2 Cr",  flag:false, note:"Growing at 15% QoQ"         },
