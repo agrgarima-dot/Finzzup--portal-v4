@@ -158,7 +158,9 @@ export function computeAlerts({ kpis = [], reportData = {}, uae = false, expirin
   // ── 5b. Section 43B(h): MSME payments past 45 days ──────────────────────
   // Unlike most alerts this one has a deadline attached to the financial year —
   // pay before year end and the expense stays allowable.
-  const msme = reportData.msmeExposure;
+  // Section 43B(h) is Indian law — never raise it for a UAE client, whatever
+  // the stored data says.
+  const msme = uae ? null : reportData.msmeExposure;
   if (msme && msme.atRisk > 0) {
     out.push({ id:"msme-43bh", severity: "critical",
       title: `${fmt(msme.atRisk)} owed to MSME suppliers past 45 days`,
