@@ -118,7 +118,7 @@ const INVITE_CODES = {
     type: "both", clientPack: "startup", email: "demo-startup@finzzup.com",
   },
   "DEMO-MSME": {
-    name: "Suresh Gupta", company: "Gupta Exports Pvt Ltd (MSME)",
+    name: "Suresh Bhatia", company: "Bhatia Precision Components Pvt Ltd (MSME)",
     type: "both", clientPack: "msme", email: "demo-msme@finzzup.com",
   },
   "DEMO-CORP": {
@@ -515,77 +515,77 @@ function getOutstandingCompliances(reportData, client, expiringDocs = []) {
     .sort((a, b) => (a.days ?? 9999) - (b.days ?? 9999));
 }
 
-// MSME variant — trading/exports flavour (Gupta Exports demo)
+// MSME variant — auto-component manufacturing, Faridabad belt (Bhatia Precision demo)
 const DEMO_DRILL_MSME = {
   revenue: {
     label:"Revenue", total:"₹8.40 Cr", period:"FY26 YTD",
-    note:"Al Madina alone is 28% of revenue and pays at 51 days against 45-day terms. One delayed shipment payment = a CC drawdown. Push for an LC on the next order.",
+    note:"JBM Auto alone is 28% of revenue and pays at 96 days against 60-day terms. One delayed OEM cycle and you are drawing on the CC. Raise this at the next rate revision — or ask for bill discounting on their acceptance.",
     dims:[
       { key:"buyer", title:"By Buyer", rows:[
-        { name:"Al Madina Trading LLC",       value:23500000, prev:19800000, sub:"Export · Dubai", txns:[
-          { id:"EXP-2214", date:"22 Jul 2026", desc:"Shipment #88 — home textiles", amount:"₹42.0L", status:"unpaid"  },
-          { id:"EXP-2201", date:"18 Jun 2026", desc:"Shipment #84 — home textiles", amount:"₹38.5L", status:"paid"    },
+        { name:"JBM Auto Ltd",                value:23500000, prev:19800000, sub:"Tier-1 · Faridabad", txns:[
+          { id:"INV-2214", date:"22 Jul 2026", desc:"Sheet metal assemblies — Sch. 88", amount:"₹42.0L", status:"unpaid"  },
+          { id:"INV-2201", date:"18 Jun 2026", desc:"Sheet metal assemblies — Sch. 84", amount:"₹38.5L", status:"paid"    },
         ]},
-        { name:"HomeStyle Retail Inc",        value:18500000, prev:21000000, sub:"Export · USA", txns:[
-          { id:"EXP-2210", date:"10 Jul 2026", desc:"PO #4471 — bed linen",         amount:"₹31.2L", status:"paid"    },
+        { name:"Hero MotoCorp Ltd",           value:18500000, prev:21000000, sub:"OEM direct · Dharuhera", txns:[
+          { id:"INV-2210", date:"10 Jul 2026", desc:"PO #4471 — machined brackets",  amount:"₹31.2L", status:"paid"    },
         ]},
-        { name:"Reliance Retail",             value:14200000, prev:12400000, sub:"Domestic · Modern trade", txns:[
-          { id:"INV-3315", date:"28 Jul 2026", desc:"Jul supply — 14 stores",       amount:"₹19.0L", status:"unpaid"  },
+        { name:"Escorts Kubota Ltd",          value:14200000, prev:12400000, sub:"OEM direct · Faridabad", txns:[
+          { id:"INV-3315", date:"28 Jul 2026", desc:"Jul schedule — tractor parts",  amount:"₹19.0L", status:"unpaid"  },
         ]},
-        { name:"DMart Distribution",          value:9800000,  prev:9100000,  sub:"Domestic · Modern trade", txns:[
-          { id:"INV-3308", date:"15 Jul 2026", desc:"Jul supply — west zone",       amount:"₹12.4L", status:"paid"    },
+        { name:"Sona BLW Precision",          value:9800000,  prev:9100000,  sub:"Tier-1 · Gurugram", txns:[
+          { id:"INV-3308", date:"15 Jul 2026", desc:"Jul schedule — gear blanks",    amount:"₹12.4L", status:"paid"    },
         ]},
-        { name:"Jaipur Handloom Distributors",value:6500000,  prev:8900000,  sub:"Domestic · Distributor", txns:[
-          { id:"INV-3288", date:"02 May 2026", desc:"Summer stock order",            amount:"₹4.0L",  status:"overdue" },
+        { name:"Kapoor Auto Spares",          value:6500000,  prev:8900000,  sub:"Aftermarket · Delhi", txns:[
+          { id:"INV-3288", date:"02 May 2026", desc:"Aftermarket order — Q1",        amount:"₹4.0L",  status:"overdue" },
         ]},
-        { name:"Others (14 buyers)",          value:11500000, prev:10600000, sub:"Avg ₹82K/buyer", txns:[] },
+        { name:"Others (14 buyers)",          value:11500000, prev:10600000, sub:"Aftermarket &amp; job work", txns:[] },
       ]},
-      { key:"market", title:"By Market", rows:[
-        { name:"Exports — GCC",            value:29000000, sub:"35% of revenue", txns:[] },
-        { name:"Exports — US & EU",        value:22000000, sub:"26% of revenue", txns:[] },
-        { name:"Domestic — Modern Trade",  value:24000000, sub:"29% of revenue", txns:[] },
-        { name:"Domestic — Distributors",  value:9000000,  sub:"11% of revenue", txns:[] },
+      { key:"segment", title:"By Segment", rows:[
+        { name:"Tier-1 supply",   value:33000000, sub:"39% of revenue · 90-day terms", txns:[] },
+        { name:"OEM direct",      value:32500000, sub:"39% of revenue · 60-day terms", txns:[] },
+        { name:"Aftermarket",     value:12000000, sub:"14% of revenue · 30-day terms", txns:[] },
+        { name:"Job work",        value:6500000,  sub:"8% of revenue", txns:[] },
       ]},
     ],
   },
   cost: {
     label:"Cost of Sales", total:"₹5.88 Cr", period:"FY26 YTD", prevPeriod:"FY25 same period", betterWhen:"lower",
-    note:"Yarn is 43% of cost and rose 14% against 6% volume growth — you are buying spot instead of on contract. A 3-month forward book at current rates saves roughly ₹18L a year.",
+    note:"Steel is 43% of cost and rose 14% against 6% volume growth — you are buying spot while your OEM prices are fixed for the year. A quarterly rate contract at current levels saves roughly ₹18L a year.",
     dims:[
       { key:"category", title:"By Category", rows:[
-        { name:"Raw Material — Yarn",   value:25300000, prev:22200000, sub:"Spot purchases", txns:[
-          { id:"PO-7741", date:"20 Jul 2026", desc:"Yarn — 8 tonnes",       amount:"₹18.2L", status:"paid"   },
-          { id:"PO-7729", date:"02 Jul 2026", desc:"Yarn — 6 tonnes",       amount:"₹13.6L", status:"paid"   },
+        { name:"Raw Material — Steel",  value:25300000, prev:22200000, sub:"CR/HR coil · spot", txns:[
+          { id:"PO-7741", date:"20 Jul 2026", desc:"CR coil — 42 tonnes",  amount:"₹18.2L", status:"paid"   },
+          { id:"PO-7729", date:"02 Jul 2026", desc:"HR coil — 31 tonnes",  amount:"₹13.6L", status:"paid"   },
         ]},
-        { name:"Dyeing & Processing",   value:12400000, prev:11800000, sub:"3 job-work units", txns:[
-          { id:"JW-2218", date:"16 Jul 2026", desc:"Dyeing — Jul batch",    amount:"₹4.8L",  status:"unpaid" },
+        { name:"Heat Treatment &amp; Plating", value:12400000, prev:11800000, sub:"3 job-work units", txns:[
+          { id:"JW-2218", date:"16 Jul 2026", desc:"Plating — Jul batch",   amount:"₹4.8L",  status:"unpaid" },
         ]},
         { name:"Factory Labour",        value:9600000,  prev:9100000,  sub:"Direct wages", txns:[] },
-        { name:"Packing & Freight",     value:7300000,  prev:6900000,  sub:"Export + domestic", txns:[
-          { id:"FRT-3390", date:"24 Jul 2026", desc:"Container — Jebel Ali", amount:"₹3.1L", status:"paid"   },
+        { name:"Freight &amp; Packing",     value:7300000,  prev:6900000,  sub:"OEM despatch", txns:[
+          { id:"FRT-3390", date:"24 Jul 2026", desc:"Despatch — Dharuhera",  amount:"₹3.1L", status:"paid"   },
         ]},
-        { name:"Power & Utilities",     value:4200000,  prev:4400000,  sub:"Factory consumption", txns:[] },
+        { name:"Power &amp; Fuel",          value:4200000,  prev:4400000,  sub:"Plant consumption", txns:[] },
       ]},
       { key:"supplier", title:"By Supplier", rows:[
-        { name:"Shree Yarn Mills",      value:15800000, prev:12900000, sub:"Largest supplier · spot", txns:[] },
-        { name:"Nova Dyeing Works",     value:8100000,  prev:7600000,  sub:"Job work", txns:[] },
-        { name:"Rajesh Textiles",       value:9500000,  prev:9300000,  sub:"Yarn — contracted", txns:[] },
-        { name:"Others (31 suppliers)", value:25400000, prev:24600000, sub:"Avg ₹82K/supplier", txns:[] },
+        { name:"Jindal Steel &amp; Alloys",  value:15800000, prev:12900000, sub:"Largest supplier · spot", txns:[] },
+        { name:"Faridabad Heat Treat",  value:8100000,  prev:7600000,  sub:"Job work · MSME", txns:[] },
+        { name:"Metro Forging Works",   value:9500000,  prev:9300000,  sub:"Forgings — contracted · MSME", txns:[] },
+        { name:"Others (31 suppliers)", value:25400000, prev:24600000, sub:"Consumables, tooling, transport", txns:[] },
       ]},
     ],
   },
   cashflow: {
     label:"Cash Flow", total:"₹34L net", period:"Jul 2026", prevPeriod:"Jun 2026",
-    note:"Net positive only because you drew ₹22L more on the CC. Operating cash was negative ₹8L — the business consumed cash in July, the facility covered it.",
+    note:"Net positive only because you drew ₹22L more on the CC. Operating cash was negative ₹8L — the plant consumed cash in July and the facility covered it. At 68% drawn you have ₹96L of headroom before the festive build-up.",
     dims:[
       { key:"movement", title:"Inflows & Outflows", rows:[
         { name:"Customer Collections",  value:6900000, prev:7400000, sub:"Inflow · 14 receipts", txns:[
-          { id:"NEFT-7712", date:"01 Aug 2026", desc:"DMart — Jul supply",     amount:"+₹12.4L", status:"paid" },
-          { id:"SWIFT-102", date:"12 Jul 2026", desc:"HomeStyle — PO #4471",   amount:"+₹31.2L", status:"paid" },
+          { id:"NEFT-7712", date:"01 Aug 2026", desc:"Sona BLW — Jul schedule", amount:"+₹12.4L", status:"paid" },
+          { id:"NEFT-7698", date:"12 Jul 2026", desc:"Hero MotoCorp — PO #4471", amount:"+₹31.2L", status:"paid" },
         ]},
         { name:"CC Drawdown",           value:2200000, prev:900000,  betterWhen:"lower", sub:"Inflow · borrowed, not earned", txns:[] },
         { name:"Supplier Payments",     value:4100000, prev:3800000, betterWhen:"lower", sub:"Outflow", txns:[
-          { id:"RTGS-7708", date:"28 Jul 2026", desc:"Yarn supplier payment",  amount:"−₹18.2L", status:"paid" },
+          { id:"RTGS-7708", date:"28 Jul 2026", desc:"Steel supplier payment", amount:"−₹18.2L", status:"paid" },
         ]},
         { name:"Wages & Salaries",      value:1600000, prev:1550000, betterWhen:"lower", sub:"Outflow", txns:[] },
         { name:"Interest on CC",        value:190000,  prev:172000,  betterWhen:"lower", sub:"Outflow · 11% p.a.", txns:[] },
@@ -594,7 +594,7 @@ const DEMO_DRILL_MSME = {
   },
   workingcap: {
     label:"Working Capital", total:"₹1.90 Cr net", period:"as on date",
-    note:"₹1.42 Cr sits in inventory — 58 days of stock. The yarn category alone holds ₹38L against 21 days of demand. Liquidating half of it funds the next export cycle without touching the CC.",
+    note:"₹1.42 Cr sits in inventory — 58 days of stock against schedules that run 30 days out. Steel alone holds ₹38L. Releasing half of it funds the festive build-up without touching the CC.",
     dims:[
       { key:"component", title:"Components", rows:[
         { name:"Debtors (receivables)",   value:9800000,  sub:"42-day average collection", txns:[] },
@@ -610,11 +610,11 @@ const DEMO_DRILL_MSME = {
     dims:[
       { key:"account", title:"By Account", rows:[
         { name:"HDFC Bank — Current",     value:6800000, sub:"Primary operating account", txns:[
-          { id:"NEFT-7712", date:"01 Aug 2026", desc:"DMart — collection",     amount:"+₹12.4L", status:"paid" },
-          { id:"RTGS-7708", date:"28 Jul 2026", desc:"Yarn supplier payment",  amount:"−₹18.2L", status:"paid" },
+          { id:"NEFT-7712", date:"01 Aug 2026", desc:"Sona BLW — collection",  amount:"+₹12.4L", status:"paid" },
+          { id:"RTGS-7708", date:"28 Jul 2026", desc:"Steel supplier payment", amount:"−₹18.2L", status:"paid" },
         ]},
-        { name:"ICICI — EEFC (USD)",      value:5200000, sub:"Export proceeds account", txns:[
-          { id:"SWIFT-102", date:"12 Jul 2026", desc:"HomeStyle — PO #4471",   amount:"+₹31.2L", status:"paid" },
+        { name:"ICICI Bank — Current",    value:5200000, sub:"OEM collections account", txns:[
+          { id:"NEFT-7698", date:"12 Jul 2026", desc:"Hero MotoCorp — PO #4471", amount:"+₹31.2L", status:"paid" },
         ]},
         { name:"Fixed Deposits",          value:8500000, sub:"3 FDs · avg 7.0% p.a.", txns:[] },
         { name:"Petty Cash",              value:500000,  sub:"Factory + office", txns:[] },
@@ -623,18 +623,18 @@ const DEMO_DRILL_MSME = {
   },
   debtors: {
     label:"Debtor Days", total:"₹98L", period:"outstanding · 42-day average", prevPeriod:"last quarter", betterWhen:"lower",
-    note:"Al Madina averages 51 days against 45-day terms — that 6-day slip on ₹38L is a permanent ₹6L+ hole in your cash. Jaipur Handloom at 94 days needs a stop-supply decision.",
+    note:"JBM averages 96 days against 60-day terms — that 36-day slip on ₹38L is a permanent ₹6L+ hole in your working capital. Kapoor Auto Spares at 94 days needs a stop-supply decision before the next order.",
     dims:[
       { key:"customer", title:"By Customer", rows:[
-        { name:"Al Madina Trading LLC",        value:3800000, prev:3100000, sub:"Avg 51 days · terms 45d", txns:[
-          { id:"EXP-2214", date:"22 Jul 2026", desc:"Shipment #88",            amount:"₹42.0L", status:"unpaid"  },
+        { name:"JBM Auto Ltd",                 value:3800000, prev:3100000, sub:"Avg 96 days · terms 60d", txns:[
+          { id:"INV-2214", date:"22 Jul 2026", desc:"Schedule #88",           amount:"₹42.0L", status:"unpaid"  },
         ]},
-        { name:"HomeStyle Retail Inc",         value:2400000, prev:2900000, sub:"Avg 38 days · on terms", txns:[] },
-        { name:"Reliance Retail",              value:1900000, prev:1750000, sub:"Avg 35 days · on terms", txns:[
+        { name:"Hero MotoCorp Ltd",            value:2400000, prev:2900000, sub:"Avg 58 days · on terms", txns:[] },
+        { name:"Escorts Kubota Ltd",           value:1900000, prev:1750000, sub:"Avg 55 days · on terms", txns:[
           { id:"INV-3315", date:"28 Jul 2026", desc:"Jul supply",               amount:"₹19.0L", status:"unpaid"  },
         ]},
-        { name:"DMart Distribution",           value:1200000, prev:1400000, sub:"Avg 29 days", txns:[] },
-        { name:"Jaipur Handloom Distributors", value:500000,  prev:200000,  sub:"94 days — escalate", txns:[
+        { name:"Sona BLW Precision",           value:1200000, prev:1400000, sub:"Avg 62 days", txns:[] },
+        { name:"Kapoor Auto Spares",           value:500000,  prev:200000,  sub:"94 days — escalate", txns:[
           { id:"INV-3288", date:"02 May 2026", desc:"Summer stock order",       amount:"₹4.0L",  status:"overdue" },
         ]},
       ]},
@@ -663,21 +663,21 @@ const DEMO_DRILL_MSME = {
   },
   receivables: {
     label:"Receivables", total:"₹62L", period:"outstanding invoices",
-    note:"₹4L from Jaipur Handloom is 94 days old — 6% of receivables but 100% of your write-off risk. Take the stop-supply call this week.",
+    note:"₹4L from Kapoor Auto Spares is 94 days old — 6% of receivables but 100% of your write-off risk. Take the stop-supply call this week.",
     dims:[
       { key:"aging", title:"By Age", rows:[
         { name:"Current",  value:3200000, sub:"Not yet due", txns:[
-          { id:"INV-3315", date:"28 Jul 2026", desc:"Reliance Retail — Jul supply", amount:"₹19.0L", status:"unpaid" },
-          { id:"EXP-2218", date:"30 Jul 2026", desc:"HomeStyle — PO #4489",         amount:"₹13.0L", status:"unpaid" },
+          { id:"INV-3315", date:"28 Jul 2026", desc:"Escorts Kubota — Jul schedule", amount:"₹19.0L", status:"unpaid" },
+          { id:"INV-2218", date:"30 Jul 2026", desc:"Hero MotoCorp — PO #4489",    amount:"₹13.0L", status:"unpaid" },
         ]},
         { name:"31–60d",   value:1800000, sub:"1 buyer", txns:[
-          { id:"EXP-2214", date:"22 Jun 2026", desc:"Al Madina — Shipment #88",     amount:"₹18.0L", status:"unpaid" },
+          { id:"INV-2214", date:"22 Jun 2026", desc:"JBM Auto — Schedule #88",     amount:"₹18.0L", status:"unpaid" },
         ]},
         { name:"61–90d",   value:800000,  sub:"1 buyer", txns:[
-          { id:"INV-3296", date:"20 May 2026", desc:"DMart — May supply balance",   amount:"₹8.0L",  status:"overdue" },
+          { id:"INV-3296", date:"20 May 2026", desc:"Sona BLW — May balance",      amount:"₹8.0L",  status:"overdue" },
         ]},
         { name:"90d+",     value:400000,  sub:"1 buyer — escalate", txns:[
-          { id:"INV-3288", date:"02 May 2026", desc:"Jaipur Handloom — summer stock", amount:"₹4.0L", status:"overdue" },
+          { id:"INV-3288", date:"02 May 2026", desc:"Kapoor Auto Spares — Q1 order", amount:"₹4.0L", status:"overdue" },
         ]},
       ]},
     ],
@@ -17754,7 +17754,7 @@ function AdminPanel({ admin, onLogout }) {
       { id:"DEMO-STARTUP", name:"Riya Kapoor", company:"BrightAI Technologies", type:"both",
         client_pack:"startup", email:"demo-startup@finzzup.com", jurisdiction:"India",
         invite_code:"DEMO-STARTUP", active:true },
-      { id:"DEMO-MSME", name:"Suresh Gupta", company:"Gupta Exports Pvt Ltd", type:"both",
+      { id:"DEMO-MSME", name:"Suresh Bhatia", company:"Bhatia Precision Components Pvt Ltd", type:"both",
         client_pack:"msme", email:"demo-msme@finzzup.com", jurisdiction:"India",
         invite_code:"DEMO-MSME", active:true },
       { id:"DEMO-CORP", name:"Anita Desai", company:"Horizon Manufacturing Ltd", type:"both",
