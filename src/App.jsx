@@ -1732,7 +1732,7 @@ const OVERVIEW_CF = [
 ];
 const OVERVIEW_ENGAGEMENTS = [
   { id:1, title:"Series A Pre-Funding Valuation", type:"Valuation", status:"Completed",  color:"#10B981" },
-  { id:2, title:"Fractional CFO — Q1 2026",       type:"CFO",       status:"Active",     color:"#3B6FF7" },
+  { id:2, title:"Virtual CFO · MSME — Q1 2026",   type:"CFO",       status:"Active",     color:"#3B6FF7" },
   { id:3, title:"ESOP Valuation Round 2",          type:"Valuation", status:"In Review",  color:"#F59E0B" },
 ];
  
@@ -10135,14 +10135,89 @@ function NewRequest({ client, setPage }) {
   const [agreed, setAgreed] = useState(false);
   const [loading, setLoading] = useState(false);
  
-  const SERVICES = [
+  // The monthly retainer is the core engagement, so it is priced in named tiers
+  // with the inclusions spelled out — a referring CA can quote these without
+  // having to call first.
+  const CFO_TIERS = [
+    { id:"vcfo-startup", name:"Virtual CFO · Startup", tag:"Monthly", tagColor:C.blue,
+      price:"₹50,000 / month", desc:"Turnover up to ₹5 Cr",
+      includes:[
+        "Monthly MIS with written commentary, signed by a Chartered Accountant",
+        "Live dashboard — revenue, cash, margin, runway",
+        "Compliance calendar: GST, TDS, advance tax",
+        "Receivables and payables ageing",
+        "One strategy call a month",
+        "WhatsApp — reply within 24 hours",
+      ] },
+    { id:"vcfo-msme", name:"Virtual CFO · MSME", tag:"Monthly", tagColor:C.purple,
+      price:"₹85,000 / month", desc:"Turnover ₹5–50 Cr", popular:true,
+      includes:[
+        "Everything in Startup",
+        "Drill down from any number to the invoice behind it",
+        "90-day cash forecast",
+        "Section 43B(h) MSME exposure, with the tax cost attached",
+        "Drawing power, CC utilisation, cash conversion cycle",
+        "Vendor register and supplier concentration",
+        "Two strategy calls a month",
+        "WhatsApp — reply within 4 working hours",
+      ] },
+    { id:"vcfo-corporate", name:"Virtual CFO · Corporate", tag:"Monthly", tagColor:C.green,
+      price:"₹1,50,000 / month onwards", desc:"Turnover above ₹50 Cr",
+      includes:[
+        "Everything in MSME",
+        "Board pack and banker pack, prepared monthly",
+        "Multi-entity and group consolidation",
+        "Trial balance import with chart-of-accounts mapping",
+        "Budget versus actual, with variance commentary",
+        "Lender and investor reporting",
+        "Weekly review call",
+        "WhatsApp — reply the same working day",
+      ] },
+  ];
+
+  const ONE_OFF = [
     { id:"val-starter",  name:"Valuation · Starter",       tag:"Compliance",  tagColor:C.purple, price:"₹30,000 onwards",  desc:"DCF or NAV, IBBI-signed, 5–7 days" },
-    { id:"val-pro",      name:"Valuation · Professional",  tag:"Fundraising", tagColor:C.pink,   price:"₹65,000 onwards",  desc:"Full IB-quality, peer comps, sensitivity", popular:true },
-    { id:"frac-cfo",     name:"Fractional CFO",            tag:"Ongoing",     tagColor:C.amber,  price:"₹50,000 / month",  desc:"MIS, forecasting, board packs, min. 3 months" },
+    { id:"val-pro",      name:"Valuation · Professional",  tag:"Fundraising", tagColor:C.pink,   price:"₹65,000 onwards",  desc:"Full IB-quality, peer comps, sensitivity" },
     { id:"esop-val",     name:"ESOP Valuation",            tag:"ESOP",        tagColor:C.teal,   price:"₹25,000 onwards",  desc:"409A-style, SEBI IPEV compliant" },
     { id:"ppa",          name:"Purchase Price Allocation",  tag:"M&A",         tagColor:C.blue,   price:"₹80,000 onwards",  desc:"Ind AS 103, intangible identification" },
     { id:"fema-fdi",     name:"FEMA / FDI Valuation",      tag:"Regulatory",  tagColor:C.red,    price:"₹40,000 onwards",  desc:"Inbound & outbound FDI compliance" },
   ];
+
+  // Flat list is what steps 2 and 3 look the selection up in.
+  const SERVICES = [...CFO_TIERS, ...ONE_OFF];
+
+  // Called as a plain function rather than mounted as <ServiceCard/>, so the
+  // cards are not torn down and rebuilt on every keystroke elsewhere on the page.
+  const serviceCard = (s) => (
+    <div key={s.id} onClick={() => setSelected(s.id)}
+      style={{ position:"relative", padding:20, borderRadius:16,
+        border:`2px solid ${selected===s.id ? C.blue : C.border}`,
+        background: selected===s.id ? `${C.blue}06` : C.bg2,
+        cursor:"pointer", transition:"all 0.2s",
+        boxShadow: selected===s.id ? `0 0 0 4px ${C.blue}15` : "none" }}>
+      {s.popular && (
+        <div style={{ position:"absolute", top:-10, right:16,
+          background:C.grad3, color:"white", fontSize:10, fontWeight:800,
+          padding:"3px 10px", borderRadius:60, fontFamily:F }}>Most Chosen</div>
+      )}
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8, gap:8 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>{s.name}</div>
+        <Badge color={s.tagColor}>{s.tag}</Badge>
+      </div>
+      <div style={{ fontFamily:FM, fontWeight:700, fontSize:14, color:C.blue, marginBottom:4 }}>{s.price}</div>
+      <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.desc}</div>
+      {s.includes && (
+        <div style={{ marginTop:14, paddingTop:14, borderTop:`1px solid ${C.border}` }}>
+          {s.includes.map((line, i) => (
+            <div key={i} style={{ display:"flex", gap:8, alignItems:"flex-start", marginBottom:7 }}>
+              <i className="ti ti-check" style={{ fontSize:13, color:C.green, flexShrink:0, marginTop:2 }}/>
+              <span style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.6 }}>{line}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
  
   const handleSubmit = async () => {
     if (!agreed) { alert("Please agree to the terms to proceed."); return; }
@@ -10229,27 +10304,31 @@ function NewRequest({ client, setPage }) {
       {/* Step 1: Select Service */}
       {step === 1 && (
         <>
+          {/* Monthly retainer — the core engagement */}
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>
+              Virtual CFO — monthly retainer
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7, maxWidth:620 }}>
+              A full-time finance controller in the NCR costs ₹18–25 lakh a year, loaded. Every tier below
+              is a Chartered Accountant reading your numbers and signing the note. Minimum three months.
+            </div>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:28, alignItems:"start" }} className="nr-tiers">
+            {CFO_TIERS.map(serviceCard)}
+          </div>
+
+          {/* One-off assignments */}
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>
+              One-off engagements
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
+              Billed per assignment. No retainer required.
+            </div>
+          </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14, marginBottom:20 }} className="nr-grid">
-            {SERVICES.map(s => (
-              <div key={s.id} onClick={() => setSelected(s.id)}
-                style={{ position:"relative", padding:20, borderRadius:16,
-                  border:`2px solid ${selected===s.id ? C.blue : C.border}`,
-                  background: selected===s.id ? `${C.blue}06` : C.bg2,
-                  cursor:"pointer", transition:"all 0.2s",
-                  boxShadow: selected===s.id ? `0 0 0 4px ${C.blue}15` : "none" }}>
-                {s.popular && (
-                  <div style={{ position:"absolute", top:-10, right:16,
-                    background:C.grad3, color:"white", fontSize:10, fontWeight:800,
-                    padding:"3px 10px", borderRadius:60, fontFamily:F }}>Most Popular</div>
-                )}
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:8 }}>
-                  <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>{s.name}</div>
-                  <Badge color={s.tagColor}>{s.tag}</Badge>
-                </div>
-                <div style={{ fontFamily:FM, fontWeight:700, fontSize:14, color:C.blue, marginBottom:4 }}>{s.price}</div>
-                <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>{s.desc}</div>
-              </div>
-            ))}
+            {ONE_OFF.map(serviceCard)}
           </div>
           <button onClick={() => { if (!selected) { alert("Please select a service."); return; } setStep(2); }}
             style={{ padding:"14px 32px", borderRadius:16, border:"none",
@@ -10258,7 +10337,10 @@ function NewRequest({ client, setPage }) {
               boxShadow: selected ? "0 2px 8px rgba(59,111,247,0.18)" : "none", transition:"all 0.2s" }}>
             Continue →
           </button>
-          <style>{`@media(max-width:600px){.nr-grid{grid-template-columns:1fr!important}}`}</style>
+          <style>{`
+            @media(max-width:900px){.nr-tiers{grid-template-columns:1fr 1fr!important}}
+            @media(max-width:600px){.nr-grid,.nr-tiers{grid-template-columns:1fr!important}}
+          `}</style>
         </>
       )}
  
@@ -10386,8 +10468,8 @@ function NewRequest({ client, setPage }) {
  
 // ─── INVOICES ─────────────────────────────────────────────────────────────────
 const DEMO_INVOICES = [
-  { id:"INV-2026-003", date:"20 Feb 2026", due:"05 Mar 2026", service:"Fractional CFO — February 2026", amount:"₹50,000", status:"unpaid", items:[{ desc:"Fractional CFO Retainer (Feb 2026)", qty:1, unit:"₹50,000", total:"₹50,000" }] },
-  { id:"INV-2026-002", date:"20 Jan 2026", due:"05 Feb 2026", service:"Fractional CFO — January 2026",  amount:"₹50,000", status:"paid",   items:[{ desc:"Fractional CFO Retainer (Jan 2026)", qty:1, unit:"₹50,000", total:"₹50,000" }] },
+  { id:"INV-2026-003", date:"20 Feb 2026", due:"05 Mar 2026", service:"Virtual CFO · MSME — February 2026", amount:"₹85,000", status:"unpaid", items:[{ desc:"Virtual CFO · MSME retainer (Feb 2026)", qty:1, unit:"₹85,000", total:"₹85,000" }] },
+  { id:"INV-2026-002", date:"20 Jan 2026", due:"05 Feb 2026", service:"Virtual CFO · MSME — January 2026",  amount:"₹85,000", status:"paid",   items:[{ desc:"Virtual CFO · MSME retainer (Jan 2026)", qty:1, unit:"₹85,000", total:"₹85,000" }] },
   { id:"INV-2026-001", date:"15 Jan 2026", due:"30 Jan 2026", service:"DCF Valuation — Series A Pre-Funding", amount:"₹65,000", status:"paid", items:[{ desc:"Valuation Report (DCF + Comps)", qty:1, unit:"₹65,000", total:"₹65,000" }] },
 ];
  
