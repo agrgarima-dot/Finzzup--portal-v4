@@ -2197,7 +2197,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         const scoreLabel = s => s >= 75 ? "Strong" : s >= 50 ? "Moderate" : "Needs Work";
 
         // Pentagon SVG
-        const pSize = 140;
+        const pSize = 118;
         const cx = pSize/2, cy = pSize/2, r = pSize/2 * 0.72;
         const angles = dims.map((_,i) => (i * 2*Math.PI/dims.length) - Math.PI/2);
         const polyPts = (scale) => angles.map(a => `${cx+r*scale*Math.cos(a)},${cy+r*scale*Math.sin(a)}`).join(" ");
@@ -2214,8 +2214,12 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
             <div style={{ display:"flex", gap:0, alignItems:"stretch", flexWrap:"wrap" }}>
               {/* Pentagon radar */}
               <div style={{ display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center",
-                padding:"16px 20px", borderRight:`1px solid ${C.border}`, minWidth:160, flexShrink:0 }}>
-                <svg width={pSize} height={pSize} viewBox={`0 0 ${pSize} ${pSize}`}>
+                padding:"12px 10px", borderRight:`1px solid ${C.border}`, minWidth:178, flexShrink:0 }}>
+                {/* The labels sit outside the pentagon, so the viewBox is padded
+                    horizontally — without it "Profitability" and "Growth" are
+                    clipped to "Profital" and "owth". */}
+                <svg width={pSize + 52} height={pSize + 14}
+                  viewBox={`${-26} ${-7} ${pSize + 52} ${pSize + 14}`}>
                   {[0.25,0.5,0.75,1].map(l => (
                     <polygon key={l} points={polyPts(l)} fill="none" stroke="#E5E7EB" strokeWidth="0.8"/>
                   ))}
@@ -2234,24 +2238,31 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                   })}
                 </svg>
               </div>
-              {/* Dimension score bars */}
-              <div style={{ flex:1, padding:"14px 18px", minWidth:220 }}>
+              {/* Dimension score bars — two to a row, so five dimensions take
+                  three rows rather than five and the panel stops dominating
+                  the page. The benchmark sits on the same line as the reading
+                  instead of claiming a line of its own. */}
+              <div style={{ flex:1, padding:"14px 18px", minWidth:220,
+                display:"grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                columnGap:22, rowGap:12, alignContent:"start" }}>
                 {dims.map((d,i) => (
-                  <div key={i} style={{ marginBottom: i < dims.length-1 ? 14 : 0 }}>
-                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:5 }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
-                        <i className={"ti "+d.icon} style={{ fontSize:12, color:scoreColor(d.score) }}/>
-                        <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text }}>{d.label}</span>
+                  <div key={i}>
+                    <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, marginBottom:4 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:6, minWidth:0 }}>
+                        <i className={"ti "+d.icon} style={{ fontSize:12, color:scoreColor(d.score), flexShrink:0 }}/>
+                        <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text,
+                          whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{d.label}</span>
                       </div>
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <span style={{ fontFamily:F, fontSize:10, color:C.muted }}>{d.desc}</span>
-                        <span style={{ fontFamily:FM, fontSize:11, fontWeight:800, color:scoreColor(d.score), minWidth:26, textAlign:"right" }}>{d.score}</span>
-                      </div>
+                      <span style={{ fontFamily:FM, fontSize:11, fontWeight:800, color:scoreColor(d.score),
+                        flexShrink:0 }}>{d.score}</span>
                     </div>
-                    <div style={{ position:"relative", height:6, background:"#F3F4F6", borderRadius:10 }}>
+                    <div style={{ position:"relative", height:5, background:"#F3F4F6", borderRadius:10 }}>
                       <div style={{ height:"100%", width:`${d.score}%`, background:scoreColor(d.score), borderRadius:10, transition:"width 0.6s ease" }}/>
                     </div>
-                    <div style={{ fontFamily:F, fontSize:9, color:C.dim, marginTop:2 }}>{d.benchmark} · {scoreLabel(d.score)}</div>
+                    <div style={{ fontFamily:F, fontSize:9.5, color:C.dim, marginTop:3,
+                      whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
+                      {d.desc} · {d.benchmark}
+                    </div>
                   </div>
                 ))}
               </div>
