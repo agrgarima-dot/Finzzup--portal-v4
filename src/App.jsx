@@ -18256,7 +18256,58 @@ function ZohoConnectionCard({ client, adminEmail }) {
           <div style={{ fontFamily:F, fontSize:12, color:C.red, lineHeight:1.7 }}>{c.last_sync_error}</div>
         </div>
       )}
+      <ZohoPreview client={client} adminEmail={adminEmail}/>
     </Card>
+  );
+}
+
+// Asks a connected org what its data looks like and shows the field names that
+// came back. This is what the sync gets written against: Zoho's published docs
+// and its SDKs disagree, and a parser built on guessed field names compiles
+// cleanly and then produces wrong figures in silence.
+function ZohoPreview({ client, adminEmail }) {
+  const [run, setRun] = useState({ state:"idle" });
+
+  const go = async () => {
+    setRun({ state:"loading" });
+    try {
+      const r = await fetch(`/api/zoho-preview?clientId=${encodeURIComponent(client.id)}` +
+                            `&adminEmail=${encodeURIComponent(adminEmail || "")}`);
+      setRun({ state:"done", data: await r.json() });
+    } catch (e) {
+      setRun({ state:"done", data:{ ok:false, reason:"unreachable" } });
+    }
+  };
+
+  const text = run.data ? JSON.stringify(run.data, null, 2) : "";
+
+  return (
+    <div style={{ marginTop:16, paddingTop:16, borderTop:`1px solid ${C.border}` }}>
+      <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
+        <button onClick={go} disabled={run.state === "loading"}
+          style={{ padding:"9px 18px", borderRadius:14, border:`1.5px solid ${C.border}`,
+            background:"none", fontFamily:F, fontWeight:700, fontSize:12, color:C.text,
+            cursor: run.state === "loading" ? "default" : "pointer" }}>
+          {run.state === "loading" ? "Reading…" : "Read field names from Zoho"}
+        </button>
+        {run.state === "done" && (
+          <button onClick={() => navigator.clipboard?.writeText(text)}
+            style={{ padding:"9px 18px", borderRadius:14, border:"none", background:C.grad1,
+              color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
+            Copy result
+          </button>
+        )}
+      </div>
+      <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:8, lineHeight:1.7 }}>
+        Returns which endpoints answered and the field names on each — never any values,
+        so no figures leave the client's books.
+      </div>
+      {run.state === "done" && (
+        <pre style={{ marginTop:12, padding:"12px 14px", borderRadius:12, background:C.bg3,
+          fontFamily:FM, fontSize:11, color:C.muted, lineHeight:1.6, maxHeight:360,
+          overflow:"auto", whiteSpace:"pre-wrap", wordBreak:"break-word" }}>{text}</pre>
+      )}
+    </div>
   );
 }
 
