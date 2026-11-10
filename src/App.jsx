@@ -17910,21 +17910,53 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
 // Paste or upload a raw trial balance; accounts are mapped to statement lines,
 // the mapping is saved per client so next month is a review not a rebuild, and
 // nothing can be published until the validation checks pass.
-function TrialBalanceTab({ client, reportData, setReportData, saveReportData, loading, saved }) {
+function TrialBalanceTab({ client, reportData, setReportData, saveReportData, loading, saved, adminEmail }) {
   const [raw, setRaw]   = React.useState("");
   const [rows, setRows] = React.useState(null);
   const [parsed, setParsed] = React.useState(null);
   const [msg, setMsg]   = React.useState("");
+  const [zohoBusy, setZohoBusy] = React.useState(false);
+  const [zohoInfo, setZohoInfo] = React.useState(null);
 
   const savedMap = reportData?.coaMap || {};
   const money = n => (Math.round(n)||0).toLocaleString(isUAE(client) ? "en-AE" : "en-IN");
 
-  const run = (text) => {
-    const p = parseTrialBalance(text);
-    if (!p.rows.length) { setMsg("No ledger accounts found — check the paste includes account names and amounts."); setParsed(null); setRows(null); return; }
+  // Shared by the paste path and the Zoho path: whichever way accounts arrive,
+  // the saved chart mapping is applied and the same review follows.
+  const accept = (p, note) => {
+    if (!p.rows.length) { setMsg(note || "No ledger accounts found."); setParsed(null); setRows(null); return; }
     const mapped = applySavedMapping(p.rows, savedMap);
     setParsed({ ...p, rows: mapped }); setRows(mapped);
     setMsg(`${mapped.length} accounts read · ${mapped.filter(r=>r.fromSaved).length} mapped from your saved chart`);
+  };
+
+  const run = (text) => accept(parseTrialBalance(text),
+    "No ledger accounts found — check the paste includes account names and amounts.");
+
+  // Same review, different source. Nothing here publishes: the fetched accounts
+  // land in the mapping table below and still wait for Apply.
+  const fetchZoho = async () => {
+    setZohoBusy(true); setZohoInfo(null);
+    try {
+      const r = await fetch(`/api/zoho-sync?clientId=${encodeURIComponent(client.id)}` +
+                            `&adminEmail=${encodeURIComponent(adminEmail || "")}`);
+      const j = await r.json();
+      if (!j.ok) {
+        setZohoInfo({ error: {
+          not_connected:        "This client has no Zoho Books connection. Connect it from the Connections tab.",
+          not_configured:       "Zoho is not configured on this deployment.",
+          token_refresh_failed: "Zoho refused the stored credentials. The connection may have been revoked — reconnect it.",
+          not_admin:            "This account is not recognised as an admin.",
+          fetch_failed:         `Zoho could not be read: ${j.detail || "unknown"}`,
+        }[j.reason] || `Could not sync (${j.reason || "unknown"}).` });
+      } else {
+        accept(j.trialBalance, "Zoho returned no accounts with a balance.");
+        setZohoInfo(j);
+      }
+    } catch {
+      setZohoInfo({ error: "Could not reach the sync endpoint." });
+    }
+    setZohoBusy(false);
   };
 
   const setGroup = (i, g) => setRows(rs => rs.map((r,j) => j===i ? { ...r, group:g, confident:true } : r));
@@ -17992,8 +18024,40 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
             onChange={e=>{ const f=e.target.files[0]; if(!f) return;
               const rd=new FileReader(); rd.onload=()=>{ setRaw(String(rd.result)); run(String(rd.result)); }; rd.readAsText(f); e.target.value=""; }}/>
         </label>
+        <button onClick={fetchZoho} disabled={zohoBusy}
+          style={{ padding:"9px 16px", borderRadius:10, border:"none", background:C.grad1,
+            color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+            cursor: zohoBusy ? "default" : "pointer", opacity: zohoBusy ? 0.7 : 1 }}>
+          {zohoBusy ? "Fetching from Zoho…" : "Fetch from Zoho"}
+        </button>
         {msg && <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>{msg}</span>}
       </div>
+
+      {zohoInfo?.error && (
+        <div style={{ marginTop:12, padding:"10px 14px", borderRadius:12,
+          background:`${C.red}08`, border:`1px solid ${C.red}25` }}>
+          <div style={{ fontFamily:F, fontSize:12, color:C.red, lineHeight:1.7 }}>{zohoInfo.error}</div>
+        </div>
+      )}
+      {zohoInfo && !zohoInfo.error && (
+        <div style={{ marginTop:12, padding:"10px 14px", borderRadius:12, background:C.bg3 }}>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.8 }}>
+            <strong>{zohoInfo.organisation}</strong> — {zohoInfo.counts.accounts} accounts,{" "}
+            {zohoInfo.counts.invoices} invoices, {zohoInfo.counts.bills} bills,{" "}
+            {zohoInfo.counts.contacts} contacts.
+          </div>
+          {!!zohoInfo.truncated?.length && (
+            <div style={{ fontFamily:F, fontSize:12, color:C.amber, marginTop:4 }}>
+              Only part of {zohoInfo.truncated.join(" and ")} was read — there is more history than one sync fetches.
+            </div>
+          )}
+          {Object.entries(zohoInfo.partialErrors || {}).filter(([,v])=>v).map(([k,v]) => (
+            <div key={k} style={{ fontFamily:F, fontSize:12, color:C.amber, marginTop:4 }}>
+              {k} could not be read ({v}) — usually a missing scope.
+            </div>
+          ))}
+        </div>
+      )}
     </Card>
 
     {/* ── Step 2: ageing / invoice register → drill detail ── */}
@@ -19707,7 +19771,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     reportData={reportData}
                     setReportData={setReportData}
                     saveReportData={saveReportData}
-                    loading={loading} saved={saved}/>}
+                    loading={loading} saved={saved} adminEmail={admin?.email}/>}
             </div>
           )}
 
