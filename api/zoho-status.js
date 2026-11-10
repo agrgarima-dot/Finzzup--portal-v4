@@ -53,7 +53,12 @@ export default async function handler(req, res) {
     return r?.ok ? r.json().catch(() => null) : null;
   };
 
-  const admins = await sbGet(`admins?email=eq.${encodeURIComponent(adminEmail)}&select=email&limit=1`);
+  // Case-insensitive, because the admins row was typed by hand and the sign-in
+  // path does not lowercase. Matching exactly against a lowercased email would
+  // reject "Garima@..." and report the account as not an admin, which it is.
+  // % and _ are PostgREST wildcards, so neutralise them before the match.
+  const pattern = adminEmail.replace(/[%_]/g, (ch) => `\\${ch}`);
+  const admins = await sbGet(`admins?email=ilike.${encodeURIComponent(pattern)}&select=email&limit=1`);
   if (!Array.isArray(admins) || !admins.length) return res.status(401).json({ ok: false, reason: "not_admin" });
 
   const rows = await sbGet(
