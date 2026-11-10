@@ -1850,47 +1850,68 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const greeting  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const accentColor = uaeClient ? "#00732F" : C.blue;
 
-  // The facts layer: refreshed nightly from the client's own books and shown
-  // without review, because none of it carries judgement. Kept deliberately
-  // plain and small — plenty of products stop at telling you what happened,
-  // and the signed analysis below it is the part worth paying for.
-  const LiveStrip = () => {
-    const snap = liveSnapshot?.data;
-    if (!snap) return null;
-    const cur = (v) => {
-      const n = Math.abs(Number(v) || 0);
-      if (uaeClient) return `AED ${n >= 1e6 ? (n/1e6).toFixed(2)+"M" : n >= 1e3 ? (n/1e3).toFixed(0)+"K" : n.toFixed(0)}`;
-      return n >= 1e7 ? `₹${(n/1e7).toFixed(2)} Cr` : n >= 1e5 ? `₹${(n/1e5).toFixed(1)}L` : `₹${n.toLocaleString("en-IN")}`;
+  // What the client's own accounting software cannot tell them.
+  //
+  // Reproducing Zoho's figures here would be pointless — they can open Zoho.
+  // What Zoho has no concept of is a threshold, a provision, a payment pattern
+  // or a five-year consequence. These are those rules, evaluated nightly.
+  const LivePositions = () => {
+    const positions = liveSnapshot?.data?.positions;
+    if (!positions?.length) return null;
+    const TONE = {
+      breach:  { dot: C.red,   label: "Act now"   },
+      watch:   { dot: C.amber, label: "Watch"     },
+      ok:      { dot: C.green, label: "In order"  },
+      unknown: { dot: C.dim,   label: "Incomplete"},
     };
     const when = liveSnapshot.updated_at
       ? new Date(liveSnapshot.updated_at).toLocaleString("en-GB",
           { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })
       : null;
-    const cells = [
-      ["Cash",                cur(snap.cash)],
-      ["Owed to you",         cur(snap.receivables)],
-      ["You owe",             cur(snap.payables)],
-      ["Overdue invoices",    snap.overdueCount > 0 ? `${snap.overdueCount} · ${cur(snap.overdueValue)}` : "None"],
-      ["Invoiced this month", cur(snap.invoicedThisMonth)],
-    ];
+    // Worst first — the point is to be read top down and stopped at.
+    const rank = { breach:0, watch:1, unknown:2, ok:3 };
+    const sorted = [...positions].sort((a,b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9));
+
     return (
-      <div style={{ border:`1px solid ${C.border}`, borderRadius:14, background:C.bg,
-        padding:"12px 16px", marginBottom:16 }}>
+      <Card style={{ marginBottom:18 }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline",
-          gap:10, marginBottom:8, flexWrap:"wrap" }}>
-          <span style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim,
-            textTransform:"uppercase", letterSpacing:"0.1em" }}>From your books</span>
-          {when && <span style={{ fontFamily:F, fontSize:11, color:C.dim }}>as at {when}</span>}
+          gap:10, marginBottom:12, flexWrap:"wrap" }}>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:14, color:C.text, letterSpacing:"-0.02em" }}>
+            Where you stand
+          </div>
+          {when && <span style={{ fontFamily:F, fontSize:11, color:C.dim }}>checked {when}</span>}
         </div>
-        <div style={{ display:"flex", gap:26, flexWrap:"wrap" }}>
-          {cells.map(([label, value]) => (
-            <div key={label}>
-              <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:C.text }}>{value}</div>
-              <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:1 }}>{label}</div>
+
+        {sorted.map((p, i) => {
+          const tone = TONE[p.status] || TONE.unknown;
+          return (
+            <div key={p.key || i} style={{ display:"flex", gap:12, alignItems:"flex-start",
+              padding:"12px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
+              <span style={{ width:8, height:8, borderRadius:"50%", background:tone.dot,
+                flexShrink:0, marginTop:7 }}/>
+              <div style={{ flex:1, minWidth:0 }}>
+                <div style={{ display:"flex", gap:10, alignItems:"baseline", flexWrap:"wrap" }}>
+                  <span style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text }}>{p.label}</span>
+                  <span style={{ fontFamily:FM, fontWeight:700, fontSize:13, color:tone.dot }}>{p.headline}</span>
+                </div>
+                <div style={{ fontFamily:F, fontSize:12.5, color:C.muted, lineHeight:1.75, marginTop:4 }}>
+                  {p.sentence}
+                </div>
+                {p.rule && (
+                  <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:4 }}>
+                    Measured against: {p.rule}
+                  </div>
+                )}
+                {p.caution && (
+                  <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:4, fontStyle:"italic" }}>
+                    {p.caution}
+                  </div>
+                )}
+              </div>
             </div>
-          ))}
-        </div>
-      </div>
+          );
+        })}
+      </Card>
     );
   };
 
@@ -2123,8 +2144,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         );
       })()}
 
-      {/* ── From your books: facts, refreshed nightly, no review needed ── */}
-      <LiveStrip/>
+      {/* ── Positions against rules, recomputed nightly ── */}
+      <LivePositions/>
 
       {/* ── AI CFO Brief ── */}
       <div className="ns-panel" style={{ borderLeft:`4px solid ${accentColor}` }}>
