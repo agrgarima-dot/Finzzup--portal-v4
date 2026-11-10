@@ -19,7 +19,9 @@
 //           SUPABASE_SERVICE_ROLE_KEY
 
 import { getAccessToken, zohoList, markSync } from "./_zoho.js";
-import { accountsToTrialBalance, liveSnapshot } from "../src/zohomap.js";
+import { accountsToTrialBalance, liveSnapshot, qfzpSplit } from "../src/zohomap.js";
+import { buildStatements } from "../src/trialbalance.js";
+import { computePositions } from "../src/positions.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -45,7 +47,10 @@ export default async function handler(req, res) {
     body: payload ? JSON.stringify(payload) : undefined,
   }).catch(() => null);
 
-  const connRes = await sb("GET", "zoho_connections?select=*");
+  // Jurisdiction and free-zone status live on the client record, not the
+  // connection, and both decide which rules apply — so they are embedded here
+  // rather than guessed.
+  const connRes = await sb("GET", "zoho_connections?select=*,clients(jurisdiction,freezone,client_pack)");
   if (!connRes || !connRes.ok) return res.status(200).json({ ok: false, reason: "connections_unreadable" });
   const connections = await connRes.json().catch(() => []);
 
@@ -58,10 +63,11 @@ export default async function handler(req, res) {
       continue;
     }
 
-    // Only what the facts layer needs. Bills and contacts are not read here —
-    // nothing on the live strip depends on them, and every call costs rate limit.
+    // Contacts are needed too: the qualifying income test turns on each
+    // customer's tax treatment, which only the contact record carries.
     const accounts = await zohoList(conn, token, "chartofaccounts", "chartofaccounts", { showbalance: "true" });
     const invoices = await zohoList(conn, token, "invoices", "invoices");
+    const contacts = await zohoList(conn, token, "contacts", "contacts");
 
     if (accounts.error) {
       await markSync(supaUrl, supaKey, conn.id, `Live refresh failed: ${accounts.error}`);
@@ -69,19 +75,33 @@ export default async function handler(req, res) {
       continue;
     }
 
-    const tb   = accountsToTrialBalance(accounts.rows);
-    const snap = liveSnapshot(tb.rows, invoices.rows);
+    const tb    = accountsToTrialBalance(accounts.rows);
+    const st    = buildStatements(tb.rows);
+    const qfzp  = qfzpSplit(invoices.rows, contacts.rows);
+    const snap  = liveSnapshot(tb.rows, invoices.rows);
+
+    // The part worth reading: rules applied to the figures, which is the thing
+    // the client's own accounting software has no concept of.
+    const positions = computePositions({
+      trialBalance: tb.rows, statements: st, invoices: invoices.rows,
+      contacts: contacts.rows, qfzp,
+      uae: /uae|cross/i.test(conn.clients?.jurisdiction || ""),
+      // A free zone company is one with a free zone named on its profile.
+      // Without one, the qualifying income test does not apply and claiming
+      // otherwise would be worse than saying nothing.
+      freeZone: !!conn.clients?.freezone,
+    });
 
     if (!dryRun) {
       await sb("POST", "live_snapshots", {
         client_id: conn.client_id,
-        data: snap,
+        data: { ...snap, positions },
         updated_at: new Date().toISOString(),
         error: invoices.error || null,
       });
       await markSync(supaUrl, supaKey, conn.id, null);
     }
-    results.push({ client_id: conn.client_id, ok: true, snapshot: snap });
+    results.push({ client_id: conn.client_id, ok: true, positions: positions.length, snapshot: snap });
   }
 
   return res.status(200).json({
