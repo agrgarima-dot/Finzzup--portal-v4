@@ -64,7 +64,8 @@ const byGroup = (rows, ...groups) => rows
  */
 export function computePositions({ trialBalance = [], statements = null, invoices = [],
                                    contacts = [], qfzp = null, uae = false, freeZone = false,
-                                   msmeExposure = null, asOf = new Date() } = {}) {
+                                   msmeExposure = null, workingCapital = null,
+                                   asOf = new Date() } = {}) {
   const cur = uae ? fmtAED : fmtINR;
   const out = [];
 
@@ -115,6 +116,23 @@ export function computePositions({ trialBalance = [], statements = null, invoice
       sentence: `${topName} is ${pct.toFixed(0)}% of everything you have invoiced. ` +
                 `Losing them would take ${pct >= 50 ? "half" : "a third or more"} of your income at once.`,
       rule: "Comfortable below 25%",
+    });
+  }
+
+  // ── Paying suppliers faster than you are being paid is free financing
+  //    left on the table, and it is invisible in any ledger ──────────────
+  const dpo = n(workingCapital?.dpo);
+  const dso = n(workingCapital?.dso ?? workingCapital?.debtorDays ?? workingCapital?.debtor_days);
+  if (dpo > 0 && dso > 0 && dso - dpo >= 15) {
+    out.push({
+      key: "terms",
+      label: "Supplier terms",
+      headline: `${Math.round(dso - dpo)} day gap`,
+      status: dso - dpo >= 45 ? "watch" : "ok",
+      sentence: `You collect in ${Math.round(dso)} days and pay in ${Math.round(dpo)}. ` +
+                `For ${Math.round(dso - dpo)} days you are funding the gap out of your own cash. ` +
+                `Every day you extend supplier terms is a day you do not have to.`,
+      rule: "Pay no sooner than you are paid",
     });
   }
 
