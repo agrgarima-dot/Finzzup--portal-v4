@@ -86,6 +86,7 @@ export default async function handler(req, res) {
       trialBalance: tb.rows, statements: st, invoices: invoices.rows,
       contacts: contacts.rows, qfzp,
       uae: /uae|cross/i.test(conn.clients?.jurisdiction || ""),
+      workingCapital: null,   // derived from the reviewed report, not the raw feed
       // A free zone company is one with a free zone named on its profile.
       // Without one, the qualifying income test does not apply and claiming
       // otherwise would be worse than saying nothing.

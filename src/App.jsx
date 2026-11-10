@@ -2271,222 +2271,6 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         );
       })()}
 
-      {/* ── Key Ratios vs Benchmarks ── */}
-      {(() => {
-        const pNum = s => parseFloat(String(s||"0").replace(/[^0-9.-]/g,"")) || 0;
-        const dso  = Number(wc.dso || wc.debtorDays || wc.debtor_days || 0);
-        const dpo  = Number(wc.dpo || 0);
-        const cr   = pNum(wc.currentRatio);
-        const gpM  = pNum(pl.gpMargin?.actual);
-        const netM = pNum(pl.netMargin?.actual);
-
-        const ratios = [
-          {
-            label:"DSO (Days Sales Outstanding)",
-            value: dso > 0 ? `${dso} days` : "—",
-            raw: dso, benchmark:45, maxBar:120,
-            lowerBetter:true,
-            icon:"ti-clock",
-            color: dso===0?"#94A3B8":dso<=30?C.green:dso<=45?C.amber:C.red,
-            insight: dso===0?"Enter DSO in working capital":dso<=30?"Excellent collection speed":dso<=45?"Within industry norm":dso<=60?"Slightly slow — review collection policy":"High risk: chase overdue receivables",
-          },
-          {
-            label:"DPO (Days Payable Outstanding)",
-            value: dpo > 0 ? `${dpo} days` : "—",
-            raw: dpo, benchmark:30, maxBar:90,
-            lowerBetter:false,
-            icon:"ti-calendar",
-            color: dpo===0?"#94A3B8":dpo>=45?C.green:dpo>=30?C.amber:C.red,
-            insight: dpo===0?"Enter DPO in working capital":dpo>=45?"Good — using supplier credit well":dpo>=30?"Moderate — could extend terms":dpo<30?"Low — paying too fast, renegotiate terms":"",
-          },
-          {
-            label:"Gross Profit Margin",
-            value: pl.gpMargin?.actual || "—",
-            raw: gpM, benchmark:30, maxBar:100,
-            lowerBetter:false,
-            icon:"ti-percentage",
-            color: gpM===0?"#94A3B8":gpM>=40?C.green:gpM>=25?C.amber:C.red,
-            insight: gpM===0?"Enter gross profit data":gpM>=40?"Strong margins — pricing power":gpM>=25?"Healthy — room to improve":gpM>=15?"Watch COGS — margins under pressure":"Critical — review pricing and cost structure",
-          },
-          {
-            label:"Net Profit Margin",
-            value: pl.netMargin?.actual || "—",
-            raw: netM, benchmark:10, maxBar:40,
-            lowerBetter:false,
-            icon:"ti-trending-up",
-            color: netM===0?"#94A3B8":netM>=15?C.green:netM>=8?C.amber:netM>0?C.orange||"#F97316":C.red,
-            insight: netM===0?"Enter P&L data":netM>=15?"Excellent — strong bottom line":netM>=8?"Healthy profitability":netM>0?"Thin margins — control overheads":"Loss-making — urgent intervention needed",
-          },
-        ];
-
-        return (
-          <div className="ns-panel">
-            <div className="ns-panel-header">
-              <h3>Key Ratios vs Benchmarks</h3>
-              <span className="ns-label">Industry standard benchmarks</span>
-            </div>
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:0 }} className="ov-ratio-grid">
-              <style>{`.ov-ratio-grid{grid-template-columns:1fr 1fr!important}@media(max-width:540px){.ov-ratio-grid{grid-template-columns:1fr!important}}`}</style>
-              {ratios.map((r,i) => {
-                const barPct = r.raw > 0 ? Math.min((r.raw/r.maxBar)*100, 100) : 0;
-                const bmkPct = Math.min((r.benchmark/r.maxBar)*100, 100);
-                return (
-                  <div key={i} style={{ padding:"14px 18px", borderBottom:`1px solid ${C.border}`,
-                    borderRight: i%2===0 ? `1px solid ${C.border}` : "none" }}>
-                    <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:6 }}>
-                      <i className={"ti "+r.icon} style={{ fontSize:13, color:r.color }}/>
-                      <span style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.06em" }}>{r.label}</span>
-                    </div>
-                    <div style={{ fontFamily:FM, fontSize:18, fontWeight:900, color:r.color, marginBottom:8 }}>{r.value}</div>
-                    {/* Bar with benchmark marker */}
-                    <div style={{ position:"relative", height:7, background:"#F3F4F6", borderRadius:10, marginBottom:6 }}>
-                      <div style={{ height:"100%", width:`${barPct}%`, background:r.color, borderRadius:10, transition:"width 0.6s ease" }}/>
-                      {/* Benchmark line */}
-                      <div style={{ position:"absolute", top:-3, bottom:-3, left:`${bmkPct}%`, width:2, background:"#94A3B8", borderRadius:2 }}/>
-                    </div>
-                    <div style={{ fontFamily:F, fontSize:10, color:C.muted }}>
-                      <span style={{ color:"#94A3B8" }}>▸ Benchmark: {r.benchmark}{r.label.includes("Day")?"d":"%"}</span>
-                    </div>
-                    <div style={{ fontFamily:F, fontSize:11, color:r.color, marginTop:4, fontWeight:600 }}>{r.insight}</div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        );
-      })()}
-
-      {/* ── Risk & Opportunity Flags ── */}
-      {(() => {
-        const pNum = s => parseFloat(String(s||"0").replace(/[^0-9.-]/g,"")) || 0;
-        const risks = [];
-        const opps  = [];
-
-        // Collection risk
-        const ar90 = Number(wc.ar90plus || reportData?.ar90plus || 0);
-        const arTot = arBuckets.reduce((s,b)=>s+b.val,0);
-        if (ar90 > 0 && arTot > 0) {
-          const pct = Math.round((ar90/arTot)*100);
-          risks.push({ icon:"ti-alert-circle", color:pct>30?C.red:C.amber, level:pct>30?"High":"Medium",
-            title:"Collection Risk", detail:`${pct}% of A/R is 90+ days overdue`, action:"Chase receivables" });
-        }
-
-        // Payables overdue
-        const apOv = (wc.apSchedule||[]).filter(r=>r.priority==="Overdue");
-        if (apOv.length > 0) {
-          const ovAmt = apOv.reduce((s,r)=>s+Number(r.amount||0),0);
-          risks.push({ icon:"ti-receipt-off", color:C.red, level:"High",
-            title:"Overdue Payables", detail:`${apOv.length} vendor${apOv.length>1?"s":""} overdue — ${uaeClient?"AED ":"₹"}${ovAmt.toLocaleString()}`, action:"Pay immediately" });
-        }
-
-        // Cash runway
-        const runwayKpi2 = (kpis||[]).find(k=>k.label?.toLowerCase().includes("runway"));
-        if (runwayKpi2?.value && runwayKpi2.value !== "—") {
-          const mo = parseFloat(String(runwayKpi2.value).replace(/[^0-9.]/g,""));
-          if (!isNaN(mo) && mo < 6)
-            risks.push({ icon:"ti-flame", color:mo<3?C.red:C.amber, level:mo<3?"Critical":"High",
-              title:"Cash Runway", detail:`${runwayKpi2.value} remaining`, action:mo<3?"Raise funds immediately":"Review burn rate" });
-        }
-
-        // Compliance overdue
-        const checklistItems3 = reportData?.checklist || [];
-        const overdueCL = checklistItems3.filter(c=>!c.done && c.status!=="done" && c.dueDate && new Date(c.dueDate)<new Date());
-        if (overdueCL.length > 0)
-          risks.push({ icon:"ti-shield-off", color:C.amber, level:"Medium",
-            title:"Overdue Compliance", detail:`${overdueCL.length} items past due date`, action:"Review compliance tab" });
-
-        // Revenue concentration
-        if (top5Clients.length > 0 && arTotal > 0) {
-          const topPct = Math.round((top5Clients[0].val/arTotal)*100);
-          if (topPct > 40)
-            risks.push({ icon:"ti-building", color:C.amber, level:"Medium",
-              title:"Revenue Concentration", detail:`Top client is ${topPct}% of receivables`, action:"Diversify client base" });
-        }
-
-        // Growth opportunity
-        const revActual = pNum(pl.revenue?.actual);
-        const revPrev   = pNum(pl.revenue?.prev);
-        if (revActual > revPrev && revPrev > 0) {
-          const g = ((revActual-revPrev)/revPrev*100).toFixed(1);
-          opps.push({ icon:"ti-rocket", color:C.green, title:"Revenue Growth", detail:`+${g}% vs prior period`, action:"Sustain momentum" });
-        }
-        if (pNum(pl.gpMargin?.actual) >= 35)
-          opps.push({ icon:"ti-percentage", color:C.green, title:"Strong Gross Margin", detail:`${pl.gpMargin.actual} — above industry avg`, action:"Reinvest in growth" });
-        if (Number(wc.dpo||0) < 30 && Number(wc.dpo||0) > 0)
-          opps.push({ icon:"ti-calendar-plus", color:C.blue, title:"Extend Supplier Terms", detail:`DPO at ${wc.dpo}d — room to negotiate`, action:"Renegotiate payment terms" });
-
-        if (risks.length === 0 && opps.length === 0) return null;
-
-        const levelColor = l => l==="Critical"?{ bg:"#FFF1F0", border:"#FCA5A5", text:C.red }:l==="High"?{ bg:"#FFF7ED", border:"#FED7AA", text:C.amber }:{ bg:"#FFFBEB", border:"#FDE68A", text:"#92400E" };
-
-        return (
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }} className="ov-risk-row">
-            <style>{`.ov-risk-row{grid-template-columns:1fr 1fr!important}@media(max-width:580px){.ov-risk-row{grid-template-columns:1fr!important}}`}</style>
-
-            {/* Risks */}
-            <div className="ns-panel" style={{ margin:0 }}>
-              <div className="ns-panel-header">
-                <h3>Risk Flags</h3>
-                {risks.length > 0 && <span className="ns-badge red">{risks.length} active</span>}
-              </div>
-              {risks.length === 0
-                ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
-                    <i className="ti ti-circle-check" style={{ fontSize:28, color:C.green, display:"block", marginBottom:6 }}/>
-                    <div style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700 }}>No major risks detected</div>
-                  </div>
-                : <div style={{ padding:"10px 14px 14px" }}>
-                    {risks.map((risk,i) => {
-                      const lc = levelColor(risk.level);
-                      return (
-                        <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:9,
-                          background:lc.bg, border:`1px solid ${lc.border}`, marginBottom:8 }}>
-                          <i className={"ti "+risk.icon} style={{ fontSize:15, color:lc.text, flexShrink:0, marginTop:1 }}/>
-                          <div style={{ flex:1, minWidth:0 }}>
-                            <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:2 }}>
-                              <span style={{ fontFamily:F, fontSize:11, fontWeight:800, color:lc.text }}>{risk.title}</span>
-                              <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:20,
-                                background:lc.border, color:lc.text }}>{risk.level}</span>
-                            </div>
-                            <div style={{ fontFamily:F, fontSize:11, color:lc.text, opacity:0.85 }}>{risk.detail}</div>
-                            <div style={{ fontFamily:F, fontSize:10, color:lc.text, fontWeight:700, marginTop:3 }}>→ {risk.action}</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-              }
-            </div>
-
-            {/* Opportunities */}
-            <div className="ns-panel" style={{ margin:0 }}>
-              <div className="ns-panel-header">
-                <h3>Opportunities</h3>
-                {opps.length > 0 && <span className="ns-badge green">{opps.length} identified</span>}
-              </div>
-              {opps.length === 0
-                ? <div style={{ padding:"20px 18px", textAlign:"center" }}>
-                    <i className="ti ti-bulb" style={{ fontSize:28, color:C.dim, display:"block", marginBottom:6 }}/>
-                    <div style={{ fontFamily:F, fontSize:12, color:C.muted }}>Add more data to surface opportunities</div>
-                  </div>
-                : <div style={{ padding:"10px 14px 14px" }}>
-                    {opps.map((opp,i) => (
-                      <div key={i} style={{ display:"flex", gap:10, padding:"10px 12px", borderRadius:9,
-                        background:"#F0FDF4", border:"1px solid #86EFAC", marginBottom:8 }}>
-                        <i className={"ti "+opp.icon} style={{ fontSize:15, color:opp.color, flexShrink:0, marginTop:1 }}/>
-                        <div style={{ flex:1, minWidth:0 }}>
-                          <div style={{ fontFamily:F, fontSize:11, fontWeight:800, color:opp.color, marginBottom:2 }}>{opp.title}</div>
-                          <div style={{ fontFamily:F, fontSize:11, color:"#166534", opacity:0.9 }}>{opp.detail}</div>
-                          <div style={{ fontFamily:F, fontSize:10, color:opp.color, fontWeight:700, marginTop:3 }}>→ {opp.action}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-              }
-            </div>
-          </div>
-        );
-      })()}
-
       {/* ── Cash Conversion Cycle ── */}
       {(Number(wc.dso||0) > 0 || Number(wc.dpo||0) > 0 || Number(wc.dio||0) > 0) && (() => {
         const dso2 = Number(wc.dso || wc.debtorDays || 0);
@@ -2537,7 +2321,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       {/* Cash Flow Trend removed here — the same chart appears on the Dashboard
           and the dedicated Cash Flow page has the full forecast view. */}
 
-      {/* ── Payables Aging row ── */}
+      {/* ── Payables Aging row — hidden until there is something to age ── */}
+      {apRows.length > 0 && (
       <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:14 }} className="ov-aging-row">
         <style>{`.ov-aging-row{grid-template-columns:1fr!important}`}</style>
 
@@ -2591,8 +2376,10 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           }
         </div>
       </div>
+      )}
 
-      {/* ── Top 5 Clients + Top 5 Vendors row ── */}
+      {/* ── Top clients and vendors — hidden until one of them has rows ── */}
+      {(arAging.length > 0 || (wc.apSchedule || []).length > 0) && (
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }} className="ov-top5-row">
         <style>{`.ov-top5-row{grid-template-columns:1fr 1fr!important}@media(max-width:580px){.ov-top5-row{grid-template-columns:1fr!important}}`}</style>
 
@@ -2667,6 +2454,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           }
         </div>
       </div>
+      )}
 
       {/* ── Invoice Status + Connected Persons row ── */}
       <div style={{ display:"grid", gridTemplateColumns:`${isMobile?"1fr":"180px 1fr"}`, gap:14 }}>
