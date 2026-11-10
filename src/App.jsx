@@ -1833,7 +1833,7 @@ PACK_CONFIG.premium  = PACK_CONFIG.corporate;
 // FIXED: Overview now shows Financial Health Score + Story of Month + Actions only.
 // Removed: Revenue/Expenses chart, Cash Flow chart, KPI cards (all moved to Dashboard).
 // This page is the executive landing — no detailed tables or repeated metrics.
-function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[], isDemo=false, liveKpis=null, liveReportData=null }) {
+function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=null, reportData=null, invoices=[], isDemo=false, liveKpis=null, liveReportData=null, liveSnapshot=null }) {
   const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
   const displayKpis  = kpis || KPIs;
   const ovPack       = normalizePack(client?.client_pack || client?.clientPack);
@@ -1849,6 +1849,50 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
   const accentColor = uaeClient ? "#00732F" : C.blue;
+
+  // The facts layer: refreshed nightly from the client's own books and shown
+  // without review, because none of it carries judgement. Kept deliberately
+  // plain and small — plenty of products stop at telling you what happened,
+  // and the signed analysis below it is the part worth paying for.
+  const LiveStrip = () => {
+    const snap = liveSnapshot?.data;
+    if (!snap) return null;
+    const cur = (v) => {
+      const n = Math.abs(Number(v) || 0);
+      if (uaeClient) return `AED ${n >= 1e6 ? (n/1e6).toFixed(2)+"M" : n >= 1e3 ? (n/1e3).toFixed(0)+"K" : n.toFixed(0)}`;
+      return n >= 1e7 ? `₹${(n/1e7).toFixed(2)} Cr` : n >= 1e5 ? `₹${(n/1e5).toFixed(1)}L` : `₹${n.toLocaleString("en-IN")}`;
+    };
+    const when = liveSnapshot.updated_at
+      ? new Date(liveSnapshot.updated_at).toLocaleString("en-GB",
+          { day:"numeric", month:"short", hour:"2-digit", minute:"2-digit" })
+      : null;
+    const cells = [
+      ["Cash",                cur(snap.cash)],
+      ["Owed to you",         cur(snap.receivables)],
+      ["You owe",             cur(snap.payables)],
+      ["Overdue invoices",    snap.overdueCount > 0 ? `${snap.overdueCount} · ${cur(snap.overdueValue)}` : "None"],
+      ["Invoiced this month", cur(snap.invoicedThisMonth)],
+    ];
+    return (
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:14, background:C.bg,
+        padding:"12px 16px", marginBottom:16 }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"baseline",
+          gap:10, marginBottom:8, flexWrap:"wrap" }}>
+          <span style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim,
+            textTransform:"uppercase", letterSpacing:"0.1em" }}>From your books</span>
+          {when && <span style={{ fontFamily:F, fontSize:11, color:C.dim }}>as at {when}</span>}
+        </div>
+        <div style={{ display:"flex", gap:26, flexWrap:"wrap" }}>
+          {cells.map(([label, value]) => (
+            <div key={label}>
+              <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:C.text }}>{value}</div>
+              <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:1 }}>{label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
 
   const healthScore = reportData?.healthScore || 72;
   const healthColor = healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
@@ -2078,6 +2122,9 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
         );
       })()}
+
+      {/* ── From your books: facts, refreshed nightly, no review needed ── */}
+      <LiveStrip/>
 
       {/* ── AI CFO Brief ── */}
       <div className="ns-panel" style={{ borderLeft:`4px solid ${accentColor}` }}>
@@ -16036,6 +16083,7 @@ function Portal({ client, onLogout }) {
   const [liveEngagement,  setLiveEngagement]  = useState(null);
   const [liveInvoices,    setLiveInvoices]    = useState(null);
   const [liveReportData,  setLiveReportData]  = useState(null);
+  const [liveSnapshot,    setLiveSnapshot]    = useState(null);
   const [dataLoading,     setDataLoading]     = useState(false);
  
   const isDemo = client?.isDemo === true;
@@ -16049,7 +16097,7 @@ function Portal({ client, onLogout }) {
     if (!looksLikeUUID) { console.warn("client.id is not a UUID — skipping live data fetch:", client.id); return; }
     const fetchAll = async () => {
       setDataLoading(true);
-      const [kpiRes, actionRes, engRes, invRes, rdRes] = await Promise.all([
+      const [kpiRes, actionRes, engRes, invRes, rdRes, liveRes] = await Promise.all([
         supabase.from("kpis").select("*").eq("client_id", client.id)
           .order("updated_at", { ascending:false }).limit(1).maybeSingle(),
         supabase.from("action_items").select("*").eq("client_id", client.id)
@@ -16058,12 +16106,16 @@ function Portal({ client, onLogout }) {
         supabase.from("invoices").select("*").eq("client_id", client.id)
           .order("created_at", { ascending:false }),
         supabase.from("report_data").select("*").eq("client_id", client.id).maybeSingle(),
+        supabase.from("live_snapshots").select("*").eq("client_id", client.id).maybeSingle(),
       ]);
       if (kpiRes.data)    setLiveKpis(kpiRes.data);
       if (actionRes.data) setLiveActions(actionRes.data);
       if (engRes.data)    setLiveEngagement(engRes.data);
       if (invRes.data)    setLiveInvoices(invRes.data);
       if (rdRes.data?.data) { try { setLiveReportData(typeof rdRes.data.data === "string" ? JSON.parse(rdRes.data.data) : rdRes.data.data); } catch(e){} }
+      // Absent or failing is normal — a client with no accounting connection
+      // simply has no live figures, and the strip hides itself.
+      if (liveRes?.data?.data) setLiveSnapshot(liveRes.data);
       setDataLoading(false);
     };
     fetchAll();
@@ -16284,7 +16336,7 @@ function Portal({ client, onLogout }) {
       : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
  
   const pages = {
-    overview:   <Overview   client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} invoices={isDemo ? [] : (liveInvoices||[])} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
+    overview:   <Overview   liveSnapshot={liveSnapshot} client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} invoices={isDemo ? [] : (liveInvoices||[])} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
     dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading} setPage={setPage} actions={resolvedActions} invoices={isDemo ? [] : (liveInvoices||[])}/>,
     cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
     actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
@@ -18365,7 +18417,7 @@ function DraftReviewCard({ client, reportData, setReportData, kpis, actions = []
 // Renders the real client screens against the draft data held in admin, so
 // Apply is never pressed blind. These are the same components the portal
 // mounts — not a mock-up of them — so what shows here is what the client gets.
-function ClientPreview({ client, reportData, kpis, actions = [], invoices = [] }) {
+function ClientPreview({ client, reportData, kpis, actions = [], invoices = [], liveSnapshot = null }) {
   const [page, setPage] = React.useState("overview");
 
   if (!client) return (
@@ -18392,7 +18444,8 @@ function ClientPreview({ client, reportData, kpis, actions = [], invoices = [] }
   const list  = (v) => Array.isArray(v) ? v : [];
 
   const view = {
-    overview:  <Overview  client={client} setPage={navigate} kpis={tiles} garimaNote={kpis?.garima_note}
+    overview:  <Overview  liveSnapshot={liveSnapshot}
+                          client={client} setPage={navigate} kpis={tiles} garimaNote={kpis?.garima_note}
                           actions={list(actions)} engagement={null} reportData={reportData}
                           invoices={list(invoices)} isDemo={false}
                           liveKpis={kpis} liveReportData={reportData}/>,
@@ -18664,6 +18717,9 @@ function AdminPanel({ admin, onLogout }) {
   // Action items state
   const [actions, setActions] = useState([]);
   const [newAction, setNewAction] = useState({ text:"", priority:"High", month:"" });
+  // The nightly facts layer, so the preview shows what the client sees rather
+  // than a version of their screen with the live strip missing.
+  const [liveSnap, setLiveSnap] = useState(null);
  
   // New client state
   const [newClient, setNewClient] = useState({
@@ -18911,6 +18967,10 @@ function AdminPanel({ admin, onLogout }) {
     const { data: reqData } = await supabase.from("requests")
       .select("*").eq("client_id", c.id).order("created_at", { ascending:false });
     setRequests(reqData || []);
+    // Load the live snapshot (absent for a client with no accounting connection)
+    const { data: lsData } = await supabase.from("live_snapshots")
+      .select("*").eq("client_id", c.id).maybeSingle();
+    setLiveSnap(lsData || null);
     // Load report data
     const { data: rdData } = await supabase.from("report_data")
       .select("*").eq("client_id", c.id).maybeSingle();
@@ -20183,7 +20243,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           {/* ── PREVIEW AS CLIENT ── */}
           {tab === "preview" && (
             <ClientPreview client={selected} reportData={reportData} kpis={kpis}
-              actions={actions} invoices={invoices}/>
+              actions={actions} invoices={invoices} liveSnapshot={liveSnap}/>
           )}
 
           {/* ── CONNECTIONS (Zoho Books) ── */}

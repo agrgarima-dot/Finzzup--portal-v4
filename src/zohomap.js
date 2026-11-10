@@ -243,6 +243,43 @@ export function contactsToRegisters(contacts = []) {
 }
 
 /**
+ * The facts layer: figures that carry no judgement and can therefore refresh on
+ * their own, without a Chartered Accountant reading them first.
+ *
+ * The line matters. A bank balance is either right or Zoho is wrong — there is
+ * nothing to review. A margin, a forecast or a recommendation is a different
+ * thing entirely, and none of those belong here. Anything requiring an opinion
+ * stays on the publish cycle.
+ */
+export function liveSnapshot(trialBalanceRows = [], invoices = [], asOf = new Date()) {
+  const sumGroup = (g) => trialBalanceRows
+    .filter(r => r.group === g)
+    .reduce((s, r) => s + (r.dr - r.cr), 0);
+
+  const live = invoices.filter(i => !DEAD_STATUSES.has(String(i?.status || "").toLowerCase()));
+  const outstanding = live.reduce((s, i) => s + Math.max(0, n(i.balance)), 0);
+
+  const today = asOf.toISOString().slice(0, 10);
+  const overdue = live.filter(i => n(i.balance) > 0 && i.due_date && i.due_date < today);
+
+  const monthStart = new Date(asOf.getFullYear(), asOf.getMonth(), 1).toISOString().slice(0, 10);
+  const invoicedThisMonth = live
+    .filter(i => (i.date || "") >= monthStart)
+    .reduce((s, i) => s + n(i.total), 0);
+
+  return {
+    asOf: asOf.toISOString(),
+    cash:               sumGroup("cash"),
+    receivables:        outstanding,
+    payables:          -sumGroup("payables"),      // held as a credit; report it positive
+    overdueCount:       overdue.length,
+    overdueValue:       overdue.reduce((s, i) => s + n(i.balance), 0),
+    invoicedThisMonth,
+    invoiceCount:       live.length,
+  };
+}
+
+/**
  * Free-zone qualifying income split, from invoices joined to their customer's
  * tax treatment.
  *

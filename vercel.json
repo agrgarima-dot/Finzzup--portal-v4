@@ -4,8 +4,8 @@
   ],
   "crons": [
     {
-      "path": "/api/keepalive",
-      "schedule": "0 6 */3 * *"
+      "path": "/api/zoho-refresh",
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/monthly-reminder",
