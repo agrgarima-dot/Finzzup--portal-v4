@@ -10,6 +10,7 @@
 // Missing env vars → {ok:false, reason:"missing_env_vars"}, never a 500.
 
 import { computeAlerts } from "../src/alerts.js";
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../src/supabaseConfig.js";
 
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -21,8 +22,8 @@ export default async function handler(req, res) {
   if (req.method === "OPTIONS") return res.status(200).end();
   if (req.method !== "GET" && req.method !== "POST") return res.status(405).end();
 
-  const supaUrl   = process.env.VITE_SUPABASE_URL      || process.env.SUPABASE_URL;
-  const supaKey   = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const supaUrl   = process.env.VITE_SUPABASE_URL      || process.env.SUPABASE_URL      || SUPABASE_URL;
+  const supaKey   = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || SUPABASE_ANON_KEY;
   const resendKey = process.env.RESEND_API_KEY;
   const from      = process.env.NOTIFY_FROM || "Garima · Finzzup <garima@finzzup.org>";
   const portalUrl = process.env.PORTAL_URL  || "https://portal.finzzup.org";
