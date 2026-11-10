@@ -18142,6 +18142,27 @@ function ZohoConnectionCard({ client, adminEmail }) {
     <Card><div style={{ fontFamily:F, fontSize:13, color:C.muted }}>Checking…</div></Card>
   );
 
+  // A failed check is not the same as "not set up yet", and showing the setup
+  // card for both sends you back to Vercel to fix settings that are already
+  // correct. Say what actually went wrong.
+  if (state.ok === false) {
+    const why = {
+      not_admin:     `Signed in as ${adminEmail || "an unknown account"}, but that email is not in the admins table. Add a row there with exactly this email.`,
+      no_admin:      "The portal did not send an admin email with the request. Sign out and sign in again.",
+      bad_client_id: "This client has no valid id on record, so the connection could not be looked up.",
+      unreachable:   "Could not reach /api/zoho-status at all. The deployment may still be building.",
+    }[state.reason] || `The check failed${state.reason ? ` (${state.reason})` : ""}.`;
+    return (
+      <Card>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, gap:10 }}>
+          <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text }}>Zoho Books</div>
+          <Badge color={C.amber}>Cannot check</Badge>
+        </div>
+        <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8 }}>{why}</p>
+      </Card>
+    );
+  }
+
   // Zoho not wired up yet is a normal state, not an error. Say what is missing.
   if (!state.configured) return (
     <Card>
