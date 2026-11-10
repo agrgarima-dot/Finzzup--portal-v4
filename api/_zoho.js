@@ -82,6 +82,26 @@ export async function zohoList(conn, accessToken, path, key, params = {}, cap = 
   return { rows: out.slice(0, cap), truncated, error: null };
 }
 
+/**
+ * Is this email an admin? Third endpoint to need this, so it lives here now.
+ * Case-insensitive: the admins row is typed by hand and the sign-in path does
+ * not lowercase, so an exact match would reject "Garima@..." — an account that
+ * had just signed in successfully.
+ */
+export async function isAdmin(supaUrl, serviceKey, email) {
+  const clean = String(email || "").trim().toLowerCase();
+  if (!clean) return false;
+  // % and _ are PostgREST wildcards; neutralise them so an odd address cannot widen the match.
+  const pattern = clean.replace(/[%_]/g, (ch) => `\\${ch}`);
+  const r = await fetch(
+    `${supaUrl}/rest/v1/admins?email=ilike.${encodeURIComponent(pattern)}&select=email&limit=1`,
+    { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
+  ).catch(() => null);
+  if (!r || !r.ok) return false;
+  const rows = await r.json().catch(() => null);
+  return Array.isArray(rows) && rows.length > 0;
+}
+
 /** Read a client's connection row. Service role key only — these rows are invisible to anon. */
 export async function getConnection(supaUrl, serviceKey, clientId) {
   const r = await fetch(
