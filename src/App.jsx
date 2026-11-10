@@ -18152,13 +18152,24 @@ function ZohoConnectionCard({ client, adminEmail }) {
       </p>
       <div style={{ padding:"12px 14px", borderRadius:12, background:C.bg3 }}>
         <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
-          textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>Still needed</div>
-        {["ZOHO_CLIENT_ID and ZOHO_CLIENT_SECRET from api-console.zoho.com",
-          "ZOHO_REDIRECT_URI pointing at /api/zoho-auth",
-          "SUPABASE_SERVICE_ROLE_KEY",
-          "The zoho_connections tables (supabase/zoho_connections.sql)"].map((t,i) => (
-          <div key={i} style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.9 }}>· {t}</div>
+          textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>
+          {state.missing?.length ? "Missing in Vercel" : "Still needed"}
+        </div>
+        {(state.missing?.length
+          ? state.missing
+          : ["ZOHO_CLIENT_ID and ZOHO_CLIENT_SECRET from api-console.zoho.com",
+             "ZOHO_REDIRECT_URI pointing at /api/zoho-auth",
+             "SUPABASE_SERVICE_ROLE_KEY"]
+        ).map((t,i) => (
+          <div key={i} style={{ fontFamily: state.missing?.length ? FM : F,
+            fontSize:12, color:C.muted, lineHeight:1.9 }}>· {t}</div>
         ))}
+        {!!state.missing?.length && (
+          <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:8, lineHeight:1.7 }}>
+            Add these in Vercel for the <strong>Production</strong> environment, then redeploy —
+            variables do not reach a deployment that was already built.
+          </div>
+        )}
       </div>
     </Card>
   );

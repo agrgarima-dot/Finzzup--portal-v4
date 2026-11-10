@@ -25,9 +25,20 @@ export default async function handler(req, res) {
   const supaUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const supaKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  // Zoho not set up yet is a normal state, not an error — the UI says so plainly.
-  if (!supaUrl || !supaKey || !process.env.ZOHO_CLIENT_ID) {
-    return res.status(200).json({ ok: true, configured: false, connected: false });
+  // Zoho not set up yet is a normal state, not an error. Name the variables that
+  // are actually missing rather than listing all of them — otherwise the screen
+  // sends you hunting through settings you have already filled in. Only names
+  // are reported, never values.
+  const missing = [
+    !supaUrl                        && "SUPABASE_URL",
+    !supaKey                        && "SUPABASE_SERVICE_ROLE_KEY",
+    !process.env.ZOHO_CLIENT_ID     && "ZOHO_CLIENT_ID",
+    !process.env.ZOHO_CLIENT_SECRET && "ZOHO_CLIENT_SECRET",
+    !process.env.ZOHO_REDIRECT_URI  && "ZOHO_REDIRECT_URI",
+  ].filter(Boolean);
+
+  if (missing.length) {
+    return res.status(200).json({ ok: true, configured: false, connected: false, missing });
   }
 
   const clientId   = String(req.query?.clientId   || "");
