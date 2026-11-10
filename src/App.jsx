@@ -17654,6 +17654,106 @@ function AdminLogin({ onLogin }) {
   );
 }
  
+// ─── ZOHO BOOKS CONNECTION ────────────────────────────────────────────────────
+// Replaces the manual "export a CSV from Zoho and upload it" step for clients
+// whose books live in Zoho Books — which, in the UAE, is most of them.
+//
+// The connection status cannot be read from the browser: zoho_connections holds
+// a refresh token and is locked to the service role key, so this asks
+// /api/zoho-status instead of querying Supabase directly.
+function ZohoConnectionCard({ client, adminEmail }) {
+  const [state, setState] = useState({ loading:true });
+
+  useEffect(() => {
+    if (!client?.id) return;
+    let live = true;
+    setState({ loading:true });
+    fetch(`/api/zoho-status?clientId=${encodeURIComponent(client.id)}&adminEmail=${encodeURIComponent(adminEmail || "")}`)
+      .then(r => r.json())
+      .then(j => { if (live) setState({ loading:false, ...j }); })
+      .catch(() => { if (live) setState({ loading:false, ok:false, reason:"unreachable" }); });
+    return () => { live = false; };
+  }, [client?.id, adminEmail]);
+
+  const Row = ({ label, value }) => (
+    <div style={{ display:"flex", justifyContent:"space-between", gap:12, padding:"8px 0",
+      borderBottom:`1px solid ${C.border}` }}>
+      <span style={{ fontFamily:F, fontSize:12, color:C.muted, fontWeight:600 }}>{label}</span>
+      <span style={{ fontFamily:F, fontSize:13, color:C.text, textAlign:"right" }}>{value}</span>
+    </div>
+  );
+
+  if (state.loading) return (
+    <Card><div style={{ fontFamily:F, fontSize:13, color:C.muted }}>Checking…</div></Card>
+  );
+
+  // Zoho not wired up yet is a normal state, not an error. Say what is missing.
+  if (!state.configured) return (
+    <Card>
+      <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, marginBottom:6 }}>Zoho Books</div>
+      <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8, marginBottom:14 }}>
+        Not set up yet. Once the Zoho app is registered and its keys are in Vercel, a client's books
+        connect once and the numbers refresh on their own — no more exporting a CSV by hand.
+      </p>
+      <div style={{ padding:"12px 14px", borderRadius:12, background:C.bg3 }}>
+        <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+          textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:8 }}>Still needed</div>
+        {["ZOHO_CLIENT_ID and ZOHO_CLIENT_SECRET from api-console.zoho.com",
+          "ZOHO_REDIRECT_URI pointing at /api/zoho-auth",
+          "SUPABASE_SERVICE_ROLE_KEY",
+          "The zoho_connections tables (supabase/zoho_connections.sql)"].map((t,i) => (
+          <div key={i} style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.9 }}>· {t}</div>
+        ))}
+      </div>
+    </Card>
+  );
+
+  if (!state.connected) return (
+    <Card>
+      <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, marginBottom:6 }}>Zoho Books</div>
+      <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8, marginBottom:16 }}>
+        <strong>{client.company || client.name}</strong> is not connected. Connecting opens Zoho, asks for
+        read-only permission, and comes back here. If the login is an accountant's, every client
+        organisation it can see becomes available.
+      </p>
+      <a href={`/api/zoho-auth?action=start&clientId=${encodeURIComponent(client.id)}`}
+        style={{ display:"inline-block", padding:"12px 22px", borderRadius:16, border:"none",
+          background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+          textDecoration:"none", boxShadow:"0 2px 8px rgba(37,99,235,0.18)" }}>
+        Connect Zoho Books
+      </a>
+      <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:12, lineHeight:1.7 }}>
+        Read-only. Finzzup never sees the client's Zoho password, and access can be withdrawn
+        from Zoho at any time.
+      </div>
+    </Card>
+  );
+
+  const c  = state.connection || {};
+  const ts = (v) => v ? new Date(v).toLocaleString("en-IN", { dateStyle:"medium", timeStyle:"short" }) : "—";
+
+  return (
+    <Card>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, gap:10 }}>
+        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text }}>Zoho Books</div>
+        <Badge color={c.last_sync_error ? C.red : C.green}>
+          {c.last_sync_error ? "Sync failed" : "Connected"}
+        </Badge>
+      </div>
+      <Row label="Organisation" value={c.organization_name || c.organization_id || "—"}/>
+      <Row label="Region"       value={(c.location || "—").toUpperCase()}/>
+      <Row label="Connected"    value={ts(c.created_at)}/>
+      <Row label="Last sync"    value={ts(c.last_sync_at)}/>
+      {c.last_sync_error && (
+        <div style={{ marginTop:12, padding:"10px 14px", borderRadius:12,
+          background:`${C.red}08`, border:`1px solid ${C.red}25` }}>
+          <div style={{ fontFamily:F, fontSize:12, color:C.red, lineHeight:1.7 }}>{c.last_sync_error}</div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
 function AdminPanel({ admin, onLogout }) {
   const [tab, setTab]         = useState("home");
   const [clients, setClients] = useState([]);
@@ -18143,6 +18243,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
     { id:"eletter",    icon:"ti-file-description", label:"Engagement Letter", group:"Clients" },
     // ── India Client Data ──
+    { id:"connections",icon:"ti-plug-connected", label:"Connections", group:"Shared"    },
     { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"Shared"     },
     { id:"kpis",       icon:"ti-chart-bar", label:"KPIs",           group:"India"      },
     { id:"actions",    icon:"ti-checkbox", label:"Action Items",   group:"India"      },
@@ -19031,6 +19132,29 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   )}
                 </Card>
               )}
+            </div>
+          )}
+
+          {/* ── CONNECTIONS (Zoho Books) ── */}
+          {tab === "connections" && !selected && (
+            <div style={{ textAlign:"center", padding:"48px 24px", color:C.muted, fontFamily:F }}>
+              <i className="ti ti-plug-connected" style={{ fontSize:36, display:"block", marginBottom:12, color:C.dim }}/>
+              <div style={{ fontWeight:700, fontSize:14, color:C.text, marginBottom:6 }}>Select a client first</div>
+              <div style={{ fontSize:12 }}>Choose a client from the dropdown in the sidebar to see where their books live.</div>
+            </div>
+          )}
+          {tab === "connections" && selected && (
+            <div style={{ maxWidth:640 }}>
+              <div style={{ marginBottom:14 }}>
+                <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.02em" }}>
+                  Accounting connections
+                </div>
+                <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
+                  Where this client's books live. A connected client's numbers arrive on their own;
+                  everyone else is imported by hand from CSV Import.
+                </div>
+              </div>
+              <ZohoConnectionCard client={selected} adminEmail={admin?.email}/>
             </div>
           )}
 
