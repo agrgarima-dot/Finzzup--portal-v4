@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import { computeAlerts, parseAmount } from "./alerts.js";
+import { parseLedger, buildReceivablesDrill, buildRevenueDrill, buildPayablesDrill,
+         buildSupplierSpendDrill, computeMsmeExposure, buildMsmeDrill, extractVendorRegister,
+         isMsme, MSME_LIMIT_DAYS, reconcile, validateLedger } from "./ledgerimport.js";
+import { parseTrialBalance, applySavedMapping, extractMapping, buildStatements,
+         validate as tbValidate, COA_GROUPS, groupLabel } from "./trialbalance.js";
 import { BarChart, Bar, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
 // SimpleBarChart — used by legacy sparkline panels
 const SimpleBarChart = ({ data=[], bars=[], height=180 }) => {
@@ -17654,6 +17659,456 @@ function AdminLogin({ onLogin }) {
   );
 }
  
+// ─── TRIAL BALANCE & LEDGER IMPORT ───────────────────────────────────────────
+// Ported out of src/admin.jsx, which nothing imported and which never reached
+// the built bundle — so these screens had never actually been reachable.
+function parseTxnLines(txt) {
+  return String(txt || "").split("\n").map(l => l.trim()).filter(Boolean).map(l => {
+    const p = l.split("|").map(s => s.trim());
+    return { id:p[0]||"", date:p[1]||"", desc:p[2]||"", amount:p[3]||"", status:(p[4]||"unpaid").toLowerCase() };
+  });
+}
+function txnLinesToText(txns) {
+  return (txns || []).map(t => [t.id, t.date, t.desc, t.amount, t.status].filter((_,i)=>i<5).join(" | ")).join("\n");
+}
+
+// Generic breakup-row editor: name / amount / sub-label / optional txns textarea
+function DrillRowsEditor({ rows, onChange, nameLabel="Name", fixedNames=null }) {
+  const list = rows || [];
+  const update = (i, patch) => onChange(list.map((r, j) => j === i ? { ...r, ...patch } : r));
+  const remove = (i) => onChange(list.filter((_, j) => j !== i));
+  const add = () => onChange([...list, { name:"", value:0, sub:"", txns:[] }]);
+  const COLS = "1.8fr 1fr 1fr 1.4fr 30px";
+  return (
+    <div>
+      <div style={{ display:"grid", gridTemplateColumns:COLS, gap:6, marginBottom:4 }}>
+        {[nameLabel, "Amount (number)", "Prior period", "Sub-label", ""].map((h,i) => (
+          <div key={i} style={{ fontFamily:F, fontSize:10, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
+        ))}
+      </div>
+      {list.map((r, i) => (
+        <div key={i} style={{ marginBottom:8 }}>
+          <div style={{ display:"grid", gridTemplateColumns:COLS, gap:6 }}>
+            {fixedNames
+              ? <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, padding:"6px 4px" }}>{r.name}</div>
+              : <InlineInput value={r.name} onCommit={v => update(i, { name:v })} placeholder="Customer / account name"/>}
+            <InlineInput value={String(r.value ?? "")} onCommit={v => update(i, { value: Number(String(v).replace(/[^0-9.-]/g,"")) || 0 })} placeholder="4200000"/>
+            <InlineInput value={r.prev == null ? "" : String(r.prev)}
+              onCommit={v => update(i, { prev: v === "" ? undefined : (Number(String(v).replace(/[^0-9.-]/g,"")) || 0) })}
+              placeholder="optional"/>
+            <InlineInput value={r.sub || ""} onCommit={v => update(i, { sub:v })} placeholder="e.g. Export · Dubai · 45d terms"/>
+            {!fixedNames ? (
+              <button onClick={() => remove(i)} style={{ border:`1px solid ${C.border}`, background:"none",
+                borderRadius:8, color:C.red, cursor:"pointer", fontSize:13 }}>×</button>
+            ) : <span/>}
+          </div>
+          <textarea
+            defaultValue={txnLinesToText(r.txns)}
+            key={`tx-${i}-${(r.txns||[]).length}`}
+            onBlur={e => update(i, { txns: parseTxnLines(e.target.value) })}
+            placeholder={"Invoices (optional, one per line):  INV-101 | 12 Jul 2026 | Description | ₹4.2L | paid/unpaid/overdue"}
+            rows={Math.max(1, (r.txns||[]).length)}
+            style={{ width:"100%", boxSizing:"border-box", marginTop:4, padding:"6px 8px", borderRadius:8,
+              fontSize:11, border:`1px dashed ${C.border}`, fontFamily:FM, color:C.muted,
+              background:C.bg2, outline:"none", resize:"vertical" }}/>
+        </div>
+      ))}
+      {!fixedNames && (
+        <button onClick={add} style={{ padding:"7px 14px", borderRadius:10, border:`1.5px dashed ${C.border}`,
+          background:"none", fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, cursor:"pointer" }}>
+          + Add row
+        </button>
+      )}
+    </div>
+  );
+}
+
+
+
+// ─── LEDGER IMPORT CARD ───────────────────────────────────────────────────────
+// A trial balance stops at the ledger total. This turns a bill-wise outstanding
+// report or a sales register into the invoice-level detail clients drill into —
+// and reconciles it back to the trial balance before anything is published.
+function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tbPayables }) {
+  const [raw, setRaw]   = React.useState("");
+  const [kind, setKind] = React.useState("receivables");   // receivables | revenue | payables | supplierSpend
+  const [msmeFlags, setMsmeFlags] = React.useState(reportData?.vendorRegister || {});
+  const isPayableSide = kind === "payables" || kind === "supplierSpend";
+  const [parsed, setParsed] = React.useState(null);
+  const [msg, setMsg]   = React.useState("");
+  const cur = isUAE(client) ? "AED " : "₹";
+
+  const run = (text) => {
+    const p = parseLedger(text);
+    if (!p.rows.length) { setMsg("No invoices found — the first row must be a header naming the customer and amount columns."); setParsed(null); return; }
+    setParsed(p);
+    setMsg(`${p.rows.length} invoices read${p.skipped?` · ${p.skipped} rows skipped`:""}`);
+  };
+
+  const recon = parsed && kind === "receivables"
+    ? reconcile(parsed, tbReceivables, { label:"Sundry Debtors (trial balance)" })
+    : parsed && kind === "payables"
+    ? reconcile(parsed, tbPayables, { label:"Sundry Creditors (trial balance)" })
+    : null;
+
+  // Section 43B(h) only applies to India — a UAE client has no equivalent rule.
+  const showMsme = isPayableSide && !isUAE(client);
+  const vendorNames = parsed && isPayableSide
+    ? [...new Set(parsed.rows.map(r => r.customer))].sort() : [];
+  const exposure = parsed && showMsme
+    ? computeMsmeExposure(parsed, { vendorRegister: msmeFlags, currency: cur }) : null;
+  const checks  = parsed ? validateLedger(parsed, recon) : [];
+  const blocking = checks.some(c => c.level === "error");
+
+  const apply = () => {
+    if (!parsed) return;
+    const period = reportData?.monthLabel || "";
+    const drill =
+        kind === "receivables"   ? buildReceivablesDrill(parsed, { currency:cur })
+      : kind === "payables"      ? buildPayablesDrill(parsed, { currency:cur, vendorRegister:msmeFlags })
+      : kind === "supplierSpend" ? buildSupplierSpendDrill(parsed, { currency:cur, period })
+      :                            buildRevenueDrill(parsed, { currency:cur, period });
+    setReportData(r => {
+      const next = { ...(r||{}), drill: { ...(r?.drill||{}), [kind]: { ...(r?.drill?.[kind]||{}), ...drill } } };
+      if (isPayableSide) next.vendorRegister = { ...(r?.vendorRegister||{}), ...msmeFlags };
+      if (showMsme && exposure) {
+        // Saved so the alert engine and weekly email can read it.
+        next.msmeExposure = { atRisk:exposure.atRisk, taxImpact:exposure.taxImpact,
+          approaching:exposure.approaching, approachingCount:exposure.approachingCount,
+          breachedCount:exposure.breachedCount, msmeVendors:exposure.msmeVendors };
+        next.drill = { ...next.drill, msme: buildMsmeDrill(exposure) };
+      }
+      return next;
+    });
+    setMsg("Applied — press Save to publish.");
+  };
+
+  const chk = { ok:{c:C.green,i:"ti-circle-check"}, warn:{c:C.amber,i:"ti-alert-triangle"}, error:{c:C.red,i:"ti-alert-circle"} };
+  const money = n => (Math.round(n)||0).toLocaleString(isUAE(client)?"en-AE":"en-IN");
+
+  return (
+    <Card style={{ marginBottom:18 }}>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+        Invoice detail — what clients drill into
+      </div>
+      <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:12, lineHeight:1.6 }}>
+        A trial balance gives totals only. Paste a <b>bill-wise outstanding report</b> for the receivables or payables
+        drill, or a <b>sales / purchase register</b> for revenue and spend by party. Columns are detected automatically.
+      </p>
+      <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+        {[["receivables","Receivables ageing"],["revenue","Sales register"],
+          ["payables","Payables ageing"],["supplierSpend","Purchase register"]].map(([k,l]) => (
+          <button key={k} onClick={()=>{setKind(k); setParsed(null); setMsg("");}}
+            style={{ padding:"6px 14px", borderRadius:16, cursor:"pointer",
+              border:`1.5px solid ${kind===k?C.amber:C.border}`,
+              background: kind===k?`${C.amber}12`:C.bg,
+              fontFamily:F, fontSize:12, fontWeight:700, color:kind===k?C.amber:C.muted }}>{l}</button>
+        ))}
+      </div>
+      <textarea value={raw} onChange={e=>setRaw(e.target.value)} rows={6}
+        placeholder={"Party Name,Bill No,Bill Date,Due Date,Amount,Balance\nAl Madina Trading,EXP-2214,22/07/2026,05/09/2026,4200000,4200000"}
+        style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:9, fontSize:12,
+          border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+      <div style={{ display:"flex", gap:10, marginTop:10, alignItems:"center", flexWrap:"wrap" }}>
+        <button onClick={()=>run(raw)} disabled={!raw.trim()}
+          style={{ padding:"8px 18px", borderRadius:10, border:"none", background:C.gradDiag, color:"#fff",
+            fontFamily:F, fontWeight:700, fontSize:12.5, cursor:raw.trim()?"pointer":"not-allowed", opacity:raw.trim()?1:.5 }}>
+          Read file
+        </button>
+        <label style={{ padding:"8px 14px", borderRadius:10, border:`1.5px solid ${C.border}`, background:C.bg,
+          fontFamily:F, fontWeight:700, fontSize:12.5, color:C.muted, cursor:"pointer" }}>
+          Upload CSV
+          <input type="file" accept=".csv,.txt,.tsv" style={{ display:"none" }}
+            onChange={e=>{ const f=e.target.files[0]; if(!f) return;
+              const rd=new FileReader(); rd.onload=()=>{ setRaw(String(rd.result)); run(String(rd.result)); }; rd.readAsText(f); e.target.value=""; }}/>
+        </label>
+        {msg && <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>{msg}</span>}
+      </div>
+
+      {parsed && (<>
+        <div style={{ marginTop:14, padding:"10px 12px", background:C.bg2, borderRadius:9, border:`1px solid ${C.border}` }}>
+          {checks.map((c,i)=>{ const k=chk[c.level]; return (
+            <div key={i} style={{ display:"flex", gap:9, alignItems:"flex-start", padding:"5px 0" }}>
+              <i className={"ti "+k.i} style={{ fontSize:14, color:k.c, marginTop:1 }}/>
+              <div>
+                <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text }}>{c.label}</div>
+                <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{c.detail}</div>
+              </div>
+            </div> );})}
+        </div>
+
+        {/* Section 43B(h): which suppliers are MSME-registered */}
+        {showMsme && vendorNames.length > 0 && (
+          <div style={{ marginTop:14, padding:"12px 14px", borderRadius:9,
+            border:`1px solid ${exposure?.atRisk>0 ? C.red+"40" : C.border}`,
+            background: exposure?.atRisk>0 ? `${C.red}06` : C.bg }}>
+            <div style={{ fontFamily:F, fontSize:12.5, fontWeight:800, color:C.text, marginBottom:3 }}>
+              Section 43B(h) — MSME suppliers
+            </div>
+            <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:10, lineHeight:1.55 }}>
+              Tick every supplier registered under MSME. Payments to them not settled within {MSME_LIMIT_DAYS} days
+              are disallowed as an expense for the year. Saved against this client, so you only do this once.
+            </div>
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(220px,1fr))", gap:6, maxHeight:180, overflowY:"auto" }}>
+              {vendorNames.map(v => {
+                const k = v.toLowerCase().trim();
+                return (
+                  <label key={k} style={{ display:"flex", alignItems:"center", gap:7, fontFamily:F, fontSize:11.5,
+                    color:C.text, cursor:"pointer", padding:"3px 0" }}>
+                    <input type="checkbox" checked={msmeFlags[k]===true}
+                      onChange={e=>setMsmeFlags(f=>({ ...f, [k]: e.target.checked }))}
+                      style={{ width:14, height:14, cursor:"pointer" }}/>
+                    <span style={{ overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v}</span>
+                  </label>
+                );
+              })}
+            </div>
+            {exposure && (exposure.atRisk > 0 || exposure.approaching > 0) && (
+              <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${C.border}`,
+                fontFamily:F, fontSize:12, color: exposure.atRisk>0 ? C.red : C.amber, fontWeight:700, lineHeight:1.6 }}>
+                {exposure.atRisk > 0
+                  ? `${cur}${money(exposure.atRisk)} is past ${MSME_LIMIT_DAYS} days across ${exposure.breachedCount} bill${exposure.breachedCount>1?"s":""} — roughly ${cur}${money(exposure.taxImpact)} of extra tax if unpaid at year end.`
+                  : `${cur}${money(exposure.approaching)} approaching the ${MSME_LIMIT_DAYS}-day limit (${exposure.approachingCount} bill${exposure.approachingCount>1?"s":""}).`}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* preview of what the client will see */}
+        <div style={{ marginTop:12 }}>
+          <div style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>
+            Preview — {({receivables:"receivables by age", payables:"payables by age",
+                         revenue:"revenue by customer", supplierSpend:"spend by supplier"})[kind]}
+          </div>
+          {(kind === "receivables"   ? buildReceivablesDrill(parsed,{currency:cur})
+           : kind === "payables"      ? buildPayablesDrill(parsed,{currency:cur, vendorRegister:msmeFlags})
+           : kind === "supplierSpend" ? buildSupplierSpendDrill(parsed,{currency:cur})
+           :                            buildRevenueDrill(parsed,{currency:cur})
+            ).dims[0].rows.map((r,i)=>(
+            <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0", borderBottom:`1px solid ${C.border}` }}>
+              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>{r.name} <span style={{ color:C.dim }}>· {r.sub}</span></span>
+              <span style={{ fontFamily:FM, fontSize:12, fontWeight:700 }}>{cur}{money(r.value)}</span>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display:"flex", justifyContent:"flex-end", marginTop:14 }}>
+          <button onClick={apply} disabled={blocking}
+            style={{ padding:"9px 20px", borderRadius:11, border:"none",
+              background: blocking ? C.border : C.gradDiag, color:"#fff",
+              fontFamily:F, fontWeight:700, fontSize:12.5, cursor: blocking?"not-allowed":"pointer" }}>
+            Apply to {({receivables:"receivables", payables:"payables",
+                        revenue:"revenue", supplierSpend:"supplier spend"})[kind]} drill
+          </button>
+        </div>
+      </>)}
+    </Card>
+  );
+}
+
+// ─── TRIAL BALANCE TAB ────────────────────────────────────────────────────────
+// Paste or upload a raw trial balance; accounts are mapped to statement lines,
+// the mapping is saved per client so next month is a review not a rebuild, and
+// nothing can be published until the validation checks pass.
+function TrialBalanceTab({ client, reportData, setReportData, saveReportData, loading, saved }) {
+  const [raw, setRaw]   = React.useState("");
+  const [rows, setRows] = React.useState(null);
+  const [parsed, setParsed] = React.useState(null);
+  const [msg, setMsg]   = React.useState("");
+
+  const savedMap = reportData?.coaMap || {};
+  const money = n => (Math.round(n)||0).toLocaleString(isUAE(client) ? "en-AE" : "en-IN");
+
+  const run = (text) => {
+    const p = parseTrialBalance(text);
+    if (!p.rows.length) { setMsg("No ledger accounts found — check the paste includes account names and amounts."); setParsed(null); setRows(null); return; }
+    const mapped = applySavedMapping(p.rows, savedMap);
+    setParsed({ ...p, rows: mapped }); setRows(mapped);
+    setMsg(`${mapped.length} accounts read · ${mapped.filter(r=>r.fromSaved).length} mapped from your saved chart`);
+  };
+
+  const setGroup = (i, g) => setRows(rs => rs.map((r,j) => j===i ? { ...r, group:g, confident:true } : r));
+
+  const view = rows ? { ...parsed, rows } : null;
+  const st   = view ? buildStatements(view.rows) : null;
+  const checks = view ? tbValidate(view, st) : [];
+  const blocking = checks.some(c => c.level === "error");
+
+  const publish = () => {
+    if (!st) return;
+    const cur = v => (isUAE(client) ? "AED " : "₹") + money(v);
+    setReportData(r => ({
+      ...(r||{}),
+      coaMap: extractMapping(view.rows),          // remembered for next month
+      pl: {
+        ...(r?.pl||{}),
+        revenue:      { ...(r?.pl?.revenue||{}),      actual: cur(st.pl.revenue) },
+        cogs:         { ...(r?.pl?.cogs||{}),         actual: cur(st.pl.cogs) },
+        grossProfit:  { ...(r?.pl?.grossProfit||{}),  actual: cur(st.pl.grossProfit) },
+        ebitda:       { ...(r?.pl?.ebitda||{}),       actual: cur(st.pl.ebitda) },
+        pat:          { ...(r?.pl?.pat||{}),          actual: cur(st.pl.pat) },
+        gpMargin:     { ...(r?.pl?.gpMargin||{}),     actual: st.pl.gpMargin || "—" },
+        ebitdaMargin: { ...(r?.pl?.ebitdaMargin||{}), actual: st.pl.ebitdaMargin || "—" },
+        netMargin:    { ...(r?.pl?.netMargin||{}),    actual: st.pl.netMargin || "—" },
+      },
+      workingCapital: {
+        ...(r?.workingCapital||{}),
+        receivables: st.bs.receivables, inventory: st.bs.inventory,
+        payables: st.bs.payables, cashBank: st.bs.cash,
+      },
+      tbBuiltAt: new Date().toISOString(),
+    }));
+    setMsg("Written to this client's report data — press Save to publish.");
+  };
+
+  const chk = { ok:{c:C.green,i:"ti-circle-check"}, warn:{c:C.amber,i:"ti-alert-triangle"}, error:{c:C.red,i:"ti-alert-circle"} };
+
+  return (<>
+    <Card style={{ marginBottom:18 }}>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+        Trial Balance → Statements — {client.name}
+      </div>
+      <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+        Paste the trial balance from Tally, Zoho or Excel. Columns can be Account/Debit/Credit or Account/Balance.
+        Accounts are mapped automatically, your corrections are remembered, and next month only new accounts need attention.
+        {Object.keys(savedMap).length > 0 &&
+          <span style={{ color:C.green, fontWeight:700 }}> {Object.keys(savedMap).length} accounts already mapped for this client.</span>}
+      </p>
+      <textarea value={raw} onChange={e=>setRaw(e.target.value)}
+        placeholder={"Particulars,Debit,Credit\nSales Account,,22500000\nPurchase Account,13200000,\nSundry Debtors,9800000,"}
+        rows={7}
+        style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:9, fontSize:12,
+          border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+      <div style={{ display:"flex", gap:10, marginTop:12, alignItems:"center", flexWrap:"wrap" }}>
+        <button onClick={()=>run(raw)} disabled={!raw.trim()}
+          style={{ padding:"9px 20px", borderRadius:10, border:"none", background:C.gradDiag, color:"#fff",
+            fontFamily:F, fontWeight:700, fontSize:13, cursor:raw.trim()?"pointer":"not-allowed", opacity:raw.trim()?1:.5 }}>
+          Read trial balance
+        </button>
+        <label style={{ padding:"9px 16px", borderRadius:10, border:`1.5px solid ${C.border}`, background:C.bg,
+          fontFamily:F, fontWeight:700, fontSize:13, color:C.muted, cursor:"pointer" }}>
+          Upload CSV
+          <input type="file" accept=".csv,.txt,.tsv" style={{ display:"none" }}
+            onChange={e=>{ const f=e.target.files[0]; if(!f) return;
+              const rd=new FileReader(); rd.onload=()=>{ setRaw(String(rd.result)); run(String(rd.result)); }; rd.readAsText(f); e.target.value=""; }}/>
+        </label>
+        {msg && <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>{msg}</span>}
+      </div>
+    </Card>
+
+    {/* ── Step 2: ageing / invoice register → drill detail ── */}
+    <LedgerImportCard
+      client={client} reportData={reportData} setReportData={setReportData}
+      tbReceivables={reportData?.workingCapital?.receivables}
+      tbPayables={reportData?.workingCapital?.payables}/>
+
+    {view && (<>
+      {/* Checks first — nothing publishes until these pass */}
+      <Card style={{ marginBottom:18 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Validation</div>
+        {checks.map((c,i)=>{ const k=chk[c.level];
+          return (
+            <div key={i} style={{ display:"flex", gap:10, alignItems:"flex-start", padding:"8px 0",
+              borderBottom:i<checks.length-1?`1px solid ${C.border}`:"none" }}>
+              <i className={"ti "+k.i} style={{ fontSize:15, color:k.c, marginTop:1 }}/>
+              <div>
+                <div style={{ fontFamily:F, fontSize:12.5, fontWeight:700, color:C.text }}>{c.label}</div>
+                <div style={{ fontFamily:F, fontSize:11.5, color:C.muted, marginTop:1 }}>{c.detail}</div>
+              </div>
+            </div>
+          );})}
+      </Card>
+
+      {/* Mapping — unmapped and unsure float to the top */}
+      <Card style={{ marginBottom:18 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+          Account mapping ({view.rows.length})
+        </div>
+        <p style={{ fontFamily:F, fontSize:11.5, color:C.muted, marginBottom:12 }}>
+          Anything unmapped or uncertain is listed first. Corrections are saved against this client.
+        </p>
+        <div style={{ maxHeight:420, overflowY:"auto" }}>
+          {view.rows
+            .map((r,i)=>({ r, i, rank: r.group==="unmapped"?0 : !r.confident?1 : 2 }))
+            .sort((a,b)=>a.rank-b.rank)
+            .map(({r,i}) => (
+              <div key={i} style={{ display:"grid", gridTemplateColumns:"2.2fr 1fr 1.4fr 70px", gap:8,
+                alignItems:"center", padding:"7px 0", borderBottom:`1px solid ${C.border}` }}>
+                <div style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:r.group==="unmapped"?700:500 }}>{r.name}</div>
+                <div style={{ fontFamily:FM, fontSize:11.5, textAlign:"right",
+                  color:r.balance>=0?C.text:C.muted }}>
+                  {r.balance>=0 ? money(r.balance) : "("+money(-r.balance)+")"}
+                </div>
+                <select value={r.group} onChange={e=>setGroup(i, e.target.value)}
+                  style={{ padding:"5px 8px", borderRadius:7, fontSize:11.5, fontFamily:F,
+                    border:`1.5px solid ${r.group==="unmapped"?C.red:C.border}`,
+                    background:C.bg, color:C.text, cursor:"pointer" }}>
+                  {COA_GROUPS.map(g=><option key={g.key} value={g.key}>{g.label}</option>)}
+                </select>
+                <span style={{ fontFamily:F, fontSize:9.5, fontWeight:800, textAlign:"center",
+                  color: r.fromSaved?C.green : r.confident?C.muted : C.amber }}>
+                  {r.fromSaved ? "SAVED" : r.confident ? "" : "CHECK"}
+                </span>
+              </div>
+            ))}
+        </div>
+      </Card>
+
+      {/* Resulting statements */}
+      <Card style={{ marginBottom:18 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>Statements produced</div>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:22 }}>
+          <div>
+            <div style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>Profit &amp; Loss</div>
+            {[["Revenue",st.pl.revenue],["Cost of Sales",st.pl.cogs],["Gross Profit",st.pl.grossProfit,1],
+              ["Operating Expenses",st.pl.opex],["EBITDA",st.pl.ebitda,1],["Depreciation",st.pl.depreciation],
+              ["Finance Cost",st.pl.finance],["Tax",st.pl.tax],["Net Profit",st.pl.pat,2]].map(([l,v,b],i)=>(
+              <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0",
+                borderBottom:`1px solid ${C.border}`, background:b===2?C.bg2:"transparent" }}>
+                <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:b?700:400 }}>{l}</span>
+                <span style={{ fontFamily:FM, fontSize:12, fontWeight:b?800:600, color:C.text }}>{money(v)}</span>
+              </div>
+            ))}
+            <div style={{ display:"flex", gap:12, marginTop:8, fontFamily:F, fontSize:11, color:C.muted }}>
+              <span>GP {st.pl.gpMargin||"—"}</span><span>EBITDA {st.pl.ebitdaMargin||"—"}</span><span>Net {st.pl.netMargin||"—"}</span>
+            </div>
+          </div>
+          <div>
+            <div style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:".08em", marginBottom:8 }}>Balance Sheet</div>
+            {[["Fixed Assets",st.bs.fixedAssets],["Inventory",st.bs.inventory],["Receivables",st.bs.receivables],
+              ["Cash &amp; Bank",st.bs.cash],["Other Assets",st.bs.otherAssets],["Total Assets",st.bs.assets,1],
+              ["Payables",st.bs.payables],["Borrowings",st.bs.borrowings],["Other Liabilities",st.bs.otherLiab],
+              ["Equity &amp; Reserves",st.bs.equity],["Liabilities + Equity",st.bs.liabilities+st.bs.equity,1]].map(([l,v,b],i)=>(
+              <div key={i} style={{ display:"flex", justifyContent:"space-between", padding:"6px 0",
+                borderBottom:`1px solid ${C.border}` }}>
+                <span style={{ fontFamily:F, fontSize:12, color:C.text, fontWeight:b?700:400 }} dangerouslySetInnerHTML={{__html:l}}/>
+                <span style={{ fontFamily:FM, fontSize:12, fontWeight:b?800:600, color:C.text }}>{money(v)}</span>
+              </div>
+            ))}
+            <div style={{ marginTop:8, fontFamily:F, fontSize:11.5, fontWeight:700,
+              color: Math.abs(st.bs.tieOut)<1 ? C.green : C.red }}>
+              {Math.abs(st.bs.tieOut)<1 ? "Balance sheet ties to zero" : `Out by ${money(Math.abs(st.bs.tieOut))}`}
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <div style={{ display:"flex", gap:12, justifyContent:"flex-end", alignItems:"center", flexWrap:"wrap" }}>
+        {blocking && <span style={{ fontFamily:F, fontSize:12, color:C.red, fontWeight:700 }}>
+          Resolve the errors above before publishing
+        </span>}
+        <button onClick={publish} disabled={blocking}
+          style={{ padding:"10px 22px", borderRadius:12, border:"none",
+            background: blocking ? C.border : C.gradDiag, color:"#fff",
+            fontFamily:F, fontWeight:700, fontSize:13, cursor: blocking?"not-allowed":"pointer" }}>
+          Apply to report data
+        </button>
+        <AdminSaveBtn onClick={saveReportData} loading={loading} saved={saved} label="Save &amp; Publish" F={F}/>
+      </div>
+    </>)}
+  </>);
+}
+
 // ─── ZOHO BOOKS CONNECTION ────────────────────────────────────────────────────
 // Replaces the manual "export a CSV from Zoho and upload it" step for clients
 // whose books live in Zoho Books — which, in the UAE, is most of them.
@@ -18245,6 +18700,8 @@ function AdminPanel({ admin, onLogout }) {
     // ── India Client Data ──
     { id:"connections",icon:"ti-plug-connected", label:"Connections", group:"Shared"    },
     { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"Shared"     },
+    { id:"trialbalance", icon:"ti-table-import", label:"Trial Balance", group:"Shared"   },
+    { id:"drilldata",  icon:"ti-git-merge", label:"Drill & Compliance", group:"Shared"  },
     { id:"kpis",       icon:"ti-chart-bar", label:"KPIs",           group:"India"      },
     { id:"actions",    icon:"ti-checkbox", label:"Action Items",   group:"India"      },
     { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",    group:"India"      },
@@ -19132,6 +19589,155 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   )}
                 </Card>
               )}
+            </div>
+          )}
+
+          {/* ── TRIAL BALANCE → STATEMENTS ── */}
+          {tab === "trialbalance" && (
+            <div style={{ maxWidth:1000 }}>
+              {!selected ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+                </Card>
+              ) : <TrialBalanceTab
+                    client={selected}
+                    reportData={reportData}
+                    setReportData={setReportData}
+                    saveReportData={saveReportData}
+                    loading={loading} saved={saved}/>}
+            </div>
+          )}
+
+          {/* ── DRILL & COMPLIANCE ── */}
+          {tab === "drilldata" && (
+            <div style={{ maxWidth:900 }}>
+              {!selected ? (
+                <Card style={{ textAlign:"center", padding:40 }}>
+                  <div style={{ fontSize:32, marginBottom:12 }}>👆</div>
+                  <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+                </Card>
+              ) : (() => {
+                const rd    = reportData || {};
+                const drill = rd.drill || {};
+                const setDrillKey = (key, patch) => setReportData(r => ({ ...(r||{}),
+                  drill: { ...(r?.drill||{}), [key]: { ...(r?.drill?.[key]||{}), ...patch } } }));
+                const getRows = (key, dimKey, dimTitle) => drill[key]?.dims?.[0]?.rows || [];
+                const setRows = (key, dimKey, dimTitle, label, rows) => setDrillKey(key, {
+                  label, dims:[{ key:dimKey, title:dimTitle, rows }] });
+                const AR_BUCKETS = ["Current", "31–60d", "61–90d", "90d+"];
+                const recvRows = (() => {
+                  const existing = drill.receivables?.dims?.[0]?.rows;
+                  if (existing?.length === 4) return existing;
+                  return AR_BUCKETS.map(n => ({ name:n, value:0, sub:"", txns:[] }));
+                })();
+                const compliance = rd.compliance || [];
+                const setCompliance = (list) => setReportData(r => ({ ...(r||{}), compliance:list }));
+                const updComp = (i, patch) => setCompliance(compliance.map((c,j) => j===i ? {...c, ...patch} : c));
+                return (<>
+                  {/* Compliance calendar */}
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      Compliance Calendar — {selected.name}
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      These show on the client's Dashboard as "Outstanding Compliances", overdue first. Tick done to hide an item.
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1.1fr 1fr 46px 30px", gap:6, marginBottom:4 }}>
+                      {["Item","Detail","Due date","Owner","Done",""].map((h,i) => (
+                        <div key={i} style={{ fontFamily:F, fontSize:10, fontWeight:800, color:C.dim, textTransform:"uppercase", letterSpacing:"0.06em" }}>{h}</div>
+                      ))}
+                    </div>
+                    {compliance.map((c, i) => (
+                      <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 2fr 1.1fr 1fr 46px 30px", gap:6, marginBottom:6, alignItems:"center" }}>
+                        <InlineInput value={c.item||""}   onCommit={v => updComp(i,{item:v})}   placeholder="GSTR-3B — Jul 2026"/>
+                        <InlineInput value={c.detail||""} onCommit={v => updComp(i,{detail:v})} placeholder="Summary return + payment"/>
+                        <input type="date" value={c.dueDate ? String(c.dueDate).slice(0,10) : ""} onChange={e => updComp(i,{dueDate:e.target.value})}
+                          style={{ padding:"6px 8px", borderRadius:8, fontSize:11.5, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none" }}/>
+                        <InlineInput value={c.owner||""}  onCommit={v => updComp(i,{owner:v})}  placeholder="CA / Client"/>
+                        <input type="checkbox" checked={!!c.done} onChange={e => updComp(i,{done:e.target.checked})} style={{ width:16, height:16, cursor:"pointer", justifySelf:"center" }}/>
+                        <button onClick={() => setCompliance(compliance.filter((_,j)=>j!==i))}
+                          style={{ border:`1px solid ${C.border}`, background:"none", borderRadius:8, color:C.red, cursor:"pointer", fontSize:13 }}>×</button>
+                      </div>
+                    ))}
+                    <div style={{ display:"flex", gap:10, marginTop:10 }}>
+                      <button onClick={() => setCompliance([...compliance, { item:"", detail:"", dueDate:"", owner:"", done:false }])}
+                        style={{ padding:"7px 14px", borderRadius:10, border:`1.5px dashed ${C.border}`, background:"none",
+                          fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, cursor:"pointer" }}>
+                        + Add compliance item
+                      </button>
+                    </div>
+                  </Card>
+
+                  {/* Revenue drill */}
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      Revenue Breakup (drill-down)
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      Shown when the client taps the Revenue tile. Amounts are raw numbers (e.g. 4200000 = ₹42L). Invoices are optional per row.
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
+                      <InlineInput value={drill.revenue?.total||""}      onCommit={v => setDrillKey("revenue",{total:v})}      placeholder='Total, e.g. "₹8.40 Cr"'/>
+                      <InlineInput value={drill.revenue?.period||""}     onCommit={v => setDrillKey("revenue",{period:v})}     placeholder='Period, e.g. "FY26 YTD"'/>
+                      <InlineInput value={drill.revenue?.prevPeriod||""} onCommit={v => setDrillKey("revenue",{prevPeriod:v})} placeholder='Compare to, e.g. "FY25"'/>
+                    </div>
+                    <DrillRowsEditor
+                      rows={getRows("revenue","customer","By Customer")}
+                      onChange={rows => setRows("revenue","customer","By Customer","Revenue",rows)}
+                      nameLabel="Customer"/>
+                    <textarea defaultValue={drill.revenue?.note||""} onBlur={e => setDrillKey("revenue",{note:e.target.value})}
+                      placeholder="Garima's note shown at the bottom of the drill panel (concentration risk, renewals due, etc.)"
+                      rows={2} style={{ width:"100%", boxSizing:"border-box", marginTop:10, padding:"8px 10px", borderRadius:8,
+                        fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+                  </Card>
+
+                  {/* Receivables drill */}
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      Receivables by Age (drill-down)
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      Powers the clickable A/R aging buckets. Keep the four buckets; add each outstanding invoice on its own line.
+                    </p>
+                    <DrillRowsEditor
+                      rows={recvRows}
+                      onChange={rows => setRows("receivables","aging","By Age","Receivables",rows)}
+                      nameLabel="Bucket" fixedNames/>
+                    <textarea defaultValue={drill.receivables?.note||""} onBlur={e => setDrillKey("receivables",{note:e.target.value})}
+                      placeholder="Garima's note (e.g. which debtor to escalate this week)"
+                      rows={2} style={{ width:"100%", boxSizing:"border-box", marginTop:10, padding:"8px 10px", borderRadius:8,
+                        fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+                  </Card>
+
+                  {/* Cash drill */}
+                  <Card style={{ marginBottom:20 }}>
+                    <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+                      Cash by Account (drill-down)
+                    </div>
+                    <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                      Shown when the client taps the Cash Balance tile. Rows = bank accounts / FDs; lines = recent movements (optional).
+                    </p>
+                    <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:10, marginBottom:10 }}>
+                      <InlineInput value={drill.cash?.total||""}      onCommit={v => setDrillKey("cash",{total:v})}      placeholder='Total, e.g. "₹2.10 Cr"'/>
+                      <InlineInput value={drill.cash?.period||""}     onCommit={v => setDrillKey("cash",{period:v})}     placeholder='e.g. "across 4 accounts"'/>
+                      <InlineInput value={drill.cash?.prevPeriod||""} onCommit={v => setDrillKey("cash",{prevPeriod:v})} placeholder='Compare to, e.g. "last month"'/>
+                    </div>
+                    <DrillRowsEditor
+                      rows={getRows("cash","account","By Account")}
+                      onChange={rows => setRows("cash","account","By Account","Cash Balance",rows)}
+                      nameLabel="Account"/>
+                    <textarea defaultValue={drill.cash?.note||""} onBlur={e => setDrillKey("cash",{note:e.target.value})}
+                      placeholder="Garima's note (idle cash, FD vs CC arbitrage, etc.)"
+                      rows={2} style={{ width:"100%", boxSizing:"border-box", marginTop:10, padding:"8px 10px", borderRadius:8,
+                        fontSize:12, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
+                  </Card>
+
+                  <div style={{ display:"flex", justifyContent:"flex-end" }}>
+                    <AdminSaveBtn onClick={saveReportData} loading={loading} saved={saved} label="Save Drill & Compliance" F={F}/>
+                  </div>
+                </>);
+              })()}
             </div>
           )}
 
