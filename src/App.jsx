@@ -18119,8 +18119,13 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
 function ZohoConnectionCard({ client, adminEmail }) {
   const [state, setState] = useState({ loading:true });
 
+  // The demo clients are hardcoded in this file with ids like "DEMO-UAE"; they
+  // have no row in the database, so nothing can be attached to them. Worth
+  // saying so rather than letting the id fail validation and look like a fault.
+  const isRealClient = /^[0-9a-f-]{36}$/i.test(String(client?.id || ""));
+
   useEffect(() => {
-    if (!client?.id) return;
+    if (!client?.id || !isRealClient) return;
     let live = true;
     setState({ loading:true });
     fetch(`/api/zoho-status?clientId=${encodeURIComponent(client.id)}&adminEmail=${encodeURIComponent(adminEmail || "")}`)
@@ -18128,7 +18133,7 @@ function ZohoConnectionCard({ client, adminEmail }) {
       .then(j => { if (live) setState({ loading:false, ...j }); })
       .catch(() => { if (live) setState({ loading:false, ok:false, reason:"unreachable" }); });
     return () => { live = false; };
-  }, [client?.id, adminEmail]);
+  }, [client?.id, adminEmail, isRealClient]);
 
   const Row = ({ label, value }) => (
     <div style={{ display:"flex", justifyContent:"space-between", gap:12, padding:"8px 0",
@@ -18136,6 +18141,20 @@ function ZohoConnectionCard({ client, adminEmail }) {
       <span style={{ fontFamily:F, fontSize:12, color:C.muted, fontWeight:600 }}>{label}</span>
       <span style={{ fontFamily:F, fontSize:13, color:C.text, textAlign:"right" }}>{value}</span>
     </div>
+  );
+
+  if (!isRealClient) return (
+    <Card>
+      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, gap:10 }}>
+        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text }}>Zoho Books</div>
+        <Badge color={C.dim}>Demo client</Badge>
+      </div>
+      <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8 }}>
+        <strong>{client?.company || client?.name}</strong> is one of the built-in demo accounts. It has no
+        record in the database, so there is nothing for a Zoho connection to attach to. Add a real client
+        and select that one to connect their books.
+      </p>
+    </Card>
   );
 
   if (state.loading) return (
