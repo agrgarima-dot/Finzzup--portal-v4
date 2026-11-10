@@ -16069,32 +16069,7 @@ function Portal({ client, onLogout }) {
   }, [client?.id, isDemo]);
  
   // Build merged KPI array — live data + prev values from report_data
-  const prevK = liveReportData?.prevKpis || {};
-  const resolvedKpis = isUAE(client)
-    ? (!isDemo && liveKpis) ? [
-      { label:"Revenue",      value:liveKpis.revenue||"—",      prev:prevK.revenue||"—",      trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"rev"       },
-      { label:"Gross Margin", value:liveKpis.gross_margin||"—", prev:prevK.gross_margin||"—", trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin"    },
-      { label:"Cash Balance", value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"cash"      },
-      { label:"Burn Rate",    value:liveKpis.burn_rate||"—",    prev:prevK.burn_rate||"—",    trend:"down", color:C.purple, bg:"#F3EFFF", icon:"burn"      },
-      { label:"Runway",       value:liveKpis.runway||"—",       prev:prevK.runway||"—",       trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"runway"    },
-      { label:"VAT Payable",  value:liveReportData?.vat?.vatPayable ? fmtAED2(liveReportData.vat.vatPayable) : (liveKpis.arr||"—"), prev:"—", trend:"down", color:C.amber, bg:"#FEF7E7", icon:"invoice" },
-      { label:"CT Eff. Rate", value:liveReportData?.ct?.qualifyingPct != null ? (liveReportData.ct.qualifyingPct >= 100 ? "0%" : `${(9*(100-liveReportData.ct.qualifyingPct)/100).toFixed(0)}%`) : "0%", prev:"—", trend:"up", color:C.green, bg:"#E8FAF3", icon:"chart_pie" },
-      { label:"QFZP Score",   value:liveReportData?.qfzp?.qfzpScore ? `${liveReportData.qfzp.qfzpScore}/100` : "—", prev:"—", trend:"up", color:C.blue, bg:"#EEF3FE", icon:"star" },
-    ] : KPIs_UAE
-    : (!isDemo && liveKpis) ? [
-    { label: client?.client_pack==="msme"?"Revenue":"Revenue",
-      value:liveKpis.revenue||"—", prev:prevK.revenue||"—", trend:"up", color:C.blue, bg:"#EEF3FE", emoji:"ti-trending-up" },
-    { label: client?.client_pack==="msme"?"Working Capital":client?.client_pack==="corporate"?"Gross Margin":"Gross Margin",
-      value:liveKpis.gross_margin||"—", prev:prevK.gross_margin||"—", trend:"up", color:C.teal, bg:"#E6FAF7", icon:"margin" },
-    { label: client?.client_pack==="corporate"?"EBITDA":"Cash Balance",
-      value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"down", color:C.amber, bg:"#FEF7E7", emoji:"ti-building-bank" },
-    { label: client?.client_pack==="msme"?"Debtor Days":client?.client_pack==="corporate"?"PAT":"Burn Rate",
-      value:liveKpis.burn_rate||"—", prev:prevK.burn_rate||"—", trend:"up", color:C.purple, bg:"#F3EFFF", icon: "ti-flame" },
-    { label: client?.client_pack==="corporate"?"Debt/Equity":"Runway",
-      value:liveKpis.runway||"—", prev:prevK.runway||"—", trend:"down", color:C.pink, bg:"#FEF0F7", icon:"runway" },
-    { label: client?.client_pack==="msme"?"Cash Conversion Cycle":"ARR",
-      value:liveKpis.arr||"—", prev:prevK.arr||"—", trend:"up", color:C.green, bg:"#E8FAF3", icon: "ti-target" },
-  ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
+  const resolvedKpis = buildKpiTiles({ client, isDemo, liveKpis, liveReportData });
  
   const resolvedActions = isUAE(client)
     ? ACTIONS_BY_PACK.uae
@@ -17910,7 +17885,7 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
 // Paste or upload a raw trial balance; accounts are mapped to statement lines,
 // the mapping is saved per client so next month is a review not a rebuild, and
 // nothing can be published until the validation checks pass.
-function TrialBalanceTab({ client, reportData, setReportData, saveReportData, loading, saved, adminEmail }) {
+function TrialBalanceTab({ client, reportData, setReportData, saveReportData, loading, saved, adminEmail, onPreview }) {
   const [raw, setRaw]   = React.useState("");
   const [rows, setRows] = React.useState(null);
   const [parsed, setParsed] = React.useState(null);
@@ -18167,10 +18142,127 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
             fontFamily:F, fontWeight:700, fontSize:13, cursor: blocking?"not-allowed":"pointer" }}>
           Apply to report data
         </button>
+        {onPreview && (
+          <button onClick={onPreview}
+            style={{ padding:"10px 20px", borderRadius:12, border:`1.5px solid ${C.border}`,
+              background:"none", fontFamily:F, fontWeight:700, fontSize:13, color:C.text, cursor:"pointer" }}>
+            Preview as client
+          </button>
+        )}
         <AdminSaveBtn onClick={saveReportData} loading={loading} saved={saved} label="Save &amp; Publish" F={F}/>
+      </div>
+      <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:8, lineHeight:1.7 }}>
+        Apply writes these figures into your working copy. Preview shows the client's own screen drawn
+        from it. Nothing reaches the client until Save &amp; Publish.
       </div>
     </>)}
   </>);
+}
+
+// Builds the KPI tiles the client screens render. Extracted out of Portal so
+// the admin preview draws the same tiles from the same code — two copies of
+// this would drift, and the preview would stop being a preview.
+function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
+  const prevK = liveReportData?.prevKpis || {};
+  return  isUAE(client)
+    ? (!isDemo && liveKpis) ? [
+      { label:"Revenue",      value:liveKpis.revenue||"—",      prev:prevK.revenue||"—",      trend:"up",   color:C.blue,   bg:"#EEF3FE", icon:"rev"       },
+      { label:"Gross Margin", value:liveKpis.gross_margin||"—", prev:prevK.gross_margin||"—", trend:"up",   color:C.teal,   bg:"#E6FAF7", icon:"margin"    },
+      { label:"Cash Balance", value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"up",   color:C.green,  bg:"#E8FAF3", icon:"cash"      },
+      { label:"Burn Rate",    value:liveKpis.burn_rate||"—",    prev:prevK.burn_rate||"—",    trend:"down", color:C.purple, bg:"#F3EFFF", icon:"burn"      },
+      { label:"Runway",       value:liveKpis.runway||"—",       prev:prevK.runway||"—",       trend:"up",   color:C.purple, bg:"#F3EFFF", icon:"runway"    },
+      { label:"VAT Payable",  value:liveReportData?.vat?.vatPayable ? fmtAED2(liveReportData.vat.vatPayable) : (liveKpis.arr||"—"), prev:"—", trend:"down", color:C.amber, bg:"#FEF7E7", icon:"invoice" },
+      { label:"CT Eff. Rate", value:liveReportData?.ct?.qualifyingPct != null ? (liveReportData.ct.qualifyingPct >= 100 ? "0%" : `${(9*(100-liveReportData.ct.qualifyingPct)/100).toFixed(0)}%`) : "0%", prev:"—", trend:"up", color:C.green, bg:"#E8FAF3", icon:"chart_pie" },
+      { label:"QFZP Score",   value:liveReportData?.qfzp?.qfzpScore ? `${liveReportData.qfzp.qfzpScore}/100` : "—", prev:"—", trend:"up", color:C.blue, bg:"#EEF3FE", icon:"star" },
+    ] : KPIs_UAE
+    : (!isDemo && liveKpis) ? [
+    { label: client?.client_pack==="msme"?"Revenue":"Revenue",
+      value:liveKpis.revenue||"—", prev:prevK.revenue||"—", trend:"up", color:C.blue, bg:"#EEF3FE", emoji:"ti-trending-up" },
+    { label: client?.client_pack==="msme"?"Working Capital":client?.client_pack==="corporate"?"Gross Margin":"Gross Margin",
+      value:liveKpis.gross_margin||"—", prev:prevK.gross_margin||"—", trend:"up", color:C.teal, bg:"#E6FAF7", icon:"margin" },
+    { label: client?.client_pack==="corporate"?"EBITDA":"Cash Balance",
+      value:liveKpis.cash_balance||"—", prev:prevK.cash_balance||"—", trend:"down", color:C.amber, bg:"#FEF7E7", emoji:"ti-building-bank" },
+    { label: client?.client_pack==="msme"?"Debtor Days":client?.client_pack==="corporate"?"PAT":"Burn Rate",
+      value:liveKpis.burn_rate||"—", prev:prevK.burn_rate||"—", trend:"up", color:C.purple, bg:"#F3EFFF", icon: "ti-flame" },
+    { label: client?.client_pack==="corporate"?"Debt/Equity":"Runway",
+      value:liveKpis.runway||"—", prev:prevK.runway||"—", trend:"down", color:C.pink, bg:"#FEF0F7", icon:"runway" },
+    { label: client?.client_pack==="msme"?"Cash Conversion Cycle":"ARR",
+      value:liveKpis.arr||"—", prev:prevK.arr||"—", trend:"up", color:C.green, bg:"#E8FAF3", icon: "ti-target" },
+  ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
+}
+
+// ─── PREVIEW AS CLIENT ────────────────────────────────────────────────────────
+// Renders the real client screens against the draft data held in admin, so
+// Apply is never pressed blind. These are the same components the portal
+// mounts — not a mock-up of them — so what shows here is what the client gets.
+function ClientPreview({ client, reportData, kpis, actions = [], invoices = [] }) {
+  const [page, setPage] = React.useState("overview");
+
+  if (!client) return (
+    <Card style={{ textAlign:"center", padding:40 }}>
+      <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+    </Card>
+  );
+
+  const PAGES = [
+    ["overview",  "Overview"],
+    ["dashboard", "Dashboard"],
+    ["myreport",  "My Report"],
+    ["cashflow",  "Cash Flow"],
+  ];
+
+  // The client components navigate by calling setPage. Honour it when the
+  // target is previewable — so "Full Report →" and the drill-downs behave as
+  // they will for the client — and ignore it otherwise.
+  const navigate = (p) => { if (PAGES.some(([id]) => id === p)) setPage(p); };
+
+  // Admin holds KPIs as the edit form's flat object; the client screens want
+  // the tile array. Same builder the portal uses, so the preview cannot drift.
+  const tiles = buildKpiTiles({ client, isDemo: false, liveKpis: kpis, liveReportData: reportData });
+  const list  = (v) => Array.isArray(v) ? v : [];
+
+  const view = {
+    overview:  <Overview  client={client} setPage={navigate} kpis={tiles} garimaNote={kpis?.garima_note}
+                          actions={list(actions)} engagement={null} reportData={reportData}
+                          invoices={list(invoices)} isDemo={false}
+                          liveKpis={kpis} liveReportData={reportData}/>,
+    dashboard: <Dashboard client={client} kpis={tiles} garimaNote={kpis?.garima_note} reportData={reportData}
+                          loading={false} setPage={navigate} actions={list(actions)} invoices={list(invoices)}/>,
+    myreport:  <MyReport  client={client} reportData={reportData} kpis={tiles}/>,
+    cashflow:  <CashFlow  reportData={reportData} client={client} kpis={tiles}/>,
+  }[page];
+
+  return (
+    <div>
+      <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
+        {PAGES.map(([id, label]) => (
+          <button key={id} onClick={() => setPage(id)}
+            style={{ padding:"7px 16px", borderRadius:60,
+              border:`1.5px solid ${page===id ? C.blue : C.border}`,
+              background: page===id ? `${C.blue}0C` : "none",
+              fontFamily:F, fontWeight:700, fontSize:12,
+              color: page===id ? C.blue : C.muted, cursor:"pointer" }}>
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <div style={{ padding:"8px 14px", borderRadius:12, background:`${C.amber}0C`,
+        border:`1px solid ${C.amber}30`, marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontSize:12, color:C.warning, lineHeight:1.7 }}>
+          <strong>Preview.</strong> This is the live client screen drawn against your unsaved working
+          data — what {client.name?.split(" ")[0] || "the client"} would see if you published now.
+          Nothing here is visible to them until you save.
+        </div>
+      </div>
+
+      {/* Framed so it never gets mistaken for the admin's own screen. */}
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden",
+        background:C.canvas, padding:"4px 0" }}>
+        {view}
+      </div>
+    </div>
+  );
 }
 
 // ─── ZOHO BOOKS CONNECTION ────────────────────────────────────────────────────
@@ -18864,6 +18956,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
     { id:"eletter",    icon:"ti-file-description", label:"Engagement Letter", group:"Clients" },
     // ── India Client Data ──
+    { id:"preview",    icon:"ti-eye", label:"Preview as Client", group:"Shared"       },
     { id:"connections",icon:"ti-plug-connected", label:"Connections", group:"Shared"    },
     { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"Shared"     },
     { id:"trialbalance", icon:"ti-table-import", label:"Trial Balance", group:"Shared"   },
@@ -19771,7 +19864,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     reportData={reportData}
                     setReportData={setReportData}
                     saveReportData={saveReportData}
-                    loading={loading} saved={saved} adminEmail={admin?.email}/>}
+                    loading={loading} saved={saved} adminEmail={admin?.email}
+                    onPreview={() => setTab("preview")}/>}
             </div>
           )}
 
@@ -19905,6 +19999,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                 </>);
               })()}
             </div>
+          )}
+
+          {/* ── PREVIEW AS CLIENT ── */}
+          {tab === "preview" && (
+            <ClientPreview client={selected} reportData={reportData} kpis={kpis}
+              actions={actions} invoices={invoices}/>
           )}
 
           {/* ── CONNECTIONS (Zoho Books) ── */}
