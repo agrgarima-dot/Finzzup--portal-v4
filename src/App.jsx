@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import { computeAlerts, parseAmount } from "./alerts.js";
+import { proposeActions, newProposalsOnly, complianceCalendar, newComplianceOnly } from "./autodraft.js";
 import { parseLedger, buildReceivablesDrill, buildRevenueDrill, buildPayablesDrill,
          buildSupplierSpendDrill, computeMsmeExposure, buildMsmeDrill, extractVendorRegister,
          isMsme, MSME_LIMIT_DAYS, reconcile, validateLedger } from "./ledgerimport.js";
@@ -17885,7 +17886,7 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
 // Paste or upload a raw trial balance; accounts are mapped to statement lines,
 // the mapping is saved per client so next month is a review not a rebuild, and
 // nothing can be published until the validation checks pass.
-function TrialBalanceTab({ client, reportData, setReportData, saveReportData, loading, saved, adminEmail, onPreview }) {
+function TrialBalanceTab({ client, reportData, setReportData, saveReportData, loading, saved, adminEmail, onPreview, adminKpis, adminActions, onAddActions }) {
   const [raw, setRaw]   = React.useState("");
   const [rows, setRows] = React.useState(null);
   const [parsed, setParsed] = React.useState(null);
@@ -18034,6 +18035,10 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
         </div>
       )}
     </Card>
+
+    {/* ── Drafting: actions, calendar and the brief ── */}
+    <DraftReviewCard client={client} reportData={reportData} setReportData={setReportData}
+      kpis={adminKpis} actions={adminActions} onAddActions={onAddActions}/>
 
     {/* ── Step 2: ageing / invoice register → drill detail ── */}
     <LedgerImportCard
@@ -18189,6 +18194,171 @@ function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
     { label: client?.client_pack==="msme"?"Cash Conversion Cycle":"ARR",
       value:liveKpis.arr||"—", prev:prevK.arr||"—", trend:"up", color:C.green, bg:"#E8FAF3", icon: "ti-target" },
   ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
+}
+
+// ─── DRAFT THE REVIEW ─────────────────────────────────────────────────────────
+// The three things that were still typed by hand every month: the action items,
+// the compliance calendar, and the brief the client reads. Each arrives as a
+// proposal with a tick box. Nothing is added until you say so, and nothing
+// reaches the client until Save & Publish.
+function DraftReviewCard({ client, reportData, setReportData, kpis, actions = [], onAddActions }) {
+  const [proposals, setProposals] = React.useState(null);   // [{...action, take:bool}]
+  const [calendar,  setCalendar]  = React.useState(null);
+  const [brief,     setBrief]     = React.useState(null);
+  const [busy,      setBusy]      = React.useState("");
+  const [note,      setNote]      = React.useState("");
+
+  const uae = isUAE(client);
+
+  const findActions = () => {
+    const tiles  = buildKpiTiles({ client, isDemo:false, liveKpis:kpis, liveReportData:reportData });
+    const alerts = computeAlerts({ kpis: tiles, reportData: reportData || {}, uae });
+    const all    = proposeActions(alerts);
+    const fresh  = newProposalsOnly(all, actions);
+    setProposals(fresh.map(p => ({ ...p, take: p.severity === "critical" })));
+    // "None new" and "none at all" are different answers, and conflating them
+    // makes a client with clean numbers look like a loading failure.
+    setNote(fresh.length ? ""
+      : all.length ? "Nothing new — every alert the engine raised is already on the action list."
+      : "No alerts on the current figures. Import or sync this period's data first if that looks wrong.");
+  };
+
+  const findCompliance = () => {
+    const proposed = complianceCalendar({
+      jurisdiction: client?.jurisdiction || "India",
+      period: new Date(),
+      fyEndMonth: /dec/i.test(client?.financialYearEnd || "") ? 12 : undefined,
+    });
+    const fresh = newComplianceOnly(proposed, reportData?.compliance || []);
+    setCalendar(fresh.map(c => ({ ...c, take: true })));
+    setNote(fresh.length ? "" : "Nothing new — the calendar already has these.");
+  };
+
+  const draftBrief = async () => {
+    setBusy("brief"); setNote("");
+    try {
+      const tiles = buildKpiTiles({ client, isDemo:false, liveKpis:kpis, liveReportData:reportData });
+      const r = await fetch("/api/narrate", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ client, reportData, kpis: tiles }),
+      });
+      const j = await r.json();
+      if (j.brief || j.text || j.content) setBrief(j.brief || j.text || j.content);
+      else setNote(j.error || "The brief could not be drafted.");
+    } catch { setNote("Could not reach the drafting service."); }
+    setBusy("");
+  };
+
+  const Btn = ({ onClick, children, busyKey }) => (
+    <button onClick={onClick} disabled={!!busy}
+      style={{ padding:"9px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
+        background:"none", fontFamily:F, fontWeight:700, fontSize:12, color:C.text,
+        cursor: busy ? "default" : "pointer", opacity: busy && busy !== busyKey ? 0.5 : 1 }}>
+      {busy === busyKey ? "Working…" : children}
+    </button>
+  );
+
+  const Tick = ({ on, onToggle, children }) => (
+    <label style={{ display:"flex", gap:10, alignItems:"flex-start", padding:"7px 0", cursor:"pointer" }}>
+      <input type="checkbox" checked={on} onChange={onToggle}
+        style={{ marginTop:3, width:15, height:15, accentColor:C.blue, cursor:"pointer", flexShrink:0 }}/>
+      <span style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.7 }}>{children}</span>
+    </label>
+  );
+
+  return (
+    <Card style={{ marginBottom:18 }}>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>Draft the review</div>
+      <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7, marginBottom:14 }}>
+        Everything below is a proposal. Tick what belongs, change what does not, and nothing is added
+        until you add it.
+      </div>
+
+      <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
+        <Btn onClick={findActions}>Propose action items</Btn>
+        <Btn onClick={findCompliance}>Fill compliance calendar</Btn>
+        <Btn onClick={draftBrief} busyKey="brief">Draft CFO brief</Btn>
+      </div>
+      {note && <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:10 }}>{note}</div>}
+
+      {/* Proposed action items, from the alerts the engine already raised */}
+      {!!proposals?.length && (
+        <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${C.border}` }}>
+          <div style={{ fontFamily:F, fontSize:11, fontWeight:800, color:C.muted,
+            textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>
+            Proposed action items
+          </div>
+          {proposals.map((p, i) => (
+            <Tick key={i} on={p.take} onToggle={() => setProposals(ps => ps.map((x,j) => j===i ? {...x, take:!x.take} : x))}>
+              <Badge color={p.priority === "High" ? C.red : p.priority === "Medium" ? C.amber : C.dim}>{p.priority}</Badge>{" "}
+              {p.text}
+            </Tick>
+          ))}
+          <button onClick={async () => {
+              const take = proposals.filter(p => p.take);
+              if (!take.length) return;
+              setBusy("actions");
+              await onAddActions?.(take.map(p => ({ text:p.text, priority:p.priority, month:"" })));
+              setProposals(ps => ps.filter(p => !p.take));
+              setBusy(""); setNote(`${take.length} added to Action Items.`);
+            }}
+            style={{ marginTop:10, padding:"9px 18px", borderRadius:12, border:"none",
+              background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
+            Add ticked to Action Items
+          </button>
+        </div>
+      )}
+
+      {/* Derived compliance calendar */}
+      {!!calendar?.length && (
+        <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${C.border}` }}>
+          <div style={{ fontFamily:F, fontSize:11, fontWeight:800, color:C.muted,
+            textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>
+            Compliance calendar — statutory dates, confirm before publishing
+          </div>
+          {calendar.map((c, i) => (
+            <Tick key={i} on={c.take} onToggle={() => setCalendar(cs => cs.map((x,j) => j===i ? {...x, take:!x.take} : x))}>
+              <span style={{ fontFamily:FM, fontSize:11.5, color:C.muted }}>{c.dueDate}</span>{"  "}
+              <strong>{c.item}</strong> — {c.detail}
+            </Tick>
+          ))}
+          <button onClick={() => {
+              const take = calendar.filter(c => c.take).map(({ take, ...c }) => c);
+              if (!take.length) return;
+              setReportData(r => ({ ...(r||{}), compliance: [ ...(r?.compliance || []), ...take ] }));
+              setCalendar(cs => cs.filter(c => !c.take));
+              setNote(`${take.length} added to the compliance calendar.`);
+            }}
+            style={{ marginTop:10, padding:"9px 18px", borderRadius:12, border:"none",
+              background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
+            Add ticked to calendar
+          </button>
+        </div>
+      )}
+
+      {/* Drafted brief — editable before it becomes the client's note */}
+      {brief != null && (
+        <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${C.border}` }}>
+          <div style={{ fontFamily:F, fontSize:11, fontWeight:800, color:C.muted,
+            textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>
+            CFO brief — a draft, in your voice, for you to correct
+          </div>
+          <textarea value={brief} onChange={e => setBrief(e.target.value)} rows={10}
+            style={{ width:"100%", boxSizing:"border-box", padding:"10px 13px", borderRadius:12,
+              fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+              background:C.bg, outline:"none", resize:"vertical", lineHeight:1.7 }}/>
+          <button onClick={() => {
+              setReportData(r => ({ ...(r||{}), garimaNote: brief }));
+              setNote("Brief saved to your working copy — preview it before publishing.");
+            }}
+            style={{ marginTop:10, padding:"9px 18px", borderRadius:12, border:"none",
+              background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
+            Use this brief
+          </button>
+        </div>
+      )}
+    </Card>
+  );
 }
 
 // ─── PREVIEW AS CLIENT ────────────────────────────────────────────────────────
@@ -18788,6 +18958,14 @@ function AdminPanel({ admin, onLogout }) {
     setNewAction({ text:"", priority:"High", month:newAction.month });
   };
  
+  // Bulk insert for proposals accepted from the drafting card.
+  const addActions = async (rows) => {
+    if (!selected || !rows?.length) return;
+    const { data } = await supabase.from("action_items")
+      .insert(rows.map(r => ({ ...r, client_id: selected.id }))).select();
+    if (data?.length) setActions(prev => [...data, ...prev]);
+  };
+
   const toggleAction = async (a) => {
     const newDone = !a.done;
     await supabase.from("action_items").update({ done: newDone }).eq("id", a.id);
@@ -19865,7 +20043,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     setReportData={setReportData}
                     saveReportData={saveReportData}
                     loading={loading} saved={saved} adminEmail={admin?.email}
-                    onPreview={() => setTab("preview")}/>}
+                    onPreview={() => setTab("preview")}
+                    adminKpis={kpis} adminActions={actions} onAddActions={addActions}/>}
             </div>
           )}
 
