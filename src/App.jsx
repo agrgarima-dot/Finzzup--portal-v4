@@ -11195,25 +11195,16 @@ function VATDashboard({ client, reportData }) {
   const vatData = {
     trnVAT:             client?.trnVAT || rd.trnVAT || "Not registered",
     registrationStatus: client?.vatRegistered ? "Active" : "Not Registered",
-    outputVAT:          rd.outputVAT    || 185000,
-    inputVAT:           rd.inputVAT     || 92500,
-    vatPayable:         rd.vatPayable   || 92500,
-    nextDeadline:       rd.nextDeadline || "28 Apr 2026",
-    filingPeriod:       rd.filingPeriod || "Q1 2026 (Jan–Mar)",
-    pendingReturns: rd.pendingReturns || [
-      { period:"Q4 2025 (Oct–Dec)", due:"28 Jan 2026", status:"Filed", vatNet:"AED 74,200" },
-      { period:"Q3 2025 (Jul–Sep)", due:"28 Oct 2025", status:"Filed", vatNet:"AED 68,500" },
-      { period:"Q1 2026 (Jan–Mar)", due:"28 Apr 2026", status:"Due",   vatNet:"AED 92,500" },
-    ],
-    cashImpact: rd.cashImpact || [
-      { month:"Oct", collected:58000, paid:24000, net:34000 },
-      { month:"Nov", collected:64000, paid:27000, net:37000 },
-      { month:"Dec", collected:71000, paid:32000, net:39000 },
-      { month:"Jan", collected:62000, paid:28000, net:34000 },
-      { month:"Feb", collected:68000, paid:31000, net:37000 },
-      { month:"Mar", collected:55000, paid:33000, net:22000 },
-      { month:"Apr", collected:null,  paid:null,  forecast:25000 },
-    ],
+    // No invented figures. A client's VAT position is either recorded or it
+    // is not, and zero reads as nothing recorded rather than as a liability
+    // nobody calculated.
+    outputVAT:          Number(rd.outputVAT  || 0),
+    inputVAT:           Number(rd.inputVAT   || 0),
+    vatPayable:         Number(rd.vatPayable || 0),
+    nextDeadline:       rd.nextDeadline || "—",
+    filingPeriod:       rd.filingPeriod || "—",
+    pendingReturns:     rd.pendingReturns || [],
+    cashImpact:         rd.cashImpact     || [],
   };
  
   const tabs = [["overview","Overview"],["returns","Returns"],["cashimpact","Cash Impact"],["invoices","🧾 VAT Invoices"]];
@@ -14442,8 +14433,10 @@ function QFZPModule({ client, reportData }) {
   const freezone = client?.freezone           || "DMCC";
   const period   = qd.period || reportData?.monthLabel || "Current Period";
   const note     = qd.garimaNote || "";
-  const score    = Number(qd.overallScore || rd.qfzpScore || 82);
-  const isDemo   = !qd.overallScore && !rd.qfzpScore;
+  const assessed = qd.overallScore != null || rd.qfzpScore != null;
+  const score    = assessed ? Number(qd.overallScore ?? rd.qfzpScore)
+                            : (client?.isDemo ? 82 : null);
+  const isDemo   = !assessed;
  
   const fzDetails = {
     DMCC:  { name:"Dubai Multi Commodities Centre", regulator:"DMCC Authority",  deadline:"30 April" },
@@ -14562,7 +14555,7 @@ function QFZPModule({ client, reportData }) {
         <div style={{ display:"flex", gap:24, alignItems:"center", flexWrap:"wrap" }}>
           <div style={{ textAlign:"center", minWidth:120 }}>
             <div style={{ fontFamily:FM, fontSize:56, fontWeight:900,
-              color:score>=80?C.green:score>=65?C.amber:C.red, lineHeight:1 }}>{score}</div>
+              color:score==null?C.dim:score>=80?C.green:score>=65?C.amber:C.red, lineHeight:1 }}>{score ?? "—"}</div>
             <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.purple, marginTop:4 }}>
               /100 · QFZP Score
             </div>
@@ -14570,7 +14563,7 @@ function QFZPModule({ client, reportData }) {
           <div style={{ flex:1 }}>
             <div style={{ height:12, background:C.border, borderRadius:60,
               overflow:"hidden", marginBottom:10 }}>
-              <div style={{ height:"100%", width:`${score}%`, borderRadius:60,
+              <div style={{ height:"100%", width:`${score ?? 0}%`, borderRadius:60,
                 background:score>=80?C.green:score>=65?C.amber:C.red,
                 transition:"width 0.5s" }}/>
             </div>
@@ -18162,6 +18155,161 @@ function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
   ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
 }
 
+// ─── UAE REPORTS (VAT & QFZP) ─────────────────────────────────────────────────
+// The two UAE modules worth filling by hand. The rest are either annual, or
+// derivable from the trial balance the sync already brings across.
+//
+// Both pull what they can from Zoho rather than asking for numbers the portal
+// already holds: VAT comes off the output and input tax accounts, and the
+// qualifying income split off invoices joined to each customer's tax
+// treatment. What is left is the part that needs a Chartered Accountant —
+// the substance assessment, and the judgement of whether the split is right.
+function UAEReportsTab({ client, reportData, setReportData, saveReportData, loading, saved, adminEmail }) {
+  const vat  = reportData?.vat || {};
+  const qfzp = reportData?.qfzp || {};
+  const qsub = reportData?.qfzpSubstance || {};
+  const [busy, setBusy] = React.useState(false);
+  const [note, setNote] = React.useState("");
+
+  const setVat  = (k,v) => setReportData(r => ({ ...(r||{}), vat:  { ...(r?.vat  || {}), [k]:v } }));
+  const setQ    = (k,v) => setReportData(r => ({ ...(r||{}), qfzp: { ...(r?.qfzp || {}), [k]:v } }));
+  const setQSub = (k,v) => setReportData(r => ({ ...(r||{}), qfzpSubstance: { ...(r?.qfzpSubstance || {}), [k]:v } }));
+
+  const money = n => (Math.round(Number(n)||0)).toLocaleString("en-AE");
+
+  const pullFromZoho = async () => {
+    setBusy(true); setNote("");
+    try {
+      const r = await fetch(`/api/zoho?action=sync&clientId=${encodeURIComponent(client.id)}` +
+                            `&adminEmail=${encodeURIComponent(adminEmail || "")}`);
+      const j = await r.json();
+      if (!j.ok) { setNote(j.reason === "not_connected"
+        ? "This client has no Zoho connection — connect it from Connections first."
+        : `Could not read Zoho (${j.reason || "unknown"}).`); setBusy(false); return; }
+
+      // VAT sits in the chart of accounts, tagged by Zoho's own account type.
+      const rows   = j.trialBalance?.rows || [];
+      const output = -rows.filter(x => x.zohoType === "output_tax").reduce((a,x)=>a+(x.dr-x.cr),0);
+      const input  =  rows.filter(x => x.zohoType === "input_tax").reduce((a,x)=>a+(x.dr-x.cr),0);
+
+      setReportData(r2 => ({
+        ...(r2||{}),
+        vat: { ...(r2?.vat||{}),
+          outputVAT: Math.round(output), inputVAT: Math.round(input),
+          vatPayable: Math.round(output - input) },
+        qfzp: { ...(r2?.qfzp||{}),
+          qualifying:       Math.round(j.qfzp?.qualifying || 0),
+          nonQualifying:    Math.round(j.qfzp?.nonQualifying || 0),
+          nonQualifyingPct: Number((j.qfzp?.nonQualifyingPct || 0).toFixed(2)),
+          unknownCount:     j.qfzp?.unknownCount || 0 },
+      }));
+      setNote(`Read from ${j.organisation}. VAT and the qualifying split are filled — ` +
+              `check them, then add the substance assessment below.`);
+    } catch { setNote("Could not reach the sync endpoint."); }
+    setBusy(false);
+  };
+
+  const Field = ({ label, value, onChange, placeholder, hint }) => (
+    <div style={{ marginBottom:12 }}>
+      <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+        letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
+      <input value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        style={{ width:"100%", padding:"9px 12px", borderRadius:12, fontSize:13,
+          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg,
+          outline:"none", boxSizing:"border-box" }}/>
+      {hint && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:4, lineHeight:1.6 }}>{hint}</div>}
+    </div>
+  );
+
+  const nq = Number(qfzp.nonQualifyingPct || 0);
+
+  return (
+    <div style={{ maxWidth:760 }}>
+      <div style={{ marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.02em" }}>
+          UAE reports
+        </div>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
+          Until these are filled, the client's VAT and QFZP screens say they have not been
+          published yet — which is the truth, and better than a figure nobody calculated.
+        </div>
+      </div>
+
+      <Card style={{ marginBottom:16 }}>
+        <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
+          <button onClick={pullFromZoho} disabled={busy}
+            style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
+              color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+              cursor: busy ? "default" : "pointer", opacity: busy ? 0.7 : 1 }}>
+            {busy ? "Reading Zoho…" : "Pull from Zoho"}
+          </button>
+          <span style={{ fontFamily:F, fontSize:12, color:C.muted }}>
+            Fills VAT and the qualifying split from the connected books.
+          </span>
+        </div>
+        {note && <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:10, lineHeight:1.7 }}>{note}</div>}
+      </Card>
+
+      {/* ── VAT ── */}
+      <Card style={{ marginBottom:16 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:12 }}>VAT position</div>
+        <Field label="Output VAT (AED)" value={vat.outputVAT} onChange={v=>setVat("outputVAT", Number(String(v).replace(/[^0-9.-]/g,""))||0)} placeholder="0"/>
+        <Field label="Input VAT (AED)"  value={vat.inputVAT}  onChange={v=>setVat("inputVAT",  Number(String(v).replace(/[^0-9.-]/g,""))||0)} placeholder="0"/>
+        <Field label="Net VAT payable (AED)" value={vat.vatPayable} onChange={v=>setVat("vatPayable", Number(String(v).replace(/[^0-9.-]/g,""))||0)}
+          placeholder="0" hint={`Output less input is ${money((vat.outputVAT||0)-(vat.inputVAT||0))}. Override if the return differs.`}/>
+        <Field label="Filing period" value={vat.filingPeriod} onChange={v=>setVat("filingPeriod",v)} placeholder="Q4 2026 (Oct–Dec)"/>
+        <Field label="Next deadline" value={vat.nextDeadline} onChange={v=>setVat("nextDeadline",v)}
+          placeholder="28 Jan 2027" hint="The FTA allows 28 days from the end of the tax period."/>
+      </Card>
+
+      {/* ── QFZP ── */}
+      <Card style={{ marginBottom:16 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+          Free zone qualifying status
+        </div>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7, marginBottom:12 }}>
+          The split below comes from invoices and each customer's tax treatment. It cannot see the
+          nature of the activity, which the qualifying test also turns on — so the score is yours
+          to set, not the portal's.
+        </div>
+
+        {(qfzp.qualifying != null || qfzp.nonQualifying != null) && (
+          <div style={{ padding:"10px 14px", borderRadius:12, marginBottom:12,
+            background: nq >= 5 ? `${C.red}08` : nq >= 4 ? `${C.amber}0C` : `${C.green}08`,
+            border:`1px solid ${nq >= 5 ? C.red : nq >= 4 ? C.amber : C.green}25` }}>
+            <div style={{ fontFamily:F, fontSize:12.5, color:C.text, lineHeight:1.8 }}>
+              Qualifying <strong>AED {money(qfzp.qualifying)}</strong> · non-qualifying{" "}
+              <strong>AED {money(qfzp.nonQualifying)}</strong> — <strong>{nq.toFixed(1)}%</strong> against a 5% limit.
+              {qfzp.unknownCount > 0 && ` ${qfzp.unknownCount} invoice${qfzp.unknownCount===1?" has":"s have"} no customer tax treatment recorded, so this is incomplete.`}
+            </div>
+          </div>
+        )}
+
+        <Field label="Your overall assessment (0–100)" value={qsub.overallScore}
+          onChange={v=>setQSub("overallScore", v === "" ? undefined : Math.max(0, Math.min(100, Number(String(v).replace(/[^0-9]/g,""))||0)))}
+          placeholder="leave blank until assessed"
+          hint="Left blank, the client's screen shows a dash rather than a score nobody gave."/>
+        <Field label="Period" value={qsub.period} onChange={v=>setQSub("period",v)} placeholder="FY 2026"/>
+        <Field label="Employees in the free zone" value={qsub.employeeCount} onChange={v=>setQSub("employeeCount", v)} placeholder="5"/>
+        <Field label="Free zone operating expenditure (AED p.a.)" value={qsub.opexAED} onChange={v=>setQSub("opexAED", v)} placeholder="412,000"/>
+        <div style={{ marginBottom:4 }}>
+          <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+            letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>Your note to the client</label>
+          <textarea value={qsub.garimaNote || ""} onChange={e=>setQSub("garimaNote", e.target.value)} rows={4}
+            placeholder="What the split means for them, and what to do before year end."
+            style={{ width:"100%", boxSizing:"border-box", padding:"9px 12px", borderRadius:12, fontSize:13,
+              border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg,
+              outline:"none", resize:"vertical", lineHeight:1.7 }}/>
+        </div>
+      </Card>
+
+      <div style={{ display:"flex", justifyContent:"flex-end" }}>
+        <AdminSaveBtn onClick={saveReportData} loading={loading} saved={saved} label="Save & Publish" F={F}/>
+      </div>
+    </div>
+  );
+}
+
 // ─── DRAFT THE REVIEW ─────────────────────────────────────────────────────────
 // The three things that were still typed by hand every month: the action items,
 // the compliance calendar, and the brief the client reads. Each arrives as a
@@ -19122,6 +19270,7 @@ function AdminPanel({ admin, onLogout }) {
     // ── UAE Client Data ──
     { id:"uae",        icon:"ti-flag", label:"UAE Profile & Tax", group:"UAE"   },
     { id:"uaecashflow",icon:"ti-cash", label:"UAE Cash & Notes",   group:"UAE"   },
+    { id:"uaereports", icon:"ti-receipt-tax", label:"VAT & QFZP",     group:"UAE"   },
     // ── Shared ──
     { id:"invoices",   icon:"ti-receipt", label:"Invoices",       group:"Shared"     },
     { id:"documents",  icon:"ti-folder", label:"Documents",      group:"Shared"     },
@@ -20152,6 +20301,16 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                 </>);
               })()}
             </div>
+          )}
+
+          {/* ── UAE REPORTS (VAT & QFZP) ── */}
+          {tab === "uaereports" && (
+            !selected ? (
+              <Card style={{ textAlign:"center", padding:40 }}>
+                <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+              </Card>
+            ) : <UAEReportsTab client={selected} reportData={reportData} setReportData={setReportData}
+                  saveReportData={saveReportData} loading={loading} saved={saved} adminEmail={admin?.email}/>
           )}
 
           {/* ── PREVIEW AS CLIENT ── */}
