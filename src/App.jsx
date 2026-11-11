@@ -17944,12 +17944,14 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
 
   return (<>
     <Card style={{ marginBottom:18 }}>
-      <AdminPageHeader title="Trial balance" client={client}
-        subtitle={<>Paste the trial balance from Tally, Zoho or Excel, or fetch it from the connected books.
-          Accounts are mapped automatically, your corrections are remembered, and next month only new
-          accounts need attention.
-          {Object.keys(savedMap).length > 0 &&
-            <span style={{ color:C.green, fontWeight:700 }}> {Object.keys(savedMap).length} accounts already mapped for this client.</span>}</>}/>
+      {/* The screen's own context line lives in TAB_INTRO; only the part that
+          depends on this client's saved mapping is shown here. */}
+      {Object.keys(savedMap).length > 0 && (
+        <div style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700,
+          margin:"0 0 12px" }}>
+          {Object.keys(savedMap).length} accounts already mapped for this client.
+        </div>
+      )}
       <textarea value={raw} onChange={e=>setRaw(e.target.value)}
         placeholder={"Particulars,Debit,Credit\nSales Account,,22500000\nPurchase Account,13200000,\nSundry Debtors,9800000,"}
         rows={7}
@@ -18164,30 +18166,6 @@ function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
   ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
 }
 
-// ─── ADMIN PAGE HEADER ────────────────────────────────────────────────────────
-// Title, who it is for, and one line of context. Used by every admin screen so
-// the client being edited is always on the page, not only in the sidebar.
-function AdminPageHeader({ title, client, subtitle }) {
-  return (
-    <div style={{ marginBottom:16 }}>
-      <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap" }}>
-        <h2 style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text,
-          letterSpacing:"-0.02em", margin:0 }}>{title}</h2>
-        {client && (
-          <span style={{ fontFamily:F, fontSize:12.5, color:C.muted }}>
-            {client.company || client.name}
-            {isUAE(client) && <span style={{ color:"#00732F", fontWeight:700 }}> · UAE</span>}
-          </span>
-        )}
-      </div>
-      {subtitle && (
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7,
-          margin:"5px 0 0", maxWidth:640 }}>{subtitle}</div>
-      )}
-    </div>
-  );
-}
-
 // ─── ANALYSIS TEMPLATES ───────────────────────────────────────────────────────
 // Download a template already carrying what the portal knows, do the analysis
 // in Excel, upload it back, read what was parsed, publish.
@@ -18250,8 +18228,6 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
 
   return (
     <div style={{ maxWidth:820 }}>
-      <AdminPageHeader title="Analysis templates" client={client}
-        subtitle="For the reports the books cannot answer on their own. Download the template — it comes with whatever the portal already knows — do the analysis in Excel, and upload it back. Anything that flows from Zoho is never templated."/>
 
       <Card style={{ marginBottom:16 }}>
         <div style={{ maxWidth:420, marginBottom:14 }}>
@@ -18479,10 +18455,6 @@ function ClientReadiness({ client, reportData, kpis, actions = [], invoices = []
 
   return (
     <div style={{ maxWidth:820 }}>
-      <AdminPageHeader title="Client setup" client={client}
-        subtitle={need === 0
-          ? "Everything the client needs is filled. Anything unticked below is optional."
-          : `${need} thing${need===1?"":"s"} still needed before this client's portal is complete.`}/>
 
       {groups.map(g => {
         const items = rows.filter(r => r.group === g);
@@ -18601,8 +18573,6 @@ function UAEReportsTab({ client, reportData, setReportData, saveReportData, load
 
   return (
     <div style={{ maxWidth:760 }}>
-      <AdminPageHeader title="VAT &amp; QFZP" client={client}
-        subtitle="Until these are filled, the client's VAT and QFZP screens say they have not been published yet — which is the truth, and better than a figure nobody calculated."/>
 
       <Card style={{ marginBottom:16 }}>
         <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
@@ -19655,6 +19625,35 @@ function AdminPanel({ admin, onLogout }) {
   //
   // `only` hides a group's screens when they do not apply to the selected
   // client, which is what actually shortens the list.
+  // What each screen is for, in one line. Shown under the header so a tab does
+  // not have to be opened to find out what it does.
+  const TAB_INTRO = {
+    home:        "Every client, newest work first. The ones that have gone quiet are flagged.",
+    readiness:   "What is filled for this client, what came from their books, and what still needs you.",
+    clients:     "Everyone on the portal, live and demo.",
+    addclient:   "Create a client and their invite code. Jurisdiction decides the currency and which rules apply.",
+    eletter:     "Draft and publish the engagement letter a client signs.",
+    connections: "Where this client's books live. A connected client's numbers arrive on their own.",
+    trialbalance:"Fetch from the connected books or paste a trial balance. Produces the statements, ageing, drill-downs and ratios.",
+    import:      "Upload a P&L, balance sheet, cash flow or bank statement as CSV.",
+    templates:   "Reports the books cannot answer. Download, analyse in Excel, upload back.",
+    kpis:        "The six tiles at the top of the client's dashboard, and the note beneath them.",
+    drilldata:   "The compliance calendar, and what a client sees when they tap a figure.",
+    reportdata:  "The detailed report inputs — P&L lines, working capital, benchmarks and board data.",
+    actions:     "What this client should do, and by when. Drafted from the alerts in Trial Balance.",
+    analytics:   "Scenarios and business intelligence. Assumptions come from you, not the books.",
+    treasury:    "Deposits, facilities and maturities. Not in the accounting records, so entered here.",
+    uae:         "Jurisdiction, free zone, TRNs and registration status. Feeds every UAE screen.",
+    uaereports:  "VAT and the free zone qualifying position, pulled from the books where possible.",
+    uaecashflow: "UAE cash position and the notes that go with it.",
+    preview:     "The client's own screens, drawn from your unsaved working data.",
+    documents:   "Files shared with this client, and anything with an expiry worth watching.",
+    engagement:  "Valuation engagements and their status.",
+    invoices:    "Your billing to this client.",
+    requests:    "Service requests clients have submitted.",
+    market:      "Market intelligence shown to clients.",
+  };
+
   const ADMIN_TABS = [
     { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",         group:"Overview" },
     { id:"readiness",  icon:"ti-checklist",        label:"Client Setup",      group:"Overview" },
@@ -20211,25 +20210,43 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
       {/* Main content */}
       <div style={{ flex:1, overflowY:"auto" }}>
         {/* Header */}
-        <div style={{ height:52, background:"#fff", borderBottom:`1px solid #EAECF0`,
-          display:"flex", alignItems:"center", padding:"0 16px", gap:12, flexWrap:"wrap" }}>
+        {/* The one header. It carries the screen you are on and the client you
+            are on it for — previously the client was a pill that truncated to
+            "ZOHO TEST — ZOHO T…", so on a narrow window you could not tell who
+            you were editing. It wraps now rather than cutting off. */}
+        <div style={{ minHeight:52, background:"#fff", borderBottom:`1px solid #EAECF0`,
+          display:"flex", alignItems:"center", padding:"9px 16px", gap:12, flexWrap:"wrap" }}>
           <button className="admin-hamburger" onClick={() => setSidebarOpen(true)}
             style={{ background:"none", border:"none", cursor:"pointer", padding:6,
               borderRadius:6, color:C.text, fontSize:20, lineHeight:1, flexShrink:0 }}>&#x2630;</button>
-          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", margin:0, flex:1 }}>
+          <h1 style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text,
+            letterSpacing:"-0.02em", margin:0, flexShrink:0 }}>
             {ADMIN_TABS.find(t=>t.id===tab)?.label}
           </h1>
-                    {selected && tab !== "clients" && tab !== "addclient" && (
-            <div style={{ padding:"4px 12px", borderRadius:60, background:`${C.amber}15`,
-              border:`1px solid ${C.amber}30` }}>
-              <span style={{ fontSize:12, fontWeight:700, color:C.amber, fontFamily:F }}>
-                {selected.name} — {selected.company}
+          {selected && !["clients","addclient","requests","market","home"].includes(tab) && (
+            <div style={{ display:"flex", alignItems:"center", gap:7, padding:"4px 12px",
+              borderRadius:60, background:`${C.amber}12`, border:`1px solid ${C.amber}30`,
+              minWidth:0, maxWidth:"100%" }}>
+              <span style={{ fontSize:12, fontWeight:700, color:C.text, fontFamily:F,
+                overflow:"hidden", textOverflow:"ellipsis" }}>
+                {selected.company || selected.name}
+              </span>
+              <span style={{ fontSize:11, color:C.muted, fontFamily:F, flexShrink:0 }}>
+                {selected.name}
+              </span>
+              <span style={{ fontSize:9.5, fontWeight:800, letterSpacing:"0.06em", flexShrink:0,
+                color: isUAE(selected) ? "#00732F" : C.blue }}>
+                {isUAE(selected) ? "UAE" : "INDIA"}
               </span>
             </div>
           )}
         </div>
  
         <div className="ns-page">
+          {TAB_INTRO[tab] && (
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7,
+              margin:"0 0 16px", maxWidth:680 }}>{TAB_INTRO[tab]}</div>
+          )}
 
           {/* ── DASHBOARD HOME ── */}
           {tab === "home" && (() => {
@@ -20813,8 +20830,6 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           )}
           {tab === "connections" && selected && (
             <div style={{ maxWidth:640 }}>
-              <AdminPageHeader title="Connections" client={selected}
-                subtitle="Where this client's books live. A connected client's numbers arrive on their own; everyone else is imported by hand from CSV Import."/>
               <ZohoConnectionCard client={selected} adminEmail={admin?.email}/>
             </div>
           )}
