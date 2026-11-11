@@ -1842,9 +1842,17 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const pendingActions = actions.filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
   const aiNarration  = reportData?.aiNarration || null;
-  const displayNote  = uaeClient
-    ? (reportData?.uaeGarimaNote || "Q1 2026 closed strongly. Review priorities in your CFO Report.")
-    : (aiNarration || garimaNote || PACK_CONFIG[ovPack]?.garimaNote || PACK_CONFIG.startup.garimaNote);
+  // The written brief, or nothing. The sample text in PACK_CONFIG exists to make
+  // the demo logins look alive; a real client reading it would be reading
+  // fabricated advice about a fundraise they never had, under a Chartered
+  // Accountant's name. Only demo clients ever see it.
+  const realNote = uaeClient
+    ? (reportData?.uaeGarimaNote || aiNarration || garimaNote)
+    : (aiNarration || garimaNote);
+  const displayNote = realNote
+    || (isDemo ? (uaeClient ? "Q1 2026 closed strongly. Review priorities in your CFO Report."
+                            : (PACK_CONFIG[ovPack]?.garimaNote || PACK_CONFIG.startup.garimaNote))
+               : null);
 
   const hour      = new Date().getHours();
   const greeting  = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
@@ -2147,7 +2155,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       {/* ── Positions against rules, recomputed nightly ── */}
       <LivePositions/>
 
-      {/* ── AI CFO Brief ── */}
+      {/* ── AI CFO Brief — hidden entirely when nothing has been written ── */}
+      {displayNote && (
       <div className="ns-panel" style={{ borderLeft:`4px solid ${accentColor}` }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 18px 0", flexWrap:"wrap", gap:8 }}>
           <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:accentColor }}>
@@ -2164,6 +2173,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.85, margin:0, whiteSpace: aiNarration ? "pre-wrap" : "normal" }}>{displayNote}</p>
         </div>
       </div>
+      )}
 
       {/* ── Strategic Health Dimensions ── */}
       {(() => {
@@ -8728,7 +8738,9 @@ function CFOPackContent({ reportData, client, kpis }) {
           <Card style={{ borderLeft:`4px solid ${C.blue}` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
             <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
-              {reportData?.reportNote || reportData?.packNote || (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote}
+              {reportData?.reportNote || reportData?.packNote
+                || (client?.isDemo ? (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote || PACK_CONFIG.startup.garimaNote)
+                                   : "Your note for this period has not been published yet.")}
             </p>
           </Card>
           {/* P&L Deep Dive — historical data, no duplication with Overview/CashFlow */}
@@ -16147,10 +16159,16 @@ function Portal({ client, onLogout }) {
     ],
   };
  
-  const resolvedReportData = isUAE(client)
-    ? ((!isDemo && liveReportData) ? liveReportData : DEMO_REPORT_DATA_UAE)
-    : ((!isDemo && liveReportData) ? liveReportData : DEMO_REPORT_DATA);
+  // A real client sees their own data or none. Falling back to the demo set
+  // put another company's revenue, margins and compliance status on their
+  // screen under a Chartered Accountant's name — convincing, specific and
+  // entirely fabricated. Empty is the honest state before anything is
+  // published, and the panels hide themselves when they have nothing.
+  const resolvedReportData = isDemo
+    ? (isUAE(client) ? DEMO_REPORT_DATA_UAE : DEMO_REPORT_DATA)
+    : (liveReportData || {});
   const resolvedGarimaNote = (!isDemo && liveKpis?.garima_note) ? liveKpis.garima_note
+    : !isDemo ? null
     : isUAE(client)
       ? "Q1 2026 closed strongly — AED 1.85M revenue, up 32% YoY, with gross margin at 45% (best quarter since inception). Four things need your attention this week: (1) VAT return for Q1 is due 28 April — AED 92.5K payable to FTA. Confirm this is sitting in your Emirates NBD current account and not locked in the Mashreq term deposit maturing 15 April. (2) DMCC audited financial statements must be submitted by 30 April to maintain QFZP status — your audit firm needs your signed management accounts by 22 April. Do not miss this: losing QFZP status triggers 9% CT retroactively. (3) Your mainland UAE sales are at 8% of revenue — above the 5% de-minimis threshold. Review the two mainland contracts due for renewal in Q2 and restructure them as DMCC-to-DMCC to bring this back under 5%. (4) SBR election must be made in your CT return by 30 September — I'll prepare this. Confirm your Q2 revenue won't cross AED 3M YTD."
       : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
