@@ -3,6 +3,7 @@ import { supabase } from "./supabase.js";
 import { computeAlerts, parseAmount } from "./alerts.js";
 import { proposeActions, newProposalsOnly, complianceCalendar, newComplianceOnly } from "./autodraft.js";
 import { mergeDerived } from "./derive.js";
+import { TEMPLATES, templateFor, buildTemplateCsv, parseTemplateCsv } from "./templates.js";
 import { parseLedger, buildReceivablesDrill, buildRevenueDrill, buildPayablesDrill,
          buildSupplierSpendDrill, computeMsmeExposure, buildMsmeDrill, extractVendorRegister,
          isMsme, MSME_LIMIT_DAYS, reconcile, validateLedger } from "./ledgerimport.js";
@@ -18166,6 +18167,159 @@ function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
   ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
 }
 
+// ─── ANALYSIS TEMPLATES ───────────────────────────────────────────────────────
+// Download a template already carrying what the portal knows, do the analysis
+// in Excel, upload it back, read what was parsed, publish.
+//
+// Replaces filling these reports in field by field. A budget, a treasury
+// schedule or a related party listing is spreadsheet work; typing it into
+// forty boxes once a month for every client is not.
+function AnalysisTemplates({ client, reportData, setReportData, saveReportData, loading, saved }) {
+  const [sel,  setSel]  = React.useState(TEMPLATES[0].key);
+  const [res,  setRes]  = React.useState(null);
+  const [err,  setErr]  = React.useState("");
+  const def = templateFor(sel);
+  const existing = reportData?.[def.writes];
+  const filled = Array.isArray(existing) ? existing.length > 0
+    : existing && typeof existing === "object" ? Object.keys(existing).length > 0 : false;
+
+  const download = () => {
+    const csv  = buildTemplateCsv(def, { client, reportData });
+    const blob = new Blob([csv], { type:"text/csv;charset=utf-8" });
+    const a    = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `${(client?.company || client?.name || "client").replace(/\W+/g,"-").toLowerCase()}-${def.key}.csv`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+  };
+
+  const read = (text) => {
+    setErr(""); setRes(null);
+    const out = parseTemplateCsv(def, text);
+    if (!out.ok) { setErr(out.reason); return; }
+    setRes(out);
+  };
+
+  const apply = () => {
+    if (!res) return;
+    setReportData(r => ({ ...(r||{}), [def.writes]: res.parsed }));
+    setErr(""); setRes({ ...res, applied:true });
+  };
+
+  return (
+    <div style={{ maxWidth:820 }}>
+      <div style={{ marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.02em" }}>
+          Analysis templates
+        </div>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7, maxWidth:620 }}>
+          For the reports the books cannot answer on their own. Download the template — it comes
+          with whatever the portal already knows — do the analysis in Excel, and upload it back.
+          Anything that flows from Zoho is never templated; re-typing it would be a step backwards.
+        </div>
+      </div>
+
+      <Card style={{ marginBottom:16 }}>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
+          {TEMPLATES.map(t => {
+            const on = t.key === sel;
+            const has = (() => { const e = reportData?.[t.writes];
+              return Array.isArray(e) ? e.length > 0 : e && typeof e === "object" ? Object.keys(e).length > 0 : false; })();
+            return (
+              <button key={t.key} onClick={() => { setSel(t.key); setRes(null); setErr(""); }}
+                style={{ padding:"7px 14px", borderRadius:60, cursor:"pointer", fontFamily:F,
+                  fontSize:12, fontWeight: on ? 700 : 600,
+                  border:`1.5px solid ${on ? C.blue : C.border}`,
+                  background: on ? `${C.blue}0C` : "white",
+                  color: on ? C.blue : C.muted, display:"flex", alignItems:"center", gap:6 }}>
+                {has && <span style={{ color:C.green, fontWeight:800 }}>✓</span>}
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ fontFamily:F, fontSize:12.5, color:C.muted, lineHeight:1.8, marginBottom:14 }}>
+          <strong style={{ color:C.text }}>{def.label}.</strong> {def.why}
+          {filled && <span style={{ color:C.green }}> Already filled for this client — uploading replaces it.</span>}
+        </div>
+
+        <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
+          <button onClick={download}
+            style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
+              color:"white", fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+            Download template
+          </button>
+          <label style={{ padding:"10px 18px", borderRadius:12, border:`1.5px solid ${C.border}`,
+            background:C.bg, fontFamily:F, fontWeight:700, fontSize:13, color:C.text, cursor:"pointer" }}>
+            Upload filled file
+            <input type="file" accept=".csv,.txt" style={{ display:"none" }}
+              onChange={e => { const f = e.target.files[0]; if (!f) return;
+                const rd = new FileReader(); rd.onload = () => read(String(rd.result)); rd.readAsText(f);
+                e.target.value = ""; }}/>
+          </label>
+          <span style={{ fontFamily:F, fontSize:11.5, color:C.dim }}>
+            Upload it exactly as saved — the notes at the top are ignored.
+          </span>
+        </div>
+
+        {err && (
+          <div style={{ marginTop:12, padding:"10px 14px", borderRadius:12,
+            background:`${C.red}08`, border:`1px solid ${C.red}25` }}>
+            <div style={{ fontFamily:F, fontSize:12, color:C.red, lineHeight:1.7 }}>{err}</div>
+          </div>
+        )}
+      </Card>
+
+      {/* What was read — shown before anything is written anywhere. */}
+      {res && (
+        <Card style={{ marginBottom:16 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
+            {res.count} row{res.count===1?"":"s"} read
+          </div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:12, lineHeight:1.7 }}>
+            Check this is what you meant before it goes anywhere near the client.
+          </div>
+          <div style={{ overflowX:"auto" }}>
+            <table style={{ borderCollapse:"collapse", width:"100%", fontFamily:F, fontSize:12 }}>
+              <thead>
+                <tr>{def.columns.map((c,i) => (
+                  <th key={i} style={{ textAlign:"left", padding:"6px 10px", color:C.dim,
+                    fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.06em",
+                    borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{c}</th>
+                ))}</tr>
+              </thead>
+              <tbody>
+                {res.rows.slice(0, 25).map((r,i) => (
+                  <tr key={i}>{def.columns.map((_,j) => (
+                    <td key={j} style={{ padding:"6px 10px", color:C.text,
+                      borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{r[j] || "—"}</td>
+                  ))}</tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          {res.rows.length > 25 && (
+            <div style={{ fontFamily:F, fontSize:11.5, color:C.dim, marginTop:8 }}>
+              Showing the first 25 of {res.rows.length}.
+            </div>
+          )}
+          <div style={{ display:"flex", gap:10, marginTop:14, alignItems:"center", flexWrap:"wrap" }}>
+            <button onClick={apply}
+              style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
+                color:"white", fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
+              Apply to report data
+            </button>
+            <AdminSaveBtn onClick={saveReportData} loading={loading} saved={saved} label="Save & Publish" F={F}/>
+            {res.applied && <span style={{ fontFamily:F, fontSize:12, color:C.green }}>
+              Applied — press Save &amp; Publish to send it to the client.</span>}
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 // ─── CLIENT READINESS ─────────────────────────────────────────────────────────
 // What is filled for this client, what came out of their books, and what still
 // needs a person — with a button to wherever that is.
@@ -19452,6 +19606,7 @@ function AdminPanel({ admin, onLogout }) {
     { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"Shared"     },
     { id:"trialbalance", icon:"ti-table-import", label:"Trial Balance", group:"Shared"   },
     { id:"drilldata",  icon:"ti-git-merge", label:"Drill & Compliance", group:"Shared"  },
+    { id:"templates",  icon:"ti-table-export", label:"Analysis Templates", group:"Shared" },
     { id:"kpis",       icon:"ti-chart-bar", label:"KPIs",           group:"India"      },
     { id:"actions",    icon:"ti-checkbox", label:"Action Items",   group:"India"      },
     { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",    group:"India"      },
@@ -20492,6 +20647,16 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                 </>);
               })()}
             </div>
+          )}
+
+          {/* ── ANALYSIS TEMPLATES ── */}
+          {tab === "templates" && (
+            !selected ? (
+              <Card style={{ textAlign:"center", padding:40 }}>
+                <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+              </Card>
+            ) : <AnalysisTemplates client={selected} reportData={reportData} setReportData={setReportData}
+                  saveReportData={saveReportData} loading={loading} saved={saved}/>
           )}
 
           {/* ── CLIENT READINESS ── */}
