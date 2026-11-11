@@ -18178,6 +18178,8 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
   const [sel,  setSel]  = React.useState(TEMPLATES[0].key);
   const [res,  setRes]  = React.useState(null);
   const [err,  setErr]  = React.useState("");
+  const [note, setNote] = React.useState("");
+  const [drafting, setDrafting] = React.useState(false);
   const def = templateFor(sel);
   const existing = reportData?.[def.writes];
   const filled = Array.isArray(existing) ? existing.length > 0
@@ -18204,6 +18206,25 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
     if (!res) return;
     setReportData(r => ({ ...(r||{}), [def.writes]: res.parsed }));
     setErr(""); setRes({ ...res, applied:true });
+  };
+
+  // Writes about the figures in the sheet — it is told not to recompute them
+  // or invent reasons the rows do not give. The analysis is yours; this is
+  // the paragraph that goes under it.
+  const draftCommentary = async () => {
+    if (!res) return;
+    setDrafting(true); setErr("");
+    try {
+      const r = await fetch("/api/narrate", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ client, reportData, topic: def.topic || def.label,
+                               rows: [def.columns, ...res.rows] }),
+      });
+      const j = await r.json();
+      if (j.narration) setNote(j.narration);
+      else setErr(j.error || "The commentary could not be drafted.");
+    } catch { setErr("Could not reach the drafting service."); }
+    setDrafting(false);
   };
 
   return (
@@ -18305,6 +18326,14 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
             </div>
           )}
           <div style={{ display:"flex", gap:10, marginTop:14, alignItems:"center", flexWrap:"wrap" }}>
+            {def.note && (
+              <button onClick={draftCommentary} disabled={drafting}
+                style={{ padding:"10px 18px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                  background:"none", fontFamily:F, fontWeight:700, fontSize:13, color:C.text,
+                  cursor: drafting ? "default" : "pointer" }}>
+                {drafting ? "Writing…" : "Draft commentary"}
+              </button>
+            )}
             <button onClick={apply}
               style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
                 color:"white", fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
@@ -18314,6 +18343,27 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
             {res.applied && <span style={{ fontFamily:F, fontSize:12, color:C.green }}>
               Applied — press Save &amp; Publish to send it to the client.</span>}
           </div>
+
+          {note && (
+            <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${C.border}` }}>
+              <div style={{ fontFamily:F, fontSize:11, fontWeight:800, color:C.muted,
+                textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>
+                Commentary — a draft about your figures, for you to correct
+              </div>
+              <textarea value={note} onChange={e => setNote(e.target.value)} rows={7}
+                style={{ width:"100%", boxSizing:"border-box", padding:"10px 13px", borderRadius:12,
+                  fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                  background:C.bg, outline:"none", resize:"vertical", lineHeight:1.75 }}/>
+              <button onClick={() => { setReportData(r => ({ ...(r||{}), [def.note]: note }));
+                                       setRes(v => ({ ...v, noteApplied:true })); }}
+                style={{ marginTop:10, padding:"9px 18px", borderRadius:12, border:"none",
+                  background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
+                Use this commentary
+              </button>
+              {res.noteApplied && <span style={{ fontFamily:F, fontSize:12, color:C.green, marginLeft:10 }}>
+                Saved to your working copy.</span>}
+            </div>
+          )}
         </Card>
       )}
     </div>
@@ -18680,7 +18730,7 @@ function DraftReviewCard({ client, reportData, setReportData, kpis, actions = []
         body: JSON.stringify({ client, reportData, kpis: tiles }),
       });
       const j = await r.json();
-      if (j.brief || j.text || j.content) setBrief(j.brief || j.text || j.content);
+      if (j.narration) setBrief(j.narration);
       else setNote(j.error || "The brief could not be drafted.");
     } catch { setNote("Could not reach the drafting service."); }
     setBusy("");
@@ -19083,6 +19133,16 @@ function AdminPanel({ admin, onLogout }) {
   const [saved, setSaved]           = useState(false);
   const [staleness,   setStaleness]   = useState({});
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [clientQuery, setClientQuery] = useState("");
+  const [staleOnly,   setStaleOnly]   = useState(false);
+  // Which sidebar groups are folded away. A group containing the open screen
+  // always shows, however it was left.
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("fz-admin-groups") || "{}"); } catch { return {}; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem("fz-admin-groups", JSON.stringify(collapsed)); } catch {}
+  }, [collapsed]);
   const [dashStats, setDashStats]     = useState({ highPriority:[], overdueInvoices:[], pendingRequests:0 });
   const [aiGenerating, setAiGen]    = useState(false);
   const [aiDraft, setAiDraft]       = useState(null);
@@ -19592,36 +19652,44 @@ function AdminPanel({ admin, onLogout }) {
     setNewClient(c => ({ ...c, invite_code: `${prefix}${year}` }));
   };
  
+  // Grouped by what you are doing, in the order you do it — get the data in,
+  // build the report, check it, publish. The old grouping was by jurisdiction,
+  // which put KPIs, Treasury and Valuation under "India" although none of them
+  // are Indian, and left nine unrelated screens under "Shared".
+  //
+  // `only` hides a group's screens when they do not apply to the selected
+  // client, which is what actually shortens the list.
   const ADMIN_TABS = [
-    // ── Overview ──
-    { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",   group:"Overview"   },
-    { id:"readiness",  icon:"ti-checklist", label:"Client Setup",    group:"Overview"   },
-    // ── Client Management ──
-    { id:"clients",    icon:"ti-users", label:"All Clients",    group:"Clients"    },
-    { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
+    { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",         group:"Overview" },
+    { id:"readiness",  icon:"ti-checklist",        label:"Client Setup",      group:"Overview" },
+
+    { id:"clients",    icon:"ti-users",            label:"All Clients",       group:"Clients" },
+    { id:"addclient",  icon:"ti-user-plus",        label:"Add Client",        group:"Clients" },
     { id:"eletter",    icon:"ti-file-description", label:"Engagement Letter", group:"Clients" },
-    // ── India Client Data ──
-    { id:"preview",    icon:"ti-eye", label:"Preview as Client", group:"Shared"       },
-    { id:"connections",icon:"ti-plug-connected", label:"Connections", group:"Shared"    },
-    { id:"import",     icon:"ti-file-upload", label:"CSV Import",     group:"Shared"     },
-    { id:"trialbalance", icon:"ti-table-import", label:"Trial Balance", group:"Shared"   },
-    { id:"drilldata",  icon:"ti-git-merge", label:"Drill & Compliance", group:"Shared"  },
-    { id:"templates",  icon:"ti-table-export", label:"Analysis Templates", group:"Shared" },
-    { id:"kpis",       icon:"ti-chart-bar", label:"KPIs",           group:"India"      },
-    { id:"actions",    icon:"ti-checkbox", label:"Action Items",   group:"India"      },
-    { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",    group:"India"      },
-    { id:"engagement", icon:"ti-scale", label:"Valuation",      group:"India"      },
-    { id:"analytics",  icon:"ti-world", label:"BI & Scenarios", group:"India"      },
-    { id:"treasury",   icon:"ti-building-bank", label:"Treasury",       group:"India"      },
-    // ── UAE Client Data ──
-    { id:"uae",        icon:"ti-flag", label:"UAE Profile & Tax", group:"UAE"   },
-    { id:"uaecashflow",icon:"ti-cash", label:"UAE Cash & Notes",   group:"UAE"   },
-    { id:"uaereports", icon:"ti-receipt-tax", label:"VAT & QFZP",     group:"UAE"   },
-    // ── Shared ──
-    { id:"invoices",   icon:"ti-receipt", label:"Invoices",       group:"Shared"     },
-    { id:"documents",  icon:"ti-folder", label:"Documents",      group:"Shared"     },
-    { id:"requests",   icon:"ti-mail", label:"Requests",       group:"Shared"     },
-    { id:"market",     icon:"ti-world", label:"Market Intel",   group:"Shared"     },
+
+    { id:"connections",icon:"ti-plug-connected",   label:"Connections",       group:"Data in" },
+    { id:"trialbalance",icon:"ti-table-import",    label:"Trial Balance",     group:"Data in" },
+    { id:"import",     icon:"ti-file-upload",      label:"CSV Import",        group:"Data in" },
+    { id:"templates",  icon:"ti-table-export",     label:"Analysis Templates",group:"Data in" },
+
+    { id:"kpis",       icon:"ti-chart-bar",        label:"KPIs",              group:"Build the report" },
+    { id:"drilldata",  icon:"ti-git-merge",        label:"Drill & Compliance",group:"Build the report" },
+    { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",       group:"Build the report" },
+    { id:"actions",    icon:"ti-checkbox",         label:"Action Items",      group:"Build the report" },
+    { id:"analytics",  icon:"ti-chart-dots",       label:"BI & Scenarios",    group:"Build the report" },
+    { id:"treasury",   icon:"ti-building-bank",    label:"Treasury",          group:"Build the report" },
+
+    { id:"uae",        icon:"ti-flag",             label:"Profile & Tax",     group:"UAE", only:"uae" },
+    { id:"uaereports", icon:"ti-receipt-tax",      label:"VAT & QFZP",        group:"UAE", only:"uae" },
+    { id:"uaecashflow",icon:"ti-cash",             label:"Cash & Notes",      group:"UAE", only:"uae" },
+
+    { id:"preview",    icon:"ti-eye",              label:"Preview as Client", group:"Check & publish" },
+    { id:"documents",  icon:"ti-folder",           label:"Documents",         group:"Check & publish" },
+    { id:"engagement", icon:"ti-scale",            label:"Valuation",         group:"Check & publish" },
+
+    { id:"invoices",   icon:"ti-receipt",          label:"Invoices",          group:"Practice" },
+    { id:"requests",   icon:"ti-mail",             label:"Requests",          group:"Practice" },
+    { id:"market",     icon:"ti-world",            label:"Market Intel",      group:"Practice" },
   ];
  
   // Stable component references — prevents remount/focus-loss on every render
@@ -20099,14 +20167,22 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           </div>
         )}
         <nav style={{ flex:1, padding:"6px 0", overflowY:"auto" }}>
-          {["Overview","Clients","India","UAE","Shared"].map(group => {
-            const groupTabs = ADMIN_TABS.filter(t => t.group === group);
+          {["Overview","Clients","Data in","Build the report","UAE","Check & publish","Practice"].map(group => {
+            const groupTabs = ADMIN_TABS.filter(t => t.group === group)
+              .filter(t => t.only !== "uae" || isUAE(selected));
+            if (!groupTabs.length) return null;
+            const shut = collapsed[group] && !groupTabs.some(t => t.id === tab);
             return (
               <div key={group}>
-                <div style={{ padding:"8px 14px 3px", fontFamily:F, fontSize:9,
-                  fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.12em" }}>
+                <button onClick={() => setCollapsed(c => ({ ...c, [group]: !c[group] }))}
+                  style={{ display:"flex", alignItems:"center", gap:6, width:"100%",
+                    padding:"9px 14px 4px", background:"none", border:"none", cursor:"pointer",
+                    fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
+                    textTransform:"uppercase", letterSpacing:"0.12em" }}>
+                  <span style={{ fontSize:8, opacity:0.7 }}>{shut ? "▸" : "▾"}</span>
                   {group}
-                </div>
+                </button>
+                {shut ? null : <>
                 {groupTabs.map(t => (
                   <button key={t.id} onClick={() => { setTab(t.id); setSidebarOpen(false); }} style={{
                     display:"flex", alignItems:"center", gap:10, width:"100%",
@@ -20120,6 +20196,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                       color:tab===t.id?C.amber:C.muted }}>{t.label}</span>
                   </button>
                 ))}
+                </>}
               </div>
             );
           })}
@@ -20224,32 +20301,80 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     ))}
                   </div>
                 )}
-                <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(280px,1fr))", gap:12 }}>
-                  {sorted.map(c => {
-                    const lastAt = staleness[c.id]?.kpiAt||staleness[c.id]?.rdAt;
-                    const days = daysSince(lastAt);
-                    const sc = stalenessColor(days); const sl = stalenessLabel(days);
-                    return (
-                      <div key={c.id} style={{ background:"#fff", border:`1px solid ${C.border}`, borderTop:`3px solid ${sc}`,
-                        borderRadius:12, padding:"14px 16px" }}>
-                        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", gap:8, marginBottom:8 }}>
-                          <div>
-                            <div style={{ fontFamily:F, fontWeight:700, fontSize:13 }}>{c.name}</div>
-                            <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>{c.company}</div>
-                          </div>
-                          <span style={{ padding:"2px 8px", borderRadius:60, fontSize:9, fontWeight:700, background:isUAE(c)?"#E8F5EE":`${C.blue}12`, color:isUAE(c)?"#00732F":C.blue, whiteSpace:"nowrap" }}>
-                            {isUAE(c)?"UAE":"India"} · {getPackLabel(c.client_pack)}
-                          </span>
-                        </div>
-                        <div style={{ fontSize:10, color:sc, fontWeight:600, marginBottom:10 }}>● {sl}</div>
-                        <button onClick={() => { selectClient(c); setTab(isUAE(c)?"uae":"kpis"); }}
-                          style={{ width:"100%", padding:"7px 0", borderRadius:7, border:`1.5px solid ${C.amber}`,
-                            background:"transparent", color:C.amber, fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>
-                          Update Data
-                        </button>
+                {/* A card each was fine for five clients and unreadable at fifty.
+                    A list, newest work first, with the ones that have gone
+                    quiet at the top — and a search box, because at some point
+                    you are looking for one client, not browsing. */}
+                <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap", marginBottom:10 }}>
+                  <input value={clientQuery} onChange={e => setClientQuery(e.target.value)}
+                    placeholder="Search by name or company"
+                    style={{ flex:"1 1 260px", maxWidth:360, padding:"8px 12px", borderRadius:10,
+                      fontSize:12.5, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                      background:C.bg, outline:"none" }}/>
+                  <button onClick={() => setStaleOnly(v => !v)}
+                    style={{ padding:"8px 14px", borderRadius:60, cursor:"pointer", fontFamily:F,
+                      fontSize:12, fontWeight:700,
+                      border:`1.5px solid ${staleOnly ? C.amber : C.border}`,
+                      background: staleOnly ? `${C.amber}12` : "white",
+                      color: staleOnly ? C.amber : C.muted }}>
+                    Needs attention only
+                  </button>
+                  <span style={{ fontFamily:F, fontSize:11.5, color:C.dim }}>
+                    {(() => {
+                      const q = clientQuery.trim().toLowerCase();
+                      const n = sorted.filter(c =>
+                        (!q || `${c.name} ${c.company}`.toLowerCase().includes(q)) &&
+                        (!staleOnly || daysSince(staleness[c.id]?.kpiAt||staleness[c.id]?.rdAt) >= 30)
+                      ).length;
+                      return `${n} of ${sorted.length}`;
+                    })()}
+                  </span>
+                </div>
+
+                <div style={{ border:`1px solid ${C.border}`, borderRadius:12, overflow:"hidden" }}>
+                  {(() => {
+                    const q = clientQuery.trim().toLowerCase();
+                    const rows = sorted.filter(c =>
+                      (!q || `${c.name} ${c.company}`.toLowerCase().includes(q)) &&
+                      (!staleOnly || daysSince(staleness[c.id]?.kpiAt||staleness[c.id]?.rdAt) >= 30));
+                    if (!rows.length) return (
+                      <div style={{ padding:"28px 16px", textAlign:"center", fontFamily:F,
+                        fontSize:12.5, color:C.muted }}>
+                        {staleOnly ? "Every client is up to date." : "No client matches that search."}
                       </div>
                     );
-                  })}
+                    return rows.slice(0, 100).map((c, i) => {
+                      const lastAt = staleness[c.id]?.kpiAt||staleness[c.id]?.rdAt;
+                      const days = daysSince(lastAt);
+                      const sc = stalenessColor(days); const sl = stalenessLabel(days);
+                      return (
+                        <div key={c.id} style={{ display:"flex", alignItems:"center", gap:12,
+                          padding:"10px 14px", borderTop: i ? `1px solid ${C.border}` : "none",
+                          background: i % 2 ? "#FCFCFD" : "white" }}>
+                          <span style={{ width:7, height:7, borderRadius:"50%", background:sc, flexShrink:0 }}/>
+                          <div style={{ flex:"1 1 200px", minWidth:0 }}>
+                            <div style={{ fontFamily:F, fontWeight:700, fontSize:12.5, color:C.text,
+                              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</div>
+                            <div style={{ fontFamily:F, fontSize:11, color:C.muted,
+                              overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.company}</div>
+                          </div>
+                          <span style={{ padding:"2px 8px", borderRadius:60, fontSize:9, fontWeight:700,
+                            background:isUAE(c)?"#E8F5EE":`${C.blue}12`, color:isUAE(c)?"#00732F":C.blue,
+                            whiteSpace:"nowrap", flexShrink:0 }}>
+                            {isUAE(c)?"UAE":"India"} · {getPackLabel(c.client_pack)}
+                          </span>
+                          <span style={{ fontFamily:F, fontSize:11, color:sc, fontWeight:600,
+                            minWidth:104, textAlign:"right", flexShrink:0 }}>{sl}</span>
+                          <button onClick={() => { selectClient(c); setTab("readiness"); }}
+                            style={{ padding:"6px 13px", borderRadius:9, border:`1.5px solid ${C.border}`,
+                              background:"transparent", color:C.text, fontFamily:F, fontSize:11,
+                              fontWeight:700, cursor:"pointer", flexShrink:0 }}>
+                            Open
+                          </button>
+                        </div>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
             );

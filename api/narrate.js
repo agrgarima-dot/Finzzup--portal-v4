@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   if (!apiKey) return res.status(500).json({ error: "API key not configured" });
 
   const body = typeof req.body === "string" ? JSON.parse(req.body) : req.body;
-  const { client, reportData, kpis } = body;
+  const { client, reportData, kpis, topic, rows } = body;
 
   const company = client?.company || client?.name || "the client";
   const pack = client?.client_pack || "startup";
@@ -56,6 +56,43 @@ export default async function handler(req, res) {
     "cross-border": "cross-border India-UAE business",
   }[pack] || "business";
 
+  // ── Commentary on an uploaded analysis ────────────────────────────────
+  // A second mode: the figures come from a template the CA filled in, and the
+  // job is to write about them, not to work them out. It is told so in as many
+  // words — the determination is the part being paid for, and an invented
+  // explanation of someone else's variance is worse than no explanation.
+  if (topic && Array.isArray(rows) && rows.length) {
+    const table = rows.map(r => Array.isArray(r) ? r.join(" | ") : JSON.stringify(r)).join("\n");
+    const topicPrompt = `You are Garima Agarwal, a Chartered Accountant, writing a short commentary for ${company} on the ${topic} you have just prepared.
+
+The figures below are YOUR analysis. Write about them. Do not recompute them, do not
+add figures that are not here, and do not speculate about causes the data does not show.
+Where an explanation has been given in the rows, use it; where none has, say what the
+movement is without inventing a reason for it.
+
+${table}
+
+Write 100 to 160 words in British English, in the first person, plainly. Lead with the
+single thing that matters most. No headings, no bullet points, no greeting or sign-off.`;
+
+    try {
+      const r = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
+        body: JSON.stringify({
+          model: process.env.ANTHROPIC_MODEL || "claude-opus-5-5",
+          max_tokens: 600,
+          messages: [{ role: "user", content: topicPrompt }],
+        }),
+      });
+      const d = await r.json();
+      if (!r.ok) return res.status(r.status).json(d);
+      return res.status(200).json({ narration: d.content?.[0]?.text || "" });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   const prompt = `You are Garima Agarwal, a CA and virtual CFO writing a monthly CFO brief for ${company}, a ${packContext}.
 
 Write a concise, professional CFO commentary for ${month}. It should:
@@ -94,7 +131,7 @@ Write the CFO brief now. No preamble, no labels — just the commentary text.`;
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-opus-4-7",
+        model: process.env.ANTHROPIC_MODEL || "claude-opus-5-5",
         max_tokens: 800,
         messages: [{ role: "user", content: prompt }],
       }),
