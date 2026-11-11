@@ -3,7 +3,7 @@ import { supabase } from "./supabase.js";
 import { computeAlerts, parseAmount } from "./alerts.js";
 import { proposeActions, newProposalsOnly, complianceCalendar, newComplianceOnly } from "./autodraft.js";
 import { mergeDerived } from "./derive.js";
-import { TEMPLATES, templateFor, buildTemplateCsv, parseTemplateCsv } from "./templates.js";
+import { buildWorkbook, readWorkbook, sheetsFor, getPath } from "./workbook.js";
 import { parseLedger, buildReceivablesDrill, buildRevenueDrill, buildPayablesDrill,
          buildSupplierSpendDrill, computeMsmeExposure, buildMsmeDrill, extractVendorRegister,
          isMsme, MSME_LIMIT_DAYS, reconcile, validateLedger } from "./ledgerimport.js";
@@ -1337,7 +1337,7 @@ function Login({ onLogin }) {
                 ].map(d => (
                   <button key={d.code} onClick={() => setCode(d.code)}
                     style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                      padding:"8px 11px", borderRadius:7, border:`1px solid ${d.color}20`,
+                      padding:"8px 11px", borderRadius:8, border:`1px solid ${d.color}20`,
                       background:`${d.color}07`, cursor:"pointer", fontFamily:F, width:"100%",
                       touchAction:"manipulation" }}>
                     <span style={{ fontSize:12, color:C.text, fontWeight:600, display:"flex",
@@ -2055,14 +2055,14 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
 
       {/* ── Alert banners ── */}
       {proAlerts.map(alert => (
-        <div key={alert.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 16px", borderRadius:9, ...severityStyle(alert.severity) }}>
+        <div key={alert.id} style={{ display:"flex", alignItems:"center", gap:12, padding:"11px 16px", borderRadius:12, ...severityStyle(alert.severity) }}>
           <i className={"ti " + alert.icon} style={{ fontSize:18, flexShrink:0 }}/>
           <div style={{ flex:1 }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:13 }}>{alert.title}</div>
             <div style={{ fontFamily:F, fontSize:12, opacity:0.8, marginTop:1 }}>{alert.sub}</div>
           </div>
-          <button onClick={() => setPage(alert.page)} style={{ padding:"5px 12px", borderRadius:6, border:"1px solid currentColor", background:"transparent", color:"inherit", fontFamily:F, fontSize:12, fontWeight:700, cursor:"pointer", flexShrink:0 }}>View →</button>
-          <button onClick={() => setDismissedAlerts(s => new Set([...s, alert.id]))} style={{ padding:"4px 8px", borderRadius:6, border:"none", background:"rgba(0,0,0,0.06)", color:"inherit", fontFamily:F, fontSize:13, cursor:"pointer", flexShrink:0, lineHeight:1 }}>×</button>
+          <button onClick={() => setPage(alert.page)} style={{ padding:"5px 12px", borderRadius:8, border:"1px solid currentColor", background:"transparent", color:"inherit", fontFamily:F, fontSize:12, fontWeight:700, cursor:"pointer", flexShrink:0 }}>View →</button>
+          <button onClick={() => setDismissedAlerts(s => new Set([...s, alert.id]))} style={{ padding:"4px 8px", borderRadius:8, border:"none", background:"rgba(0,0,0,0.06)", color:"inherit", fontFamily:F, fontSize:13, cursor:"pointer", flexShrink:0, lineHeight:1 }}>×</button>
         </div>
       ))}
 
@@ -2138,7 +2138,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                 onMouseEnter={e=>{ e.currentTarget.style.boxShadow="0 4px 14px rgba(0,0,0,0.09)"; e.currentTarget.style.transform="translateY(-1px)"; }}
                 onMouseLeave={e=>{ e.currentTarget.style.boxShadow="0 1px 3px rgba(0,0,0,0.04)"; e.currentTarget.style.transform="none"; }}>
                 <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:8 }}>
-                  <div style={{ width:24, height:24, borderRadius:6, background:`${s.color}15`,
+                  <div style={{ width:24, height:24, borderRadius:8, background:`${s.color}15`,
                     display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                     <i className={"ti "+s.icon} style={{ fontSize:12, color:s.color }}/>
                   </div>
@@ -2166,9 +2166,9 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </div>
           <div style={{ display:"flex", gap:8, alignItems:"center" }}>
             {aiNarration && (
-              <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"2px 8px", borderRadius:20, background:"#F5F3FF", border:"1px solid #DDD6FE", fontFamily:F, fontSize:10, fontWeight:700, color:"#7C3AED" }}>✦ AI-assisted</span>
+              <span style={{ display:"inline-flex", alignItems:"center", gap:4, padding:"2px 8px", borderRadius:60, background:"#F5F3FF", border:"1px solid #DDD6FE", fontFamily:F, fontSize:10, fontWeight:700, color:"#7C3AED" }}>✦ AI-assisted</span>
             )}
-            <button onClick={() => setPage("myreport")} style={{ padding:"5px 12px", borderRadius:7, border:`1px solid ${accentColor}`, background:"transparent", color:accentColor, fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>Full Report →</button>
+            <button onClick={() => setPage("myreport")} style={{ padding:"5px 12px", borderRadius:8, border:`1px solid ${accentColor}`, background:"transparent", color:accentColor, fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>Full Report →</button>
           </div>
         </div>
         <div style={{ padding:"14px 18px" }}>
@@ -2268,8 +2268,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                       <span style={{ fontFamily:FM, fontSize:11, fontWeight:800, color:scoreColor(d.score),
                         flexShrink:0 }}>{d.score}</span>
                     </div>
-                    <div style={{ position:"relative", height:5, background:"#F3F4F6", borderRadius:10 }}>
-                      <div style={{ height:"100%", width:`${d.score}%`, background:scoreColor(d.score), borderRadius:10, transition:"width 0.6s ease" }}/>
+                    <div style={{ position:"relative", height:5, background:"#F3F4F6", borderRadius:12 }}>
+                      <div style={{ height:"100%", width:`${d.score}%`, background:scoreColor(d.score), borderRadius:12, transition:"width 0.6s ease" }}/>
                     </div>
                     <div style={{ fontFamily:F, fontSize:9.5, color:C.dim, marginTop:3,
                       whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
@@ -2298,7 +2298,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
             </div>
             <div style={{ padding:"14px 18px 18px" }}>
               {/* Pipeline visual */}
-              <div style={{ display:"flex", alignItems:"stretch", gap:0, marginBottom:14, borderRadius:10, overflow:"hidden" }}>
+              <div style={{ display:"flex", alignItems:"stretch", gap:0, marginBottom:14, borderRadius:12, overflow:"hidden" }}>
                 {[
                   { label:"DSO", sublabel:"Collect from clients", val:dso2, color:C.blue,  icon:"ti-user-dollar"  },
                   { label:"DIO", sublabel:"Inventory holding",    val:dio2, color:C.purple, icon:"ti-package"      },
@@ -2362,8 +2362,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                           {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400, fontFamily:F }}>({pct.toFixed(0)}%)</span>
                         </span>
                       </div>
-                      <div style={{ height:6, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10, transition:"width 0.5s ease" }}/>
+                      <div style={{ height:6, background:"#F3F4F6", borderRadius:12, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:12, transition:"width 0.5s ease" }}/>
                       </div>
                     </div>
                   );
@@ -2377,7 +2377,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                       <span style={{ fontFamily:F, fontSize:11, color:C.text, flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{r.supplier}</span>
                       <div style={{ display:"flex", gap:6, alignItems:"center", flexShrink:0, marginLeft:8 }}>
                         <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:ov?C.red:C.text }}>{currSym}{Number(r.amount||0).toLocaleString()}</span>
-                        <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:20,
+                        <span style={{ fontSize:9, fontWeight:700, padding:"1px 6px", borderRadius:60,
                           background:ov?"#FEF2F2":r.priority==="Upcoming"?"#FFFBEB":"#ECFDF5",
                           color:ov?C.red:r.priority==="Upcoming"?C.amber:C.green }}>{r.priority}</span>
                       </div>
@@ -2420,8 +2420,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                         <span style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{c.name}</span>
                         <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:colors[i], flexShrink:0, marginLeft:8 }}>{fmtVal(c.val)}</span>
                       </div>
-                      <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${pct}%`, background:colors[i], borderRadius:10, transition:"width 0.6s ease" }}/>
+                      <div style={{ height:5, background:"#F3F4F6", borderRadius:12, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:colors[i], borderRadius:12, transition:"width 0.6s ease" }}/>
                       </div>
                     </div>
                   );
@@ -2456,8 +2456,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                         <span style={{ fontFamily:F, fontSize:11, color:C.text, fontWeight:600, flex:1, minWidth:0, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{v.name}</span>
                         <span style={{ fontFamily:FM, fontSize:11, fontWeight:700, color:colors[i], flexShrink:0, marginLeft:8 }}>{fmtVal(v.val)}</span>
                       </div>
-                      <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${pct}%`, background:colors[i], borderRadius:10, transition:"width 0.6s ease" }}/>
+                      <div style={{ height:5, background:"#F3F4F6", borderRadius:12, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:colors[i], borderRadius:12, transition:"width 0.6s ease" }}/>
                       </div>
                     </div>
                   );
@@ -2490,7 +2490,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
             <div style={{ fontFamily:F, fontSize:11, color:C.amber, fontWeight:700 }}>{unpaidInv} unpaid</div>
           </div>
           <button onClick={() => setPage("invoices")}
-            style={{ marginTop:10, padding:"5px 14px", borderRadius:7, border:`1px solid ${C.blue}`,
+            style={{ marginTop:10, padding:"5px 14px", borderRadius:8, border:`1px solid ${C.blue}`,
               background:"transparent", color:C.blue, fontFamily:F, fontSize:11, fontWeight:700, cursor:"pointer" }}>
             View all →
           </button>
@@ -2676,7 +2676,7 @@ function DrillDownPanel({ drill, onClose, uae }) {
                 : null;
               return (
                 <div key={i} onClick={clickable ? () => setSel(r) : undefined}
-                  style={{ padding:"12px 14px", borderRadius:10, border:`1px solid ${C.border}`,
+                  style={{ padding:"12px 14px", borderRadius:12, border:`1px solid ${C.border}`,
                     marginBottom:8, cursor:clickable ? "pointer" : "default",
                     background:C.bg, transition:"border-color .15s" }}
                   onMouseEnter={e => { if (clickable) e.currentTarget.style.borderColor = C.accent; }}
@@ -2700,7 +2700,7 @@ function DrillDownPanel({ drill, onClose, uae }) {
                     {rowDelta && (
                       <span style={{ whiteSpace:"nowrap", flexShrink:0 }}>
                         <span style={{ fontFamily:F, fontSize:10.5, fontWeight:800, color:rowDelta.color,
-                          background:rowDelta.bg, padding:"1px 7px", borderRadius:10 }}>
+                          background:rowDelta.bg, padding:"1px 7px", borderRadius:12 }}>
                           {rowDelta.text}
                         </span>
                         <span style={{ fontFamily:F, fontSize:10.5, color:C.dim, marginLeft:5 }}>
@@ -2710,13 +2710,13 @@ function DrillDownPanel({ drill, onClose, uae }) {
                     )}
                   </div>
                   {/* Current period bar, with the prior period as a faint marker behind it */}
-                  <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden", position:"relative" }}>
+                  <div style={{ height:5, background:"#F3F4F6", borderRadius:12, overflow:"hidden", position:"relative" }}>
                     {prevBarPct != null && (
                       <div style={{ position:"absolute", left:0, top:0, height:"100%",
-                        width:`${Math.max(prevBarPct, 1)}%`, background:"#CBD5E1", borderRadius:10 }}/>
+                        width:`${Math.max(prevBarPct, 1)}%`, background:"#CBD5E1", borderRadius:12 }}/>
                     )}
                     <div style={{ position:"relative", height:"100%", width:`${Math.max(barPct, 2)}%`,
-                      background:C.grad, borderRadius:10 }}/>
+                      background:C.grad, borderRadius:12 }}/>
                   </div>
                 </div>
               );
@@ -2746,7 +2746,7 @@ function DrillDownPanel({ drill, onClose, uae }) {
                   <div style={{ textAlign:"right", flexShrink:0 }}>
                     <div style={{ fontFamily:FM, fontSize:13, fontWeight:800, color:C.text }}>{t.amount}</div>
                     {t.status && (
-                      <span style={{ fontSize:9.5, fontWeight:800, padding:"2px 8px", borderRadius:10,
+                      <span style={{ fontSize:9.5, fontWeight:800, padding:"2px 8px", borderRadius:12,
                         textTransform:"uppercase", letterSpacing:"0.04em",
                         background:stBg(t.status), color:stColor(t.status) }}>{t.status}</span>
                     )}
@@ -2959,7 +2959,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
           {highPriority.length > 0 && (
             <span className="ns-badge red"><i className="ti ti-alert-triangle" style={{ fontSize:11 }}/> {highPriority.length} High Priority</span>
           )}
-          <span style={{ padding:"5px 14px", borderRadius:20, border:`1px solid ${accentColor}50`, background:`${accentColor}08`,
+          <span style={{ padding:"5px 14px", borderRadius:60, border:`1px solid ${accentColor}50`, background:`${accentColor}08`,
             fontFamily:F, fontSize:12, fontWeight:700, color:accentColor }}>
             Health Score: {healthScore}/100 — {healthLabel}
           </span>
@@ -3031,7 +3031,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                 const st = sevStyle[a.severity] || sevStyle.info;
                 return (
                   <div key={a.id} style={{ display:"flex", alignItems:"flex-start", gap:11,
-                    padding:"11px 13px", borderRadius:10,
+                    padding:"11px 13px", borderRadius:12,
                     background:st.bg, border:`1px solid ${st.border}` }}>
                     <i className={"ti " + st.icon} style={{ fontSize:16, color:st.color, flexShrink:0, marginTop:1 }}/>
                     <div style={{ flex:1, minWidth:0 }}>
@@ -3059,7 +3059,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                     )}
                     <button onClick={() => setDismissedAlerts(s => new Set([...s, a.id]))}
                       title="Dismiss"
-                      style={{ padding:"4px 7px", borderRadius:6, border:"none", background:"rgba(0,0,0,0.05)",
+                      style={{ padding:"4px 7px", borderRadius:8, border:"none", background:"rgba(0,0,0,0.05)",
                         color:C.muted, fontFamily:F, fontSize:13, cursor:"pointer", flexShrink:0, lineHeight:1 }}>
                       ×
                     </button>
@@ -3252,7 +3252,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:600, color:C.text, lineHeight:1.4,
                         overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{a.title||a.item||"—"}</div>
                       {a.priority && (
-                        <span style={{ fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:10, marginTop:2, display:"inline-block",
+                        <span style={{ fontSize:9, fontWeight:700, padding:"1px 5px", borderRadius:12, marginTop:2, display:"inline-block",
                           background:a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#F3F4F6",
                           color:a.priority==="High"?C.red:a.priority==="Medium"?C.amber:C.muted }}>{a.priority}</span>
                       )}
@@ -3276,7 +3276,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                   const pct = (b.val/arTotal*100);
                   const canDrill = !!recvDrill && (recvDrill.dims?.[0]?.rows?.[i]?.txns || []).length > 0;
                   return (
-                    <div key={i} style={{ marginBottom:10, cursor:canDrill?"pointer":"default", borderRadius:6, padding:"2px 4px", margin:"0 -4px 10px" }}
+                    <div key={i} style={{ marginBottom:10, cursor:canDrill?"pointer":"default", borderRadius:8, padding:"2px 4px", margin:"0 -4px 10px" }}
                       onClick={canDrill ? () => setDrill({ ...recvDrill, _selectIdx:i }) : undefined}
                       title={canDrill ? "View invoices in this bucket" : undefined}
                       onMouseEnter={e => { if (canDrill) e.currentTarget.style.background = "#F8FAFF"; }}
@@ -3289,8 +3289,8 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
                           {currSym}{b.val.toLocaleString()} <span style={{ color:C.muted, fontWeight:400 }}>({pct.toFixed(0)}%)</span>
                         </span>
                       </div>
-                      <div style={{ height:5, background:"#F3F4F6", borderRadius:10, overflow:"hidden" }}>
-                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:10 }}/>
+                      <div style={{ height:5, background:"#F3F4F6", borderRadius:12, overflow:"hidden" }}>
+                        <div style={{ height:"100%", width:`${pct}%`, background:b.color, borderRadius:12 }}/>
                       </div>
                     </div>
                   );
@@ -3956,7 +3956,7 @@ function CashFlow({ reportData, client, kpis }) {
             { item:"Salary & PF",                   amount:"−₹14.3L", due:"1 Apr",  risk:"low"    },
           ].map((r,i) => (
             <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-              padding:"9px 12px", borderRadius:9, marginBottom:6,
+              padding:"9px 12px", borderRadius:12, marginBottom:6,
               background:r.risk==="high"?`${C.red}06`:r.risk==="medium"?`${C.amber}06`:C.bg,
               border:`1px solid ${r.risk==="high"?C.red+"20":r.risk==="medium"?C.amber+"20":C.border}` }}>
               <div>
@@ -4058,7 +4058,7 @@ function CashFlow({ reportData, client, kpis }) {
           { label:"= Free Cash Flow",          value:"₹107L",  color:C.purple, base:true  },
         ].map((b,i) => (
           <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
-            padding:"9px 12px", borderRadius:9, margin:"2px 0",
+            padding:"9px 12px", borderRadius:12, margin:"2px 0",
             background:b.base?`${b.color}10`:C.bg,
             border:`1px solid ${b.base?b.color+"30":C.border}` }}>
             <span style={{ fontFamily:F, fontSize:13, color:b.base?b.color:C.text, fontWeight:b.base?700:400 }}>
@@ -4648,7 +4648,7 @@ function PackPreview({ p, label }) {
       {/* KPI snapshot row */}
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8, marginBottom:12 }}>
         {data.kpis.map((kpi,i) => (
-          <div key={i} style={{ padding:"10px 12px", borderRadius:9, background:C.bg,
+          <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:C.bg,
             border:`1px solid ${C.border}`, textAlign:"center" }}>
             <div style={{ fontFamily:F, fontSize:10, color:C.muted, marginBottom:3 }}>{kpi.k}</div>
             <div style={{ fontFamily:FM, fontSize:14, fontWeight:700, color:C.blue }}>{kpi.v}</div>
@@ -4659,7 +4659,7 @@ function PackPreview({ p, label }) {
       </div>
  
       {/* Garima note snippet */}
-      <div style={{ padding:"10px 12px", borderRadius:9, background:`${C.blue}06`,
+      <div style={{ padding:"10px 12px", borderRadius:12, background:`${C.blue}06`,
         borderLeft:`4px solid ${C.blue}`, marginBottom:12 }}>
         <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.blue, marginBottom:4, letterSpacing:"0.06em" }}>
           NOTE FROM GARIMA
@@ -4668,7 +4668,7 @@ function PackPreview({ p, label }) {
       </div>
  
       {/* Table of contents */}
-      <div style={{ padding:"8px 12px", borderRadius:9, background:C.bg, border:`1px solid ${C.border}` }}>
+      <div style={{ padding:"8px 12px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}` }}>
         <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, letterSpacing:"0.06em", marginBottom:6 }}>
           CONTENTS
         </div>
@@ -4709,7 +4709,7 @@ function ArchiveRow({ p, label }) {
         </div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           <button onClick={() => setShowPreview(v => !v)}
-            style={{ padding:"8px 14px", borderRadius:9,
+            style={{ padding:"8px 14px", borderRadius:12,
               border:`1.5px solid ${C.border}`,
               background: showPreview ? C.bg3 : "transparent",
               color: showPreview ? C.text : C.muted,
@@ -4722,14 +4722,14 @@ function ArchiveRow({ p, label }) {
                 const win = window.open("", "_blank");
                 if (win) { win.document.write(decodeURIComponent(p.file_url.replace("data:text/html;charset=utf-8,",""))); win.document.close(); }
               } else { window.open(p.file_url, "_blank"); }
-            }} style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.blue}`,
+            }} style={{ padding:"8px 18px", borderRadius:12, border:`1.5px solid ${C.blue}`,
                 background:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?C.blue:"transparent", color:((new Date()-new Date(p.uploadedAt))<35*24*60*60*1000)?"white":C.blue,
                 fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer",
                 touchAction:"manipulation" }}>
               {p.file_url.startsWith("data:text/html") ? "View Report" : "↓ Download"}
             </button>
           ) : (
-            <button disabled style={{ padding:"8px 18px", borderRadius:9, border:`1.5px solid ${C.border}`,
+            <button disabled style={{ padding:"8px 18px", borderRadius:12, border:`1.5px solid ${C.border}`,
               background:"transparent", color:C.dim,
               fontFamily:F, fontWeight:700, fontSize:12, cursor:"not-allowed", touchAction:"manipulation" }}>
               ↓ Coming soon
@@ -10802,7 +10802,7 @@ function MyDocuments({ client }) {
               value={query}
               onChange={e => setQuery(e.target.value)}
               placeholder="Search documents…"
-              style={{ flex:1, minWidth:180, padding:"9px 14px", borderRadius:10, fontSize:13,
+              style={{ flex:1, minWidth:180, padding:"9px 14px", borderRadius:12, fontSize:13,
                 border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                 background:C.bg, outline:"none" }}
               onFocus={e => e.target.style.borderColor = C.blue}
@@ -10810,7 +10810,7 @@ function MyDocuments({ client }) {
             />
             {years.length > 1 && (
               <select value={year} onChange={e => setYear(e.target.value)}
-                style={{ padding:"9px 12px", borderRadius:10, fontSize:12.5, fontFamily:F,
+                style={{ padding:"9px 12px", borderRadius:12, fontSize:12.5, fontFamily:F,
                   border:`1.5px solid ${C.border}`, color:C.text, background:C.bg, cursor:"pointer" }}>
                 <option value="all">All years</option>
                 {years.map(y => <option key={y} value={y}>{y}</option>)}
@@ -10846,7 +10846,7 @@ function MyDocuments({ client }) {
         {loading && (
           <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
             {Array.from({length:4}).map((_,i) => (
-              <div key={i} style={{ padding:"16px 18px", borderRadius:10, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:14 }}>
+              <div key={i} style={{ padding:"16px 18px", borderRadius:12, border:`1px solid ${C.border}`, display:"flex", alignItems:"center", gap:14 }}>
                 <Skeleton width={36} height={36} radius={8}/>
                 <div style={{ flex:1 }}>
                   <Skeleton width="50%" height={12} style={{ marginBottom:8 }}/>
@@ -10882,7 +10882,7 @@ function MyDocuments({ client }) {
                 background: rowBg, border:`1px solid ${rowBorder}`,
                 flexWrap:"wrap", gap:10 }}>
                 <div style={{ display:"flex", alignItems:"center", gap:12, flex:1, minWidth:0 }}>
-                  <div style={{ width:38, height:38, borderRadius:10,
+                  <div style={{ width:38, height:38, borderRadius:12,
                     background: iconBg,
                     display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>
                     <i className={"ti " + fileIcon(doc.name, resolvedDocType)}
@@ -10896,12 +10896,12 @@ function MyDocuments({ client }) {
                       </div>
                       {isEL ? (
                         <span style={{ fontSize:10, fontWeight:700, color:"#00732F", background:"#DCFCE7",
-                          padding:"2px 8px", borderRadius:20, letterSpacing:"0.06em", textTransform:"uppercase" }}>
+                          padding:"2px 8px", borderRadius:60, letterSpacing:"0.06em", textTransform:"uppercase" }}>
                           Engagement Letter
                         </span>
                       ) : (
                         <span style={{ fontSize:9.5, fontWeight:700, color:docCat.color, background:`${docCat.color}12`,
-                          padding:"2px 8px", borderRadius:20, letterSpacing:"0.04em" }}>
+                          padding:"2px 8px", borderRadius:60, letterSpacing:"0.04em" }}>
                           {docCat.label}
                         </span>
                       )}
@@ -10909,7 +10909,7 @@ function MyDocuments({ client }) {
                         const exp = docExpiry(doc);
                         return exp && exp.days <= 60 ? (
                           <span style={{ fontSize:9.5, fontWeight:800, color:exp.color, background:exp.bg,
-                            padding:"2px 8px", borderRadius:20, letterSpacing:"0.04em" }}>
+                            padding:"2px 8px", borderRadius:60, letterSpacing:"0.04em" }}>
                             ⚠ {exp.label}
                           </span>
                         ) : null;
@@ -11178,7 +11178,7 @@ function AwaitingData({ title, detail }) {
     <div className="ns-page">
       <Card style={{ textAlign:"center", padding:"52px 28px", maxWidth:560, margin:"0 auto" }}>
         <i className="ti ti-file-description" style={{ fontSize:34, color:C.dim, display:"block", marginBottom:14 }}/>
-        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, marginBottom:8 }}>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:8 }}>
           {title} has not been published yet
         </div>
         <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8, margin:0 }}>
@@ -15976,6 +15976,108 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
   );
 }
  
+// ─── RELEASING A REPORT, A PAGE AT A TIME ─────────────────────────────────────
+// A client's whole report lives in one row, so saving has always meant saving
+// everything. That is not how the work actually goes: the analysis lands, then
+// each report gets read through and signed off, one at a time.
+//
+// So what a client can read is held separately from what has been saved.
+// `publishedPages` lists the pages that have been released. A page not on the
+// list shows the client that it is being prepared, rather than half-finished
+// figures under a Chartered Accountant's name.
+//
+// If the list is missing entirely — every client before this existed — nothing
+// is withheld. Releasing page by page is something you opt into by releasing a
+// first page, and the admin screen says plainly what that does to the rest.
+const GATED_PAGES = new Set([
+  "overview", "dashboard", "cashflow", "treasury", "actions", "myreport",
+  "engagement", "corptax", "compliance", "auditready",
+  "vat", "revrecon", "workingcapital", "verticalanalysis", "qfzp",
+]);
+
+function isReleased(reportData, pageId) {
+  if (!GATED_PAGES.has(pageId)) return true;          // invoices, documents, requests
+  const list = reportData?.publishedPages;
+  if (!Array.isArray(list)) return true;              // never used — behave as before
+  return list.includes(pageId);
+}
+
+/** Released pages, plus this one. Returns a whole new report-data object. */
+function releasePage(reportData, pageId, everything = null) {
+  const now = new Date().toISOString();
+  const list = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : [];
+  const next = everything || Array.from(new Set([...list, pageId]));
+  return {
+    ...(reportData || {}),
+    publishedPages: next,
+    publishedAt: { ...(reportData?.publishedAt || {}),
+                   ...Object.fromEntries((everything || [pageId]).map(id => [id, now])) },
+  };
+}
+
+function BeingPrepared({ title }) {
+  return (
+    <div style={{ padding:"48px 24px", textAlign:"center" }}>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:8 }}>
+        {title || "This report"} is being prepared
+      </div>
+      <div style={{ fontFamily:F, fontSize:13, color:C.muted, maxWidth:420,
+        margin:"0 auto", lineHeight:1.8 }}>
+        Your Chartered Accountant is working through it. It will appear here once
+        it has been reviewed and released.
+      </div>
+    </div>
+  );
+}
+
+// ─── THE CLIENT'S PAGES ───────────────────────────────────────────────────────
+// Every screen the client can open, built in one place.
+//
+// The admin panel renders these too, so a Chartered Accountant reviews the
+// actual page rather than a second drawing of it. Keeping one map is the point:
+// the admin panel used to hold its own idea of what the client sees, and the
+// two drifted until the preview was reassuring about a screen that was broken.
+function clientPages({ client, setPage, isDemo, dataLoading, reportSaveKey,
+                       liveSnapshot, liveKpis, liveReportData, liveInvoices,
+                       resolvedKpis, resolvedGarimaNote, resolvedActions,
+                       resolvedEngagement, resolvedReportData, gate = false }) {
+  const built = {
+    overview:   <Overview   liveSnapshot={liveSnapshot} client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} invoices={isDemo ? [] : (liveInvoices||[])} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
+    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading} setPage={setPage} actions={resolvedActions} invoices={isDemo ? [] : (liveInvoices||[])}/>,
+    cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
+    actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
+    myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
+    engagement: <Engagement liveData={resolvedEngagement}/>,
+    calendar:   <Calendar/>,
+    newrequest: <NewRequest client={client} setPage={setPage}/>,
+    market:     <MarketIntel client={client}/>,
+    invoices:   <Invoices   client={client} liveInvoices={isDemo ? null : liveInvoices}/>,
+    documents:  <MyDocuments client={client}/>,
+    treasury:   <Treasury   client={client} reportData={resolvedReportData}/>,
+    terms:      <Terms/>,
+    // ── UAE modules (only rendered for UAE/Cross-Border clients) ──
+    vat:             <VATDashboard          client={client} reportData={resolvedReportData}/>,
+    revrecon:        <RevenueReconciliation client={client} reportData={resolvedReportData}/>,
+    workingcapital:  <WorkingCapital        client={client} reportData={resolvedReportData}/>,
+    verticalanalysis:<VerticalAnalysis      client={client} reportData={resolvedReportData}/>, // NEW
+    corptax:         <CorporateTax          client={client} reportData={resolvedReportData}/>,
+    compliance:      <ComplianceCalendar    client={client} reportData={resolvedReportData}/>,
+    qfzp:            <QFZPModule            client={client} reportData={resolvedReportData}/>,
+    auditready:      <AuditReadiness        client={client} reportData={resolvedReportData}/>,
+  };
+
+  // The client is shown a page only once it has been released. The admin panel
+  // passes gate false, so a review is of the real screen and not of this notice.
+  if (!gate) return built;
+  const nav = getNav(client);
+  return Object.fromEntries(Object.entries(built).map(([id, node]) => [
+    id,
+    isReleased(resolvedReportData, id)
+      ? node
+      : <BeingPrepared title={nav.find(n => n.id === id)?.label}/>,
+  ]));
+}
+
 function Portal({ client, onLogout }) {
   const [page,      setPage]      = useState("overview");
   const [collapsed, setCollapsed] = useState(false);
@@ -16244,30 +16346,11 @@ function Portal({ client, onLogout }) {
       ? "Q1 2026 closed strongly — AED 1.85M revenue, up 32% YoY, with gross margin at 45% (best quarter since inception). Four things need your attention this week: (1) VAT return for Q1 is due 28 April — AED 92.5K payable to FTA. Confirm this is sitting in your Emirates NBD current account and not locked in the Mashreq term deposit maturing 15 April. (2) DMCC audited financial statements must be submitted by 30 April to maintain QFZP status — your audit firm needs your signed management accounts by 22 April. Do not miss this: losing QFZP status triggers 9% CT retroactively. (3) Your mainland UAE sales are at 8% of revenue — above the 5% de-minimis threshold. Review the two mainland contracts due for renewal in Q2 and restructure them as DMCC-to-DMCC to bring this back under 5%. (4) SBR election must be made in your CT return by 30 September — I'll prepare this. Confirm your Q2 revenue won't cross AED 3M YTD."
       : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
  
-  const pages = {
-    overview:   <Overview   liveSnapshot={liveSnapshot} client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} invoices={isDemo ? [] : (liveInvoices||[])} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
-    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading} setPage={setPage} actions={resolvedActions} invoices={isDemo ? [] : (liveInvoices||[])}/>,
-    cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
-    actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
-    myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
-    engagement: <Engagement liveData={resolvedEngagement}/>,
-    calendar:   <Calendar/>,
-    newrequest: <NewRequest client={client} setPage={setPage}/>,
-    market:     <MarketIntel client={client}/>,
-    invoices:   <Invoices   client={client} liveInvoices={isDemo ? null : liveInvoices}/>,
-    documents:  <MyDocuments client={client}/>,
-    treasury:   <Treasury   client={client} reportData={resolvedReportData}/>,
-    terms:      <Terms/>,
-    // ── UAE modules (only rendered for UAE/Cross-Border clients) ──
-    vat:             <VATDashboard          client={client} reportData={resolvedReportData}/>,
-    revrecon:        <RevenueReconciliation client={client} reportData={resolvedReportData}/>,
-    workingcapital:  <WorkingCapital        client={client} reportData={resolvedReportData}/>,
-    verticalanalysis:<VerticalAnalysis      client={client} reportData={resolvedReportData}/>, // NEW
-    corptax:         <CorporateTax          client={client} reportData={resolvedReportData}/>,
-    compliance:      <ComplianceCalendar    client={client} reportData={resolvedReportData}/>,
-    qfzp:            <QFZPModule            client={client} reportData={resolvedReportData}/>,
-    auditready:      <AuditReadiness        client={client} reportData={resolvedReportData}/>,
-  };
+  const pages = clientPages({ client, setPage, isDemo, dataLoading, reportSaveKey,
+                             liveSnapshot, liveKpis, liveReportData, liveInvoices,
+                             resolvedKpis, resolvedGarimaNote, resolvedActions,
+                             resolvedEngagement, resolvedReportData,
+                             gate: !isDemo });
  
   return (
     <>
@@ -16863,7 +16946,7 @@ function AdminInput({ label, val, onChange, type="text", placeholder="", mono=fa
   const [local, setLocal] = React.useState(val ?? "");
   React.useEffect(() => { setLocal(val ?? ""); }, [val]);
  
-  const sharedStyle = { width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
+  const sharedStyle = { width:"100%", padding:"10px 12px", borderRadius:12, fontSize:13,
     border:`1.5px solid ${C.border}`, fontFamily:mono?FM:F, color:C.text,
     background:C.bg, outline:"none", boxSizing:"border-box" };
  
@@ -16914,7 +16997,7 @@ const AdminSelect = ({ label, val, onChange, options, C, F }) => (
     <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
       letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
     <select value={val} onChange={e => onChange(e.target.value)}
-      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
+      style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:13,
         border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
         background:C.bg, outline:"none", boxSizing:"border-box" }}>
       {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
@@ -17226,7 +17309,7 @@ function DropZone({ onFile, fileName, dragColor, F, C }) {
       onDragLeave={()=>setDragOver(false)}
       onDrop={e=>{e.preventDefault();setDragOver(false);process(e.dataTransfer.files[0])}}
       onClick={()=>fileRef.current?.click()}
-      style={{ border:`2px dashed ${dragOver?(dragColor||"#3B6FF7"):C.border}`, borderRadius:10,
+      style={{ border:`2px dashed ${dragOver?(dragColor||"#3B6FF7"):C.border}`, borderRadius:12,
         padding:"28px 20px", textAlign:"center", cursor:"pointer",
         background: dragOver?`${dragColor||"#3B6FF7"}08`:"#FAFAFA", transition:"all 0.2s" }}>
       <input ref={fileRef} type="file" accept=".csv,.txt" style={{display:"none"}}
@@ -17651,7 +17734,7 @@ function DrillRowsEditor({ rows, onChange, nameLabel="Name", fixedNames=null }) 
         </div>
       ))}
       {!fixedNames && (
-        <button onClick={add} style={{ padding:"7px 14px", borderRadius:10, border:`1.5px dashed ${C.border}`,
+        <button onClick={add} style={{ padding:"7px 14px", borderRadius:12, border:`1.5px dashed ${C.border}`,
           background:"none", fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, cursor:"pointer" }}>
           + Add row
         </button>
@@ -17744,15 +17827,15 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
       </div>
       <textarea value={raw} onChange={e=>setRaw(e.target.value)} rows={6}
         placeholder={"Party Name,Bill No,Bill Date,Due Date,Amount,Balance\nAl Madina Trading,EXP-2214,22/07/2026,05/09/2026,4200000,4200000"}
-        style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:9, fontSize:12,
+        style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:12, fontSize:12,
           border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
       <div style={{ display:"flex", gap:10, marginTop:10, alignItems:"center", flexWrap:"wrap" }}>
         <button onClick={()=>run(raw)} disabled={!raw.trim()}
-          style={{ padding:"8px 18px", borderRadius:10, border:"none", background:C.gradDiag, color:"#fff",
+          style={{ padding:"8px 18px", borderRadius:12, border:"none", background:C.gradDiag, color:"#fff",
             fontFamily:F, fontWeight:700, fontSize:12.5, cursor:raw.trim()?"pointer":"not-allowed", opacity:raw.trim()?1:.5 }}>
           Read file
         </button>
-        <label style={{ padding:"8px 14px", borderRadius:10, border:`1.5px solid ${C.border}`, background:C.bg,
+        <label style={{ padding:"8px 14px", borderRadius:12, border:`1.5px solid ${C.border}`, background:C.bg,
           fontFamily:F, fontWeight:700, fontSize:12.5, color:C.muted, cursor:"pointer" }}>
           Upload CSV
           <input type="file" accept=".csv,.txt,.tsv" style={{ display:"none" }}
@@ -17763,7 +17846,7 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
       </div>
 
       {parsed && (<>
-        <div style={{ marginTop:14, padding:"10px 12px", background:C.bg2, borderRadius:9, border:`1px solid ${C.border}` }}>
+        <div style={{ marginTop:14, padding:"10px 12px", background:C.bg2, borderRadius:12, border:`1px solid ${C.border}` }}>
           {checks.map((c,i)=>{ const k=chk[c.level]; return (
             <div key={i} style={{ display:"flex", gap:9, alignItems:"flex-start", padding:"5px 0" }}>
               <i className={"ti "+k.i} style={{ fontSize:14, color:k.c, marginTop:1 }}/>
@@ -17776,7 +17859,7 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
 
         {/* Section 43B(h): which suppliers are MSME-registered */}
         {showMsme && vendorNames.length > 0 && (
-          <div style={{ marginTop:14, padding:"12px 14px", borderRadius:9,
+          <div style={{ marginTop:14, padding:"12px 14px", borderRadius:12,
             border:`1px solid ${exposure?.atRisk>0 ? C.red+"40" : C.border}`,
             background: exposure?.atRisk>0 ? `${C.red}06` : C.bg }}>
             <div style={{ fontFamily:F, fontSize:12.5, fontWeight:800, color:C.text, marginBottom:3 }}>
@@ -17831,7 +17914,7 @@ function LedgerImportCard({ client, reportData, setReportData, tbReceivables, tb
 
         <div style={{ display:"flex", justifyContent:"flex-end", marginTop:14 }}>
           <button onClick={apply} disabled={blocking}
-            style={{ padding:"9px 20px", borderRadius:11, border:"none",
+            style={{ padding:"10px 20px", borderRadius:12, border:"none",
               background: blocking ? C.border : C.gradDiag, color:"#fff",
               fontFamily:F, fontWeight:700, fontSize:12.5, cursor: blocking?"not-allowed":"pointer" }}>
             Apply to {({receivables:"receivables", payables:"payables",
@@ -17955,15 +18038,15 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
       <textarea value={raw} onChange={e=>setRaw(e.target.value)}
         placeholder={"Particulars,Debit,Credit\nSales Account,,22500000\nPurchase Account,13200000,\nSundry Debtors,9800000,"}
         rows={7}
-        style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:9, fontSize:12,
+        style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:12, fontSize:12,
           border:`1.5px solid ${C.border}`, fontFamily:FM, color:C.text, background:C.bg, outline:"none", resize:"vertical" }}/>
       <div style={{ display:"flex", gap:10, marginTop:12, alignItems:"center", flexWrap:"wrap" }}>
         <button onClick={()=>run(raw)} disabled={!raw.trim()}
-          style={{ padding:"9px 20px", borderRadius:10, border:"none", background:C.gradDiag, color:"#fff",
+          style={{ padding:"9px 20px", borderRadius:12, border:"none", background:C.gradDiag, color:"#fff",
             fontFamily:F, fontWeight:700, fontSize:13, cursor:raw.trim()?"pointer":"not-allowed", opacity:raw.trim()?1:.5 }}>
           Read trial balance
         </button>
-        <label style={{ padding:"9px 16px", borderRadius:10, border:`1.5px solid ${C.border}`, background:C.bg,
+        <label style={{ padding:"9px 16px", borderRadius:12, border:`1.5px solid ${C.border}`, background:C.bg,
           fontFamily:F, fontWeight:700, fontSize:13, color:C.muted, cursor:"pointer" }}>
           Upload CSV
           <input type="file" accept=".csv,.txt,.tsv" style={{ display:"none" }}
@@ -17971,7 +18054,7 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
               const rd=new FileReader(); rd.onload=()=>{ setRaw(String(rd.result)); run(String(rd.result)); }; rd.readAsText(f); e.target.value=""; }}/>
         </label>
         <button onClick={fetchZoho} disabled={zohoBusy}
-          style={{ padding:"9px 16px", borderRadius:10, border:"none", background:C.grad1,
+          style={{ padding:"9px 16px", borderRadius:12, border:"none", background:C.grad1,
             color:"white", fontFamily:F, fontWeight:700, fontSize:13,
             cursor: zohoBusy ? "default" : "pointer", opacity: zohoBusy ? 0.7 : 1 }}>
           {zohoBusy ? "Fetching from Zoho…" : "Fetch from Zoho"}
@@ -18054,7 +18137,7 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
                   {r.balance>=0 ? money(r.balance) : "("+money(-r.balance)+")"}
                 </div>
                 <select value={r.group} onChange={e=>setGroup(i, e.target.value)}
-                  style={{ padding:"5px 8px", borderRadius:7, fontSize:11.5, fontFamily:F,
+                  style={{ padding:"5px 8px", borderRadius:8, fontSize:11.5, fontFamily:F,
                     border:`1.5px solid ${r.group==="unmapped"?C.red:C.border}`,
                     background:C.bg, color:C.text, cursor:"pointer" }}>
                   {COA_GROUPS.map(g=><option key={g.key} value={g.key}>{g.label}</option>)}
@@ -18166,191 +18249,235 @@ function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
   ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
 }
 
-// ─── ANALYSIS TEMPLATES ───────────────────────────────────────────────────────
+// ─── THE EXCEL WORKBOOK ───────────────────────────────────────────────────────
 // Download a template already carrying what the portal knows, do the analysis
 // in Excel, upload it back, read what was parsed, publish.
 //
 // Replaces filling these reports in field by field. A budget, a treasury
 // schedule or a related party listing is spreadsheet work; typing it into
 // forty boxes once a month for every client is not.
-function AnalysisTemplates({ client, reportData, setReportData, saveReportData, loading, saved }) {
-  const [sel,  setSel]  = React.useState(TEMPLATES[0].key);
-  const [res,  setRes]  = React.useState(null);
-  const [err,  setErr]  = React.useState("");
-  const [note, setNote] = React.useState("");
-  const [drafting, setDrafting] = React.useState(false);
-  const def = templateFor(sel);
-  const existing = reportData?.[def.writes];
-  const filled = Array.isArray(existing) ? existing.length > 0
-    : existing && typeof existing === "object" ? Object.keys(existing).length > 0 : false;
+function AnalysisTemplates({ client, reportData, setReportData, saveReportData, loading, saved,
+                            kpis, setKpis, saveKPIs, actions = [], replaceActions }) {
+  const [busy,  setBusy]  = React.useState("");
+  const [err,   setErr]   = React.useState("");
+  const [res,   setRes]   = React.useState(null);
+  const [applied, setApplied] = React.useState(false);
+  const uae = isUAE(client);
+  const specs = sheetsFor(uae);
 
-  const download = () => {
-    const csv  = buildTemplateCsv(def, { client, reportData });
-    const blob = new Blob([csv], { type:"text/csv;charset=utf-8" });
-    const a    = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = `${(client?.company || client?.name || "client").replace(/\W+/g,"-").toLowerCase()}-${def.key}.csv`;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(a.href), 30000);
-  };
+  const fileName = `${(client?.company || client?.name || "client")
+    .replace(/\W+/g, "-").toLowerCase()}-finzzup-${new Date().toISOString().slice(0,10)}.xlsx`;
 
-  const read = (text) => {
-    setErr(""); setRes(null);
-    const out = parseTemplateCsv(def, text);
-    if (!out.ok) { setErr(out.reason); return; }
-    setRes(out);
-  };
-
-  const apply = () => {
-    if (!res) return;
-    setReportData(r => ({ ...(r||{}), [def.writes]: res.parsed }));
-    setErr(""); setRes({ ...res, applied:true });
-  };
-
-  // Writes about the figures in the sheet — it is told not to recompute them
-  // or invent reasons the rows do not give. The analysis is yours; this is
-  // the paragraph that goes under it.
-  const draftCommentary = async () => {
-    if (!res) return;
-    setDrafting(true); setErr("");
+  // SheetJS is close to half a megabyte. It is pulled in only when the workbook
+  // is actually used, so the client portal never pays for it.
+  const download = async () => {
+    setErr(""); setBusy("download");
     try {
-      const r = await fetch("/api/narrate", {
-        method:"POST", headers:{ "Content-Type":"application/json" },
-        body: JSON.stringify({ client, reportData, topic: def.topic || def.label,
-                               rows: [def.columns, ...res.rows] }),
-      });
-      const j = await r.json();
-      if (j.narration) setNote(j.narration);
-      else setErr(j.error || "The commentary could not be drafted.");
-    } catch { setErr("Could not reach the drafting service."); }
-    setDrafting(false);
+      const XLSX = await import("xlsx");
+      const wb = XLSX.utils.book_new();
+      for (const sheet of buildWorkbook({ client, reportData, kpis, actions, uae })) {
+        const ws = XLSX.utils.aoa_to_sheet(sheet.aoa);
+        // Column widths, so it opens readable rather than as a wall of ####.
+        const widest = sheet.aoa.reduce((acc, row) => {
+          (row || []).forEach((c, i) => {
+            acc[i] = Math.max(acc[i] || 10, Math.min(60, String(c ?? "").length + 2));
+          });
+          return acc;
+        }, []);
+        ws["!cols"] = widest.map(w => ({ wch: w }));
+        XLSX.utils.book_append_sheet(wb, ws, sheet.name.slice(0, 31));
+      }
+      XLSX.writeFile(wb, fileName);
+    } catch (e) {
+      setErr(`The workbook could not be built: ${e.message}`);
+    }
+    setBusy("");
   };
+
+  const upload = async (file) => {
+    setErr(""); setRes(null); setApplied(false); setBusy("upload");
+    try {
+      const XLSX  = await import("xlsx");
+      const buf   = await file.arrayBuffer();
+      const wb    = XLSX.read(buf, { type: "array" });
+      const byName = {};
+      for (const name of wb.SheetNames) {
+        byName[name] = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, blankrows: true, defval: "" });
+      }
+      const out = readWorkbook(byName, { reportData, kpis, uae });
+      const total = out.summary.reduce((a, s) => a + (s.changed || 0), 0);
+      if (!total && out.problems.length === specs.length) {
+        setErr("Nothing in this file matched the workbook. Download a fresh one and fill that — the sheet names are how the portal finds its way around.");
+      } else {
+        setRes({ ...out, total });
+      }
+    } catch (e) {
+      setErr(`That file could not be read as a workbook: ${e.message}`);
+    }
+    setBusy("");
+  };
+
+  const apply = async () => {
+    if (!res) return;
+    setReportData(res.reportData);
+    if (res.kpis && setKpis) setKpis(res.kpis);
+    if (res.actions && replaceActions) await replaceActions(res.actions);
+    setApplied(true);
+  };
+
+  const filledCount = specs.filter(s => {
+    const src = s.target === "kpis" ? kpis : reportData;
+    if (s.kind === "kv") return s.fields.some(f => {
+      const v = getPath(src, s.path ? `${s.path}.${f.key}` : f.key);
+      return v != null && v !== "";
+    });
+    if (s.target === "actions") return (actions || []).length > 0;
+    const v = getPath(reportData, s.path);
+    return Array.isArray(v) ? v.length > 0 : v && typeof v === "object" && Object.keys(v).length > 0;
+  }).length;
 
   return (
-    <div style={{ maxWidth:820 }}>
+    <div style={{ maxWidth:860 }}>
 
+      {/* ── The one workbook ── */}
       <Card style={{ marginBottom:16 }}>
-        <div style={{ maxWidth:420, marginBottom:14 }}>
-          <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
-            letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>Report</label>
-          <select value={sel} onChange={e => { setSel(e.target.value); setRes(null); setErr(""); setNote(""); }}
-            style={{ width:"100%", padding:"9px 12px", borderRadius:12, fontSize:13,
-              border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-              background:C.bg, outline:"none", cursor:"pointer" }}>
-            {TEMPLATES.map(t => {
-              const e = reportData?.[t.writes];
-              const has = Array.isArray(e) ? e.length > 0 : e && typeof e === "object" ? Object.keys(e).length > 0 : false;
-              return <option key={t.key} value={t.key}>{has ? "✓ " : ""}{t.label}</option>;
-            })}
-          </select>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>
+          One workbook, every report
         </div>
-
-        <div style={{ fontFamily:F, fontSize:12.5, color:C.muted, lineHeight:1.8, marginBottom:14 }}>
-          <strong style={{ color:C.text }}>{def.label}.</strong> {def.why}
-          {filled && <span style={{ color:C.green }}> Already filled for this client — uploading replaces it.</span>}
+        <div style={{ fontFamily:F, fontSize:12.5, color:C.muted, lineHeight:1.8, marginBottom:16 }}>
+          {specs.length} sheets, one for each screen the client sees. It opens already carrying
+          everything the books know — the P&amp;L worked through from the trial balance, the ageing
+          off the invoices, the ratios{uae ? ", the corporate tax computation" : ""}. Do the analysis
+          in Excel and upload the same file back. Each sheet lands on the screen it belongs to.
+          <br/>
+          <strong style={{ color:C.text }}>A blank cell changes nothing</strong> — leave anything you
+          have not got to and what is published now stays as it is.
         </div>
 
         <div style={{ display:"flex", gap:10, flexWrap:"wrap", alignItems:"center" }}>
-          <button onClick={download}
+          <button onClick={download} disabled={!!busy}
             style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
-              color:"white", fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-            Download template
+              color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+              cursor: busy ? "default" : "pointer", opacity: busy==="download" ? 0.6 : 1 }}>
+            {busy==="download" ? "Building…" : "Download the workbook"}
           </button>
           <label style={{ padding:"10px 18px", borderRadius:12, border:`1.5px solid ${C.border}`,
-            background:C.bg, fontFamily:F, fontWeight:700, fontSize:13, color:C.text, cursor:"pointer" }}>
-            Upload filled file
-            <input type="file" accept=".csv,.txt" style={{ display:"none" }}
-              onChange={e => { const f = e.target.files[0]; if (!f) return;
-                const rd = new FileReader(); rd.onload = () => read(String(rd.result)); rd.readAsText(f);
-                e.target.value = ""; }}/>
+            background:C.bg, fontFamily:F, fontWeight:700, fontSize:13, color:C.text,
+            cursor: busy ? "default" : "pointer", opacity: busy==="upload" ? 0.6 : 1 }}>
+            {busy==="upload" ? "Reading…" : "Upload the filled workbook"}
+            <input type="file" accept=".xlsx,.xlsm,.xls" style={{ display:"none" }} disabled={!!busy}
+              onChange={e => { const f = e.target.files[0]; if (f) upload(f); e.target.value = ""; }}/>
           </label>
           <span style={{ fontFamily:F, fontSize:11.5, color:C.dim }}>
-            Upload it exactly as saved — the notes at the top are ignored.
+            {filledCount} of {specs.length} sheets have something in them for this client.
           </span>
         </div>
 
         {err && (
-          <div style={{ marginTop:12, padding:"10px 14px", borderRadius:12,
+          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:12,
             background:`${C.red}08`, border:`1px solid ${C.red}25` }}>
             <div style={{ fontFamily:F, fontSize:12, color:C.red, lineHeight:1.7 }}>{err}</div>
           </div>
         )}
       </Card>
 
-      {/* What was read — shown before anything is written anywhere. */}
+      {/* ── What came back, before anything is written ── */}
       {res && (
         <Card style={{ marginBottom:16 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, marginBottom:4 }}>
-            {res.count} row{res.count===1?"":"s"} read
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+            {res.summary.filter(s=>s.changed).length === 0
+              ? "Nothing in this workbook differs from what is published"
+              : `Changes in ${res.summary.filter(s=>s.changed).length} of ${res.summary.length} sheets`}
           </div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:12, lineHeight:1.7 }}>
-            Check this is what you meant before it goes anywhere near the client.
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.7 }}>
+            Nothing has been written yet. Check this is what you meant, then apply it.
           </div>
+
           <div style={{ overflowX:"auto" }}>
             <table style={{ borderCollapse:"collapse", width:"100%", fontFamily:F, fontSize:12 }}>
               <thead>
-                <tr>{def.columns.map((c,i) => (
-                  <th key={i} style={{ textAlign:"left", padding:"6px 10px", color:C.dim,
-                    fontSize:10, fontWeight:800, textTransform:"uppercase", letterSpacing:"0.06em",
-                    borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{c}</th>
+                <tr>{["Sheet","Where it shows","Changes"].map((h,i) => (
+                  <th key={i} style={{ textAlign: i===2?"right":"left", padding:"7px 10px", color:C.dim,
+                    fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em",
+                    borderBottom:`1px solid ${C.border}` }}>{h}</th>
                 ))}</tr>
               </thead>
               <tbody>
-                {res.rows.slice(0, 25).map((r,i) => (
-                  <tr key={i}>{def.columns.map((_,j) => (
-                    <td key={j} style={{ padding:"6px 10px", color:C.text,
-                      borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{r[j] || "—"}</td>
-                  ))}</tr>
+                {res.summary.map((s,i) => (
+                  <tr key={i} style={{ opacity: s.changed ? 1 : 0.45 }}>
+                    <td style={{ padding:"7px 10px", color:C.text, fontWeight:600,
+                      borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{s.sheet}</td>
+                    <td style={{ padding:"7px 10px", color:C.muted,
+                      borderBottom:`1px solid ${C.border}` }}>{s.screen}</td>
+                    <td style={{ padding:"7px 10px", textAlign:"right", whiteSpace:"nowrap",
+                      color: s.changed ? C.green : C.dim, fontWeight:700,
+                      borderBottom:`1px solid ${C.border}` }}>
+                      {s.changed ? `${s.changed} ${s.unit || ""}`.trim() : "left as it was"}
+                    </td>
+                  </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          {res.rows.length > 25 && (
-            <div style={{ fontFamily:F, fontSize:11.5, color:C.dim, marginTop:8 }}>
-              Showing the first 25 of {res.rows.length}.
+
+          {res.problems.length > 0 && (
+            <div style={{ marginTop:14, padding:"11px 14px", borderRadius:12,
+              background:`${C.amber}0A`, border:`1px solid ${C.amber}30` }}>
+              <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.amber,
+                textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>
+                {res.problems.length} sheet{res.problems.length===1?"":"s"} skipped
+              </div>
+              {res.problems.map((p,i) => (
+                <div key={i} style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.75 }}>{p}</div>
+              ))}
             </div>
           )}
-          <div style={{ display:"flex", gap:10, marginTop:14, alignItems:"center", flexWrap:"wrap" }}>
-            {def.note && (
-              <button onClick={draftCommentary} disabled={drafting}
-                style={{ padding:"10px 18px", borderRadius:12, border:`1.5px solid ${C.border}`,
-                  background:"none", fontFamily:F, fontWeight:700, fontSize:13, color:C.text,
-                  cursor: drafting ? "default" : "pointer" }}>
-                {drafting ? "Writing…" : "Draft commentary"}
-              </button>
-            )}
+
+          <div style={{ display:"flex", gap:10, marginTop:16, alignItems:"center", flexWrap:"wrap" }}>
             <button onClick={apply}
               style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
                 color:"white", fontFamily:F, fontWeight:700, fontSize:13, cursor:"pointer" }}>
-              Apply to report data
+              Apply to every screen
             </button>
-            <AdminSaveBtn onClick={saveReportData} loading={loading} saved={saved} label="Save & Publish" F={F}/>
-            {res.applied && <span style={{ fontFamily:F, fontSize:12, color:C.green }}>
-              Applied — press Save &amp; Publish to send it to the client.</span>}
+            <AdminSaveBtn onClick={async () => { await saveReportData(); if (saveKPIs) await saveKPIs(); }}
+              loading={loading} saved={saved} label="Save & Publish" F={F}/>
+            {applied && <span style={{ fontFamily:F, fontSize:12, color:C.green }}>
+              Applied to your working copy — press Save &amp; Publish to send it to the client.</span>}
           </div>
-
-          {note && (
-            <div style={{ marginTop:16, paddingTop:14, borderTop:`1px solid ${C.border}` }}>
-              <div style={{ fontFamily:F, fontSize:11, fontWeight:800, color:C.muted,
-                textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>
-                Commentary — a draft about your figures, for you to correct
-              </div>
-              <textarea value={note} onChange={e => setNote(e.target.value)} rows={7}
-                style={{ width:"100%", boxSizing:"border-box", padding:"10px 13px", borderRadius:12,
-                  fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                  background:C.bg, outline:"none", resize:"vertical", lineHeight:1.75 }}/>
-              <button onClick={() => { setReportData(r => ({ ...(r||{}), [def.note]: note }));
-                                       setRes(v => ({ ...v, noteApplied:true })); }}
-                style={{ marginTop:10, padding:"9px 18px", borderRadius:12, border:"none",
-                  background:C.grad1, color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
-                Use this commentary
-              </button>
-              {res.noteApplied && <span style={{ fontFamily:F, fontSize:12, color:C.green, marginLeft:10 }}>
-                Saved to your working copy.</span>}
-            </div>
-          )}
         </Card>
       )}
+
+      {/* ── What is in the workbook ── */}
+      <Card>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+          What is in it
+        </div>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.7 }}>
+          Every sheet, and the screen it feeds.
+        </div>
+        <div style={{ display:"grid", gap:1, background:C.border, borderRadius:12, overflow:"hidden" }}>
+          {specs.map(s => {
+            const src = s.target === "kpis" ? kpis : reportData;
+            const has = s.kind === "kv"
+              ? s.fields.some(f => { const v = getPath(src, s.path ? `${s.path}.${f.key}` : f.key); return v != null && v !== ""; })
+              : s.target === "actions" ? (actions || []).length > 0
+              : (() => { const v = getPath(reportData, s.path);
+                         return Array.isArray(v) ? v.length>0 : v && typeof v==="object" && Object.keys(v).length>0; })();
+            return (
+              <div key={s.name} style={{ display:"flex", gap:12, alignItems:"baseline",
+                padding:"9px 13px", background:"#fff", flexWrap:"wrap" }}>
+                <span style={{ fontFamily:F, fontSize:12.5, fontWeight:700, color:C.text,
+                  minWidth:170 }}>{s.name}</span>
+                <span style={{ fontFamily:F, fontSize:12, color:C.muted, flex:1, minWidth:200 }}>{s.screen}</span>
+                <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
+                  color: has ? C.green : C.dim, whiteSpace:"nowrap" }}>
+                  {has ? "filled" : "empty"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
     </div>
   );
 }
@@ -18483,7 +18610,7 @@ function ClientReadiness({ client, reportData, kpis, actions = [], invoices = []
                   )}
                 </div>
                 <button onClick={() => goTo(r.tab)}
-                  style={{ padding:"6px 13px", borderRadius:10, border:`1.5px solid ${C.border}`,
+                  style={{ padding:"6px 13px", borderRadius:12, border:`1.5px solid ${C.border}`,
                     background:"none", fontFamily:F, fontWeight:700, fontSize:11.5,
                     color:C.text, cursor:"pointer", flexShrink:0, whiteSpace:"nowrap" }}>
                   {r.done ? "Review" : "Open"}
@@ -18562,7 +18689,7 @@ function UAEReportsTab({ client, reportData, setReportData, saveReportData, load
       <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
         letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>{label}</label>
       <input value={value ?? ""} onChange={e => onChange(e.target.value)} placeholder={placeholder}
-        style={{ width:"100%", padding:"9px 12px", borderRadius:12, fontSize:13,
+        style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:13,
           border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg,
           outline:"none", boxSizing:"border-box" }}/>
       {hint && <div style={{ fontFamily:F, fontSize:11, color:C.dim, marginTop:4, lineHeight:1.6 }}>{hint}</div>}
@@ -18636,7 +18763,7 @@ function UAEReportsTab({ client, reportData, setReportData, saveReportData, load
             letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>Your note to the client</label>
           <textarea value={qsub.garimaNote || ""} onChange={e=>setQSub("garimaNote", e.target.value)} rows={4}
             placeholder="What the split means for them, and what to do before year end."
-            style={{ width:"100%", boxSizing:"border-box", padding:"9px 12px", borderRadius:12, fontSize:13,
+            style={{ width:"100%", boxSizing:"border-box", padding:"10px 12px", borderRadius:12, fontSize:13,
               border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg,
               outline:"none", resize:"vertical", lineHeight:1.7 }}/>
         </div>
@@ -18818,8 +18945,114 @@ function DraftReviewCard({ client, reportData, setReportData, kpis, actions = []
 // Renders the real client screens against the draft data held in admin, so
 // Apply is never pressed blind. These are the same components the portal
 // mounts — not a mock-up of them — so what shows here is what the client gets.
-function ClientPreview({ client, reportData, kpis, actions = [], invoices = [], liveSnapshot = null }) {
+// ─── RESET ───────────────────────────────────────────────────────────────────
+// Two different things, kept apart because confusing them would be expensive.
+//
+// Pulling the report back hides it from the client but keeps every figure, so
+// it can go out again the moment it is right. Clearing the working copy throws
+// the figures away. The second asks twice and says exactly what goes.
+function ResetClientData({ client, reportData, setReportData, saveReportData, loading }) {
+  const [confirm, setConfirm] = React.useState("");
+  const released = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : null;
+  const keys = Object.keys(reportData || {}).filter(k => !["publishedPages","publishedAt"].includes(k));
+
+  const pullBack = async () => {
+    await saveReportData({ ...(reportData || {}), publishedPages: [], publishedAt: {} });
+    setConfirm("");
+  };
+  const clearAll = async () => {
+    await saveReportData({ publishedPages: [], publishedAt: {} });
+    setReportData({ publishedPages: [], publishedAt: {} });
+    setConfirm("");
+  };
+
+  const btn = (bg, color, border) => ({
+    padding:"9px 18px", borderRadius:12, border: border || "none", background:bg, color,
+    fontFamily:F, fontWeight:700, fontSize:12.5, cursor:"pointer",
+  });
+
+  return (
+    <Card>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+        Reset
+      </div>
+      <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.75 }}>
+        {client?.company || client?.name} currently has{" "}
+        <strong style={{ color:C.text }}>{keys.length}</strong> field
+        {keys.length === 1 ? "" : "s"} of report data
+        {released === null
+          ? ", with every page open to them."
+          : released.length
+            ? `, and ${released.length} page${released.length === 1 ? "" : "s"} released.`
+            : ", and nothing released."}
+      </div>
+
+      {/* Pull the report back */}
+      <div style={{ display:"flex", gap:12, alignItems:"center", flexWrap:"wrap",
+        paddingBottom:14, marginBottom:14, borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ flex:1, minWidth:250, fontFamily:F, fontSize:12.5,
+          color:C.muted, lineHeight:1.75 }}>
+          <strong style={{ color:C.text }}>Pull the report back.</strong> Every page goes back to
+          "being prepared". Nothing is lost — release them again whenever you are ready.
+        </div>
+        {confirm === "pull" ? (
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <button onClick={pullBack} disabled={loading} style={btn(C.warning, "#fff")}>
+              {loading ? "Working…" : "Yes, pull it back"}
+            </button>
+            <button onClick={() => setConfirm("")} style={btn("none", C.muted, `1.5px solid ${C.border}`)}>
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setConfirm("pull")} style={btn("none", C.text, `1.5px solid ${C.border}`)}>
+            Pull the report back
+          </button>
+        )}
+      </div>
+
+      {/* Clear the working copy */}
+      <div style={{ display:"flex", gap:12, alignItems:"center", flexWrap:"wrap" }}>
+        <div style={{ flex:1, minWidth:250, fontFamily:F, fontSize:12.5,
+          color:C.muted, lineHeight:1.75 }}>
+          <strong style={{ color:C.red }}>Clear the working copy.</strong> Deletes all{" "}
+          {keys.length} field{keys.length === 1 ? "" : "s"} — the P&amp;L, the commentary, the
+          analysis, everything. The books can be synced again; anything you wrote cannot.
+        </div>
+        {confirm === "clear" ? (
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <button onClick={clearAll} disabled={loading} style={btn(C.red, "#fff")}>
+              {loading ? "Working…" : "Delete everything"}
+            </button>
+            <button onClick={() => setConfirm("")} style={btn("none", C.muted, `1.5px solid ${C.border}`)}>
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setConfirm("clear")}
+            style={btn("none", C.red, `1.5px solid ${C.red}40`)}>
+            Clear the working copy
+          </button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+// ─── THE CLIENT'S REPORT, WALKED AND RELEASED ─────────────────────────────────
+// The client's portal, drawn here exactly as they will read it — their sidebar,
+// their topbar, their pages, in their order. You walk it the way they will,
+// and release each page from the page itself once you have read it through.
+//
+// It is the real screen, not a second drawing of one. The admin panel used to
+// keep its own idea of what the client sees, and the two drifted until the
+// preview was reassuring about a report that was broken.
+function ClientReportWalk({ client, reportData, setReportData, saveReportData,
+                            kpis, actions = [], invoices = [], liveSnapshot = null,
+                            loading, saved }) {
   const [page, setPage] = React.useState("overview");
+  const [collapsed, setCollapsed] = React.useState(false);
+  const [confirmAll, setConfirmAll] = React.useState(false);
 
   if (!client) return (
     <Card style={{ textAlign:"center", padding:40 }}>
@@ -18827,63 +19060,152 @@ function ClientPreview({ client, reportData, kpis, actions = [], invoices = [], 
     </Card>
   );
 
-  const PAGES = [
-    ["overview",  "Overview"],
-    ["dashboard", "Dashboard"],
-    ["myreport",  "My Report"],
-    ["cashflow",  "Cash Flow"],
-  ];
-
-  // The client components navigate by calling setPage. Honour it when the
-  // target is previewable — so "Full Report →" and the drill-downs behave as
-  // they will for the client — and ignore it otherwise.
-  const navigate = (p) => { if (PAGES.some(([id]) => id === p)) setPage(p); };
-
-  // Admin holds KPIs as the edit form's flat object; the client screens want
-  // the tile array. Same builder the portal uses, so the preview cannot drift.
-  const tiles = buildKpiTiles({ client, isDemo: false, liveKpis: kpis, liveReportData: reportData });
+  const nav   = getNav(client);
+  const tiles = buildKpiTiles({ client, isDemo:false, liveKpis:kpis, liveReportData:reportData });
   const list  = (v) => Array.isArray(v) ? v : [];
 
-  const view = {
-    overview:  <Overview  liveSnapshot={liveSnapshot}
-                          client={client} setPage={navigate} kpis={tiles} garimaNote={kpis?.garima_note}
-                          actions={list(actions)} engagement={null} reportData={reportData}
-                          invoices={list(invoices)} isDemo={false}
-                          liveKpis={kpis} liveReportData={reportData}/>,
-    dashboard: <Dashboard client={client} kpis={tiles} garimaNote={kpis?.garima_note} reportData={reportData}
-                          loading={false} setPage={navigate} actions={list(actions)} invoices={list(invoices)}/>,
-    myreport:  <MyReport  client={client} reportData={reportData} kpis={tiles}/>,
-    cashflow:  <CashFlow  reportData={reportData} client={client} kpis={tiles}/>,
-  }[page];
+  // gate false — this is a review, so the real page is drawn even before it has
+  // been released. The release state is shown in the bar above it instead.
+  const pages = clientPages({
+    client, setPage, isDemo:false, dataLoading:false, reportSaveKey:0,
+    liveSnapshot, liveKpis:kpis, liveReportData:reportData, liveInvoices:list(invoices),
+    resolvedKpis: tiles, resolvedGarimaNote: kpis?.garima_note,
+    resolvedActions: list(actions), resolvedEngagement: null,
+    resolvedReportData: reportData || {}, gate:false,
+  });
+
+  const gated      = GATED_PAGES.has(page);
+  const releasable = nav.filter(n => GATED_PAGES.has(n.id));
+  const releasedList = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : null;
+  const live       = isReleased(reportData, page);
+  const releasedAt = reportData?.publishedAt?.[page];
+  const label      = nav.find(n => n.id === page)?.label || getPageTitle(page, client);
+  const everyone   = releasedList === null;
+
+  const release = async (all) => {
+    const next = releasePage(reportData || {}, page,
+      all ? Array.from(new Set([...(releasedList || []), ...releasable.map(n => n.id)])) : null);
+    await saveReportData(next);
+    setConfirmAll(false);
+  };
 
   return (
     <div>
-      <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
-        {PAGES.map(([id, label]) => (
-          <button key={id} onClick={() => setPage(id)}
-            style={{ padding:"7px 16px", borderRadius:60,
-              border:`1.5px solid ${page===id ? C.blue : C.border}`,
-              background: page===id ? `${C.blue}0C` : "none",
-              fontFamily:F, fontWeight:700, fontSize:12,
-              color: page===id ? C.blue : C.muted, cursor:"pointer" }}>
+      {/* ── The release bar. Not part of the client's screen — it sits above it. ── */}
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:"13px 16px",
+        marginBottom:12, background:"#fff", display:"flex", alignItems:"center",
+        gap:14, flexWrap:"wrap" }}>
+        <div style={{ flex:1, minWidth:260 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text,
+            display:"flex", alignItems:"center", gap:9, flexWrap:"wrap" }}>
             {label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ padding:"8px 14px", borderRadius:12, background:`${C.amber}0C`,
-        border:`1px solid ${C.amber}30`, marginBottom:14 }}>
-        <div style={{ fontFamily:F, fontSize:12, color:C.warning, lineHeight:1.7 }}>
-          <strong>Preview.</strong> This is the live client screen drawn against your unsaved working
-          data — what {client.name?.split(" ")[0] || "the client"} would see if you published now.
-          Nothing here is visible to them until you save.
+            {!gated ? (
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.dim,
+                background:C.bg, padding:"3px 11px", borderRadius:60 }}>Always available</span>
+            ) : live ? (
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
+                color: everyone ? C.dim : C.green,
+                background: everyone ? C.bg : `${C.green}12`,
+                padding:"3px 11px", borderRadius:60 }}>
+                {everyone ? "Open to your client"
+                  : `Released${releasedAt ? ` ${new Date(releasedAt).toLocaleDateString("en-GB",
+                      { day:"numeric", month:"short" })}` : ""}`}
+              </span>
+            ) : (
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.warning,
+                background:`${C.amber}14`, padding:"3px 11px", borderRadius:60 }}>Not released</span>
+            )}
+          </div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
+            {!gated
+              ? "This page is part of their account rather than their report, so it is always open to them."
+              : live
+                ? "Your client can read this page now. Releasing it again sends whatever you have changed since."
+                : everyone
+                  ? "Nothing has been released page by page yet, so your client can still see everything. Release this page and the rest will show them a note saying they are being prepared, until you release those too."
+                  : "Your client sees a note saying this page is being prepared."}
+          </div>
         </div>
+
+        {gated && (
+          <div style={{ display:"flex", gap:9, alignItems:"center", flexWrap:"wrap" }}>
+            <button onClick={() => release(false)} disabled={loading}
+              style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
+                color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+                cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1 }}>
+              {loading ? "Releasing…" : (live && !everyone) ? "Release again" : "Release this page"}
+            </button>
+            {saved && <span style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700 }}>Released</span>}
+          </div>
+        )}
       </div>
 
-      {/* Framed so it never gets mistaken for the admin's own screen. */}
+      {/* How far through the report you are. */}
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:"11px 16px",
+        marginBottom:12, background:"#fff", display:"flex", alignItems:"center",
+        gap:12, flexWrap:"wrap" }}>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, flex:1, minWidth:230 }}>
+          {everyone
+            ? <>All {releasable.length} report pages are open to your client — nothing is being held back.</>
+            : <><strong style={{ color:C.text }}>
+                {releasable.filter(n => releasedList.includes(n.id)).length} of {releasable.length}
+                </strong> report pages released.</>}
+        </div>
+        <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+          {releasable.map(n => {
+            const ok = isReleased(reportData, n.id);
+            return (
+              <button key={n.id} onClick={() => setPage(n.id)} title={n.label}
+                style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px",
+                  borderRadius:60, cursor:"pointer", fontFamily:F, fontSize:11, fontWeight:700,
+                  border:`1px solid ${page===n.id ? C.blue : C.border}`,
+                  background: page===n.id ? `${C.blue}0C` : "none",
+                  color: page===n.id ? C.blue : C.muted }}>
+                <span style={{ width:6, height:6, borderRadius:60,
+                  background: ok ? C.green : C.border }}/>
+                {n.label}
+              </button>
+            );
+          })}
+        </div>
+        {!everyone && releasable.some(n => !isReleased(reportData, n.id)) && (
+          confirmAll ? (
+            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>Release every page?</span>
+              <button onClick={() => release(true)}
+                style={{ padding:"7px 15px", borderRadius:12, border:"none", background:C.grad1,
+                  color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>Yes</button>
+              <button onClick={() => setConfirmAll(false)}
+                style={{ padding:"7px 13px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                  background:"none", fontFamily:F, fontWeight:700, fontSize:12,
+                  color:C.muted, cursor:"pointer" }}>No</button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirmAll(true)}
+              style={{ padding:"8px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                background:"none", fontFamily:F, fontWeight:700, fontSize:12,
+                color:C.text, cursor:"pointer" }}>
+              Release all pages
+            </button>
+          )
+        )}
+      </div>
+
+      {/* ── The client's screen, whole: their sidebar, their topbar, their page ── */}
       <div style={{ border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden",
-        background:C.canvas, padding:"4px 0" }}>
-        {view}
+        background:"#fff" }}>
+        <div style={{ display:"flex", minHeight:560, fontFamily:F, background:"#fff" }}>
+          <Sidebar page={page} setPage={setPage} client={client}
+            onLogout={() => {}} collapsed={collapsed} setCollapsed={setCollapsed}/>
+          <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0,
+            overflow:"hidden", background:"#fff" }}>
+            <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
+              onMenuToggle={() => setCollapsed(c => !c)} notifItems={[]}/>
+            <div style={{ flex:1, overflowY:"auto", background:C.canvas }}>
+              {pages[page] || <BeingPrepared title={label}/>}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -18926,7 +19248,7 @@ function ZohoConnectionCard({ client, adminEmail }) {
   if (!isRealClient) return (
     <Card>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, gap:10 }}>
-        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text }}>Zoho Books</div>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>Zoho Books</div>
         <Badge color={C.dim}>Demo client</Badge>
       </div>
       <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8 }}>
@@ -18954,7 +19276,7 @@ function ZohoConnectionCard({ client, adminEmail }) {
     return (
       <Card>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:10, gap:10 }}>
-          <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text }}>Zoho Books</div>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>Zoho Books</div>
           <Badge color={C.amber}>Cannot check</Badge>
         </div>
         <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8 }}>{why}</p>
@@ -18965,7 +19287,7 @@ function ZohoConnectionCard({ client, adminEmail }) {
   // Zoho not wired up yet is a normal state, not an error. Say what is missing.
   if (!state.configured) return (
     <Card>
-      <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, marginBottom:6 }}>Zoho Books</div>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>Zoho Books</div>
       <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8, marginBottom:14 }}>
         Not set up yet. Once the Zoho app is registered and its keys are in Vercel, a client's books
         connect once and the numbers refresh on their own — no more exporting a CSV by hand.
@@ -18996,7 +19318,7 @@ function ZohoConnectionCard({ client, adminEmail }) {
 
   if (!state.connected) return (
     <Card>
-      <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, marginBottom:6 }}>Zoho Books</div>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>Zoho Books</div>
       <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8, marginBottom:16 }}>
         <strong>{client.company || client.name}</strong> is not connected. Connecting opens Zoho, asks for
         read-only permission, and comes back here. If the login is an accountant's, every client
@@ -19021,7 +19343,7 @@ function ZohoConnectionCard({ client, adminEmail }) {
   return (
     <Card>
       <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12, gap:10 }}>
-        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text }}>Zoho Books</div>
+        <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text }}>Zoho Books</div>
         <Badge color={c.last_sync_error ? C.red : C.green}>
           {c.last_sync_error ? "Sync failed" : "Connected"}
         </Badge>
@@ -19065,14 +19387,14 @@ function ZohoPreview({ client, adminEmail }) {
     <div style={{ marginTop:16, paddingTop:16, borderTop:`1px solid ${C.border}` }}>
       <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
         <button onClick={go} disabled={run.state === "loading"}
-          style={{ padding:"9px 18px", borderRadius:14, border:`1.5px solid ${C.border}`,
+          style={{ padding:"9px 18px", borderRadius:16, border:`1.5px solid ${C.border}`,
             background:"none", fontFamily:F, fontWeight:700, fontSize:12, color:C.text,
             cursor: run.state === "loading" ? "default" : "pointer" }}>
           {run.state === "loading" ? "Reading…" : "Read field names from Zoho"}
         </button>
         {run.state === "done" && (
           <button onClick={() => navigator.clipboard?.writeText(text)}
-            style={{ padding:"9px 18px", borderRadius:14, border:"none", background:C.grad1,
+            style={{ padding:"9px 18px", borderRadius:16, border:"none", background:C.grad1,
               color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>
             Copy result
           </button>
@@ -19101,8 +19423,11 @@ function AdminPanel({ admin, onLogout }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [clientQuery, setClientQuery] = useState("");
   const [staleOnly,   setStaleOnly]   = useState(false);
-  // Which sidebar groups are folded away. A group containing the open screen
-  // always shows, however it was left.
+  // Which sidebar groups are folded away. A click always folds the group it
+  // was given — this used to force open any group holding the open screen,
+  // which meant clicking "Overview" while on the Dashboard appeared to do
+  // nothing at all. Landing on a screen inside a folded group unfolds it
+  // instead, which is the only case the old rule was really there for.
   const [collapsed, setCollapsed] = useState(() => {
     try { return JSON.parse(localStorage.getItem("fz-admin-groups") || "{}"); } catch { return {}; }
   });
@@ -19458,6 +19783,17 @@ function AdminPanel({ admin, onLogout }) {
     if (data?.length) setActions(prev => [...data, ...prev]);
   };
 
+  // The Action Items sheet of the workbook is the whole list, so uploading one
+  // replaces it. An empty sheet is never treated as "delete everything" —
+  // that reading of a blank cell is the one the workbook promises not to make.
+  const replaceActions = async (rows) => {
+    if (!selected || !rows?.length) return;
+    await supabase.from("action_items").delete().eq("client_id", selected.id);
+    const { data } = await supabase.from("action_items")
+      .insert(rows.map(r => ({ ...r, client_id: selected.id }))).select();
+    setActions(data || []);
+  };
+
   const toggleAction = async (a) => {
     const newDone = !a.done;
     await supabase.from("action_items").update({ done: newDone }).eq("id", a.id);
@@ -19483,10 +19819,17 @@ function AdminPanel({ admin, onLogout }) {
     setTimeout(() => setSaved(false), 2500);
   };
  
-  const saveReportData = async () => {
-    if (!selected || !reportData) return;
+  // `override` exists for publishing a single page: setReportData is async, so
+  // a publish that set the state and then saved would write the copy from
+  // before the page was released — the release would appear to work and reach
+  // nobody. The caller hands over the exact object to write instead.
+  const saveReportData = async (override) => {
+    const payloadData = (override && typeof override === "object" && !override.nativeEvent)
+      ? override : reportData;
+    if (!selected || !payloadData) return;
+    if (override && payloadData !== reportData) setReportData(payloadData);
     setLoading(true);
-    const payload = { client_id: selected.id, data: JSON.stringify(reportData), updated_at: new Date().toISOString() };
+    const payload = { client_id: selected.id, data: JSON.stringify(payloadData), updated_at: new Date().toISOString() };
     // Check if exists first
     const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).maybeSingle();
     if (existing?.id) {
@@ -19633,10 +19976,10 @@ function AdminPanel({ admin, onLogout }) {
     clients:     "Everyone on the portal, live and demo.",
     addclient:   "Create a client and their invite code. Jurisdiction decides the currency and which rules apply.",
     eletter:     "Draft and publish the engagement letter a client signs.",
-    connections: "Where this client's books live. A connected client's numbers arrive on their own.",
+    connections: "Where this client's books live. Connect Zoho and their figures arrive on their own.",
     trialbalance:"Fetch from the connected books or paste a trial balance. Produces the statements, ageing, drill-downs and ratios.",
     import:      "Upload a P&L, balance sheet, cash flow or bank statement as CSV.",
-    templates:   "Reports the books cannot answer. Download, analyse in Excel, upload back.",
+    templates:   "One workbook, every report. Download it filled with the Zoho figures, do the analysis in Excel, upload it back.",
     kpis:        "The six tiles at the top of the client's dashboard, and the note beneath them.",
     drilldata:   "The compliance calendar, and what a client sees when they tap a figure.",
     reportdata:  "The detailed report inputs — P&L lines, working capital, benchmarks and board data.",
@@ -19646,46 +19989,72 @@ function AdminPanel({ admin, onLogout }) {
     uae:         "Jurisdiction, free zone, TRNs and registration status. Feeds every UAE screen.",
     uaereports:  "VAT and the free zone qualifying position, pulled from the books where possible.",
     uaecashflow: "UAE cash position and the notes that go with it.",
-    preview:     "The client's own screens, drawn from your unsaved working data.",
-    documents:   "Files shared with this client, and anything with an expiry worth watching.",
+    preview:     "Your client's portal, exactly as they read it. Walk it page by page and release each one.",
+    override:    "Type a figure in by hand when the workbook is more trouble than the correction is worth.",
+    documents:   "Files this client has shared with you, and anything with an expiry worth watching.",
     engagement:  "Valuation engagements and their status.",
     invoices:    "Your billing to this client.",
     requests:    "Service requests clients have submitted.",
     market:      "Market intelligence shown to clients.",
   };
 
+  // Four groups, in the order the work happens: what only you can do, the
+  // figures coming in, the analysis, and then the client's own report — which
+  // you walk exactly as they will, releasing each page as you sign it off.
+  //
+  // It used to be seven groups and twenty-four screens with no order to them.
   const ADMIN_TABS = [
-    { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",         group:"Overview" },
-    { id:"readiness",  icon:"ti-checklist",        label:"Client Setup",      group:"Overview" },
+    { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",         group:"Admin control" },
+    { id:"clients",    icon:"ti-users",            label:"All Clients",       group:"Admin control" },
+    { id:"addclient",  icon:"ti-user-plus",        label:"Add Client",        group:"Admin control" },
+    { id:"readiness",  icon:"ti-checklist",        label:"Client Setup",      group:"Admin control" },
+    { id:"eletter",    icon:"ti-file-description", label:"Engagement Letter", group:"Admin control" },
+    { id:"invoices",   icon:"ti-receipt",          label:"Invoices",          group:"Admin control" },
+    { id:"requests",   icon:"ti-mail",             label:"Requests",          group:"Admin control" },
+    { id:"override",   icon:"ti-adjustments",      label:"Manual Override",   group:"Admin control" },
 
-    { id:"clients",    icon:"ti-users",            label:"All Clients",       group:"Clients" },
-    { id:"addclient",  icon:"ti-user-plus",        label:"Add Client",        group:"Clients" },
-    { id:"eletter",    icon:"ti-file-description", label:"Engagement Letter", group:"Clients" },
-
-    { id:"connections",icon:"ti-plug-connected",   label:"Connections",       group:"Data in" },
+    { id:"connections",icon:"ti-plug-connected",   label:"Zoho Connection",   group:"Data in" },
     { id:"trialbalance",icon:"ti-table-import",    label:"Trial Balance",     group:"Data in" },
     { id:"import",     icon:"ti-file-upload",      label:"CSV Import",        group:"Data in" },
-    { id:"templates",  icon:"ti-table-export",     label:"Analysis Templates",group:"Data in" },
+    { id:"documents",  icon:"ti-folder",           label:"Client Documents",  group:"Data in" },
 
-    { id:"kpis",       icon:"ti-chart-bar",        label:"KPIs",              group:"Build the report" },
-    { id:"drilldata",  icon:"ti-git-merge",        label:"Drill & Compliance",group:"Build the report" },
-    { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",       group:"Build the report" },
-    { id:"actions",    icon:"ti-checkbox",         label:"Action Items",      group:"Build the report" },
-    { id:"analytics",  icon:"ti-chart-dots",       label:"BI & Scenarios",    group:"Build the report" },
-    { id:"treasury",   icon:"ti-building-bank",    label:"Treasury",          group:"Build the report" },
+    { id:"templates",  icon:"ti-table-export",     label:"Excel Workbook",    group:"Analysis" },
 
-    { id:"uae",        icon:"ti-flag",             label:"Profile & Tax",     group:"UAE", only:"uae" },
-    { id:"uaereports", icon:"ti-receipt-tax",      label:"VAT & QFZP",        group:"UAE", only:"uae" },
-    { id:"uaecashflow",icon:"ti-cash",             label:"Cash & Notes",      group:"UAE", only:"uae" },
-
-    { id:"preview",    icon:"ti-eye",              label:"Preview as Client", group:"Check & publish" },
-    { id:"documents",  icon:"ti-folder",           label:"Documents",         group:"Check & publish" },
-    { id:"engagement", icon:"ti-scale",            label:"Valuation",         group:"Check & publish" },
-
-    { id:"invoices",   icon:"ti-receipt",          label:"Invoices",          group:"Practice" },
-    { id:"requests",   icon:"ti-mail",             label:"Requests",          group:"Practice" },
-    { id:"market",     icon:"ti-world",            label:"Market Intel",      group:"Practice" },
+    { id:"preview",    icon:"ti-eye",              label:"Client Report",     group:"Client report" },
   ];
+
+  // The screens that still let a figure be typed in by hand. They are reached
+  // through Manual Override rather than listed one by one, because the
+  // workbook is the way the report gets filled now — these are for correcting
+  // a single figure without a round trip through Excel.
+  const OVERRIDE_TABS = [
+    { id:"kpis",       label:"Dashboard KPIs" },
+    { id:"reportdata", label:"Report Data" },
+    { id:"drilldata",  label:"Drill & Compliance" },
+    { id:"actions",    label:"Action Items" },
+    { id:"analytics",  label:"BI & Scenarios" },
+    { id:"treasury",   label:"Treasury" },
+    { id:"engagement", label:"Valuation" },
+    { id:"market",     label:"Market Intel" },
+    ...(isUAE(selected) ? [
+      { id:"uae",        label:"UAE — Profile & Tax" },
+      { id:"uaereports", label:"UAE — VAT & QFZP" },
+      { id:"uaecashflow",label:"UAE — Cash & Notes" },
+    ] : []),
+  ];
+  const isOverrideTab = OVERRIDE_TABS.some(t => t.id === tab);
+
+  // The client's own pages, as the client's sidebar lists them. Walking these
+  // is reviewing the real screen, not a second drawing of it.
+  const CLIENT_PAGES = selected ? getNav(selected).filter(n => GATED_PAGES.has(n.id)) : [];
+
+  // Landing on a screen whose group is folded — from a "go to the UAE tab"
+  // button, say — unfolds that group, so the sidebar never disagrees with the
+  // screen you are looking at.
+  const tabGroup = ADMIN_TABS.find(t => t.id === tab)?.group;
+  useEffect(() => {
+    if (tabGroup) setCollapsed(c => (c[tabGroup] ? { ...c, [tabGroup]: false } : c));
+  }, [tabGroup]);
  
   // Stable component references — prevents remount/focus-loss on every render
  
@@ -20120,7 +20489,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             </div>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="admin-hamburger"
-            style={{ background:"none", border:"none", cursor:"pointer", padding:6, borderRadius:6, color:C.muted, fontSize:18, lineHeight:1 }}>&#x2715;</button>
+            style={{ background:"none", border:"none", cursor:"pointer", padding:6, borderRadius:8, color:C.muted, fontSize:18, lineHeight:1 }}>&#x2715;</button>
         </div>
         <div style={{ padding:"10px 14px", borderBottom:`1px solid ${C.border}` }}>
           <div style={{ fontSize:10, color:C.dim, fontFamily:F }}>Logged in as</div>
@@ -20162,11 +20531,11 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           </div>
         )}
         <nav style={{ flex:1, padding:"6px 0", overflowY:"auto" }}>
-          {["Overview","Clients","Data in","Build the report","UAE","Check & publish","Practice"].map(group => {
+          {["Admin control","Data in","Analysis","Client report"].map(group => {
             const groupTabs = ADMIN_TABS.filter(t => t.group === group)
               .filter(t => t.only !== "uae" || isUAE(selected));
             if (!groupTabs.length) return null;
-            const shut = collapsed[group] && !groupTabs.some(t => t.id === tab);
+            const shut = !!collapsed[group];
             return (
               <div key={group}>
                 <button onClick={() => setCollapsed(c => ({ ...c, [group]: !c[group] }))}
@@ -20195,11 +20564,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
               </div>
             );
           })}
+
         </nav>
         <div style={{ padding:"8px 10px", borderTop:`1px solid ${C.border}` }}>
           <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
             width:"100%", padding:"10px 12px", background:"none",
-            border:`1.5px solid ${C.red}40`, borderRadius:9, cursor:"pointer",
+            border:`1.5px solid ${C.red}40`, borderRadius:12, cursor:"pointer",
             fontFamily:F, fontSize:12, fontWeight:700, color:C.red }}>
             <i className="ti ti-logout" style={{ fontSize:14 }}/>
             Sign Out
@@ -20218,8 +20588,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           display:"flex", alignItems:"center", padding:"9px 16px", gap:12, flexWrap:"wrap" }}>
           <button className="admin-hamburger" onClick={() => setSidebarOpen(true)}
             style={{ background:"none", border:"none", cursor:"pointer", padding:6,
-              borderRadius:6, color:C.text, fontSize:20, lineHeight:1, flexShrink:0 }}>&#x2630;</button>
-          <h1 style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text,
+              borderRadius:8, color:C.text, fontSize:20, lineHeight:1, flexShrink:0 }}>&#x2630;</button>
+          <h1 style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text,
             letterSpacing:"-0.02em", margin:0, flexShrink:0 }}>
             {ADMIN_TABS.find(t=>t.id===tab)?.label}
           </h1>
@@ -20249,6 +20619,59 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           )}
 
           {/* ── DASHBOARD HOME ── */}
+          {/* ── MANUAL OVERRIDE ──
+              The old admin panel was these screens: around three hundred boxes
+              to type a report into. The workbook fills them now, so they are
+              behind one door rather than nine sidebar items — still there, for
+              correcting a single figure without a round trip through Excel. */}
+          {(tab === "override" || isOverrideTab) && (
+            !selected ? (
+              <Card style={{ textAlign:"center", padding:40 }}>
+                <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+              </Card>
+            ) : (
+              <div style={{ maxWidth:900, marginBottom:16 }}>
+                <Card>
+                  <div style={{ display:"flex", gap:14, alignItems:"flex-end", flexWrap:"wrap" }}>
+                    <div style={{ flex:1, minWidth:250 }}>
+                      <label style={{ fontSize:11, fontWeight:700, color:C.muted,
+                        textTransform:"uppercase", letterSpacing:"0.08em", display:"block",
+                        marginBottom:6, fontFamily:F }}>Screen to edit by hand</label>
+                      <select value={isOverrideTab ? tab : ""} onChange={e => setTab(e.target.value || "override")}
+                        style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:13,
+                          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                          background:C.bg, outline:"none", cursor:"pointer" }}>
+                        <option value="">Choose a screen…</option>
+                        {OVERRIDE_TABS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                      </select>
+                    </div>
+                    {isOverrideTab && (
+                      <button onClick={() => setTab("templates")}
+                        style={{ padding:"10px 18px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                          background:"none", fontFamily:F, fontWeight:700, fontSize:12.5,
+                          color:C.text, cursor:"pointer" }}>
+                        Use the workbook instead
+                      </button>
+                    )}
+                  </div>
+                  {!isOverrideTab && (
+                    <div style={{ fontFamily:F, fontSize:12.5, color:C.muted,
+                      lineHeight:1.8, marginTop:14 }}>
+                      These screens fill the report a box at a time. The{" "}
+                      <strong style={{ color:C.text }}>Excel Workbook</strong> does the same job in
+                      one file and is the way a month's report normally gets built — reach for a
+                      screen here when one figure needs correcting and a round trip through Excel
+                      is more trouble than the correction is worth.
+                    </div>
+                  )}
+                </Card>
+                {!isOverrideTab && <div style={{ height:16 }}/>}
+                {!isOverrideTab && <ResetClientData client={selected} reportData={reportData}
+                  setReportData={setReportData} saveReportData={saveReportData} loading={loading}/>}
+              </div>
+            )
+          )}
+
           {tab === "home" && (() => {
             const now = Date.now();
             const daysSince = iso => iso ? Math.floor((now - new Date(iso).getTime()) / 86400000) : 999;
@@ -20308,7 +20731,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                           <div style={{ fontFamily:F, fontSize:10, color:C.muted }}>{clients.find(c=>c.id===a.client_id)?.name||a.client_id}{a.month?` · ${a.month}`:""}</div>
                         </div>
                         <button onClick={() => { const c=clients.find(x=>x.id===a.client_id); if(c){selectClient(c);setTab("actions");} }}
-                          style={{ padding:"4px 10px", borderRadius:6, border:`1px solid ${C.red}40`, background:"transparent",
+                          style={{ padding:"4px 10px", borderRadius:8, border:`1px solid ${C.red}40`, background:"transparent",
                             color:C.red, fontFamily:F, fontSize:10, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap" }}>View</button>
                       </div>
                     ))}
@@ -20321,8 +20744,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                 <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap", marginBottom:10 }}>
                   <input value={clientQuery} onChange={e => setClientQuery(e.target.value)}
                     placeholder="Search by name or company"
-                    style={{ flex:"1 1 260px", maxWidth:360, padding:"8px 12px", borderRadius:10,
-                      fontSize:12.5, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                    style={{ flex:"1 1 260px", maxWidth:360, padding:"10px 12px", borderRadius:12,
+                      fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                       background:C.bg, outline:"none" }}/>
                   <button onClick={() => setStaleOnly(v => !v)}
                     style={{ padding:"8px 14px", borderRadius:60, cursor:"pointer", fontFamily:F,
@@ -20379,7 +20802,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                           <span style={{ fontFamily:F, fontSize:11, color:sc, fontWeight:600,
                             minWidth:104, textAlign:"right", flexShrink:0 }}>{sl}</span>
                           <button onClick={() => { selectClient(c); setTab("readiness"); }}
-                            style={{ padding:"6px 13px", borderRadius:9, border:`1.5px solid ${C.border}`,
+                            style={{ padding:"6px 13px", borderRadius:12, border:`1.5px solid ${C.border}`,
                               background:"transparent", color:C.text, fontFamily:F, fontSize:11,
                               fontWeight:700, cursor:"pointer", flexShrink:0 }}>
                             Open
@@ -20491,7 +20914,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     onChange={v=>setNewClient(c=>({...c,invite_code:v.toUpperCase()}))}
                     placeholder="e.g. SHAR2026" mono={true} />
                 </div>
-                <button onClick={genCode} style={{ padding:"10px 14px", borderRadius:9, marginBottom:12,
+                <button onClick={genCode} style={{ padding:"10px 14px", borderRadius:12, marginBottom:12,
                   border:`1px solid ${C.border}`, background:"#fff", fontFamily:F, fontSize:12,
                   color:C.muted, cursor:"pointer", whiteSpace:"nowrap" }}>
                   Auto-generate
@@ -20594,7 +21017,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <div style={{ marginBottom:14 }}>
                     <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase", letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>Duration</label>
                     <select value={elForm.duration} onChange={e=>setElForm(f=>({...f,duration:e.target.value}))}
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none" }}>
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none" }}>
                       <option>12 months (auto-renewing)</option>
                       <option>6 months</option>
                       <option>Month-to-month</option>
@@ -20609,10 +21032,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     <textarea value={elForm.specialTerms} rows={3}
                       onChange={e=>setElForm(f=>({...f,specialTerms:e.target.value}))}
                       placeholder="e.g. First month is a free trial. Quarterly reviews included."
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}/>
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text, background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}/>
                   </div>
 
-                  <div style={{ background:`${C.blue}08`, border:`1px solid ${C.blue}20`, borderRadius:10, padding:"12px 16px", marginBottom:20, fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7 }}>
+                  <div style={{ background:`${C.blue}08`, border:`1px solid ${C.blue}20`, borderRadius:12, padding:"12px 16px", marginBottom:20, fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7 }}>
                     <strong style={{ color:C.blue }}>Pack scope auto-filled:</strong> Services listed in the letter are based on the client's pack type ({selected.client_pack}). The letter includes Finzzup branding, signature blocks, and formal terms.
                   </div>
 
@@ -20708,7 +21131,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     ))}
                     <div style={{ display:"flex", gap:10, marginTop:10 }}>
                       <button onClick={() => setCompliance([...compliance, { item:"", detail:"", dueDate:"", owner:"", done:false }])}
-                        style={{ padding:"7px 14px", borderRadius:10, border:`1.5px dashed ${C.border}`, background:"none",
+                        style={{ padding:"7px 14px", borderRadius:12, border:`1.5px dashed ${C.border}`, background:"none",
                           fontFamily:F, fontSize:12, fontWeight:700, color:C.muted, cursor:"pointer" }}>
                         + Add compliance item
                       </button>
@@ -20787,14 +21210,16 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             </div>
           )}
 
-          {/* ── ANALYSIS TEMPLATES ── */}
+          {/* ── THE EXCEL WORKBOOK ── */}
           {tab === "templates" && (
             !selected ? (
               <Card style={{ textAlign:"center", padding:40 }}>
                 <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
               </Card>
             ) : <AnalysisTemplates client={selected} reportData={reportData} setReportData={setReportData}
-                  saveReportData={saveReportData} loading={loading} saved={saved}/>
+                  saveReportData={saveReportData} loading={loading} saved={saved}
+                  kpis={kpis} setKpis={setKpis} saveKPIs={saveKPIs}
+                  actions={actions} replaceActions={replaceActions}/>
           )}
 
           {/* ── CLIENT READINESS ── */}
@@ -20814,10 +21239,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   saveReportData={saveReportData} loading={loading} saved={saved} adminEmail={admin?.email}/>
           )}
 
-          {/* ── PREVIEW AS CLIENT ── */}
+          {/* ── THE CLIENT'S REPORT, WALKED AND RELEASED ── */}
           {tab === "preview" && (
-            <ClientPreview client={selected} reportData={reportData} kpis={kpis}
-              actions={actions} invoices={invoices} liveSnapshot={liveSnap}/>
+            <ClientReportWalk client={selected} reportData={reportData}
+              setReportData={setReportData} saveReportData={saveReportData}
+              kpis={kpis} actions={actions} invoices={invoices}
+              liveSnapshot={liveSnap} loading={loading} saved={saved}/>
           )}
 
           {/* ── CONNECTIONS (Zoho Books) ── */}
@@ -20995,7 +21422,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     </label>
                     <textarea value={kpis.garima_note||""} onChange={e=>setKpis(k=>({...k,garima_note:e.target.value}))}
                       rows={4} placeholder="Write your monthly note for the client here..."
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:14,
                         border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                         background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
                       onFocus={e => e.target.style.borderColor = C.amber}
@@ -21121,7 +21548,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     <textarea value={engagement.garima_note||""} rows={3}
                       onChange={e=>setEngagement(en=>({...en,garima_note:e.target.value}))}
                       placeholder="e.g. Working on DCF model, on track for 28 Feb..."
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:14,
                         border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                         background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}/>
                   </div>
@@ -22016,7 +22443,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <textarea value={reportData.reportNote || reportData.packNote || ""} rows={4}
                     onChange={e => setReportData(r=>({...r,reportNote:e.target.value,packNote:e.target.value}))}
                     placeholder="e.g. Strong month — revenue up 6.1%, EBITDA margin at 17.5%..."
-                    style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+                    style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:14,
                       border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                       background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
                     onFocus={e=>e.target.style.borderColor=C.amber}
@@ -22030,7 +22457,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <textarea value={reportData.cashflowNote || ""} rows={4}
                     onChange={e => setReportData(r=>({...r,cashflowNote:e.target.value}))}
                     placeholder="e.g. March forecast dips due to advance tax + delayed collection from Client B..."
-                    style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:14,
+                    style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:14,
                       border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                       background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
                     onFocus={e=>e.target.style.borderColor=C.amber}
@@ -22094,7 +22521,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                       <textarea value={reportData[f.key] || ""} rows={3}
                         onChange={e => setReportData(r => ({...r, [f.key]:e.target.value}))}
                         placeholder={f.placeholder}
-                        style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
+                        style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:13,
                           border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                           background:C.bg, outline:"none", boxSizing:"border-box", resize:"vertical" }}
                         onFocus={e=>e.target.style.borderColor=C.blue}
@@ -22331,7 +22758,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, marginBottom:6, textTransform:"uppercase", letterSpacing:"0.07em" }}>Top 5 Clients — A/R Aging by Customer</div>
                   <p style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:10, lineHeight:1.6 }}>Shown on Overview's Top 5 Clients section and Working Capital AR table. Raw ₹ amounts.</p>
                   {[0,1,2,3,4].map(i=>(
-                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:14, padding:14, marginBottom:8 }}>
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:16, padding:14, marginBottom:8 }}>
                       <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>Client {i+1}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:8 }}>
                         <AdminInput C={C} F={F} FM={FM} label="Client Name"
@@ -22362,7 +22789,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, marginBottom:6, marginTop:8, textTransform:"uppercase", letterSpacing:"0.07em" }}>Top 5 Vendors — AP Payment Schedule</div>
                   <p style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:10, lineHeight:1.6 }}>Outstanding payables per vendor — shown in Overview's Top 5 Vendors section.</p>
                   {[0,1,2,3,4].map(i=>(
-                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:14, padding:14, marginBottom:8 }}>
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:16, padding:14, marginBottom:8 }}>
                       <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.muted, marginBottom:8, textTransform:"uppercase", letterSpacing:"0.05em" }}>Vendor {i+1}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:8, marginBottom:8 }}>
                         <AdminInput C={C} F={F} FM={FM} label="Supplier Name"
@@ -22393,7 +22820,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.text, marginBottom:6, marginTop:8, textTransform:"uppercase", letterSpacing:"0.07em" }}>Connected Persons (shown in Overview page)</div>
                   <p style={{ fontFamily:F, fontSize:11, color:C.muted, marginBottom:10, lineHeight:1.6 }}>Key founders, directors, investors — shown at the bottom of the Overview page.</p>
                   {[0,1,2].map(i=>(
-                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:14, padding:14, marginBottom:8 }}>
+                    <div key={i} style={{ background:"#fff", border:`1px solid ${C.border}`, borderRadius:16, padding:14, marginBottom:8 }}>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:8 }}>
                         <AdminInput C={C} F={F} FM={FM} label="Name"
                           val={reportData?.connectedPersonsAdmin?.[i]?.name||""}
@@ -22606,7 +23033,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     });
                     return (
                       <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:10, marginBottom:8,
-                        padding:"10px 12px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
+                        padding:"10px 12px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}` }}>
                         <AdminInput C={C} F={F} FM={FM} label={`Period ${i+1}`} val={row.period||""}
                           onChange={v=>upd("period",v)} placeholder="e.g. Q1 2026 (Jan–Mar)"/>
                         <AdminInput C={C} F={F} FM={FM} label="Due Date" val={row.due||""}
@@ -22693,7 +23120,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     });
                     return (
                       <div key={i} style={{ display:"grid", gridTemplateColumns:"3fr 1fr 80px", gap:8, marginBottom:6,
-                        padding:"8px 10px", borderRadius:10, background:C.bg, border:`1px solid ${C.border}` }}>
+                        padding:"8px 10px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}` }}>
                         <AdminInput C={C} F={F} FM={FM} label={`Line ${i+1} — Description`} val={adj.item||""}
                           onChange={v=>updAdj("item",v)}
                           placeholder={i===0?"e.g. Accounting Profit (per audited FS)":i===1?"e.g. Add: Non-deductible entertainment expenses":i===2?"e.g. Less: Exempt dividend income":i===3?"e.g. Less: QFZP qualifying income":"e.g. Other adjustment"}/>
@@ -23822,7 +24249,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                       Document Type
                     </label>
                     <select id="doc-type-select" defaultValue="general"
-                      style={{ width:"100%", padding:"10px 12px", borderRadius:9, fontSize:13,
+                      style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:13,
                         border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
                         background:C.bg, outline:"none" }}>
                       <option value="general">General Document</option>
@@ -23900,7 +24327,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                         padding:"12px 14px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}`,
                         flexWrap:"wrap", gap:10 }}>
                         <div style={{ display:"flex", alignItems:"center", gap:20 }}>
-                          <div style={{ width:36, height:36, borderRadius:9, background:`${C.blue}12`,
+                          <div style={{ width:36, height:36, borderRadius:12, background:`${C.blue}12`,
                             display:"flex", alignItems:"center", justifyContent:"center" }}>
                             <i className={"ti " + (()=>{const ext=d.name?.split(".").pop()?.toLowerCase();if(["pdf"].includes(ext))return"ti-file-type-pdf";if(["xls","xlsx","csv"].includes(ext))return"ti-table";if(["doc","docx"].includes(ext))return"ti-file-text";return"ti-file-analytics";})()}
                               style={{ fontSize:16, color:C.blue }}/>
