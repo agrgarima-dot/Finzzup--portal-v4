@@ -11,6 +11,7 @@ import { pnl, balanceSheet, cashFlow, workingCapital, ratios } from "./wb-calc.m
 import { variance, vertical, trend, scenarios, cash13, unitEconomics,
          concentration, treasury } from "./wb-analysis.mjs";
 import { uaeVat, uaeCT, uaeQfzp, uaeRpt, uaeRevRecon, indiaTax } from "./wb-tax.mjs";
+import { eInvoicing, segments, loanReadiness, crossBorder } from "./wb-uae2.mjs";
 import { portalFeed } from "./wb-feed.mjs";
 
 const n = (v) => { const x = Number(v); return isFinite(x) ? x : 0; };
@@ -71,6 +72,15 @@ export function seedFromSync(sync) {
  */
 export function buildAnalysisWorkbook({ client, sync } = {}) {
   const seed = seedFromSync(sync);
+
+  // A free zone company has no GST and an Indian company has no QFZP. Building
+  // both sets and leaving half of them blank would be asking a Chartered
+  // Accountant to scroll past a dozen sheets that can never apply, every
+  // month, for every client.
+  const j     = String(client?.jurisdiction || "UAE");
+  const cross = /cross/i.test(j);
+  const uae   = cross || /uae/i.test(j);
+  const india = cross || !uae;
   const wb = new ExcelJS.Workbook();
   wb.creator = "Finzzup";
   wb.created = new Date();
@@ -100,16 +110,24 @@ export function buildAnalysisWorkbook({ client, sync } = {}) {
   cash13(wb);
   unitEconomics(wb);
   concentration(wb);
+  segments(wb, uae);
   treasury(wb);
+  loanReadiness(wb);
 
-  uaeVat(wb);
-  uaeCT(wb);
-  uaeQfzp(wb);
-  uaeRpt(wb);
-  uaeRevRecon(wb);
-  indiaTax(wb);
+  if (uae) {
+    uaeVat(wb);
+    uaeCT(wb);
+    uaeQfzp(wb);
+    uaeRpt(wb);
+    uaeRevRecon(wb);
+    eInvoicing(wb);
+  }
+  if (india) indiaTax(wb);
+  // An Indian promoter with a UAE entity is the case this answers. It belongs
+  // with the UAE set, not with the Indian one.
+  if (uae) crossBorder(wb);
 
-  portalFeed(wb);
+  portalFeed(wb, uae);
   checks(wb);
   return wb;
 }

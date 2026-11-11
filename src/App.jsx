@@ -11393,44 +11393,48 @@ function CorporateTax({ client, reportData, initialTab }) {
   const rd = reportData?.ct || {};
   if (!client?.isDemo && !Object.keys(rd).length) return <AwaitingData title="Your corporate tax position"/>;
  
-  const revenue       = rd.revenue     || 1850000;
-  const sbrThreshold  = 3000000;
-  const sbrEligible   = client?.sbrEligible ?? (revenue <= sbrThreshold);
-  const qfzpStatus    = client?.qfzpStatus ?? true;
- 
+  // Every figure on this screen used to have a default behind it — revenue of
+  // 1,850,000, taxable income of 271,000, a four-line adjustments table with
+  // amounts and explanations, a CT charge of 24,390, qualifying income at 92%.
+  // The guard above only fires when the whole ct object is missing, so a
+  // client with one synced figure saw the other dozen invented, under a
+  // Chartered Accountant's name. They are read or they are blank.
+  const num           = (v) => { const x = Number(v); return isFinite(x) && v !== "" && v != null ? x : null; };
+  const revenue       = num(rd.revenue);
+  const sbrThreshold  = num(rd.sbrCap) ?? 3000000;
+  const sbrEligible   = rd.sbrEligible != null
+    ? (rd.sbrEligible === true || /^(y|yes|true|eligible)$/i.test(String(rd.sbrEligible)))
+    : (revenue == null ? null : revenue <= sbrThreshold);
+  const qfzpStatus    = client?.qfzpStatus ?? null;
+
   const ctData = {
-    trnCT:               client?.trnCT || rd.trnCT || "Pending registration",
-    sbrEligible, revenue, qfzpStatus,
-    taxableIncome:       rd.taxableIncome || 271000,
-    adjustments: rd.adjustments || [
-      { item:"Accounting Profit (per audited FS)", amount: 271000, sign: 1, note:"Net profit before CT adjustments" },
-      { item:"Add: Non-deductible expenses",        amount:  12000, sign: 1, note:"Entertainment, fines, and non-business costs" },
-      { item:"Less: Exempt dividend income",        amount:  18000, sign:-1, note:"Dividends from UAE subsidiary — exempt under Art. 22" },
-      { item:"Less: QFZP qualifying income",        amount: 265000, sign:-1, note:"Income from qualifying activities — 0% CT rate" },
-    ],
-    taxableFinalIncome:  rd.taxableFinalIncome  || 0,
-    effectiveCTRate:     (qfzpStatus || sbrEligible) ? 0 : 9,
-    ctPayable:           (qfzpStatus || sbrEligible) ? 0 : rd.ctPayable || 24390,
+    trnCT:               client?.trnCT || rd.trnCT || "Not recorded",
+    sbrEligible, revenue, qfzpStatus, sbrThreshold,
+    taxableIncome:       num(rd.taxableIncome),
+    adjustments:         Array.isArray(rd.adjustments) ? rd.adjustments : [],
+    taxableFinalIncome:  num(rd.taxableFinalIncome),
+    effectiveCTRate:     num(rd.effectiveCTRate),
+    ctPayable:           num(rd.liability) ?? num(rd.ctPayable),
     ctDue:               ctDeadline(client?.financialYearEnd),
-    qualifyingPct:       rd.qualifyingPct     || 92,
-    nonQualifyingPct:    rd.nonQualifyingPct  || 8,
+    qualifyingPct:       num(rd.qualifyingPct),
+    nonQualifyingPct:    num(rd.nonQualifyingPct),
+    // Watching the cap rather than discovering it at the year end.
+    revenueYTD:          num(rd.revenueYTD),
+    sbrHeadroom:         num(rd.sbrHeadroom),
+    sbrPosition:         rd.sbrPosition || "",
+    provision:           num(rd.provision),
+    setAside:            num(rd.setAside),
     substanceItems: (() => {
-      if (rd.substanceItems && Array.isArray(rd.substanceItems)) return rd.substanceItems;
-      const si = rd.substanceItems || reportData?.ct?.substanceItems;
-      if (si && typeof si === "object" && !Array.isArray(si)) return [
+      if (Array.isArray(rd.substanceItems)) return rd.substanceItems;
+      const si = rd.substanceItems;
+      if (si && typeof si === "object") return [
         { item:"Adequate employees in free zone",   done:!!si.employees },
         { item:"Adequate operating expenditure",    done:!!si.opex      },
         { item:"Physical presence in free zone",    done:!!si.presence  },
         { item:"Core income-generating activities", done:!!si.ciga      },
         { item:"Audited financial statements",      done:!!si.auditedFS },
       ];
-      return [
-        { item:"Adequate employees in free zone",   done:true  },
-        { item:"Adequate operating expenditure",    done:true  },
-        { item:"Physical presence in free zone",    done:true  },
-        { item:"Core income-generating activities", done:true  },
-        { item:"Audited financial statements",      done:false },
-      ];
+      return [];
     })(),
   };
  
@@ -11496,9 +11500,68 @@ function CorporateTax({ client, reportData, initialTab }) {
  
       {tab === "overview" && (
         <>
+          {/* ── Watching the Small Business Relief cap ──
+              An owner near the cap finds out at the year end, by which point
+              the election is gone. Revenue to date against the cap says it in
+              month three instead. Shown only once there is a position. */}
+          {(ctData.sbrPosition || ctData.sbrHeadroom != null) && (
+            <Card style={{ marginBottom:20,
+              borderLeft:`3px solid ${/crossed/i.test(ctData.sbrPosition) ? C.red
+                : /on course/i.test(ctData.sbrPosition) ? C.amber : C.green}` }}>
+              <div className="ns-panel-header" style={{ margin:"-14px -14px 14px" }}>
+                <h3>Small Business Relief — where this sits against the cap</h3>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:12 }}>
+                {[
+                  { label:"Revenue this tax period", value: ctData.revenueYTD != null ? fmtAED(ctData.revenueYTD) : "—" },
+                  { label:"The cap",                 value: fmtAED(ctData.sbrThreshold) },
+                  { label:"Headroom left",           value: ctData.sbrHeadroom != null ? fmtAED(ctData.sbrHeadroom) : "—",
+                    warn: ctData.sbrHeadroom != null && ctData.sbrHeadroom < 0 },
+                ].map((t,i) => (
+                  <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:C.bg }}>
+                    <div className="ns-label" style={{ marginBottom:4 }}>{t.label}</div>
+                    <div style={{ fontFamily:FM, fontSize:15, fontWeight:800,
+                      color: t.warn ? C.red : C.text }}>{t.value}</div>
+                  </div>
+                ))}
+              </div>
+              {ctData.sbrPosition && (
+                <div style={{ marginTop:12, fontFamily:F, fontSize:13, fontWeight:700, lineHeight:1.7,
+                  color: /crossed/i.test(ctData.sbrPosition) ? C.red
+                       : /on course/i.test(ctData.sbrPosition) ? C.warning : C.green }}>
+                  {ctData.sbrPosition}
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* What to hold back, so March is not a surprise. */}
+          {(ctData.provision != null || ctData.setAside != null) && (
+            <Card style={{ marginBottom:20 }}>
+              <div className="ns-panel-header" style={{ margin:"-14px -14px 14px" }}>
+                <h3>Tax to carry</h3>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))", gap:12 }}>
+                {[
+                  { label:"To provide this month", value: ctData.provision != null ? fmtAED(ctData.provision) : "—" },
+                  { label:"Set aside for tax",     value: ctData.setAside  != null ? fmtAED(ctData.setAside)  : "—" },
+                ].map((t,i) => (
+                  <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:C.bg }}>
+                    <div className="ns-label" style={{ marginBottom:4 }}>{t.label}</div>
+                    <div style={{ fontFamily:FM, fontSize:15, fontWeight:800, color:C.text }}>{t.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:10, lineHeight:1.7 }}>
+                Money already owed in tax is not money available to spend. Carrying the charge month
+                by month is the difference between having it when the return falls due and not.
+              </div>
+            </Card>
+          )}
+
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
             {[
-              { label:"Effective CT Rate", value:`${ctData.effectiveCTRate}%`, color:C.green, icon:"ti-building-bank" },
+              { label:"Effective CT Rate", value: ctData.effectiveCTRate == null ? "—" : `${ctData.effectiveCTRate}%`, color:C.green, icon:"ti-building-bank" },
               { label:"CT Payable",        value:fmtAED(ctData.ctPayable),     color:ctData.ctPayable>0?C.amber:C.green, icon:"ti-cash" },
               { label:"CT Return Due",     value:ctData.ctDue,                  color:C.blue, icon:"ti-calendar" },
             ].map((s,i) => (
@@ -14829,7 +14892,10 @@ function AuditReadiness({ client, reportData }) {
   const rd        = reportData?.auditReadiness || {};
   if (!client?.isDemo && !Object.keys(rd).length) return <AwaitingData title="Your audit readiness review"/>;
   const freezone  = client?.freezone || "DMCC";
-  const auditScore = rd.auditScore || 68;
+  // 68 used to appear here for any client who had no score worked out. The
+  // checklist below is the honest read; with no score the dial stays off.
+  const auditScore = rd.auditScore ?? null;
+  const einv = reportData?.einv || {};
  
   const checklistItems = rd.checklistItems || [
     { cat:"Financial Statements",  item:"Audited P&L (current year)",                done:false, req:true  },
@@ -14865,7 +14931,7 @@ function AuditReadiness({ client, reportData }) {
         </div>
         <div style={{ textAlign:"right" }}>
           <div style={{ fontFamily:F, fontSize:20, fontWeight:700,
-            color:auditScore>=80?C.green:auditScore>=60?C.amber:C.red }}>{auditScore}/100</div>
+            color:auditScore==null?C.dim:auditScore>=80?C.green:auditScore>=60?C.amber:C.red }}>{auditScore==null?"—":`${auditScore}/100`}</div>
           <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>Audit Readiness Score</div>
         </div>
       </div>
@@ -14896,12 +14962,52 @@ function AuditReadiness({ client, reportData }) {
         );
       })}
  
-      <Card style={{ borderLeft:"3px solid #059669", background:"#F0FDF4", marginBottom:14 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:8 }}>Note from Garima — Audit Readiness</div>
-        <p style={{ fontFamily:F, fontSize:13, color:"#166534", lineHeight:1.8, margin:"0 0 12px" }}>
-          Your audit readiness score of {auditScore}/100 is encouraging, but there are 5 required documents still outstanding. The highest-priority gap is QFZP Supporting Documentation — without this, your free zone status cannot be confirmed in the audit. I'd suggest we schedule a 45-minute working session to close these items before the 30 April DMCC deadline. I can prepare the first draft of the CT computation and transfer pricing documentation if you share the relevant contracts.
-        </p>
-      </Card>
+      {/* ── E-invoicing readiness ──
+          Free zones get no exemption, and readiness is a master-data problem
+          long before it is a software one. Shown only once there is something
+          to show. */}
+      {(einv.date || einv.score || einv.monthsLeft) && (
+        <Card style={{ marginBottom:14 }}>
+          <div className="ns-panel-header" style={{ margin:"-14px -14px 14px" }}>
+            <h3>E-invoicing readiness</h3>
+            {einv.wave && <span className="ns-badge blue">{einv.wave}</span>}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:12 }}>
+            {[
+              { label:"Mandatory from",  value: einv.date || "—" },
+              { label:"Months remaining", value: einv.monthsLeft || "—",
+                warn: Number(einv.monthsLeft) > 0 && Number(einv.monthsLeft) < 12 },
+              { label:"Readiness",       value: einv.score != null && einv.score !== "" ? `${einv.score}/100` : "—" },
+              { label:"Master data clean", value: einv.dataQuality || "—" },
+              { label:"Provider appointed", value: einv.provider || "—" },
+            ].map((t,i) => (
+              <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:C.bg }}>
+                <div className="ns-label" style={{ marginBottom:4 }}>{t.label}</div>
+                <div style={{ fontFamily:FM, fontSize:15, fontWeight:800,
+                  color: t.warn ? C.warning : C.text }}>{t.value}</div>
+              </div>
+            ))}
+          </div>
+          {einv.note && (
+            <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8, margin:"14px 0 0" }}>
+              {einv.note}
+            </p>
+          )}
+        </Card>
+      )}
+
+      {/* The note is written by a Chartered Accountant or it is not there.
+          A default paragraph used to stand in — naming five outstanding
+          documents, a forty-five minute session and a 30 April deadline — for
+          every client, whatever their actual position. */}
+      {reportData?.governanceNote && (
+        <Card style={{ borderLeft:"3px solid #059669", background:"#F0FDF4", marginBottom:14 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:8 }}>Note from Garima — Audit Readiness</div>
+          <p style={{ fontFamily:F, fontSize:13, color:"#166534", lineHeight:1.8, margin:"0 0 12px", whiteSpace:"pre-wrap" }}>
+            {reportData.governanceNote}
+          </p>
+        </Card>
+      )}
       <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:24,
         borderRadius:16, border:"none", background:C.green, color:"white",
         fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>

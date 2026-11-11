@@ -64,6 +64,17 @@ const FORMULA = {
   "ct.liability":                "=CT_Charge",
   "ct.sbrEligible":              "=IF(CT_SBR=\"Eligible\",\"Y\",\"N\")",
 
+  "ct.revenueYTD":               "=CT_RevYTD",
+  "ct.sbrHeadroom":              "=CT_SBRHeadroom",
+  "ct.sbrPosition":              "=CT_SBRPosition",
+  "ct.provision":                "=CT_Provision",
+  "ct.setAside":                 "=CT_SetAside",
+
+  "einv.date":                   "=IF(EI_Date=\"\",\"\",TEXT(EI_Date,\"d mmmm yyyy\"))",
+  "einv.monthsLeft":             "=IF(EI_MonthsLeft=\"\",\"\",TEXT(EI_MonthsLeft,\"0.0\"))",
+  "einv.score":                  "=EI_Score",
+  "einv.dataQuality":            "=IF(EI_DataQuality=\"\",\"\",TEXT(EI_DataQuality,\"0%\"))",
+
   "qfzp.qfzpScore":              "=QF_Score",
   "qfzpSubstance.period":        "=Cl_Period",
   "qfzpSubstance.overallScore":  "=QF_Score",
@@ -76,6 +87,19 @@ const FORMULA = {
   "scenarioBase.cogs":           "=PL_COGS",
   "scenarioBase.opex":           "=PL_Opex",
   "spendRevenue":                "=PL_Revenue",
+
+  // Bank and investor readiness — the portal already shows these.
+  "loanScore":                   "=LN_Score",
+  "dscr":                        "=LN_DSCR",
+  "interestCoverage":            "=IFERROR(PL_EBITDA/PL_Fin,\"\")",
+  "debtEquity":                  "=IFERROR(BS_Debt/BS_Eq,\"\")",
+  "debtEbitda":                  "=IFERROR(BS_Debt/PL_EBITDA,\"\")",
+  "roe":                         "=IFERROR(PL_PAT/BS_Eq,\"\")",
+  "existingDebt":                "=BS_Debt",
+  "workingCapital.quickRatio":   "=IFERROR(TEXT((BS_AR+BS_Cash+BS_OA)/(BS_AP+BS_OL),\"0.00\")&\"x\",\"\")",
+  "workingCapital.currentRatio": "=IFERROR(TEXT((BS_AR+BS_Inv+BS_Cash+BS_OA)/(BS_AP+BS_OL),\"0.00\")&\"x\",\"\")",
+
+  // Free zone and e-invoicing positions worth putting in front of a client.
 };
 
 // Tables are a range rather than a cell, so they are listed separately with
@@ -89,9 +113,11 @@ const RANGES = {
   "revRecon.rows":                 "'UAE Rev Recon'!A:E",
   "workingCapital.arAging":        "Concentration!A:F",
   "workingCapital.apSchedule":     "Concentration!A:F",
+  "geoIndia":                      "Segments!A:G",
+  "depts":                         "Segments!A:G",
 };
 
-export function portalFeed(wb) {
+export function portalFeed(wb, uae = true) {
   const ws = sheet(wb, "Portal Feed", {
     tab: T.tabOut, widths: [34, 40, 44, 22, 34], freeze: "A6" });
   let r = title(ws, "Portal Feed",
@@ -101,10 +127,10 @@ export function portalFeed(wb) {
     "Green values come from your workings. Blue ones are waiting for you — either type the figure or point the cell at wherever it lives in your own schedules.", 5);
   r++;
 
-  // Both jurisdictions on one sheet. The ones that do not apply simply stay
-  // empty, which is cheaper than maintaining two workbooks.
+  // Only this client's jurisdiction. A feed row for a figure that can never
+  // apply is a row someone eventually tries to fill.
   const seen = new Set();
-  const all = [...sheetsFor(true), ...sheetsFor(false)];
+  const all = sheetsFor(uae);
   let group = null;
 
   for (const s of all) {

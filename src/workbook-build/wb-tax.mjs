@@ -49,6 +49,33 @@ export function uaeVat(wb) {
   r++;
   r = note(ws, r, "Cash that is already owed to the FTA is not cash available to spend. This figure is why a client with money in the bank can still be short.", 4);
 
+  r = section(ws, r, "Allocation by emirate", 4);
+  r = note(ws, r, "Standard-rated supplies are reported by the emirate of the fixed establishment making them. Putting the lot under one emirate is among the commonest errors on the return, and it is the one the FTA can see from the outside.", 4);
+  r = heads(ws, r, ["Emirate", "Standard-rated supplies", "Output VAT", "Note"],
+            { align: ["left","right","right","left"] });
+  const eFirst = r;
+  for (const em of ["Abu Dhabi","Dubai","Sharjah","Ajman","Umm Al Quwain","Ras Al Khaimah","Fujairah"]) {
+    cell(ws, r, 1, em, { kind: "label", indent: 1 });
+    cell(ws, r, 2, null, { kind: "input", nf: NF.money });
+    cell(ws, r, 3, `=N(B${r})*R_VAT`, { nf: NF.money });
+    cell(ws, r, 4, null, { kind: "input" });
+    r++;
+  }
+  cell(ws, r, 1, "Total", { kind: "label", bold: true });
+  cell(ws, r, 2, `=SUM(B${eFirst}:B${r - 1})`, { kind: "lock", nf: NF.money, bold: true });
+  cell(ws, r, 3, `=SUM(C${eFirst}:C${r - 1})`, { kind: "lock", nf: NF.money, bold: true });
+  const emTotal = r; r++;
+  cell(ws, r, 1, "Against standard-rated supplies above", { kind: "label", indent: 1, bold: true });
+  cell(ws, r, 2, `=B${emTotal}-B${V.std}`, { kind: "lock", nf: NF.money, bold: true });
+  const emDiff = r;
+  ws.addConditionalFormatting({ ref: `B${emDiff}`, rules: [
+    { type:"cellIs", operator:"notEqual", formulae:["0"], priority:1,
+      style:{ font:{ color:{ argb:T.bad }, bold:true },
+              fill:{ type:"pattern", pattern:"solid", fgColor:{ argb:T.badFill } } } },
+  ]});
+  wb.definedNames.add(`'UAE VAT'!$A$${eFirst}:$D$${emTotal - 1}`, "EmirateTable");
+  wb.definedNames.add(`'UAE VAT'!$B$${emDiff}`, "VAT_EmirateDiff");
+
   cell(ws, V.std, 2, `=PL_Revenue`, { kind: "link", nf: NF.money });
   wb.definedNames.add(`'UAE VAT'!$C$${V.outputTotal}`, "VAT_Output");
   wb.definedNames.add(`'UAE VAT'!$C$${V.inputTotal}`,  "VAT_Input");
@@ -114,7 +141,65 @@ export function uaeCT(wb) {
   cell(ws, r, 1, "Basis", { kind: "label", indent: 1 });
   cell(ws, r, 2, `=IF(AND(B${C2.sbr}="Eligible",B${C2.elected}="Yes"),"Small Business Relief elected","9% above the nil band")`,
        { align: "left" });
-  C2.basis = r;
+  C2.basis = r; r += 2;
+
+  // ── Watching the threshold rather than discovering it ──
+  // An owner near the cap finds out at year end, by which point the election
+  // is gone. Revenue to date against the cap, with the run rate, says it in
+  // month three instead.
+  r = section(ws, r, "Small Business Relief — watching the threshold", 4);
+  const sbrLine = (label, f, hint, input = false, nf = NF.money) => {
+    cell(ws, r, 1, label, { kind: "label", indent: 1 });
+    cell(ws, r, 2, input ? null : `=${f}`, { kind: input ? "input" : "calc", nf });
+    cell(ws, r, 4, hint, { size: 9, wrap: true }).font = { size: 9, italic: true, color: { argb: T.muted } };
+    const at = r; r++; return at;
+  };
+  const ytd    = sbrLine("Revenue so far this tax period", null, "Year to date, not just this month", true);
+  const months = sbrLine("Months elapsed", null, "Of the tax period", true, NF.num);
+  const run    = sbrLine("Full-year run rate", `IF(N(B${months})=0,"",B${ytd}/B${months}*12)`,
+                         "What this year lands at if nothing changes", false);
+  const head   = sbrLine("Headroom against the cap", `R_SBRCap-B${ytd}`, "Revenue left before the relief is gone");
+  const when   = sbrLine("Crosses the cap in month",
+    `IF(OR(N(B${months})=0,B${run}<=R_SBRCap),"",ROUNDUP(R_SBRCap/(B${ytd}/B${months}),0))`,
+    "On the current run rate", false, NF.num);
+  cell(ws, r, 1, "Position", { kind: "label", indent: 1, bold: true });
+  cell(ws, r, 2, `=IF(B${ytd}="","",IF(B${ytd}>R_SBRCap,"Cap already crossed — the relief is gone for this period",` +
+                 `IF(N(B${run})>R_SBRCap,"On course to cross the cap — plan for 9% now","Within the cap")))`,
+       { bold: true });
+  const sbrPos = r;
+  ws.addConditionalFormatting({ ref: `B${sbrPos}`, rules: [
+    { type:"containsText", operator:"containsText", text:"already crossed", priority:1,
+      style:{ font:{ color:{ argb:T.bad }, bold:true },
+              fill:{ type:"pattern", pattern:"solid", fgColor:{ argb:T.badFill } } } },
+    { type:"containsText", operator:"containsText", text:"On course", priority:2,
+      style:{ font:{ color:{ argb:T.warn }, bold:true },
+              fill:{ type:"pattern", pattern:"solid", fgColor:{ argb:T.warnFill } } } },
+    { type:"containsText", operator:"containsText", text:"Within", priority:3,
+      style:{ font:{ color:{ argb:T.good }, bold:true } } },
+  ]});
+  r++;
+  cell(ws, r, 1, "Relief available until", { kind: "label", indent: 1 });
+  cell(ws, r, 2, "=R_SBRUntil", { kind: "link", nf: NF.date });
+  cell(ws, r, 4, "Set on Assumptions from the decision itself. Summaries of this date disagree with each other.",
+       { size: 9, wrap: true }).font = { size: 9, italic: true, color: { argb: T.muted } };
+  r += 2;
+
+  // ── Provision, so the year end is not a surprise ──
+  r = section(ws, r, "Monthly provision", 4);
+  r = note(ws, r, "Carrying the charge month by month is the difference between a client who has the cash in March and one who does not.", 4);
+  const chargeYr = sbrLine("Expected charge for the full year", `B${C2.charge}`, "", false);
+  const accrued  = sbrLine("Provided so far", null, "What is already in the books", true);
+  const thisMo   = sbrLine("To provide this month",
+    `IF(N(B${months})=0,"",MAX(0,B${chargeYr}*N(B${months})/12-N(B${accrued})))`, "", false);
+  cell(ws, r, 1, "Set aside for tax", { kind: "label", indent: 1, bold: true });
+  cell(ws, r, 2, `=MAX(0,B${chargeYr}-N(B${accrued}))`, { kind: "lock", nf: NF.money, bold: true });
+  const setAside = r;
+
+  wb.definedNames.add(`'UAE Corporate Tax'!$B$${ytd}`,      "CT_RevYTD");
+  wb.definedNames.add(`'UAE Corporate Tax'!$B$${head}`,     "CT_SBRHeadroom");
+  wb.definedNames.add(`'UAE Corporate Tax'!$B$${sbrPos}`,   "CT_SBRPosition");
+  wb.definedNames.add(`'UAE Corporate Tax'!$B$${thisMo}`,   "CT_Provision");
+  wb.definedNames.add(`'UAE Corporate Tax'!$B$${setAside}`, "CT_SetAside");
   wb.definedNames.add(`'UAE Corporate Tax'!$B$${C2.rev}`,     "CT_Revenue");
   wb.definedNames.add(`'UAE Corporate Tax'!$B$${C2.taxable}`, "CT_Taxable");
   wb.definedNames.add(`'UAE Corporate Tax'!$B$${C2.charge}`,  "CT_Charge");

@@ -31,7 +31,9 @@ export const WORKBOOK_SHEETS = [
     ["13-Week Cash",     "Weekly, with the headroom row that turns red"],
     ["Unit Economics",   "CAC, LTV, churn, runway — off for a client without subscriptions"],
     ["Concentration",    "Who the business depends on, customer and supplier"],
+    ["Segments",         "Profit by business line, emirate and branch"],
     ["Treasury",         "Deposits, rates, maturities"],
+    ["Loan & Investor",  "DSCR and covenants, and the pack a lender asks for"],
   ]},
   { group: "Tax", sheets: [
     ["UAE VAT",            "The return working, and what to set aside"],
@@ -39,7 +41,9 @@ export const WORKBOOK_SHEETS = [
     ["UAE QFZP",           "De minimis headroom in dirhams, and substance"],
     ["UAE Related Party",  "Art. 34, 35 and 36 schedules"],
     ["UAE Rev Recon",      "IFRS revenue to VAT revenue"],
+    ["E-Invoicing Readiness","Which wave, master data quality, and the steps to go live"],
     ["India Tax",          "GST reconciliation, TDS, 43B(h) ageing, advance tax"],
+    ["India-UAE",          "Residence, treaty positions, money moving, reporting in both places"],
   ]},
   { group: "Out to the portal", sheets: [
     ["Portal Feed",      "Every figure the client sees, on a fixed row. The only sheet the portal reads"],

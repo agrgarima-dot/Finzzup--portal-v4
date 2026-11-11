@@ -227,13 +227,19 @@ export function assumptions(wb) {
     ["QFZP de minimis — percentage",     0.05,    "%", "Non-qualifying revenue as a share of total"],
     ["QFZP de minimis — absolute",       5000000, "AED", "The test is the lower of the two"],
     ["India MSME payment window",        45,      "days", "Section 43B(h)"],
+    ["SBR available until",              null,    "date", "The relief has been extended before. Put the date from the decision itself, not from a summary"],
+    ["E-invoicing — revenue threshold",  50000000,"AED", "Above this, the earlier wave"],
+    ["E-invoicing — earlier wave from",  null,    "date", "Confirm against the current decision"],
+    ["E-invoicing — later wave from",    null,    "date", ""],
+    ["E-invoicing — cost per month late",5000,    "AED", ""],
   ];
   const rFirst = r;
   for (const [label, v, unit, hint] of rates) {
     cell(ws, r, 1, label, { kind: "label", indent: 1 });
-    cell(ws, r, 2, v, { kind: "input", nf: unit === "%" ? NF.pct : NF.money });
+    cell(ws, r, 2, v, { kind: "input",
+      nf: unit === "%" ? NF.pct : unit === "date" ? NF.date : unit === "days" ? NF.num : NF.money });
     cell(ws, r, 3, unit, { kind: "label", size: 9 });
-    cell(ws, r, 4, hint, { size: 9 }).font = { size: 9, italic: true, color: { argb: T.muted } };
+    cell(ws, r, 4, hint, { size: 9, wrap: true }).font = { size: 9, italic: true, color: { argb: T.muted } };
     r++;
   }
   wb.definedNames.add(`Assumptions!$B$${rFirst}`,     "R_VAT");
@@ -242,7 +248,12 @@ export function assumptions(wb) {
   wb.definedNames.add(`Assumptions!$B$${rFirst + 3}`, "R_SBRCap");
   wb.definedNames.add(`Assumptions!$B$${rFirst + 4}`, "R_DeMinPct");
   wb.definedNames.add(`Assumptions!$B$${rFirst + 5}`, "R_DeMinAbs");
-  wb.definedNames.add(`Assumptions!$B$${rFirst + 6}`, "R_MSMEDays");
+  wb.definedNames.add(`Assumptions!$B$${rFirst + 6}`,  "R_MSMEDays");
+  wb.definedNames.add(`Assumptions!$B$${rFirst + 7}`,  "R_SBRUntil");
+  wb.definedNames.add(`Assumptions!$B$${rFirst + 8}`,  "R_EinvThreshold");
+  wb.definedNames.add(`Assumptions!$B$${rFirst + 9}`,  "R_EinvDate1");
+  wb.definedNames.add(`Assumptions!$B$${rFirst + 10}`, "R_EinvDate2");
+  wb.definedNames.add(`Assumptions!$B$${rFirst + 11}`, "R_EinvPenalty");
 
   note(ws, r + 1, "Rates move. This sheet is the only place they are written down, so a year-end change is one edit rather than a hunt through formulas.", 4);
   return ws;
