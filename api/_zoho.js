@@ -105,7 +105,10 @@ export async function isAdmin(supaUrl, serviceKey, email) {
 /** Read a client's connection row. Service role key only — these rows are invisible to anon. */
 export async function getConnection(supaUrl, serviceKey, clientId) {
   const r = await fetch(
-    `${supaUrl}/rest/v1/zoho_connections?client_id=eq.${encodeURIComponent(clientId)}&select=*&limit=1`,
+    // The client's jurisdiction decides which rules apply to the derived
+    // figures, so it is embedded rather than looked up separately.
+    `${supaUrl}/rest/v1/zoho_connections?client_id=eq.${encodeURIComponent(clientId)}` +
+      `&select=*,clients(jurisdiction,freezone,client_pack)&limit=1`,
     { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
   ).catch(() => null);
   if (!r || !r.ok) return null;

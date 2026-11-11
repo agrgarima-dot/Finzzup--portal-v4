@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { supabase } from "./supabase.js";
 import { computeAlerts, parseAmount } from "./alerts.js";
 import { proposeActions, newProposalsOnly, complianceCalendar, newComplianceOnly } from "./autodraft.js";
+import { mergeDerived } from "./derive.js";
 import { parseLedger, buildReceivablesDrill, buildRevenueDrill, buildPayablesDrill,
          buildSupplierSpendDrill, computeMsmeExposure, buildMsmeDrill, extractVendorRegister,
          isMsme, MSME_LIMIT_DAYS, reconcile, validateLedger } from "./ledgerimport.js";
@@ -17852,6 +17853,10 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
   const [msg, setMsg]   = React.useState("");
   const [zohoBusy, setZohoBusy] = React.useState(false);
   const [zohoInfo, setZohoInfo] = React.useState(null);
+  // Everything the sync worked out for itself — ageing, drills, ratios, the
+  // vendor register, vertical analysis, corporate tax. Apply used to discard
+  // all of it and keep only the P&L.
+  const [derived,  setDerived]  = React.useState(null);
 
   const savedMap = reportData?.coaMap || {};
   const money = n => (Math.round(n)||0).toLocaleString(isUAE(client) ? "en-AE" : "en-IN");
@@ -17886,6 +17891,7 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
         }[j.reason] || `Could not sync (${j.reason || "unknown"}).` });
       } else {
         accept(j.trialBalance, "Zoho returned no accounts with a balance.");
+        setDerived(j.derived || null);
         setZohoInfo(j);
       }
     } catch {
@@ -17925,7 +17931,12 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
       },
       tbBuiltAt: new Date().toISOString(),
     }));
-    setMsg("Written to this client's report data — press Save to publish.");
+    // A Zoho sync works out far more than the P&L. Merge it in — notes,
+    // budgets and anything a person wrote are left alone.
+    if (derived) setReportData(r => mergeDerived(r || {}, derived));
+    setMsg(derived
+      ? "Written to this client's report data — statements, ageing, drill-downs, ratios and the vendor register. Press Save to publish."
+      : "Written to this client's report data — press Save to publish.");
   };
 
   const chk = { ok:{c:C.green,i:"ti-circle-check"}, warn:{c:C.amber,i:"ti-alert-triangle"}, error:{c:C.red,i:"ti-alert-circle"} };

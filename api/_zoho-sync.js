@@ -10,9 +10,11 @@
 // Requires: ZOHO_CLIENT_ID, ZOHO_CLIENT_SECRET, SUPABASE_URL,
 //           SUPABASE_SERVICE_ROLE_KEY
 
-import { getAccessToken, zohoList, getConnection, isAdmin, markSync } from "./_zoho.js";
+import { getAccessToken, zohoList, zohoGet, getConnection, isAdmin, markSync } from "./_zoho.js";
 import { accountsToTrialBalance, invoicesToReceivables, invoicesToRevenue,
          contactsToRegisters, qfzpSplit, billsToPayables, billsToSupplierSpend } from "../src/zohomap.js";
+import { buildStatements } from "../src/trialbalance.js";
+import { deriveReportData } from "../src/derive.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -59,6 +61,21 @@ export default async function handler(req, res) {
   const payables  = billsToPayables(billsRes.rows);
   const supplier  = billsToSupplierSpend(billsRes.rows);
   const registers = contactsToRegisters(contactsRes.rows);
+
+  // Day-based ratios need to know what period the P&L covers. Zoho reports
+  // chart-of-accounts balances from the start of the organisation's own
+  // financial year, so the answer comes from the org profile rather than an
+  // assumption — and if it cannot be read, those ratios are left out.
+  const orgRes = await zohoGet(conn, token, "organizations");
+  const org    = Array.isArray(orgRes?.organizations) ? orgRes.organizations[0] : null;
+  const fyStart = Number(org?.fiscal_year_start_month);
+  let periodDays = null;
+  if (fyStart >= 1 && fyStart <= 12) {
+    const now = new Date();
+    let y = now.getFullYear();
+    if (now.getMonth() + 1 < fyStart) y -= 1;
+    periodDays = Math.max(1, Math.round((now - new Date(y, fyStart - 1, 1)) / 864e5));
+  }
   const qfzp      = qfzpSplit(invoicesRes.rows, contactsRes.rows);
 
   // A partial read is reported, not hidden. Reviewing a sync that silently
@@ -91,6 +108,13 @@ export default async function handler(req, res) {
       contacts: contactsRes.error || null,
     },
     trialBalance: tb,
+    periodDays,
+    // Everything the books can work out on their own, ready to be reviewed.
+    derived: deriveReportData({
+      statements: buildStatements(tb.rows), receivables: receivab, payables,
+      revenue, supplierSpend: supplier, registers, periodDays,
+      uae: /uae|cross/i.test(conn.clients?.jurisdiction || ""),
+    }),
     receivables:  receivab,
     payables,
     supplierSpend: supplier,
