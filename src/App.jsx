@@ -14890,7 +14890,14 @@ function QFZPModule({ client, reportData }) {
 // ─── AUDIT READINESS ──────────────────────────────────────────────────────────
 function AuditReadiness({ client, reportData }) {
   const rd        = reportData?.auditReadiness || {};
-  if (!client?.isDemo && !Object.keys(rd).length) return <AwaitingData title="Your audit readiness review"/>;
+  // E-invoicing readiness is its own piece of work and arrives on its own
+  // schedule. Hiding it behind an empty audit checklist meant a client could
+  // have a deadline counting down and see nothing at all.
+  const einvAny   = Object.keys(reportData?.einv || {}).some(k => {
+    const v = reportData.einv[k]; return v != null && v !== "";
+  });
+  if (!client?.isDemo && !Object.keys(rd).length && !einvAny)
+    return <AwaitingData title="Your audit readiness review"/>;
   const freezone  = client?.freezone || "DMCC";
   // 68 used to appear here for any client who had no score worked out. The
   // checklist below is the honest read; with no score the dial stays off.
@@ -23404,6 +23411,70 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     val={reportData?.ctGarimaNote||""}
                     onChange={v=>setReportData(r=>({...r,ctGarimaNote:v}))}
                     placeholder="e.g. With QFZP status, your effective CT rate is 0%. Ensure audited FS are submitted to DMCC by 30 April."
+                    multiline/>
+                </Card>
+
+                {/* ── The SBR cap, and the tax to carry ──
+                    Written by the workbook, and typeable here, because
+                    correcting one figure should not need a round trip through
+                    Excel. Both write the same keys the client screen reads. */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-gauge" style={{fontSize:15,color:C.blue}}/>Small Business Relief &amp; tax to carry
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                    Shows on the client's <strong>Corporate Tax</strong> page. An owner near the
+                    AED 3M cap otherwise finds out at the year end, when the election has gone.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    {[
+                      { k:"revenueYTD",  label:"Revenue so far this tax period", ph:"e.g. 2400000" },
+                      { k:"sbrHeadroom", label:"Headroom before the cap",        ph:"e.g. 600000"  },
+                      { k:"provision",   label:"To provide this month",          ph:"e.g. 4500"    },
+                      { k:"setAside",    label:"Set aside for tax",              ph:"e.g. 18000"   },
+                    ].map(f => (
+                      <AdminInput C={C} F={F} FM={FM} key={f.k} label={f.label} mono
+                        val={reportData?.ct?.[f.k] ?? ""} placeholder={f.ph}
+                        onChange={v=>setReportData(r=>({...r, ct:{...(r?.ct||{}), [f.k]:v}}))}/>
+                    ))}
+                  </div>
+                  <AdminInput C={C} F={F} FM={FM} label="Position against the cap"
+                    val={reportData?.ct?.sbrPosition ?? ""}
+                    placeholder="e.g. On course to cross the cap — plan for 9% now"
+                    onChange={v=>setReportData(r=>({...r, ct:{...(r?.ct||{}), sbrPosition:v}}))}/>
+                  <div style={{ fontFamily:F, fontSize:11.5, color:C.dim, lineHeight:1.7 }}>
+                    The wording is read as written. "Crossed" shows red, "on course" amber,
+                    anything else green.
+                  </div>
+                </Card>
+
+                {/* ── E-invoicing readiness ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-file-invoice" style={{fontSize:15,color:C.blue}}/>E-invoicing readiness
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                    Shows on the client's <strong>Audit Readiness</strong> page. Free zones are not
+                    exempt, and readiness is a master-data problem long before it is a software one.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    {[
+                      { k:"wave",        label:"Which wave",            ph:"e.g. Later wave" },
+                      { k:"date",        label:"Mandatory from",        ph:"e.g. 1 July 2027" },
+                      { k:"monthsLeft",  label:"Months remaining",      ph:"e.g. 7.6", mono:true },
+                      { k:"score",       label:"Readiness (0–100)",     ph:"e.g. 38",  mono:true },
+                      { k:"dataQuality", label:"Master data clean",     ph:"e.g. 71%", mono:true },
+                      { k:"provider",    label:"Provider appointed",    ph:"Yes / No" },
+                    ].map(f => (
+                      <AdminInput C={C} F={F} FM={FM} key={f.k} label={f.label} mono={f.mono}
+                        val={reportData?.einv?.[f.k] ?? ""} placeholder={f.ph}
+                        onChange={v=>setReportData(r=>({...r, einv:{...(r?.einv||{}), [f.k]:v}}))}/>
+                    ))}
+                  </div>
+                  <AdminInput C={C} F={F} FM={FM} label="Your note on e-invoicing"
+                    val={reportData?.einv?.note ?? ""}
+                    placeholder="e.g. Master data is the gap, not the software. 340 of 1,200 customers have no TRN."
+                    onChange={v=>setReportData(r=>({...r, einv:{...(r?.einv||{}), note:v}}))}
                     multiline/>
                 </Card>
  
