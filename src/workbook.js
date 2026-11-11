@@ -366,7 +366,6 @@ export const SHEETS = [
       { key: "garimaNote",       label: "Note on the dashboard",    source: YOU, long: true },
       { key: "cashflowNote",     label: "Cash flow commentary",     source: YOU, long: true },
       { key: "forecastNote",     label: "Forward outlook",          source: YOU, long: true },
-      { key: "varianceCommentary", label: "Variance commentary",    source: YOU, long: true },
       { key: "governanceNote",   label: "Governance assessment",    source: YOU, long: true },
       { key: "ipoNote",          label: "IPO readiness note",       source: YOU, long: true },
     ],
@@ -732,7 +731,12 @@ export function buildWorkbook(ctx = {}) {
       const src = s.target === "kpis" ? kpis : reportData;
       for (const f of s.fields) {
         const v = s.path ? getPath(src, `${s.path}.${f.key}`) : getPath(src, f.key);
-        aoa.push([f.label, v == null ? "" : (typeof v === "boolean" ? yn(v) : String(v)), f.source, f.key]);
+        // A key holding a list or an object belongs on a table sheet. Writing
+        // String(v) here printed "[object Object],[object Object]" into a cell
+        // that then looked editable — and editing it would have replaced the
+        // list with a sentence.
+        const scalar = v == null || typeof v === "object" ? "" : (typeof v === "boolean" ? yn(v) : String(v));
+        aoa.push([f.label, scalar, f.source, f.key]);
       }
     } else if (s.kind === "table") {
       aoa.push([...s.columns]);
@@ -817,6 +821,7 @@ export function readWorkbook(byName = {}, ctx = {}) {
           // holding the same Zoho figure they were downloaded with, and
           // reporting those as changes would bury the handful that are real.
           const before = s.target === "kpis" ? kpisOut[key] : getPath(draft, full);
+          if (wouldClobber(before, val)) continue;
           if (str(before) !== val) n++;
           if (s.target === "kpis") kpisOut[key] = val;
           else draft = setPath(draft, full, val);
@@ -898,6 +903,9 @@ export const PL_POINTS = PL_LINES.flatMap(([key, label]) => ([
   { id: `pl.${key}.actual`, label: `${label} — this month`,     screen: "Monthly Report → P&L summary" },
   { id: `pl.${key}.prev`,   label: `${label} — previous month`, screen: "Monthly Report → P&L summary" },
 ]));
+
+const wouldClobber = (before, value) =>
+  before != null && typeof before === "object" && typeof value !== "object";
 
 // ─── READING THE PORTAL FEED ──────────────────────────────────────────────────
 // The analysis workbook carries one sheet the portal reads: Portal Feed, with
@@ -1060,6 +1068,12 @@ export function readPortalFeed(byName = {}, ctx = {}) {
       const val = typeof raw === "number" ? String(raw) : str(raw);
       const key = id.replace(/^kpis\./, "");
       const before = point.spec.target === "kpis" ? kpisOut[key] : getPath(draft, id);
+      // The client screens walk some of these as lists. Replacing one with a
+      // sentence does not look wrong here and crashes the page that reads it.
+      if (wouldClobber(before, val)) {
+        problems.push(`${point.field?.label || id} holds a list on this client's report, so the single value in the feed was ignored.`);
+        continue;
+      }
       if (str(before) === val) continue;
       if (point.spec.target === "kpis") kpisOut[key] = val;
       else draft = setPath(draft, id, val);
