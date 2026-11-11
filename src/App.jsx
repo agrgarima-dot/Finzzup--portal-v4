@@ -15976,6 +15976,108 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
   );
 }
  
+// ─── RELEASING A REPORT, A PAGE AT A TIME ─────────────────────────────────────
+// A client's whole report lives in one row, so saving has always meant saving
+// everything. That is not how the work actually goes: the analysis lands, then
+// each report gets read through and signed off, one at a time.
+//
+// So what a client can read is held separately from what has been saved.
+// `publishedPages` lists the pages that have been released. A page not on the
+// list shows the client that it is being prepared, rather than half-finished
+// figures under a Chartered Accountant's name.
+//
+// If the list is missing entirely — every client before this existed — nothing
+// is withheld. Releasing page by page is something you opt into by releasing a
+// first page, and the admin screen says plainly what that does to the rest.
+const GATED_PAGES = new Set([
+  "overview", "dashboard", "cashflow", "treasury", "actions", "myreport",
+  "engagement", "corptax", "compliance", "auditready",
+  "vat", "revrecon", "workingcapital", "verticalanalysis", "qfzp",
+]);
+
+function isReleased(reportData, pageId) {
+  if (!GATED_PAGES.has(pageId)) return true;          // invoices, documents, requests
+  const list = reportData?.publishedPages;
+  if (!Array.isArray(list)) return true;              // never used — behave as before
+  return list.includes(pageId);
+}
+
+/** Released pages, plus this one. Returns a whole new report-data object. */
+function releasePage(reportData, pageId, everything = null) {
+  const now = new Date().toISOString();
+  const list = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : [];
+  const next = everything || Array.from(new Set([...list, pageId]));
+  return {
+    ...(reportData || {}),
+    publishedPages: next,
+    publishedAt: { ...(reportData?.publishedAt || {}),
+                   ...Object.fromEntries((everything || [pageId]).map(id => [id, now])) },
+  };
+}
+
+function BeingPrepared({ title }) {
+  return (
+    <div style={{ padding:"48px 24px", textAlign:"center" }}>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:8 }}>
+        {title || "This report"} is being prepared
+      </div>
+      <div style={{ fontFamily:F, fontSize:13, color:C.muted, maxWidth:420,
+        margin:"0 auto", lineHeight:1.8 }}>
+        Your Chartered Accountant is working through it. It will appear here once
+        it has been reviewed and released.
+      </div>
+    </div>
+  );
+}
+
+// ─── THE CLIENT'S PAGES ───────────────────────────────────────────────────────
+// Every screen the client can open, built in one place.
+//
+// The admin panel renders these too, so a Chartered Accountant reviews the
+// actual page rather than a second drawing of it. Keeping one map is the point:
+// the admin panel used to hold its own idea of what the client sees, and the
+// two drifted until the preview was reassuring about a screen that was broken.
+function clientPages({ client, setPage, isDemo, dataLoading, reportSaveKey,
+                       liveSnapshot, liveKpis, liveReportData, liveInvoices,
+                       resolvedKpis, resolvedGarimaNote, resolvedActions,
+                       resolvedEngagement, resolvedReportData, gate = false }) {
+  const built = {
+    overview:   <Overview   liveSnapshot={liveSnapshot} client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} invoices={isDemo ? [] : (liveInvoices||[])} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
+    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading} setPage={setPage} actions={resolvedActions} invoices={isDemo ? [] : (liveInvoices||[])}/>,
+    cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
+    actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
+    myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
+    engagement: <Engagement liveData={resolvedEngagement}/>,
+    calendar:   <Calendar/>,
+    newrequest: <NewRequest client={client} setPage={setPage}/>,
+    market:     <MarketIntel client={client}/>,
+    invoices:   <Invoices   client={client} liveInvoices={isDemo ? null : liveInvoices}/>,
+    documents:  <MyDocuments client={client}/>,
+    treasury:   <Treasury   client={client} reportData={resolvedReportData}/>,
+    terms:      <Terms/>,
+    // ── UAE modules (only rendered for UAE/Cross-Border clients) ──
+    vat:             <VATDashboard          client={client} reportData={resolvedReportData}/>,
+    revrecon:        <RevenueReconciliation client={client} reportData={resolvedReportData}/>,
+    workingcapital:  <WorkingCapital        client={client} reportData={resolvedReportData}/>,
+    verticalanalysis:<VerticalAnalysis      client={client} reportData={resolvedReportData}/>, // NEW
+    corptax:         <CorporateTax          client={client} reportData={resolvedReportData}/>,
+    compliance:      <ComplianceCalendar    client={client} reportData={resolvedReportData}/>,
+    qfzp:            <QFZPModule            client={client} reportData={resolvedReportData}/>,
+    auditready:      <AuditReadiness        client={client} reportData={resolvedReportData}/>,
+  };
+
+  // The client is shown a page only once it has been released. The admin panel
+  // passes gate false, so a review is of the real screen and not of this notice.
+  if (!gate) return built;
+  const nav = getNav(client);
+  return Object.fromEntries(Object.entries(built).map(([id, node]) => [
+    id,
+    isReleased(resolvedReportData, id)
+      ? node
+      : <BeingPrepared title={nav.find(n => n.id === id)?.label}/>,
+  ]));
+}
+
 function Portal({ client, onLogout }) {
   const [page,      setPage]      = useState("overview");
   const [collapsed, setCollapsed] = useState(false);
@@ -16244,30 +16346,11 @@ function Portal({ client, onLogout }) {
       ? "Q1 2026 closed strongly — AED 1.85M revenue, up 32% YoY, with gross margin at 45% (best quarter since inception). Four things need your attention this week: (1) VAT return for Q1 is due 28 April — AED 92.5K payable to FTA. Confirm this is sitting in your Emirates NBD current account and not locked in the Mashreq term deposit maturing 15 April. (2) DMCC audited financial statements must be submitted by 30 April to maintain QFZP status — your audit firm needs your signed management accounts by 22 April. Do not miss this: losing QFZP status triggers 9% CT retroactively. (3) Your mainland UAE sales are at 8% of revenue — above the 5% de-minimis threshold. Review the two mainland contracts due for renewal in Q2 and restructure them as DMCC-to-DMCC to bring this back under 5%. (4) SBR election must be made in your CT return by 30 September — I'll prepare this. Confirm your Q2 revenue won't cross AED 3M YTD."
       : (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.garimaNote) || PACK_CONFIG.startup.garimaNote;
  
-  const pages = {
-    overview:   <Overview   liveSnapshot={liveSnapshot} client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} invoices={isDemo ? [] : (liveInvoices||[])} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
-    dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading} setPage={setPage} actions={resolvedActions} invoices={isDemo ? [] : (liveInvoices||[])}/>,
-    cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
-    actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
-    myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
-    engagement: <Engagement liveData={resolvedEngagement}/>,
-    calendar:   <Calendar/>,
-    newrequest: <NewRequest client={client} setPage={setPage}/>,
-    market:     <MarketIntel client={client}/>,
-    invoices:   <Invoices   client={client} liveInvoices={isDemo ? null : liveInvoices}/>,
-    documents:  <MyDocuments client={client}/>,
-    treasury:   <Treasury   client={client} reportData={resolvedReportData}/>,
-    terms:      <Terms/>,
-    // ── UAE modules (only rendered for UAE/Cross-Border clients) ──
-    vat:             <VATDashboard          client={client} reportData={resolvedReportData}/>,
-    revrecon:        <RevenueReconciliation client={client} reportData={resolvedReportData}/>,
-    workingcapital:  <WorkingCapital        client={client} reportData={resolvedReportData}/>,
-    verticalanalysis:<VerticalAnalysis      client={client} reportData={resolvedReportData}/>, // NEW
-    corptax:         <CorporateTax          client={client} reportData={resolvedReportData}/>,
-    compliance:      <ComplianceCalendar    client={client} reportData={resolvedReportData}/>,
-    qfzp:            <QFZPModule            client={client} reportData={resolvedReportData}/>,
-    auditready:      <AuditReadiness        client={client} reportData={resolvedReportData}/>,
-  };
+  const pages = clientPages({ client, setPage, isDemo, dataLoading, reportSaveKey,
+                             liveSnapshot, liveKpis, liveReportData, liveInvoices,
+                             resolvedKpis, resolvedGarimaNote, resolvedActions,
+                             resolvedEngagement, resolvedReportData,
+                             gate: !isDemo });
  
   return (
     <>
@@ -18862,8 +18945,114 @@ function DraftReviewCard({ client, reportData, setReportData, kpis, actions = []
 // Renders the real client screens against the draft data held in admin, so
 // Apply is never pressed blind. These are the same components the portal
 // mounts — not a mock-up of them — so what shows here is what the client gets.
-function ClientPreview({ client, reportData, kpis, actions = [], invoices = [], liveSnapshot = null }) {
+// ─── RESET ───────────────────────────────────────────────────────────────────
+// Two different things, kept apart because confusing them would be expensive.
+//
+// Pulling the report back hides it from the client but keeps every figure, so
+// it can go out again the moment it is right. Clearing the working copy throws
+// the figures away. The second asks twice and says exactly what goes.
+function ResetClientData({ client, reportData, setReportData, saveReportData, loading }) {
+  const [confirm, setConfirm] = React.useState("");
+  const released = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : null;
+  const keys = Object.keys(reportData || {}).filter(k => !["publishedPages","publishedAt"].includes(k));
+
+  const pullBack = async () => {
+    await saveReportData({ ...(reportData || {}), publishedPages: [], publishedAt: {} });
+    setConfirm("");
+  };
+  const clearAll = async () => {
+    await saveReportData({ publishedPages: [], publishedAt: {} });
+    setReportData({ publishedPages: [], publishedAt: {} });
+    setConfirm("");
+  };
+
+  const btn = (bg, color, border) => ({
+    padding:"9px 18px", borderRadius:12, border: border || "none", background:bg, color,
+    fontFamily:F, fontWeight:700, fontSize:12.5, cursor:"pointer",
+  });
+
+  return (
+    <Card>
+      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
+        Reset
+      </div>
+      <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.75 }}>
+        {client?.company || client?.name} currently has{" "}
+        <strong style={{ color:C.text }}>{keys.length}</strong> field
+        {keys.length === 1 ? "" : "s"} of report data
+        {released === null
+          ? ", with every page open to them."
+          : released.length
+            ? `, and ${released.length} page${released.length === 1 ? "" : "s"} released.`
+            : ", and nothing released."}
+      </div>
+
+      {/* Pull the report back */}
+      <div style={{ display:"flex", gap:12, alignItems:"center", flexWrap:"wrap",
+        paddingBottom:14, marginBottom:14, borderBottom:`1px solid ${C.border}` }}>
+        <div style={{ flex:1, minWidth:250, fontFamily:F, fontSize:12.5,
+          color:C.muted, lineHeight:1.75 }}>
+          <strong style={{ color:C.text }}>Pull the report back.</strong> Every page goes back to
+          "being prepared". Nothing is lost — release them again whenever you are ready.
+        </div>
+        {confirm === "pull" ? (
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <button onClick={pullBack} disabled={loading} style={btn(C.warning, "#fff")}>
+              {loading ? "Working…" : "Yes, pull it back"}
+            </button>
+            <button onClick={() => setConfirm("")} style={btn("none", C.muted, `1.5px solid ${C.border}`)}>
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setConfirm("pull")} style={btn("none", C.text, `1.5px solid ${C.border}`)}>
+            Pull the report back
+          </button>
+        )}
+      </div>
+
+      {/* Clear the working copy */}
+      <div style={{ display:"flex", gap:12, alignItems:"center", flexWrap:"wrap" }}>
+        <div style={{ flex:1, minWidth:250, fontFamily:F, fontSize:12.5,
+          color:C.muted, lineHeight:1.75 }}>
+          <strong style={{ color:C.red }}>Clear the working copy.</strong> Deletes all{" "}
+          {keys.length} field{keys.length === 1 ? "" : "s"} — the P&amp;L, the commentary, the
+          analysis, everything. The books can be synced again; anything you wrote cannot.
+        </div>
+        {confirm === "clear" ? (
+          <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+            <button onClick={clearAll} disabled={loading} style={btn(C.red, "#fff")}>
+              {loading ? "Working…" : "Delete everything"}
+            </button>
+            <button onClick={() => setConfirm("")} style={btn("none", C.muted, `1.5px solid ${C.border}`)}>
+              Cancel
+            </button>
+          </div>
+        ) : (
+          <button onClick={() => setConfirm("clear")}
+            style={btn("none", C.red, `1.5px solid ${C.red}40`)}>
+            Clear the working copy
+          </button>
+        )}
+      </div>
+    </Card>
+  );
+}
+
+// ─── THE CLIENT'S REPORT, WALKED AND RELEASED ─────────────────────────────────
+// The client's portal, drawn here exactly as they will read it — their sidebar,
+// their topbar, their pages, in their order. You walk it the way they will,
+// and release each page from the page itself once you have read it through.
+//
+// It is the real screen, not a second drawing of one. The admin panel used to
+// keep its own idea of what the client sees, and the two drifted until the
+// preview was reassuring about a report that was broken.
+function ClientReportWalk({ client, reportData, setReportData, saveReportData,
+                            kpis, actions = [], invoices = [], liveSnapshot = null,
+                            loading, saved }) {
   const [page, setPage] = React.useState("overview");
+  const [collapsed, setCollapsed] = React.useState(false);
+  const [confirmAll, setConfirmAll] = React.useState(false);
 
   if (!client) return (
     <Card style={{ textAlign:"center", padding:40 }}>
@@ -18871,63 +19060,152 @@ function ClientPreview({ client, reportData, kpis, actions = [], invoices = [], 
     </Card>
   );
 
-  const PAGES = [
-    ["overview",  "Overview"],
-    ["dashboard", "Dashboard"],
-    ["myreport",  "My Report"],
-    ["cashflow",  "Cash Flow"],
-  ];
-
-  // The client components navigate by calling setPage. Honour it when the
-  // target is previewable — so "Full Report →" and the drill-downs behave as
-  // they will for the client — and ignore it otherwise.
-  const navigate = (p) => { if (PAGES.some(([id]) => id === p)) setPage(p); };
-
-  // Admin holds KPIs as the edit form's flat object; the client screens want
-  // the tile array. Same builder the portal uses, so the preview cannot drift.
-  const tiles = buildKpiTiles({ client, isDemo: false, liveKpis: kpis, liveReportData: reportData });
+  const nav   = getNav(client);
+  const tiles = buildKpiTiles({ client, isDemo:false, liveKpis:kpis, liveReportData:reportData });
   const list  = (v) => Array.isArray(v) ? v : [];
 
-  const view = {
-    overview:  <Overview  liveSnapshot={liveSnapshot}
-                          client={client} setPage={navigate} kpis={tiles} garimaNote={kpis?.garima_note}
-                          actions={list(actions)} engagement={null} reportData={reportData}
-                          invoices={list(invoices)} isDemo={false}
-                          liveKpis={kpis} liveReportData={reportData}/>,
-    dashboard: <Dashboard client={client} kpis={tiles} garimaNote={kpis?.garima_note} reportData={reportData}
-                          loading={false} setPage={navigate} actions={list(actions)} invoices={list(invoices)}/>,
-    myreport:  <MyReport  client={client} reportData={reportData} kpis={tiles}/>,
-    cashflow:  <CashFlow  reportData={reportData} client={client} kpis={tiles}/>,
-  }[page];
+  // gate false — this is a review, so the real page is drawn even before it has
+  // been released. The release state is shown in the bar above it instead.
+  const pages = clientPages({
+    client, setPage, isDemo:false, dataLoading:false, reportSaveKey:0,
+    liveSnapshot, liveKpis:kpis, liveReportData:reportData, liveInvoices:list(invoices),
+    resolvedKpis: tiles, resolvedGarimaNote: kpis?.garima_note,
+    resolvedActions: list(actions), resolvedEngagement: null,
+    resolvedReportData: reportData || {}, gate:false,
+  });
+
+  const gated      = GATED_PAGES.has(page);
+  const releasable = nav.filter(n => GATED_PAGES.has(n.id));
+  const releasedList = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : null;
+  const live       = isReleased(reportData, page);
+  const releasedAt = reportData?.publishedAt?.[page];
+  const label      = nav.find(n => n.id === page)?.label || getPageTitle(page, client);
+  const everyone   = releasedList === null;
+
+  const release = async (all) => {
+    const next = releasePage(reportData || {}, page,
+      all ? Array.from(new Set([...(releasedList || []), ...releasable.map(n => n.id)])) : null);
+    await saveReportData(next);
+    setConfirmAll(false);
+  };
 
   return (
     <div>
-      <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:12 }}>
-        {PAGES.map(([id, label]) => (
-          <button key={id} onClick={() => setPage(id)}
-            style={{ padding:"7px 16px", borderRadius:60,
-              border:`1.5px solid ${page===id ? C.blue : C.border}`,
-              background: page===id ? `${C.blue}0C` : "none",
-              fontFamily:F, fontWeight:700, fontSize:12,
-              color: page===id ? C.blue : C.muted, cursor:"pointer" }}>
+      {/* ── The release bar. Not part of the client's screen — it sits above it. ── */}
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:"13px 16px",
+        marginBottom:12, background:"#fff", display:"flex", alignItems:"center",
+        gap:14, flexWrap:"wrap" }}>
+        <div style={{ flex:1, minWidth:260 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text,
+            display:"flex", alignItems:"center", gap:9, flexWrap:"wrap" }}>
             {label}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ padding:"8px 14px", borderRadius:12, background:`${C.amber}0C`,
-        border:`1px solid ${C.amber}30`, marginBottom:14 }}>
-        <div style={{ fontFamily:F, fontSize:12, color:C.warning, lineHeight:1.7 }}>
-          <strong>Preview.</strong> This is the live client screen drawn against your unsaved working
-          data — what {client.name?.split(" ")[0] || "the client"} would see if you published now.
-          Nothing here is visible to them until you save.
+            {!gated ? (
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.dim,
+                background:C.bg, padding:"3px 11px", borderRadius:60 }}>Always available</span>
+            ) : live ? (
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
+                color: everyone ? C.dim : C.green,
+                background: everyone ? C.bg : `${C.green}12`,
+                padding:"3px 11px", borderRadius:60 }}>
+                {everyone ? "Open to your client"
+                  : `Released${releasedAt ? ` ${new Date(releasedAt).toLocaleDateString("en-GB",
+                      { day:"numeric", month:"short" })}` : ""}`}
+              </span>
+            ) : (
+              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.warning,
+                background:`${C.amber}14`, padding:"3px 11px", borderRadius:60 }}>Not released</span>
+            )}
+          </div>
+          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
+            {!gated
+              ? "This page is part of their account rather than their report, so it is always open to them."
+              : live
+                ? "Your client can read this page now. Releasing it again sends whatever you have changed since."
+                : everyone
+                  ? "Nothing has been released page by page yet, so your client can still see everything. Release this page and the rest will show them a note saying they are being prepared, until you release those too."
+                  : "Your client sees a note saying this page is being prepared."}
+          </div>
         </div>
+
+        {gated && (
+          <div style={{ display:"flex", gap:9, alignItems:"center", flexWrap:"wrap" }}>
+            <button onClick={() => release(false)} disabled={loading}
+              style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
+                color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+                cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1 }}>
+              {loading ? "Releasing…" : (live && !everyone) ? "Release again" : "Release this page"}
+            </button>
+            {saved && <span style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700 }}>Released</span>}
+          </div>
+        )}
       </div>
 
-      {/* Framed so it never gets mistaken for the admin's own screen. */}
+      {/* How far through the report you are. */}
+      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:"11px 16px",
+        marginBottom:12, background:"#fff", display:"flex", alignItems:"center",
+        gap:12, flexWrap:"wrap" }}>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, flex:1, minWidth:230 }}>
+          {everyone
+            ? <>All {releasable.length} report pages are open to your client — nothing is being held back.</>
+            : <><strong style={{ color:C.text }}>
+                {releasable.filter(n => releasedList.includes(n.id)).length} of {releasable.length}
+                </strong> report pages released.</>}
+        </div>
+        <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
+          {releasable.map(n => {
+            const ok = isReleased(reportData, n.id);
+            return (
+              <button key={n.id} onClick={() => setPage(n.id)} title={n.label}
+                style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px",
+                  borderRadius:60, cursor:"pointer", fontFamily:F, fontSize:11, fontWeight:700,
+                  border:`1px solid ${page===n.id ? C.blue : C.border}`,
+                  background: page===n.id ? `${C.blue}0C` : "none",
+                  color: page===n.id ? C.blue : C.muted }}>
+                <span style={{ width:6, height:6, borderRadius:60,
+                  background: ok ? C.green : C.border }}/>
+                {n.label}
+              </button>
+            );
+          })}
+        </div>
+        {!everyone && releasable.some(n => !isReleased(reportData, n.id)) && (
+          confirmAll ? (
+            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
+              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>Release every page?</span>
+              <button onClick={() => release(true)}
+                style={{ padding:"7px 15px", borderRadius:12, border:"none", background:C.grad1,
+                  color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>Yes</button>
+              <button onClick={() => setConfirmAll(false)}
+                style={{ padding:"7px 13px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                  background:"none", fontFamily:F, fontWeight:700, fontSize:12,
+                  color:C.muted, cursor:"pointer" }}>No</button>
+            </div>
+          ) : (
+            <button onClick={() => setConfirmAll(true)}
+              style={{ padding:"8px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                background:"none", fontFamily:F, fontWeight:700, fontSize:12,
+                color:C.text, cursor:"pointer" }}>
+              Release all pages
+            </button>
+          )
+        )}
+      </div>
+
+      {/* ── The client's screen, whole: their sidebar, their topbar, their page ── */}
       <div style={{ border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden",
-        background:C.canvas, padding:"4px 0" }}>
-        {view}
+        background:"#fff" }}>
+        <div style={{ display:"flex", minHeight:560, fontFamily:F, background:"#fff" }}>
+          <Sidebar page={page} setPage={setPage} client={client}
+            onLogout={() => {}} collapsed={collapsed} setCollapsed={setCollapsed}/>
+          <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0,
+            overflow:"hidden", background:"#fff" }}>
+            <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
+              onMenuToggle={() => setCollapsed(c => !c)} notifItems={[]}/>
+            <div style={{ flex:1, overflowY:"auto", background:C.canvas }}>
+              {pages[page] || <BeingPrepared title={label}/>}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -19541,10 +19819,17 @@ function AdminPanel({ admin, onLogout }) {
     setTimeout(() => setSaved(false), 2500);
   };
  
-  const saveReportData = async () => {
-    if (!selected || !reportData) return;
+  // `override` exists for publishing a single page: setReportData is async, so
+  // a publish that set the state and then saved would write the copy from
+  // before the page was released — the release would appear to work and reach
+  // nobody. The caller hands over the exact object to write instead.
+  const saveReportData = async (override) => {
+    const payloadData = (override && typeof override === "object" && !override.nativeEvent)
+      ? override : reportData;
+    if (!selected || !payloadData) return;
+    if (override && payloadData !== reportData) setReportData(payloadData);
     setLoading(true);
-    const payload = { client_id: selected.id, data: JSON.stringify(reportData), updated_at: new Date().toISOString() };
+    const payload = { client_id: selected.id, data: JSON.stringify(payloadData), updated_at: new Date().toISOString() };
     // Check if exists first
     const { data: existing } = await supabase.from("report_data").select("id").eq("client_id", selected.id).maybeSingle();
     if (existing?.id) {
@@ -19691,7 +19976,7 @@ function AdminPanel({ admin, onLogout }) {
     clients:     "Everyone on the portal, live and demo.",
     addclient:   "Create a client and their invite code. Jurisdiction decides the currency and which rules apply.",
     eletter:     "Draft and publish the engagement letter a client signs.",
-    connections: "Where this client's books live. A connected client's numbers arrive on their own.",
+    connections: "Where this client's books live. Connect Zoho and their figures arrive on their own.",
     trialbalance:"Fetch from the connected books or paste a trial balance. Produces the statements, ageing, drill-downs and ratios.",
     import:      "Upload a P&L, balance sheet, cash flow or bank statement as CSV.",
     templates:   "One workbook, every report. Download it filled with the Zoho figures, do the analysis in Excel, upload it back.",
@@ -19704,46 +19989,64 @@ function AdminPanel({ admin, onLogout }) {
     uae:         "Jurisdiction, free zone, TRNs and registration status. Feeds every UAE screen.",
     uaereports:  "VAT and the free zone qualifying position, pulled from the books where possible.",
     uaecashflow: "UAE cash position and the notes that go with it.",
-    preview:     "The client's own screens, drawn from your unsaved working data.",
-    documents:   "Files shared with this client, and anything with an expiry worth watching.",
+    preview:     "Your client's portal, exactly as they read it. Walk it page by page and release each one.",
+    override:    "Type a figure in by hand when the workbook is more trouble than the correction is worth.",
+    documents:   "Files this client has shared with you, and anything with an expiry worth watching.",
     engagement:  "Valuation engagements and their status.",
     invoices:    "Your billing to this client.",
     requests:    "Service requests clients have submitted.",
     market:      "Market intelligence shown to clients.",
   };
 
+  // Four groups, in the order the work happens: what only you can do, the
+  // figures coming in, the analysis, and then the client's own report — which
+  // you walk exactly as they will, releasing each page as you sign it off.
+  //
+  // It used to be seven groups and twenty-four screens with no order to them.
   const ADMIN_TABS = [
-    { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",         group:"Overview" },
-    { id:"readiness",  icon:"ti-checklist",        label:"Client Setup",      group:"Overview" },
+    { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",         group:"Admin control" },
+    { id:"clients",    icon:"ti-users",            label:"All Clients",       group:"Admin control" },
+    { id:"addclient",  icon:"ti-user-plus",        label:"Add Client",        group:"Admin control" },
+    { id:"readiness",  icon:"ti-checklist",        label:"Client Setup",      group:"Admin control" },
+    { id:"eletter",    icon:"ti-file-description", label:"Engagement Letter", group:"Admin control" },
+    { id:"invoices",   icon:"ti-receipt",          label:"Invoices",          group:"Admin control" },
+    { id:"requests",   icon:"ti-mail",             label:"Requests",          group:"Admin control" },
+    { id:"override",   icon:"ti-adjustments",      label:"Manual Override",   group:"Admin control" },
 
-    { id:"clients",    icon:"ti-users",            label:"All Clients",       group:"Clients" },
-    { id:"addclient",  icon:"ti-user-plus",        label:"Add Client",        group:"Clients" },
-    { id:"eletter",    icon:"ti-file-description", label:"Engagement Letter", group:"Clients" },
-
-    { id:"connections",icon:"ti-plug-connected",   label:"Connections",       group:"Data in" },
+    { id:"connections",icon:"ti-plug-connected",   label:"Zoho Connection",   group:"Data in" },
     { id:"trialbalance",icon:"ti-table-import",    label:"Trial Balance",     group:"Data in" },
     { id:"import",     icon:"ti-file-upload",      label:"CSV Import",        group:"Data in" },
-    { id:"templates",  icon:"ti-table-export",     label:"Excel Workbook",    group:"Data in" },
+    { id:"documents",  icon:"ti-folder",           label:"Client Documents",  group:"Data in" },
 
-    { id:"kpis",       icon:"ti-chart-bar",        label:"KPIs",              group:"Build the report" },
-    { id:"drilldata",  icon:"ti-git-merge",        label:"Drill & Compliance",group:"Build the report" },
-    { id:"reportdata", icon:"ti-report-analytics", label:"Report Data",       group:"Build the report" },
-    { id:"actions",    icon:"ti-checkbox",         label:"Action Items",      group:"Build the report" },
-    { id:"analytics",  icon:"ti-chart-dots",       label:"BI & Scenarios",    group:"Build the report" },
-    { id:"treasury",   icon:"ti-building-bank",    label:"Treasury",          group:"Build the report" },
+    { id:"templates",  icon:"ti-table-export",     label:"Excel Workbook",    group:"Analysis" },
 
-    { id:"uae",        icon:"ti-flag",             label:"Profile & Tax",     group:"UAE", only:"uae" },
-    { id:"uaereports", icon:"ti-receipt-tax",      label:"VAT & QFZP",        group:"UAE", only:"uae" },
-    { id:"uaecashflow",icon:"ti-cash",             label:"Cash & Notes",      group:"UAE", only:"uae" },
-
-    { id:"preview",    icon:"ti-eye",              label:"Preview as Client", group:"Check & publish" },
-    { id:"documents",  icon:"ti-folder",           label:"Documents",         group:"Check & publish" },
-    { id:"engagement", icon:"ti-scale",            label:"Valuation",         group:"Check & publish" },
-
-    { id:"invoices",   icon:"ti-receipt",          label:"Invoices",          group:"Practice" },
-    { id:"requests",   icon:"ti-mail",             label:"Requests",          group:"Practice" },
-    { id:"market",     icon:"ti-world",            label:"Market Intel",      group:"Practice" },
+    { id:"preview",    icon:"ti-eye",              label:"Client Report",     group:"Client report" },
   ];
+
+  // The screens that still let a figure be typed in by hand. They are reached
+  // through Manual Override rather than listed one by one, because the
+  // workbook is the way the report gets filled now — these are for correcting
+  // a single figure without a round trip through Excel.
+  const OVERRIDE_TABS = [
+    { id:"kpis",       label:"Dashboard KPIs" },
+    { id:"reportdata", label:"Report Data" },
+    { id:"drilldata",  label:"Drill & Compliance" },
+    { id:"actions",    label:"Action Items" },
+    { id:"analytics",  label:"BI & Scenarios" },
+    { id:"treasury",   label:"Treasury" },
+    { id:"engagement", label:"Valuation" },
+    { id:"market",     label:"Market Intel" },
+    ...(isUAE(selected) ? [
+      { id:"uae",        label:"UAE — Profile & Tax" },
+      { id:"uaereports", label:"UAE — VAT & QFZP" },
+      { id:"uaecashflow",label:"UAE — Cash & Notes" },
+    ] : []),
+  ];
+  const isOverrideTab = OVERRIDE_TABS.some(t => t.id === tab);
+
+  // The client's own pages, as the client's sidebar lists them. Walking these
+  // is reviewing the real screen, not a second drawing of it.
+  const CLIENT_PAGES = selected ? getNav(selected).filter(n => GATED_PAGES.has(n.id)) : [];
 
   // Landing on a screen whose group is folded — from a "go to the UAE tab"
   // button, say — unfolds that group, so the sidebar never disagrees with the
@@ -20228,7 +20531,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           </div>
         )}
         <nav style={{ flex:1, padding:"6px 0", overflowY:"auto" }}>
-          {["Overview","Clients","Data in","Build the report","UAE","Check & publish","Practice"].map(group => {
+          {["Admin control","Data in","Analysis","Client report"].map(group => {
             const groupTabs = ADMIN_TABS.filter(t => t.group === group)
               .filter(t => t.only !== "uae" || isUAE(selected));
             if (!groupTabs.length) return null;
@@ -20261,6 +20564,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
               </div>
             );
           })}
+
         </nav>
         <div style={{ padding:"8px 10px", borderTop:`1px solid ${C.border}` }}>
           <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
@@ -20315,6 +20619,59 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           )}
 
           {/* ── DASHBOARD HOME ── */}
+          {/* ── MANUAL OVERRIDE ──
+              The old admin panel was these screens: around three hundred boxes
+              to type a report into. The workbook fills them now, so they are
+              behind one door rather than nine sidebar items — still there, for
+              correcting a single figure without a round trip through Excel. */}
+          {(tab === "override" || isOverrideTab) && (
+            !selected ? (
+              <Card style={{ textAlign:"center", padding:40 }}>
+                <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+              </Card>
+            ) : (
+              <div style={{ maxWidth:900, marginBottom:16 }}>
+                <Card>
+                  <div style={{ display:"flex", gap:14, alignItems:"flex-end", flexWrap:"wrap" }}>
+                    <div style={{ flex:1, minWidth:250 }}>
+                      <label style={{ fontSize:11, fontWeight:700, color:C.muted,
+                        textTransform:"uppercase", letterSpacing:"0.08em", display:"block",
+                        marginBottom:6, fontFamily:F }}>Screen to edit by hand</label>
+                      <select value={isOverrideTab ? tab : ""} onChange={e => setTab(e.target.value || "override")}
+                        style={{ width:"100%", padding:"10px 12px", borderRadius:12, fontSize:13,
+                          border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                          background:C.bg, outline:"none", cursor:"pointer" }}>
+                        <option value="">Choose a screen…</option>
+                        {OVERRIDE_TABS.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+                      </select>
+                    </div>
+                    {isOverrideTab && (
+                      <button onClick={() => setTab("templates")}
+                        style={{ padding:"10px 18px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                          background:"none", fontFamily:F, fontWeight:700, fontSize:12.5,
+                          color:C.text, cursor:"pointer" }}>
+                        Use the workbook instead
+                      </button>
+                    )}
+                  </div>
+                  {!isOverrideTab && (
+                    <div style={{ fontFamily:F, fontSize:12.5, color:C.muted,
+                      lineHeight:1.8, marginTop:14 }}>
+                      These screens fill the report a box at a time. The{" "}
+                      <strong style={{ color:C.text }}>Excel Workbook</strong> does the same job in
+                      one file and is the way a month's report normally gets built — reach for a
+                      screen here when one figure needs correcting and a round trip through Excel
+                      is more trouble than the correction is worth.
+                    </div>
+                  )}
+                </Card>
+                {!isOverrideTab && <div style={{ height:16 }}/>}
+                {!isOverrideTab && <ResetClientData client={selected} reportData={reportData}
+                  setReportData={setReportData} saveReportData={saveReportData} loading={loading}/>}
+              </div>
+            )
+          )}
+
           {tab === "home" && (() => {
             const now = Date.now();
             const daysSince = iso => iso ? Math.floor((now - new Date(iso).getTime()) / 86400000) : 999;
@@ -20882,10 +21239,12 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   saveReportData={saveReportData} loading={loading} saved={saved} adminEmail={admin?.email}/>
           )}
 
-          {/* ── PREVIEW AS CLIENT ── */}
+          {/* ── THE CLIENT'S REPORT, WALKED AND RELEASED ── */}
           {tab === "preview" && (
-            <ClientPreview client={selected} reportData={reportData} kpis={kpis}
-              actions={actions} invoices={invoices} liveSnapshot={liveSnap}/>
+            <ClientReportWalk client={selected} reportData={reportData}
+              setReportData={setReportData} saveReportData={saveReportData}
+              kpis={kpis} actions={actions} invoices={invoices}
+              liveSnapshot={liveSnap} loading={loading} saved={saved}/>
           )}
 
           {/* ── CONNECTIONS (Zoho Books) ── */}
