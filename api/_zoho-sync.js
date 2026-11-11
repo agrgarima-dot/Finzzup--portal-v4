@@ -12,7 +12,7 @@
 
 import { getAccessToken, zohoList, getConnection, isAdmin, markSync } from "./_zoho.js";
 import { accountsToTrialBalance, invoicesToReceivables, invoicesToRevenue,
-         contactsToRegisters, qfzpSplit } from "../src/zohomap.js";
+         contactsToRegisters, qfzpSplit, billsToPayables, billsToSupplierSpend } from "../src/zohomap.js";
 
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -56,6 +56,8 @@ export default async function handler(req, res) {
   const tb        = accountsToTrialBalance(accountsRes.rows);
   const receivab  = invoicesToReceivables(invoicesRes.rows);
   const revenue   = invoicesToRevenue(invoicesRes.rows);
+  const payables  = billsToPayables(billsRes.rows);
+  const supplier  = billsToSupplierSpend(billsRes.rows);
   const registers = contactsToRegisters(contactsRes.rows);
   const qfzp      = qfzpSplit(invoicesRes.rows, contactsRes.rows);
 
@@ -90,6 +92,8 @@ export default async function handler(req, res) {
     },
     trialBalance: tb,
     receivables:  receivab,
+    payables,
+    supplierSpend: supplier,
     revenue,
     registers,
     qfzp,
