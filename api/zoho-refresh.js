@@ -68,6 +68,7 @@ export default async function handler(req, res) {
     const accounts = await zohoList(conn, token, "chartofaccounts", "chartofaccounts", { showbalance: "true" });
     const invoices = await zohoList(conn, token, "invoices", "invoices");
     const contacts = await zohoList(conn, token, "contacts", "contacts");
+    const billsRes = await zohoList(conn, token, "bills", "bills");
 
     if (accounts.error) {
       await markSync(supaUrl, supaKey, conn.id, `Live refresh failed: ${accounts.error}`);
@@ -84,7 +85,7 @@ export default async function handler(req, res) {
     // the client's own accounting software has no concept of.
     const positions = computePositions({
       trialBalance: tb.rows, statements: st, invoices: invoices.rows,
-      contacts: contacts.rows, qfzp,
+      bills: billsRes?.rows || [], contacts: contacts.rows, qfzp,
       uae: /uae|cross/i.test(conn.clients?.jurisdiction || ""),
       workingCapital: null,   // derived from the reviewed report, not the raw feed
       // A free zone company is one with a free zone named on its profile.

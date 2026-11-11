@@ -210,6 +210,76 @@ export function invoicesToRevenue(invoices = [], { from = null, to = null } = {}
 }
 
 /**
+ * Bills → payables ageing, bucketed and drillable to the bill.
+ *
+ * Written against field names read off a live organisation: a bill carries
+ * both `balance` and `balance_due`, so the first is preferred and the second
+ * used only if it is absent.
+ *
+ * Ageing runs from the BILL date for the same reason receivables age from the
+ * invoice date — money owed for 95 days on 60-day terms is 90-day money,
+ * whatever the due date says.
+ */
+export function billsToPayables(bills = [], asOf = new Date()) {
+  const buckets = [
+    { name: "Current", max: 30,       rows: [] },
+    { name: "31–60d",  max: 60,       rows: [] },
+    { name: "61–90d",  max: 90,       rows: [] },
+    { name: "90d+",    max: Infinity, rows: [] },
+  ];
+
+  for (const bill of bills) {
+    if (DEAD_STATUSES.has(String(bill?.status || "").toLowerCase())) continue;
+    const outstanding = n(bill.balance ?? bill.balance_due);
+    if (outstanding <= 0) continue;
+
+    const d   = parseDate(bill.date);
+    const age = d ? daysBetween(asOf, d) : 0;
+    const b   = buckets.find(x => age <= x.max) || buckets[buckets.length - 1];
+
+    b.rows.push({
+      id:      bill.bill_number || bill.bill_id || "",
+      date:    bill.date || "",
+      desc:    bill.vendor_name || "—",
+      amount:  outstanding,
+      status:  String(bill.status || "open").toLowerCase(),
+      dueDate: bill.due_date || "",
+      ageDays: age,
+    });
+  }
+
+  return buckets.map(b => ({
+    name:  b.name,
+    value: b.rows.reduce((s, r) => s + r.amount, 0),
+    sub:   `${b.rows.length} bill${b.rows.length === 1 ? "" : "s"}`,
+    txns:  b.rows.sort((x, y) => y.amount - x.amount),
+  }));
+}
+
+/** Bills → spend by supplier. Paid bills count: this is spend, not what is owed. */
+export function billsToSupplierSpend(bills = []) {
+  const byVendor = new Map();
+  for (const bill of bills) {
+    if (DEAD_STATUSES.has(String(bill?.status || "").toLowerCase())) continue;
+    const key = bill.vendor_name || "—";
+    if (!byVendor.has(key)) byVendor.set(key, { name: key, value: 0, sub: "", txns: [] });
+    const row = byVendor.get(key);
+    const total = n(bill.total);
+    row.value += total;
+    row.txns.push({
+      id:     bill.bill_number || bill.bill_id || "",
+      date:   bill.date || "",
+      desc:   `Bill ${bill.bill_number || ""}`.trim(),
+      amount: total,
+      status: String(bill.status || "").toLowerCase(),
+    });
+  }
+  const rows = [...byVendor.values()].sort((a, b) => b.value - a.value);
+  for (const r of rows) r.sub = `${r.txns.length} bill${r.txns.length === 1 ? "" : "s"}`;
+  return rows;
+}
+
+/**
  * Contacts → customer and vendor registers.
  *
  * tax_treatment is the field that matters most here: it is what separates a

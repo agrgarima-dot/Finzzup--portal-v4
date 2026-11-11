@@ -63,8 +63,8 @@ const byGroup = (rows, ...groups) => rows
  * @returns {Array} positions
  */
 export function computePositions({ trialBalance = [], statements = null, invoices = [],
-                                   contacts = [], qfzp = null, uae = false, freeZone = false,
-                                   msmeExposure = null, workingCapital = null,
+                                   bills = [], contacts = [], qfzp = null, uae = false,
+                                   freeZone = false, msmeExposure = null, workingCapital = null,
                                    asOf = new Date() } = {}) {
   const cur = uae ? fmtAED : fmtINR;
   const out = [];
@@ -73,7 +73,8 @@ export function computePositions({ trialBalance = [], statements = null, invoice
 
   // ── Who is actually not paying, which is not the same as what is owed ──────
   const liveInv = invoices.filter(i => !["draft", "void"].includes(String(i?.status || "").toLowerCase()));
-  const today   = asOf.toISOString().slice(0, 10);
+  const todayISO = asOf.toISOString().slice(0, 10);
+  const today    = todayISO;
   const overdue = liveInv.filter(i => n(i.balance) > 0 && i.due_date && i.due_date < today);
 
   if (overdue.length) {
@@ -116,6 +117,31 @@ export function computePositions({ trialBalance = [], statements = null, invoice
       sentence: `${topName} is ${pct.toFixed(0)}% of everything you have invoiced. ` +
                 `Losing them would take ${pct >= 50 ? "half" : "a third or more"} of your income at once.`,
       rule: "Comfortable below 25%",
+    });
+  }
+
+  // ── Bills already past their due date ────────────────────────────────────
+  const liveBills = bills.filter(x => !["draft","void"].includes(String(x?.status || "").toLowerCase()));
+  const billsDue  = liveBills.filter(x => n(x.balance ?? x.balance_due) > 0 && x.due_date && x.due_date < todayISO);
+  if (billsDue.length) {
+    const byVendor = new Map();
+    for (const x of billsDue) {
+      const k = x.vendor_name || "—";
+      byVendor.set(k, (byVendor.get(k) || 0) + n(x.balance ?? x.balance_due));
+    }
+    const [worst, amt] = [...byVendor.entries()].sort((a,b) => b[1]-a[1])[0];
+    const oldest = billsDue.reduce((a,b) => (a.due_date < b.due_date ? a : b));
+    const late   = Math.floor((asOf - new Date(oldest.due_date)) / 864e5);
+    const total  = billsDue.reduce((s2, x) => s2 + n(x.balance ?? x.balance_due), 0);
+    out.push({
+      key: "billsoverdue",
+      label: "Suppliers waiting to be paid",
+      headline: cur(total),
+      status: late > 60 ? "breach" : late > 30 ? "watch" : "ok",
+      sentence: `${cur(total)} is past due across ${billsDue.length} bill${billsDue.length===1?"":"s"}. ` +
+                `The oldest is ${late} days late, and ${worst} is owed ${cur(amt)} of it. ` +
+                `Late suppliers tighten terms before they stop supplying.`,
+      rule: "The terms you agreed with them",
     });
   }
 
