@@ -5973,8 +5973,35 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
   return (
     <div style={{ display:"flex", flexDirection:"column", gap:0 }}>
  
-      {/* ── Dropdown nav — always shown ── */}
-      <div style={{ padding:"8px 16px", background:"white",
+      {/* ── Visible tabs ───────────────────────────────────────────────────
+          Every report used to sit behind the dropdown below, which showed
+          only the one you were already on. Six UAE reports were effectively
+          invisible — reachable, but nobody would know they existed. They are
+          listed here, grouped, and the dropdown stays for narrow screens. */}
+      <div className="pack-tabs" style={{ padding:"10px 16px 0", background:"white" }}>
+        {groups.map((g, gi) => (
+          <div key={gi} style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap",
+            marginBottom: gi < groups.length-1 ? 8 : 10 }}>
+            <span style={{ fontFamily:F, fontSize:9.5, fontWeight:800, color:C.dim,
+              textTransform:"uppercase", letterSpacing:"0.1em", minWidth:116 }}>{g.label}</span>
+            {g.items.map(t => (
+              <button key={t.id} onClick={() => setTab(t.id)}
+                style={{ padding:"6px 13px", borderRadius:60, cursor:"pointer", fontFamily:F,
+                  fontSize:12, fontWeight: tab===t.id ? 700 : 600,
+                  border:`1.5px solid ${tab===t.id ? accent : "#E5E7EB"}`,
+                  background: tab===t.id ? `${accent}0E` : "white",
+                  color: tab===t.id ? accent : "#475569",
+                  display:"flex", alignItems:"center", gap:6, whiteSpace:"nowrap" }}>
+                <i className={"ti " + (t.emoji||"ti-circle")} style={{ fontSize:12 }}/>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* ── Dropdown nav — the only navigation on a narrow screen ── */}
+      <div className="pack-drop" style={{ padding:"8px 16px", background:"white",
         borderBottom:"1px solid #E5E7EB", display:"flex", alignItems:"center", gap:20 }}>
         <div ref={dropRef} style={{ position:"relative", maxWidth:320 }}>
  
@@ -6047,6 +6074,15 @@ function PackLayout({ tab, setTab, groups, accent, children }) {
         </div>
       </div>
  
+      <style>{`
+        .pack-tabs { display:block; }
+        .pack-drop { display:none; }
+        @media (max-width: 860px) {
+          .pack-tabs { display:none; }
+          .pack-drop { display:flex !important; }
+        }
+      `}</style>
+
       {/* ── Content area ── */}
       <div style={{ padding:"20px 20px 32px" }}>
         {children}
