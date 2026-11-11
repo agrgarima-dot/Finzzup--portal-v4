@@ -17804,7 +17804,7 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
   const fetchZoho = async () => {
     setZohoBusy(true); setZohoInfo(null);
     try {
-      const r = await fetch(`/api/zoho-sync?clientId=${encodeURIComponent(client.id)}` +
+      const r = await fetch(`/api/zoho?action=sync&clientId=${encodeURIComponent(client.id)}` +
                             `&adminEmail=${encodeURIComponent(adminEmail || "")}`);
       const j = await r.json();
       if (!j.ok) {
@@ -18332,7 +18332,7 @@ function ClientPreview({ client, reportData, kpis, actions = [], invoices = [], 
 //
 // The connection status cannot be read from the browser: zoho_connections holds
 // a refresh token and is locked to the service role key, so this asks
-// /api/zoho-status instead of querying Supabase directly.
+// /api/zoho?action=status instead of querying Supabase directly.
 function ZohoConnectionCard({ client, adminEmail }) {
   const [state, setState] = useState({ loading:true });
 
@@ -18345,7 +18345,7 @@ function ZohoConnectionCard({ client, adminEmail }) {
     if (!client?.id || !isRealClient) return;
     let live = true;
     setState({ loading:true });
-    fetch(`/api/zoho-status?clientId=${encodeURIComponent(client.id)}&adminEmail=${encodeURIComponent(adminEmail || "")}`)
+    fetch(`/api/zoho?action=status&clientId=${encodeURIComponent(client.id)}&adminEmail=${encodeURIComponent(adminEmail || "")}`)
       .then(r => r.json())
       .then(j => { if (live) setState({ loading:false, ...j }); })
       .catch(() => { if (live) setState({ loading:false, ok:false, reason:"unreachable" }); });
@@ -18386,7 +18386,7 @@ function ZohoConnectionCard({ client, adminEmail }) {
       not_admin:     `Signed in as ${adminEmail || "an unknown account"}, but that email is not in the admins table. Add a row there with exactly this email.`,
       no_admin:      "The portal did not send an admin email with the request. Sign out and sign in again.",
       bad_client_id: "This client has no valid id on record, so the connection could not be looked up.",
-      unreachable:   "Could not reach /api/zoho-status at all. The deployment may still be building.",
+      unreachable:   "Could not reach the Zoho endpoint at all. The deployment may still be building.",
     }[state.reason] || `The check failed${state.reason ? ` (${state.reason})` : ""}.`;
     return (
       <Card>
@@ -18488,7 +18488,7 @@ function ZohoPreview({ client, adminEmail }) {
   const go = async () => {
     setRun({ state:"loading" });
     try {
-      const r = await fetch(`/api/zoho-preview?clientId=${encodeURIComponent(client.id)}` +
+      const r = await fetch(`/api/zoho?action=preview&clientId=${encodeURIComponent(client.id)}` +
                             `&adminEmail=${encodeURIComponent(adminEmail || "")}`);
       setRun({ state:"done", data: await r.json() });
     } catch (e) {
