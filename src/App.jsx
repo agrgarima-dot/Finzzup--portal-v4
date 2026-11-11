@@ -18121,7 +18121,16 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
                             `&adminEmail=${encodeURIComponent(adminEmail || "")}`);
       const j = await r.json();
       if (!j.ok) {
-        setZohoInfo({ error: {
+        // "No connection" is almost always a connection on the wrong client
+        // record — the same company created twice, connected once. Saying so
+        // turns an unanswerable message into a one-click fix.
+        let elsewhere = null;
+        if (j.reason === "not_connected") {
+          const cr = await fetch(`/api/zoho?action=connections&adminEmail=${encodeURIComponent(adminEmail || "")}`)
+            .then(x => x.json()).catch(() => null);
+          if (cr?.ok) elsewhere = (cr.connections || []).filter(c => c.clientId !== client.id);
+        }
+        setZohoInfo({ elsewhere, error: {
           not_connected:        "This client has no Zoho Books connection. Connect it from the Connections tab.",
           not_configured:       "Zoho is not configured on this deployment.",
           token_refresh_failed: "Zoho refused the stored credentials. The connection may have been revoked — reconnect it.",
@@ -18221,6 +18230,37 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
         <div style={{ marginTop:12, padding:"10px 14px", borderRadius:12,
           background:`${C.red}08`, border:`1px solid ${C.red}25` }}>
           <div style={{ fontFamily:F, fontSize:12, color:C.red, lineHeight:1.7 }}>{zohoInfo.error}</div>
+          {/* Where the connection actually is. Without this the message is
+              unanswerable: the books are connected, just to the other record
+              of the same company. */}
+          {Array.isArray(zohoInfo.elsewhere) && zohoInfo.elsewhere.length > 0 && (
+            <div style={{ marginTop:10, paddingTop:10, borderTop:`1px solid ${C.red}25` }}>
+              <div style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.8, marginBottom:6 }}>
+                {zohoInfo.elsewhere.length === 1
+                  ? "There is a connection on another client record:"
+                  : `There are ${zohoInfo.elsewhere.length} connections, on other client records:`}
+              </div>
+              {zohoInfo.elsewhere.map(c => (
+                <div key={c.clientId} style={{ fontFamily:F, fontSize:12, color:C.text,
+                  padding:"6px 0", display:"flex", gap:8, alignItems:"baseline", flexWrap:"wrap" }}>
+                  <strong>{c.company || c.name || "Unnamed client"}</strong>
+                  {c.organisation && <span style={{ color:C.muted }}>· {c.organisation}</span>}
+                  {c.lastSyncAt && <span style={{ color:C.dim, fontSize:11 }}>
+                    last synced {new Date(c.lastSyncAt).toLocaleDateString("en-GB",
+                      { day:"numeric", month:"short" })}</span>}
+                </div>
+              ))}
+              <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.8, marginTop:6 }}>
+                Select that client at the top of the sidebar and fetch again. If it is the same
+                company twice, the duplicate is worth deleting — a connection belongs to one record.
+              </div>
+            </div>
+          )}
+          {Array.isArray(zohoInfo.elsewhere) && zohoInfo.elsewhere.length === 0 && (
+            <div style={{ marginTop:8, fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.8 }}>
+              No client on this account has a Zoho connection yet.
+            </div>
+          )}
         </div>
       )}
       {zohoInfo && !zohoInfo.error && (
@@ -18412,10 +18452,11 @@ function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
 // schedule or a related party listing is spreadsheet work; typing it into
 // forty boxes once a month for every client is not.
 function AnalysisTemplates({ client, reportData, setReportData, saveReportData, loading, saved,
-                            kpis, setKpis, saveKPIs, actions = [], replaceActions, adminEmail }) {
+                            kpis, setKpis, saveKPIs, actions = [], replaceActions, adminEmail, goTo }) {
   const [busy,  setBusy]  = React.useState("");
   const [err,   setErr]   = React.useState("");
   const [seeded, setSeeded] = React.useState(null);
+  const [seedFail, setSeedFail] = React.useState(null);
   const [res,   setRes]   = React.useState(null);
   const [applied, setApplied] = React.useState(false);
   const uae = isUAE(client);
@@ -18434,18 +18475,22 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
   // ExcelJS and the builders are pulled in only here. The client portal never
   // carries a spreadsheet writer it has no use for.
   const download = async () => {
-    setErr(""); setBusy("download"); setSeeded(null);
+    setErr(""); setBusy("download"); setSeeded(null); setSeedFail(null);
     try {
-      let sync = null;
-      if (/^[0-9a-f-]{36}$/i.test(String(client?.id || ""))) {
+      let sync = null, why = null;
+      if (!/^[0-9a-f-]{36}$/i.test(String(client?.id || ""))) {
+        why = "demo";
+      } else {
         const r = await fetch(`/api/zoho?action=sync&clientId=${encodeURIComponent(client.id)}` +
                               `&adminEmail=${encodeURIComponent(adminEmail || "")}`).catch(() => null);
         const j = r ? await r.json().catch(() => null) : null;
-        if (j?.ok) sync = j;
-        else if (j && j.reason !== "not_connected") {
-          setErr(`The books could not be read, so the workbook is empty: ${j.reason || "unknown"}.`);
-        }
+        if (j?.ok) sync = j; else why = j?.reason || "unreachable";
       }
+      // An empty workbook used to look like a success. It is the commonest
+      // thing to go wrong here — most often because the client selected is not
+      // the one the books are connected to — so it says which client it asked
+      // about and what came back.
+      if (why) setSeedFail({ why, company: client?.company || client?.name });
       const { buildAnalysisWorkbook, seedFromSync, describeSeed } = await import("./workbook-build/index.js");
       const wb  = buildAnalysisWorkbook({ client, sync });
       const buf = await wb.xlsx.writeBuffer();
@@ -18455,7 +18500,7 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
       a.download = fileName;
       a.click();
       setTimeout(() => URL.revokeObjectURL(a.href), 30000);
-      setSeeded(describeSeed(seedFromSync(sync)));
+      if (sync) setSeeded(describeSeed(seedFromSync(sync)));
     } catch (e) {
       setErr(`The workbook could not be built: ${e.message}`);
     }
@@ -18559,6 +18604,30 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
           </span>
         </div>
 
+        {seedFail && (
+          <div style={{ marginTop:14, padding:"11px 14px", borderRadius:12,
+            background:`${C.amber}0A`, border:`1px solid ${C.amber}30` }}>
+            <div style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.8 }}>
+              <strong>The workbook came down empty.</strong>{" "}
+              {seedFail.why === "not_connected"
+                ? <>Nothing is connected to <strong>{seedFail.company}</strong>. If you have more than
+                    one client with a similar name, check you have the right one selected — the
+                    connection belongs to a single client record.{" "}
+                    <button onClick={() => goTo && goTo("connections")}
+                      style={{ background:"none", border:"none", padding:0, cursor:"pointer",
+                        color:C.blue, fontFamily:F, fontSize:12, fontWeight:700,
+                        textDecoration:"underline" }}>Open Zoho Connection</button></>
+                : seedFail.why === "demo"
+                ? <>{seedFail.company} is a demo client, so there are no books to read. The sheets are
+                    yours to paste into.</>
+                : seedFail.why === "token_refresh_failed"
+                ? <>Zoho refused the stored credentials for {seedFail.company} — the connection may
+                    have been revoked and needs reconnecting.</>
+                : <>The books could not be read for {seedFail.company}: {seedFail.why}.</>}
+            </div>
+          </div>
+        )}
+
         {seeded && (
           <div style={{ marginTop:14, padding:"10px 14px", borderRadius:12,
             background:`${C.green}0A`, border:`1px solid ${C.green}30` }}>
@@ -18568,8 +18637,8 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
                     {seeded.accounts===1?"":"s"}, <strong>{seeded.receivables}</strong> open invoice
                     {seeded.receivables===1?"":"s"} and <strong>{seeded.payables}</strong> open bill
                     {seeded.payables===1?"":"s"}. The statements, ageings and ratios are already worked out.</>
-                : <>Downloaded empty — this client has no accounting connection, so the trial balance,
-                    invoices and bills are yours to paste in.</>}
+                : <>Connected, but the books returned nothing — no accounts, invoices or bills.
+                    Worth checking the organisation selected in Zoho.</>}
             </div>
           </div>
         )}
@@ -21484,7 +21553,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             ) : <AnalysisTemplates client={selected} reportData={reportData} setReportData={setReportData}
                   saveReportData={saveReportData} loading={loading} saved={saved}
                   kpis={kpis} setKpis={setKpis} saveKPIs={saveKPIs}
-                  actions={actions} replaceActions={replaceActions} adminEmail={admin?.email}/>
+                  actions={actions} replaceActions={replaceActions} adminEmail={admin?.email}
+                  goTo={setTab}/>
           )}
 
           {/* ── CLIENT READINESS ── */}
