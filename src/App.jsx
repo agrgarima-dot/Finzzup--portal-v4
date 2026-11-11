@@ -18785,7 +18785,8 @@ function AdminPanel({ admin, onLogout }) {
  
   // New client state
   const [newClient, setNewClient] = useState({
-    name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both"
+    name:"", company:"", email:"", invite_code:"", client_pack:"startup", type:"both",
+    jurisdiction:"India"
   });
  
   // Engagement state
@@ -19080,6 +19081,26 @@ function AdminPanel({ admin, onLogout }) {
     setNewAction({ text:"", priority:"High", month:newAction.month });
   };
  
+  const [jurMsg, setJurMsg] = useState("");
+  const setJurisdiction = async (v) => {
+    if (!selected) return;
+    setJurMsg("");
+    const { error } = await supabase.from("clients")
+      .update({ jurisdiction: v }).eq("id", selected.id);
+    if (error) { setJurMsg(`Could not save: ${error.message}`); return; }
+    // Read it back. A write that is accepted but stored nowhere is the failure
+    // mode that made this look like it had worked.
+    const { data } = await supabase.from("clients")
+      .select("jurisdiction").eq("id", selected.id).maybeSingle();
+    if (data?.jurisdiction !== v) {
+      setJurMsg("The database accepted the change but did not store it — the clients table has no jurisdiction column.");
+      return;
+    }
+    setSelected(sv => ({ ...sv, jurisdiction: v }));
+    setClients(cs => cs.map(c => c.id === selected.id ? { ...c, jurisdiction: v } : c));
+    setJurMsg(`Saved — now a ${v} client.`);
+  };
+
   // Bulk insert for proposals accepted from the drafting card.
   const addActions = async (rows) => {
     if (!selected || !rows?.length) return;
@@ -21974,16 +21995,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   </p>
                   <div style={{ maxWidth:420, margin:"0 auto", textAlign:"left" }}>
                     <AdminSelect C={C} F={F} label="Jurisdiction" val={selected.jurisdiction||"India"}
-                      onChange={async v => {
-                        await supabase.from("clients").update({ jurisdiction:v }).eq("id", selected.id);
-                        setSelected(s=>({...s,jurisdiction:v}));
-                        setClients(cs => cs.map(c => c.id===selected.id ? {...c, jurisdiction:v} : c));
-                      }}
+                      onChange={setJurisdiction}
                       options={[
                         {value:"India",        label:"India — ₹, GST, TDS, Section 43B(h)"},
                         {value:"UAE",          label:"UAE — AED, VAT, Corporate Tax, QFZP"},
                         {value:"Cross-Border", label:"Cross-Border — both sets of rules"},
                       ]}/>
+                    {jurMsg && <div style={{ fontFamily:F, fontSize:12, marginTop:8, lineHeight:1.7,
+                      color: jurMsg.startsWith("Saved") ? C.green : C.red }}>{jurMsg}</div>}
                   </div>
                 </Card>
               ) : (<>
@@ -21998,16 +22017,14 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                       reports a client sees. It could only be set when the client was
                       created, so a wrong choice meant deleting and starting again. */}
                   <AdminSelect C={C} F={F} label="Jurisdiction" val={selected.jurisdiction||"India"}
-                    onChange={async v => {
-                      await supabase.from("clients").update({ jurisdiction:v }).eq("id", selected.id);
-                      setSelected(s=>({...s,jurisdiction:v}));
-                      setClients(cs => cs.map(c => c.id===selected.id ? {...c, jurisdiction:v} : c));
-                    }}
+                    onChange={setJurisdiction}
                     options={[
                       {value:"India",        label:"India — ₹, GST, TDS, Section 43B(h)"},
                       {value:"UAE",          label:"UAE — AED, VAT, Corporate Tax, QFZP"},
                       {value:"Cross-Border", label:"Cross-Border — both sets of rules"},
                     ]}/>
+                  {jurMsg && <div style={{ fontFamily:F, fontSize:12, marginTop:8, lineHeight:1.7,
+                    color: jurMsg.startsWith("Saved") ? C.green : C.red }}>{jurMsg}</div>}
                   <AdminSelect C={C} F={F} label="Free Zone" val={selected.freezone||"DMCC"}
                     onChange={async v => {
                       await supabase.from("clients").update({ freezone:v }).eq("id", selected.id);
