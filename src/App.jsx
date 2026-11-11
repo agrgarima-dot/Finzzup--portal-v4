@@ -11127,9 +11127,34 @@ function UAEDisclaimer() {
 }
  
 // ─── VAT DASHBOARD ────────────────────────────────────────────────────────────
+// ─── NOT PUBLISHED YET ────────────────────────────────────────────────────────
+// Shown in place of a report a Chartered Accountant has not prepared yet.
+//
+// Every UAE module carried fabricated fallbacks — a VAT payable of AED 92,500,
+// an audit score of 68, a QFZP score of 82, DSO of 38 days. They existed so the
+// demo logins would look alive, but a real client read them as their own
+// position, under a CA's name. Inventing a client's VAT liability is the worst
+// thing this portal could do, so these screens now say nothing instead.
+function AwaitingData({ title, detail }) {
+  return (
+    <div className="ns-page">
+      <Card style={{ textAlign:"center", padding:"52px 28px", maxWidth:560, margin:"0 auto" }}>
+        <i className="ti ti-file-description" style={{ fontSize:34, color:C.dim, display:"block", marginBottom:14 }}/>
+        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, marginBottom:8 }}>
+          {title} has not been published yet
+        </div>
+        <p style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.8, margin:0 }}>
+          {detail || "This is prepared from your books by a Chartered Accountant and appears here once it has been reviewed and signed off."}
+        </p>
+      </Card>
+    </div>
+  );
+}
+
 function VATDashboard({ client, reportData }) {
   const [tab, setTab] = useState("overview");
   const rd = reportData?.vat || {};
+  if (!client?.isDemo && !Object.keys(rd).length) return <AwaitingData title="Your VAT position"/>;
  
   const vatData = {
     trnVAT:             client?.trnVAT || rd.trnVAT || "Not registered",
@@ -11310,6 +11335,7 @@ function VATDashboard({ client, reportData }) {
 function CorporateTax({ client, reportData, initialTab }) {
   const [tab, setTab] = useState(initialTab || "overview");
   const rd = reportData?.ct || {};
+  if (!client?.isDemo && !Object.keys(rd).length) return <AwaitingData title="Your corporate tax position"/>;
  
   const revenue       = rd.revenue     || 1850000;
   const sbrThreshold  = 3000000;
@@ -12765,6 +12791,7 @@ tr.total td:first-child { font-family:Arial,Helvetica,sans-serif; }
 // NEW: Revenue Reconciliation user-facing component
 function RevenueReconciliation({ client, reportData }) {
   const rr      = reportData?.revRecon || {};
+  if (!client?.isDemo && !Object.keys(rr).length) return <AwaitingData title="Your revenue reconciliation"/>;
   const period  = rr.period  || reportData?.monthLabel || "Current Quarter";
   const note    = rr.garimaNote || "";
  
@@ -13230,6 +13257,7 @@ tr.total-row td:first-child { font-family:Arial,Helvetica,sans-serif; }
 // NEW: Working Capital Management user component
 function WorkingCapital({ client, reportData }) {
   const wc     = reportData?.workingCapital || {};
+  if (!client?.isDemo && !Object.keys(wc).length) return <AwaitingData title="Your working capital review"/>;
   const period = wc.period || reportData?.monthLabel || "Current Period";
   const note   = wc.garimaNote || "";
  
@@ -13769,6 +13797,9 @@ td { border-bottom:1px solid #F3F4F6; }
  
 // NEW: Vertical Analysis user component
 function VerticalAnalysis({ client, reportData }) {
+  if (!client?.isDemo && !Object.keys(reportData?.verticalAnalysis || {}).length
+      && !Object.keys(reportData?.geoIndia || {}).length && !Object.keys(reportData?.depts || {}).length)
+    return <AwaitingData title="Your vertical analysis"/>;
   const acc = "#00732F"; // UAE green accent
   const [view, setView] = React.useState("pnl"); // pnl | geography | department
  
@@ -14085,8 +14116,15 @@ function VerticalAnalysis({ client, reportData }) {
  
  
 // ─── UNIFIED COMPLIANCE CALENDAR ─────────────────────────────────────────────
-function ComplianceCalendar({ client }) {
+function ComplianceCalendar({ client, reportData }) {
   const [filter, setFilter] = useState("all");
+  // This screen had no data source at all — the deadlines below are sample
+  // dates, including a named AED 92.5K payment to the FTA. Real clients get
+  // the calendar their CA published, or nothing.
+  const published = reportData?.compliance || reportData?.checklist || [];
+  if (!client?.isDemo && !published.length)
+    return <AwaitingData title="Your compliance calendar"
+      detail="Your filing dates are set when your CA reviews the period. They will appear here once published."/>;
   const freezone = client?.freezone || "DMCC";
   const fye      = client?.financialYearEnd || "31 Dec";
  
@@ -14364,6 +14402,7 @@ td { border-bottom:1px solid #F3F4F6; }
 function QFZPModule({ client, reportData }) {
   const qd       = reportData?.qfzpSubstance || {};
   const rd       = reportData?.qfzp          || {};
+  if (!client?.isDemo && !Object.keys(qd).length && !Object.keys(rd).length) return <AwaitingData title="Your QFZP review"/>;
   const freezone = client?.freezone           || "DMCC";
   const period   = qd.period || reportData?.monthLabel || "Current Period";
   const note     = qd.garimaNote || "";
@@ -14730,6 +14769,7 @@ function QFZPModule({ client, reportData }) {
 // ─── AUDIT READINESS ──────────────────────────────────────────────────────────
 function AuditReadiness({ client, reportData }) {
   const rd        = reportData?.auditReadiness || {};
+  if (!client?.isDemo && !Object.keys(rd).length) return <AwaitingData title="Your audit readiness review"/>;
   const freezone  = client?.freezone || "DMCC";
   const auditScore = rd.auditScore || 68;
  
@@ -16193,7 +16233,7 @@ function Portal({ client, onLogout }) {
     workingcapital:  <WorkingCapital        client={client} reportData={resolvedReportData}/>,
     verticalanalysis:<VerticalAnalysis      client={client} reportData={resolvedReportData}/>, // NEW
     corptax:         <CorporateTax          client={client} reportData={resolvedReportData}/>,
-    compliance:      <ComplianceCalendar    client={client}/>,
+    compliance:      <ComplianceCalendar    client={client} reportData={resolvedReportData}/>,
     qfzp:            <QFZPModule            client={client} reportData={resolvedReportData}/>,
     auditready:      <AuditReadiness        client={client} reportData={resolvedReportData}/>,
   };
