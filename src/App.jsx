@@ -21967,9 +21967,24 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <div style={{ fontFamily:F, fontSize:14, color:C.warning, fontWeight:600 }}>
                     Selected client is an India client
                   </div>
-                  <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:8 }}>
-                    Switch to a UAE or Cross-Border client to edit UAE/Tax data.
+                  <p style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:8, marginBottom:16 }}>
+                    If that is wrong — a Dubai client created as India, say — change it here.
+                    Jurisdiction decides the currency, which tax rules apply and which reports
+                    the client sees.
                   </p>
+                  <div style={{ maxWidth:420, margin:"0 auto", textAlign:"left" }}>
+                    <AdminSelect C={C} F={F} label="Jurisdiction" val={selected.jurisdiction||"India"}
+                      onChange={async v => {
+                        await supabase.from("clients").update({ jurisdiction:v }).eq("id", selected.id);
+                        setSelected(s=>({...s,jurisdiction:v}));
+                        setClients(cs => cs.map(c => c.id===selected.id ? {...c, jurisdiction:v} : c));
+                      }}
+                      options={[
+                        {value:"India",        label:"India — ₹, GST, TDS, Section 43B(h)"},
+                        {value:"UAE",          label:"UAE — AED, VAT, Corporate Tax, QFZP"},
+                        {value:"Cross-Border", label:"Cross-Border — both sets of rules"},
+                      ]}/>
+                  </div>
                 </Card>
               ) : (<>
  
@@ -21979,6 +21994,20 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Update jurisdiction settings and tax registration details.
                   </p>
+                  {/* Jurisdiction decides the currency, which tax rules apply and which
+                      reports a client sees. It could only be set when the client was
+                      created, so a wrong choice meant deleting and starting again. */}
+                  <AdminSelect C={C} F={F} label="Jurisdiction" val={selected.jurisdiction||"India"}
+                    onChange={async v => {
+                      await supabase.from("clients").update({ jurisdiction:v }).eq("id", selected.id);
+                      setSelected(s=>({...s,jurisdiction:v}));
+                      setClients(cs => cs.map(c => c.id===selected.id ? {...c, jurisdiction:v} : c));
+                    }}
+                    options={[
+                      {value:"India",        label:"India — ₹, GST, TDS, Section 43B(h)"},
+                      {value:"UAE",          label:"UAE — AED, VAT, Corporate Tax, QFZP"},
+                      {value:"Cross-Border", label:"Cross-Border — both sets of rules"},
+                    ]}/>
                   <AdminSelect C={C} F={F} label="Free Zone" val={selected.freezone||"DMCC"}
                     onChange={async v => {
                       await supabase.from("clients").update({ freezone:v }).eq("id", selected.id);
