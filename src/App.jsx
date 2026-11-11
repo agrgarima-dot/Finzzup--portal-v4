@@ -3,7 +3,7 @@ import { supabase } from "./supabase.js";
 import { computeAlerts, parseAmount } from "./alerts.js";
 import { proposeActions, newProposalsOnly, complianceCalendar, newComplianceOnly } from "./autodraft.js";
 import { mergeDerived } from "./derive.js";
-import { buildWorkbook, readWorkbook, sheetsFor, getPath } from "./workbook.js";
+import { buildWorkbook, readWorkbook, sheetsFor, getPath, setPath } from "./workbook.js";
 import { parseLedger, buildReceivablesDrill, buildRevenueDrill, buildPayablesDrill,
          buildSupplierSpendDrill, computeMsmeExposure, buildMsmeDrill, extractVendorRegister,
          isMsme, MSME_LIMIT_DAYS, reconcile, validateLedger } from "./ledgerimport.js";
@@ -10973,57 +10973,68 @@ function MyDocuments({ client }) {
 function Treasury({ client, reportData }) {
   const [tab, setTab] = useState("overview");
   const uae = isUAE(client);
- 
-  // Use live admin-entered data if available, else fall back to defaults
-  const rd = reportData?.treasury;
- 
-  const UAE_T = {
-    totalCash:   rd?.totalCash   || "AED 620K",
-    investedPct: rd?.investedPct || 55,
-    yieldPA:     rd?.yieldPA     || "AED 22K",
-    dso: 38, dpo: 28, dio: 15,
-    cashPositions: (rd?.cashPositions?.some(p=>p.bank)) ? rd.cashPositions : [
-      { bank:"Emirates NBD — Current A/C",  balance:"AED 210K", type:"Operating",    rate:"0%",   flag:false },
-      { bank:"Mashreq — Term Deposit",       balance:"AED 300K", type:"Term Deposit", rate:"5.2%", flag:false },
-      { bank:"ADCB — Islamic Wakala",        balance:"AED 80K",  type:"Islamic Inv.", rate:"4.8%", flag:false },
-      { bank:"FAB — Current A/C",            balance:"AED 30K",  type:"Reserve",      rate:"0%",   flag:true,  note:"Consider moving to Wakala" },
-    ],
-    maturitySchedule: (rd?.maturitySchedule?.some(m=>m.item)) ? rd.maturitySchedule : [
-      { item:"Mashreq Term Deposit",    maturity:"15 Apr 2026", amount:"AED 150K", action:"Renew"      },
-      { item:"ADCB Islamic Wakala",     maturity:"30 Apr 2026", amount:"AED 80K",  action:"Redeem"     },
-      { item:"Mashreq TD — Tranche 2", maturity:"31 May 2026", amount:"AED 150K", action:"Auto-renew" },
-    ],
-    recommendations: (rd?.recommendations?.some(r=>r.text)) ? rd.recommendations : [
-      { priority:"High",   text:"Hold AED 92.5K cash reserve for Q1 VAT payment due 28 April — don't lock in FDs." },
-      { priority:"High",   text:"Renew Mashreq TD at 5.2% — UAE rates stabilising. Lock in before potential CBUAE cut." },
-      { priority:"Medium", text:"Move FAB idle AED 30K to ADCB Wakala — earn 4.8% profit share on Islamic structure." },
-      { priority:"Low",    text:"Consider ENBD Emirates Islamic Murabaha for April surplus — projected AED 50K." },
-    ],
+
+  // This screen used to invent a treasury. With nothing entered it named four
+  // banks, gave each a balance and a rate, scheduled three maturities and
+  // wrote four recommendations — one of them a specific AED 92.5K VAT reserve
+  // — and put the lot on a real client's screen under a Chartered
+  // Accountant's name. Convincing, specific and entirely fabricated.
+  //
+  // Facility terms, rates and maturities are not in the accounting records at
+  // all; they come from the Treasury and Deposits sheets of the workbook. Until
+  // those are filled, this says so.
+  const rd   = reportData?.treasury;
+  const cur  = (v) => (v == null || v === "") ? "—" : String(v);
+  const rows = (v, k) => Array.isArray(v) && v.some(x => x?.[k]) ? v : [];
+
+  const cashPositions    = rows(rd?.cashPositions, "bank");
+  const depositRows      = rows(rd?.deposits, "institution");
+  const maturitySchedule = rows(rd?.maturitySchedule, "item");
+  const recommendations  = rows(rd?.recommendations, "text");
+
+  // The deposit schedule from the workbook, shown as cash positions when no
+  // separate position list has been given.
+  const positions = cashPositions.length ? cashPositions : depositRows.map(d => ({
+    bank: d.institution, balance: d.amount, type: d.type,
+    rate: d.rate == null ? "" : `${d.rate}%`, flag:false, note: d.note,
+  }));
+  const maturities = maturitySchedule.length ? maturitySchedule : depositRows
+    .filter(d => d.maturity)
+    .map(d => ({ item: d.institution, maturity: d.maturity, amount: d.amount, action: d.note || "" }));
+
+  const anything = !!(rd && (rd.totalCash || rd.investedPct || rd.yieldPA)) ||
+                   positions.length || maturities.length || recommendations.length;
+
+  if (!client?.isDemo && !anything) {
+    return (
+      <div className="ns-page">
+        <SectionTitle sub={uae ? "Multi-currency cash, term deposits, and yield optimisation."
+                               : "Cash visibility, FD tracking, and yield optimisation."}>
+          {uae ? "Treasury Management (AED)" : "Treasury Management"}
+        </SectionTitle>
+        <AwaitingData title="Your treasury position"
+          detail="Deposits, facilities, rates and maturities are not in the accounting records, so they are prepared separately. This will fill once that work is published."/>
+      </div>
+    );
+  }
+
+  // Days come from the reviewed working capital figures, never from a default.
+  const wc = reportData?.workingCapital || {};
+  const n  = (v) => { const x = Number(v); return isFinite(x) ? x : null; };
+  const dso = n(wc.dso), dpo = n(wc.dpo), dio = n(wc.dio);
+  const ccc = (dso != null && dpo != null) ? dso - dpo + (dio || 0) : null;
+
+  const TREASURY_DATA = {
+    totalCash:   cur(rd?.totalCash),
+    investedPct: rd?.investedPct == null || rd?.investedPct === "" ? null : rd.investedPct,
+    yieldPA:     cur(rd?.yieldPA),
+    dso, dpo, dio, ccc,
+    cashPositions: positions,
+    maturitySchedule: maturities,
+    recommendations,
   };
- 
-  const TREASURY_DATA = uae ? UAE_T : {
-    totalCash:    rd?.totalCash    || "₹50.4L",
-    investedPct:  rd?.investedPct  || 65,
-    yieldPA:      rd?.yieldPA      || "₹3.2L",
-    cashPositions: (rd?.cashPositions?.some(p=>p.bank)) ? rd.cashPositions : [
-      { bank:"HDFC Bank — Current A/C",   balance:"₹14.2L", type:"Operating",   rate:"3.5%",  flag:false },
-      { bank:"SBI — Fixed Deposit",        balance:"₹25.0L", type:"FD (91 days)", rate:"7.1%",  flag:false },
-      { bank:"Axis Bank — Sweep Account",  balance:"₹8.4L",  type:"Sweep FD",    rate:"6.8%",  flag:false },
-      { bank:"ICICI Bank — Current A/C",   balance:"₹2.8L",  type:"Reserve",     rate:"0%",    flag:true,  note:"Consider sweeping to FD" },
-    ],
-    maturitySchedule: (rd?.maturitySchedule?.some(m=>m.item)) ? rd.maturitySchedule : [
-      { item:"SBI FD — Tranche 1", maturity:"15 Mar 2026", amount:"₹10.0L", action:"Renew"     },
-      { item:"SBI FD — Tranche 2", maturity:"28 Mar 2026", amount:"₹15.0L", action:"Redeem"    },
-      { item:"Axis Sweep",         maturity:"Revolving",    amount:"₹8.4L",  action:"Auto-renew"},
-    ],
-    recommendations: (rd?.recommendations?.some(r=>r.text)) ? rd.recommendations : [
-      { priority:"High",   text:"Renew SBI FD Tranche 1 — rates likely lower post April RBI meeting. Lock in 7.1% now." },
-      { priority:"High",   text:"Redeem SBI Tranche 2 (₹15L) to fund March advance tax outflow — avoid OD." },
-      { priority:"Medium", text:"Sweep ₹2.8L ICICI idle balance to sweep account — earn 6.8% vs 0%." },
-      { priority:"Low",    text:"Consider a 30-day liquid fund for the April surplus (₹8L projected) — yield ~7.5%." },
-    ],
-  };
- 
+  const UAE_T = TREASURY_DATA;
+
   return (
     <div className="ns-page">
       <SectionTitle sub={uae ? "Multi-currency cash, term deposits, and yield optimisation." : "Cash visibility, FD tracking, and yield optimisation."}>
@@ -11034,9 +11045,9 @@ function Treasury({ client, reportData }) {
       {uae && (
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
           {[
-            { label:"Days Sales Outstanding (DSO)", value:`${UAE_T.dso} days`, color:C.blue,  icon:"↑" },
-            { label:"Days Payable Outstanding (DPO)",value:`${UAE_T.dpo} days`, color:C.green, icon:"↓" },
-            { label:"Cash Conversion Cycle",         value:`${UAE_T.dso - UAE_T.dpo + UAE_T.dio} days`, color:C.amber, icon:"🔄" },
+            { label:"Days Sales Outstanding (DSO)", value: UAE_T.dso == null ? "—" : `${UAE_T.dso} days`, color:C.blue,  icon:"↑" },
+            { label:"Days Payable Outstanding (DPO)",value: UAE_T.dpo == null ? "—" : `${UAE_T.dpo} days`, color:C.green, icon:"↓" },
+            { label:"Cash Conversion Cycle",         value: UAE_T.ccc == null ? "—" : `${UAE_T.ccc} days`, color:C.amber, icon:"🔄" },
           ].map((s,i) => (
             <Card key={i} style={{ padding:18 }}>
               <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
@@ -11064,7 +11075,7 @@ function Treasury({ client, reportData }) {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="tr-grid">
             {[
               { label:"Total Cash",      value:TREASURY_DATA.totalCash,              icon:"ti-wallet", color:C.blue  },
-              { label:uae?"In Term Deposits":"Invested in FDs", value:`${TREASURY_DATA.investedPct}%`, icon:"ti-trending-up", color:C.teal  },
+              { label:uae?"In Term Deposits":"Invested in FDs", value: TREASURY_DATA.investedPct == null ? "—" : `${TREASURY_DATA.investedPct}%`, icon:"ti-trending-up", color:C.teal  },
               { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,                icon:"ti-building-bank", color:C.green },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
@@ -19039,20 +19050,44 @@ function ResetClientData({ client, reportData, setReportData, saveReportData, lo
   );
 }
 
-// ─── THE CLIENT'S REPORT, WALKED AND RELEASED ─────────────────────────────────
-// The client's portal, drawn here exactly as they will read it — their sidebar,
-// their topbar, their pages, in their order. You walk it the way they will,
-// and release each page from the page itself once you have read it through.
+// ─── ONE PAGE OF THE CLIENT'S REPORT ──────────────────────────────────────────
+// The client's own screen, drawn here exactly as they will read it — reached
+// from the same sidebar as everything else, because two nested sidebars is one
+// too many. Above it: what state the page is in, a draft of the commentary
+// that belongs on it, and the button that releases it.
 //
 // It is the real screen, not a second drawing of one. The admin panel used to
 // keep its own idea of what the client sees, and the two drifted until the
 // preview was reassuring about a report that was broken.
-function ClientReportWalk({ client, reportData, setReportData, saveReportData,
+
+// Which note each page carries. A page with no entry has no commentary of its
+// own — the compliance calendar and the action list are lists, not writing.
+const PAGE_NOTE = {
+  overview:        { uae:"uaeGarimaNote",            india:"garimaNote",     topic:"this month's position overall" },
+  dashboard:       { uae:"uaeGarimaNote",            india:"garimaNote",     topic:"the dashboard figures" },
+  cashflow:        { uae:"cashflowGarimaNote",       india:"cashflowNote",   topic:"the cash position and forward outlook" },
+  myreport:        { uae:"uaeGarimaNote",            india:"reportNote",     topic:"this month's report" },
+  treasury:        { uae:"wcNote",                   india:"wcNote",         topic:"the deposit and facility position" },
+  corptax:         { uae:"ctGarimaNote",             india:"ctGarimaNote",   topic:"the corporate tax position" },
+  vat:             { uae:"vatGarimaNote",            india:"vatGarimaNote",  topic:"the VAT position" },
+  workingcapital:  { uae:"workingCapital.garimaNote",india:"wcNote",         topic:"working capital and the cash conversion cycle" },
+  verticalanalysis:{ uae:"verticalAnalysis.garimaNote", india:"verticalAnalysis.garimaNote", topic:"the vertical analysis" },
+  revrecon:        { uae:"revRecon.garimaNote",      india:"revReconNote",   topic:"the IFRS to VAT revenue reconciliation" },
+  qfzp:            { uae:"qfzpSubstance.garimaNote", india:"qfzpSubstance.garimaNote", topic:"the QFZP qualifying position" },
+  auditready:      { uae:"governanceNote",           india:"governanceNote", topic:"audit readiness" },
+  engagement:      { uae:"ipoNote",                  india:"ipoNote",        topic:"the valuation engagement" },
+};
+
+function ClientReportPage({ page, client, reportData, setReportData, saveReportData,
                             kpis, actions = [], invoices = [], liveSnapshot = null,
-                            loading, saved }) {
-  const [page, setPage] = React.useState("overview");
-  const [collapsed, setCollapsed] = React.useState(false);
+                            loading, saved, goTo }) {
+  const [drafting, setDrafting] = React.useState(false);
+  const [draft,    setDraft]    = React.useState(null);
+  const [draftErr, setDraftErr] = React.useState("");
   const [confirmAll, setConfirmAll] = React.useState(false);
+
+  // A different page means a different note — the draft must not follow you.
+  React.useEffect(() => { setDraft(null); setDraftErr(""); }, [page, client?.id]);
 
   if (!client) return (
     <Card style={{ textAlign:"center", padding:40 }}>
@@ -19060,14 +19095,15 @@ function ClientReportWalk({ client, reportData, setReportData, saveReportData,
     </Card>
   );
 
+  const uae   = isUAE(client);
   const nav   = getNav(client);
   const tiles = buildKpiTiles({ client, isDemo:false, liveKpis:kpis, liveReportData:reportData });
   const list  = (v) => Array.isArray(v) ? v : [];
 
   // gate false — this is a review, so the real page is drawn even before it has
-  // been released. The release state is shown in the bar above it instead.
+  // been released. The release state is said plainly in the bar instead.
   const pages = clientPages({
-    client, setPage, isDemo:false, dataLoading:false, reportSaveKey:0,
+    client, setPage: goTo, isDemo:false, dataLoading:false, reportSaveKey:0,
     liveSnapshot, liveKpis:kpis, liveReportData:reportData, liveInvoices:list(invoices),
     resolvedKpis: tiles, resolvedGarimaNote: kpis?.garima_note,
     resolvedActions: list(actions), resolvedEngagement: null,
@@ -19077,10 +19113,14 @@ function ClientReportWalk({ client, reportData, setReportData, saveReportData,
   const gated      = GATED_PAGES.has(page);
   const releasable = nav.filter(n => GATED_PAGES.has(n.id));
   const releasedList = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : null;
+  const everyone   = releasedList === null;
   const live       = isReleased(reportData, page);
   const releasedAt = reportData?.publishedAt?.[page];
   const label      = nav.find(n => n.id === page)?.label || getPageTitle(page, client);
-  const everyone   = releasedList === null;
+
+  const noteDef = PAGE_NOTE[page];
+  const noteKey = noteDef ? (uae ? noteDef.uae : noteDef.india) : null;
+  const current = noteKey ? (getPath(reportData || {}, noteKey) || "") : "";
 
   const release = async (all) => {
     const next = releasePage(reportData || {}, page,
@@ -19089,123 +19129,159 @@ function ClientReportWalk({ client, reportData, setReportData, saveReportData,
     setConfirmAll(false);
   };
 
+  // Written about the figures on this page. The analysis is yours; this is the
+  // paragraph that goes under it, and nothing is saved until you say so.
+  const writeCommentary = async () => {
+    setDrafting(true); setDraftErr("");
+    try {
+      const r = await fetch("/api/narrate", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ client, reportData, kpis, topic: noteDef.topic,
+                               rows: [["Figure","Value"], ...Object.entries(reportData?.pl || {})
+                                 .map(([k, v]) => [k, v?.actual ?? ""])] }),
+      });
+      const j = await r.json();
+      if (j.narration) setDraft(j.narration);
+      else setDraftErr(j.error || "The commentary could not be drafted.");
+    } catch { setDraftErr("Could not reach the drafting service."); }
+    setDrafting(false);
+  };
+
+  const useDraft = () => {
+    setReportData(r => setPath(r || {}, noteKey, draft));
+    setDraft(null);
+  };
+
   return (
     <div>
-      {/* ── The release bar. Not part of the client's screen — it sits above it. ── */}
+      {/* ── State, commentary, release ── */}
       <div style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:"13px 16px",
-        marginBottom:12, background:"#fff", display:"flex", alignItems:"center",
-        gap:14, flexWrap:"wrap" }}>
-        <div style={{ flex:1, minWidth:260 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text,
-            display:"flex", alignItems:"center", gap:9, flexWrap:"wrap" }}>
-            {label}
-            {!gated ? (
-              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.dim,
-                background:C.bg, padding:"3px 11px", borderRadius:60 }}>Always available</span>
-            ) : live ? (
-              <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
-                color: everyone ? C.dim : C.green,
-                background: everyone ? C.bg : `${C.green}12`,
-                padding:"3px 11px", borderRadius:60 }}>
-                {everyone ? "Open to your client"
-                  : `Released${releasedAt ? ` ${new Date(releasedAt).toLocaleDateString("en-GB",
-                      { day:"numeric", month:"short" })}` : ""}`}
-              </span>
+        marginBottom:12, background:"#fff" }}>
+        <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
+          <div style={{ flex:1, minWidth:250 }}>
+            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text,
+              display:"flex", alignItems:"center", gap:9, flexWrap:"wrap" }}>
+              {label}
+              {!gated ? (
+                <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.dim,
+                  background:C.bg, padding:"3px 11px", borderRadius:60 }}>Always available</span>
+              ) : live ? (
+                <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
+                  color: everyone ? C.dim : C.green,
+                  background: everyone ? C.bg : `${C.green}12`,
+                  padding:"3px 11px", borderRadius:60 }}>
+                  {everyone ? "Open to your client"
+                    : `Released${releasedAt ? ` ${new Date(releasedAt).toLocaleDateString("en-GB",
+                        { day:"numeric", month:"short" })}` : ""}`}
+                </span>
+              ) : (
+                <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.warning,
+                  background:`${C.amber}14`, padding:"3px 11px", borderRadius:60 }}>Not released</span>
+              )}
+              {releasedList && (
+                <span style={{ fontFamily:F, fontSize:11, color:C.dim }}>
+                  {releasable.filter(n => releasedList.includes(n.id)).length} of {releasable.length} pages released
+                </span>
+              )}
+            </div>
+            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
+              {!gated
+                ? "Part of their account rather than their report, so it is always open to them."
+                : live
+                  ? everyone
+                    ? "Nothing has been released page by page yet, so your client can see every page."
+                    : "Your client can read this page now. Releasing it again sends whatever you have changed since."
+                  : everyone
+                    ? "Release this page and the rest will show your client a note saying they are being prepared, until you release those too."
+                    : "Your client sees a note saying this page is being prepared."}
+            </div>
+          </div>
+
+          <div style={{ display:"flex", gap:9, alignItems:"center", flexWrap:"wrap" }}>
+            {noteKey && (
+              <button onClick={writeCommentary} disabled={drafting}
+                style={{ padding:"10px 18px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                  background:"none", fontFamily:F, fontWeight:700, fontSize:13, color:C.text,
+                  cursor: drafting ? "default" : "pointer" }}>
+                {drafting ? "Writing…" : current ? "Redraft commentary" : "Draft commentary"}
+              </button>
+            )}
+            {gated && (
+              <button onClick={() => release(false)} disabled={loading}
+                style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
+                  color:"white", fontFamily:F, fontWeight:700, fontSize:13,
+                  cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1 }}>
+                {loading ? "Publishing…" : (live && !everyone) ? "Publish again" : "Publish this page"}
+              </button>
+            )}
+            {saved && <span style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700 }}>Published</span>}
+          </div>
+        </div>
+
+        {draftErr && (
+          <div style={{ marginTop:11, fontFamily:F, fontSize:12, color:C.red, lineHeight:1.7 }}>{draftErr}</div>
+        )}
+
+        {/* The draft, for correcting before it goes anywhere. */}
+        {draft != null && (
+          <div style={{ marginTop:14, paddingTop:13, borderTop:`1px solid ${C.border}` }}>
+            <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
+              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>
+              A draft about your figures, for you to correct
+            </div>
+            <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={6}
+              style={{ width:"100%", boxSizing:"border-box", padding:"10px 13px", borderRadius:12,
+                fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+                background:C.bg, outline:"none", resize:"vertical", lineHeight:1.75 }}/>
+            <div style={{ display:"flex", gap:9, marginTop:10, flexWrap:"wrap" }}>
+              <button onClick={useDraft}
+                style={{ padding:"9px 18px", borderRadius:12, border:"none", background:C.grad1,
+                  color:"white", fontFamily:F, fontWeight:700, fontSize:12.5, cursor:"pointer" }}>
+                Put this on the page
+              </button>
+              <button onClick={() => setDraft(null)}
+                style={{ padding:"9px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                  background:"none", fontFamily:F, fontWeight:700, fontSize:12.5,
+                  color:C.muted, cursor:"pointer" }}>
+                Discard
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Releasing the lot, once you have been through them. */}
+        {gated && !everyone && releasable.some(n => !isReleased(reportData, n.id)) && (
+          <div style={{ marginTop:13, paddingTop:12, borderTop:`1px solid ${C.border}`,
+            display:"flex", gap:9, alignItems:"center", flexWrap:"wrap" }}>
+            {confirmAll ? (
+              <>
+                <span style={{ fontFamily:F, fontSize:12, color:C.text }}>
+                  Publish all {releasable.length} pages?
+                </span>
+                <button onClick={() => release(true)}
+                  style={{ padding:"7px 15px", borderRadius:12, border:"none", background:C.grad1,
+                    color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>Yes</button>
+                <button onClick={() => setConfirmAll(false)}
+                  style={{ padding:"7px 13px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                    background:"none", fontFamily:F, fontWeight:700, fontSize:12,
+                    color:C.muted, cursor:"pointer" }}>No</button>
+              </>
             ) : (
-              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.warning,
-                background:`${C.amber}14`, padding:"3px 11px", borderRadius:60 }}>Not released</span>
+              <button onClick={() => setConfirmAll(true)}
+                style={{ padding:"8px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                  background:"none", fontFamily:F, fontWeight:700, fontSize:12,
+                  color:C.text, cursor:"pointer" }}>
+                Publish every remaining page
+              </button>
             )}
           </div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
-            {!gated
-              ? "This page is part of their account rather than their report, so it is always open to them."
-              : live
-                ? "Your client can read this page now. Releasing it again sends whatever you have changed since."
-                : everyone
-                  ? "Nothing has been released page by page yet, so your client can still see everything. Release this page and the rest will show them a note saying they are being prepared, until you release those too."
-                  : "Your client sees a note saying this page is being prepared."}
-          </div>
-        </div>
-
-        {gated && (
-          <div style={{ display:"flex", gap:9, alignItems:"center", flexWrap:"wrap" }}>
-            <button onClick={() => release(false)} disabled={loading}
-              style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
-                color:"white", fontFamily:F, fontWeight:700, fontSize:13,
-                cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1 }}>
-              {loading ? "Releasing…" : (live && !everyone) ? "Release again" : "Release this page"}
-            </button>
-            {saved && <span style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700 }}>Released</span>}
-          </div>
         )}
       </div>
 
-      {/* How far through the report you are. */}
-      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:"11px 16px",
-        marginBottom:12, background:"#fff", display:"flex", alignItems:"center",
-        gap:12, flexWrap:"wrap" }}>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, flex:1, minWidth:230 }}>
-          {everyone
-            ? <>All {releasable.length} report pages are open to your client — nothing is being held back.</>
-            : <><strong style={{ color:C.text }}>
-                {releasable.filter(n => releasedList.includes(n.id)).length} of {releasable.length}
-                </strong> report pages released.</>}
-        </div>
-        <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
-          {releasable.map(n => {
-            const ok = isReleased(reportData, n.id);
-            return (
-              <button key={n.id} onClick={() => setPage(n.id)} title={n.label}
-                style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px",
-                  borderRadius:60, cursor:"pointer", fontFamily:F, fontSize:11, fontWeight:700,
-                  border:`1px solid ${page===n.id ? C.blue : C.border}`,
-                  background: page===n.id ? `${C.blue}0C` : "none",
-                  color: page===n.id ? C.blue : C.muted }}>
-                <span style={{ width:6, height:6, borderRadius:60,
-                  background: ok ? C.green : C.border }}/>
-                {n.label}
-              </button>
-            );
-          })}
-        </div>
-        {!everyone && releasable.some(n => !isReleased(reportData, n.id)) && (
-          confirmAll ? (
-            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>Release every page?</span>
-              <button onClick={() => release(true)}
-                style={{ padding:"7px 15px", borderRadius:12, border:"none", background:C.grad1,
-                  color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>Yes</button>
-              <button onClick={() => setConfirmAll(false)}
-                style={{ padding:"7px 13px", borderRadius:12, border:`1.5px solid ${C.border}`,
-                  background:"none", fontFamily:F, fontWeight:700, fontSize:12,
-                  color:C.muted, cursor:"pointer" }}>No</button>
-            </div>
-          ) : (
-            <button onClick={() => setConfirmAll(true)}
-              style={{ padding:"8px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
-                background:"none", fontFamily:F, fontWeight:700, fontSize:12,
-                color:C.text, cursor:"pointer" }}>
-              Release all pages
-            </button>
-          )
-        )}
-      </div>
-
-      {/* ── The client's screen, whole: their sidebar, their topbar, their page ── */}
+      {/* ── The client's screen ── */}
       <div style={{ border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden",
-        background:"#fff" }}>
-        <div style={{ display:"flex", minHeight:560, fontFamily:F, background:"#fff" }}>
-          <Sidebar page={page} setPage={setPage} client={client}
-            onLogout={() => {}} collapsed={collapsed} setCollapsed={setCollapsed}/>
-          <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0,
-            overflow:"hidden", background:"#fff" }}>
-            <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
-              onMenuToggle={() => setCollapsed(c => !c)} notifItems={[]}/>
-            <div style={{ flex:1, overflowY:"auto", background:C.canvas }}>
-              {pages[page] || <BeingPrepared title={label}/>}
-            </div>
-          </div>
-        </div>
+        background:C.canvas }}>
+        {pages[page] || <BeingPrepared title={label}/>}
       </div>
     </div>
   );
@@ -19991,7 +20067,7 @@ function AdminPanel({ admin, onLogout }) {
     uaecashflow: "UAE cash position and the notes that go with it.",
     preview:     "Your client's portal, exactly as they read it. Walk it page by page and release each one.",
     override:    "Type a figure in by hand when the workbook is more trouble than the correction is worth.",
-    documents:   "Files this client has shared with you, and anything with an expiry worth watching.",
+    documents:   "Documents both ways — what this client has sent you, and what you have sent them.",
     engagement:  "Valuation engagements and their status.",
     invoices:    "Your billing to this client.",
     requests:    "Service requests clients have submitted.",
@@ -20020,7 +20096,6 @@ function AdminPanel({ admin, onLogout }) {
 
     { id:"templates",  icon:"ti-table-export",     label:"Excel Workbook",    group:"Analysis" },
 
-    { id:"preview",    icon:"ti-eye",              label:"Client Report",     group:"Client report" },
   ];
 
   // The screens that still let a figure be typed in by hand. They are reached
@@ -20531,7 +20606,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           </div>
         )}
         <nav style={{ flex:1, padding:"6px 0", overflowY:"auto" }}>
-          {["Admin control","Data in","Analysis","Client report"].map(group => {
+          {["Admin control","Data in","Analysis"].map(group => {
             const groupTabs = ADMIN_TABS.filter(t => t.group === group)
               .filter(t => t.only !== "uae" || isUAE(selected));
             if (!groupTabs.length) return null;
@@ -20565,6 +20640,51 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             );
           })}
 
+          {/* ── The client's report, page by page ──
+              Their nav, in their order, in this one sidebar. Opening a page
+              draws the screen they will read, with the state of it and the
+              publish button above. A second nested sidebar was one too many. */}
+          {CLIENT_PAGES.length > 0 && (() => {
+            const shut = !!collapsed["Client report"];
+            const released = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : null;
+            const done = released ? CLIENT_PAGES.filter(n => released.includes(n.id)).length : null;
+            return (
+              <div>
+                <button onClick={() => setCollapsed(c => ({ ...c, ["Client report"]: !c["Client report"] }))}
+                  style={{ display:"flex", alignItems:"center", gap:6, width:"100%",
+                    padding:"9px 14px 4px", background:"none", border:"none", cursor:"pointer",
+                    fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
+                    textTransform:"uppercase", letterSpacing:"0.12em" }}>
+                  <span style={{ fontSize:8, opacity:0.7 }}>{shut ? "▸" : "▾"}</span>
+                  Client report
+                  {done != null && (
+                    <span style={{ marginLeft:"auto", fontSize:9, fontWeight:700, color:C.dim,
+                      letterSpacing:0, textTransform:"none" }}>{done}/{CLIENT_PAGES.length}</span>
+                  )}
+                </button>
+                {shut ? null : CLIENT_PAGES.map(n => {
+                  const id = `cp:${n.id}`;
+                  const live = isReleased(reportData, n.id);
+                  return (
+                    <button key={id} onClick={() => { setTab(id); setSidebarOpen(false); }} style={{
+                      display:"flex", alignItems:"center", gap:10, width:"100%",
+                      padding:"9px 14px", background:tab===id?`${C.amber}12`:"transparent",
+                      border:"none", cursor:"pointer",
+                      borderLeft:tab===id?`3px solid ${C.amber}`:"3px solid transparent",
+                      fontFamily:F }}>
+                      <i className={"ti " + (n.icon||"ti-circle")} style={{ fontSize:14,
+                        color:tab===id?C.amber:C.muted }}/>
+                      <span style={{ fontSize:12, fontWeight:600, flex:1, textAlign:"left",
+                        color:tab===id?C.amber:C.muted }}>{n.label}</span>
+                      <span title={live ? "Published" : "Not published yet"}
+                        style={{ width:7, height:7, borderRadius:60, flexShrink:0,
+                          background: live ? C.green : C.border }}/>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </nav>
         <div style={{ padding:"8px 10px", borderTop:`1px solid ${C.border}` }}>
           <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
@@ -20591,7 +20711,9 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
               borderRadius:8, color:C.text, fontSize:20, lineHeight:1, flexShrink:0 }}>&#x2630;</button>
           <h1 style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text,
             letterSpacing:"-0.02em", margin:0, flexShrink:0 }}>
-            {ADMIN_TABS.find(t=>t.id===tab)?.label}
+            {tab.startsWith("cp:")
+              ? (CLIENT_PAGES.find(n => `cp:${n.id}` === tab)?.label || "Client report")
+              : ADMIN_TABS.find(t=>t.id===tab)?.label}
           </h1>
           {selected && !["clients","addclient","requests","market","home"].includes(tab) && (
             <div style={{ display:"flex", alignItems:"center", gap:7, padding:"4px 12px",
@@ -20613,9 +20735,11 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
         </div>
  
         <div className="ns-page">
-          {TAB_INTRO[tab] && (
+          {(TAB_INTRO[tab] || tab.startsWith("cp:")) && (
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7,
-              margin:"0 0 16px", maxWidth:680 }}>{TAB_INTRO[tab]}</div>
+              margin:"0 0 16px", maxWidth:680 }}>
+              {TAB_INTRO[tab] || "This page exactly as your client reads it. Draft the commentary, then publish it to them."}
+            </div>
           )}
 
           {/* ── DASHBOARD HOME ── */}
@@ -21239,12 +21363,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   saveReportData={saveReportData} loading={loading} saved={saved} adminEmail={admin?.email}/>
           )}
 
-          {/* ── THE CLIENT'S REPORT, WALKED AND RELEASED ── */}
-          {tab === "preview" && (
-            <ClientReportWalk client={selected} reportData={reportData}
+          {/* ── ONE PAGE OF THE CLIENT'S REPORT ── */}
+          {tab.startsWith("cp:") && (
+            <ClientReportPage page={tab.slice(3)} client={selected} reportData={reportData}
               setReportData={setReportData} saveReportData={saveReportData}
               kpis={kpis} actions={actions} invoices={invoices}
-              liveSnapshot={liveSnap} loading={loading} saved={saved}/>
+              liveSnapshot={liveSnap} loading={loading} saved={saved}
+              goTo={(pg) => setTab(`cp:${pg}`)}/>
           )}
 
           {/* ── CONNECTIONS (Zoho Books) ── */}
@@ -24338,6 +24463,20 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                               <span>{d.file_size}</span>
                               <span>·</span>
                               <span>{d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN") : "—"}</span>
+                              {/* Who put it here. Both sides write to the same table,
+                                  so without this you cannot tell a file the client
+                                  sent you from one you sent them. */}
+                              {(() => {
+                                const mine = /^garima$/i.test(String(d.uploaded_by || ""));
+                                return (
+                                  <span style={{ fontWeight:700, fontSize:10, textTransform:"uppercase",
+                                    letterSpacing:"0.05em", padding:"1px 7px", borderRadius:60,
+                                    color: mine ? C.dim : C.green,
+                                    background: mine ? C.bg : `${C.green}12` }}>
+                                    {mine ? "Sent to them" : `From ${d.uploaded_by || "the client"}`}
+                                  </span>
+                                );
+                              })()}
                               {d.doc_type && d.doc_type !== "general" && (
                                 <span style={{ color:C.blue, fontWeight:700, textTransform:"uppercase", fontSize:10,
                                   background:`${C.blue}12`, padding:"1px 7px", borderRadius:60 }}>
