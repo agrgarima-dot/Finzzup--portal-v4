@@ -1925,9 +1925,15 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
     );
   };
 
-  const healthScore = reportData?.healthScore || 72;
-  const healthColor = healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
-  const healthLabel = healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
+  // A score of 72 used to appear here whenever none had been worked out — a
+  // flat "Health: 72/100 — Moderate" on a client who had published nothing,
+  // under a Chartered Accountant's name. The five dimensions below give the
+  // honest read; with no score of its own this chip stays off.
+  const healthScore = reportData?.healthScore ?? null;
+  const healthColor = healthScore == null ? C.muted
+    : healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
+  const healthLabel = healthScore == null ? null
+    : healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
 
   // ── Proactive alerts ──────────────────────────────────────────────────────
   const [dismissedAlerts, setDismissedAlerts] = React.useState(new Set());
@@ -2047,9 +2053,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           {highPriority.length > 0 && (
             <span className="ns-badge red"><i className="ti ti-alert-triangle" style={{ fontSize:11 }}/> {highPriority.length} High Priority</span>
           )}
-          <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
-            Health: {healthScore}/100 — {healthLabel}
-          </span>
+          {healthScore != null && (
+            <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
+              Health: {healthScore}/100 — {healthLabel}
+            </span>
+          )}
         </div>
       </div>
 
@@ -2468,8 +2476,13 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       </div>
       )}
 
-      {/* ── Invoice Status + Connected Persons row ── */}
-      <div style={{ display:"grid", gridTemplateColumns:`${isMobile?"1fr":"180px 1fr"}`, gap:14 }}>
+      {/* ── Invoice Status + Connected Persons row ──
+          Connected persons are an Art. 36 corporate-tax concept. On an India
+          client the panel was headed with the term and then said there were
+          none on record — which there never would be, because the concept does
+          not apply to them. */}
+      <div style={{ display:"grid",
+        gridTemplateColumns:`${isMobile ? "1fr" : (isUAE(client) ? "180px 1fr" : "1fr")}`, gap:14 }}>
 
         {/* Invoice donut-style status */}
         <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:18 }}>
@@ -2496,7 +2509,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </button>
         </div>
 
-        {/* Connected Persons */}
+        {/* Connected Persons — UAE only */}
+        {isUAE(client) && (
         <div className="ns-panel" style={{ margin:0 }}>
           <div className="ns-panel-header">
             <h3>Connected Persons</h3>
@@ -2529,6 +2543,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
               </div>
           }
         </div>
+        )}
       </div>
 
       <DrillPortal/>
@@ -15987,6 +16002,233 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
   );
 }
  
+// ─── THE CLIENT PORTAL'S DESIGN SYSTEM ────────────────────────────────────────
+// Every rule the client's screens are drawn with: the panels, the headings,
+// the tables, the tiles, the responsive behaviour.
+//
+// This used to live inside the Portal component, which meant it travelled with
+// the portal and nowhere else. The admin panel renders the same screens for
+// review, and without these rules every panel heading fell back to a raw <h3>
+// — the same page, in the same components, looking thrown together. Anything
+// drawing a client screen renders this first.
+function ClientStyles() {
+  return (
+      <style>{`
+        /* ── NetSuite Global Design System ── */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { background: #F0F1F3; }
+ 
+        /* Typography scale */
+        .ns-page-title { font-size:15px; font-weight:800; color:#1a1a2e; letter-spacing:-0.01em; }
+        .ns-section-title { font-size:11px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.08em; }
+        .ns-label { font-size:10px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; }
+        .ns-value { font-size:20px; font-weight:900; color:#1a1a2e; font-family:'JetBrains Mono','SF Mono',monospace; }
+        .ns-sub { font-size:11px; color:#9CA3AF; }
+ 
+        /* Panel / Card */
+        .ns-panel {
+          background: white;
+          border: 1px solid #E5E7EB;
+          border-radius: 6px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+          overflow: hidden;
+        }
+        .ns-panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 14px;
+          background: #F8F9FA;
+          border-bottom: 1px solid #E5E7EB;
+        }
+        .ns-panel-header h3 {
+          margin: 0;
+          font-size: 11px;
+          font-weight: 700;
+          color: #374151;
+          text-transform: uppercase;
+          letter-spacing: 0.07em;
+        }
+        .ns-panel-body { padding: 14px; }
+        .ns-panel-body.no-pad { padding: 0; }
+ 
+        /* Tables */
+        .ns-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .ns-table thead tr { background: #F0F1F3; }
+        .ns-table thead th {
+          padding: 6px 12px;
+          text-align: left;
+          font-size: 10px;
+          font-weight: 700;
+          color: #6B7280;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          border-bottom: 1px solid #E5E7EB;
+          white-space: nowrap;
+        }
+        .ns-table thead th.right { text-align: right; }
+        .ns-table tbody tr { border-bottom: 1px solid #F3F4F6; }
+        .ns-table tbody tr:hover { background: #F9FAFB; }
+        .ns-table tbody tr.striped:nth-child(even) { background: #FAFAFA; }
+        .ns-table tbody td {
+          padding: 7px 12px;
+          color: #374151;
+          font-size: 12px;
+          vertical-align: middle;
+        }
+        .ns-table tbody td.right { text-align: right; }
+        .ns-table tbody td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+        .ns-table tbody td.bold { font-weight: 700; color: #111827; }
+        .ns-table tbody td.muted { color: #9CA3AF; }
+        .ns-table tbody tr.subtotal td { background: #F9FAFB; font-weight: 700; color: #111827; }
+        .ns-table tbody tr.total td { background: #EEF2FF; font-weight: 800; color: #1E3A8A; border-top: 2px solid #C7D2FE; }
+ 
+        /* Form controls do not inherit font-family by default — force it so
+           buttons, inputs and selects match the rest of the portal. */
+        button, input, select, textarea, optgroup { font-family: inherit; }
+
+        /* KPI Tiles */
+        .ns-kpi-tile {
+          background: white;
+          border: 1px solid #E5E7EB;
+          border-radius: 6px;
+          padding: 12px 14px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
+        .ns-kpi-tile .value { font-size:13px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
+        .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
+        .ns-kpi-tile.drillable { cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; }
+        .ns-kpi-tile.drillable:hover { border-color:#2563EB; box-shadow:0 3px 10px rgba(37,99,235,0.14); transform:translateY(-1px); }
+        .ns-kpi-tile .drill-hint {
+          position:absolute; top:8px; right:10px;
+          font-size:13px; font-weight:800; color:#2563EB; opacity:0.35;
+          transition:opacity .15s;
+        }
+        .ns-kpi-tile.drillable:hover .drill-hint { opacity:1; }
+ 
+        /* Badges */
+        .ns-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:700; }
+        .ns-badge.green { background:#DCFCE7; color:#15803D; }
+        .ns-badge.red { background:#FEF2F2; color:#DC2626; }
+        .ns-badge.amber { background:#FEF3C7; color:#D97706; }
+        .ns-badge.blue { background:#DBEAFE; color:#1D4ED8; }
+        .ns-badge.purple { background:#EDE9FE; color:#6D28D9; }
+ 
+        /* Stat bar (like NetSuite's performance bars) */
+        .ns-stat-row { display:flex; align-items:center; justify-content:space-between; padding:7px 14px; border-bottom:1px solid #F3F4F6; font-size:12px; }
+        .ns-stat-row:last-child { border-bottom:none; }
+        .ns-stat-row .stat-label { color:#374151; flex:1; }
+        .ns-stat-row .stat-period { color:#9CA3AF; font-size:11px; flex:1; }
+        .ns-stat-row .stat-value { font-family:'JetBrains Mono','SF Mono',monospace; font-weight:700; color:#111827; min-width:80px; text-align:right; }
+        .ns-stat-row .stat-change { min-width:50px; text-align:right; font-size:11px; font-weight:700; }
+        .ns-stat-row .stat-change.up { color:#059669; }
+        .ns-stat-row .stat-change.down { color:#EF4444; }
+ 
+        /* Tiles (shortcut buttons) */
+        .ns-tile-row { display:flex; gap:10px; }
+        .ns-tile {
+          flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+          gap:8px; padding:16px 10px; border-radius:6px; border:none; cursor:pointer;
+          color:white; font-weight:700; font-size:11px; transition:opacity 0.15s;
+          box-shadow:0 1px 3px rgba(0,0,0,0.15);
+        }
+        .ns-tile:hover { opacity:0.88; }
+        .ns-tile .tile-icon { font-size:20px; }
+ 
+        /* Scrollbar */
+        ::-webkit-scrollbar { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#D1D5DB; border-radius:10px; }
+        ::-webkit-scrollbar-thumb:hover { background:#9CA3AF; }
+ 
+        /* Page padding wrapper */
+        .ns-page { padding:16px; display:flex; flex-direction:column; gap:14px; background:#F0F1F3; min-height:calc(100vh - 44px); }
+        .ns-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .ns-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+        .ns-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+        .ns-grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
+        @media(max-width:900px){
+          .ns-grid-6{grid-template-columns:repeat(3,1fr)!important}
+          .ns-grid-4{grid-template-columns:repeat(2,1fr)!important}
+          .ns-grid-3{grid-template-columns:1fr!important}
+          .ns-grid-2{grid-template-columns:1fr!important}
+        }
+
+        /* ── Mobile (< 768px) ── */
+        @media(max-width:768px){
+          /* Sidebar becomes a fixed overlay */
+          .main-sidebar {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+            width: 260px !important;
+            transform: translateX(-100%) !important;
+            transition: transform 0.25s ease !important;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
+          }
+          .main-sidebar.sidebar-open {
+            transform: translateX(0) !important;
+          }
+          /* Show mobile backdrop when sidebar open */
+          .main-sidebar.sidebar-open ~ * .mobile-backdrop,
+          .mobile-backdrop { display: block !important; }
+
+          /* Hamburger visible on mobile */
+          .hamburger-btn { display: flex !important; }
+
+          /* Hide breadcrumb home on tiny screens */
+          .bc-home { display: none !important; }
+
+          /* Grids stack on mobile */
+          .ns-grid-6 { grid-template-columns: 1fr 1fr !important; }
+          .ns-grid-4 { grid-template-columns: 1fr 1fr !important; }
+          .ns-grid-3 { grid-template-columns: 1fr !important; }
+          .ns-grid-2 { grid-template-columns: 1fr !important; }
+
+          /* Page padding tighter on mobile */
+          .ns-page { padding: 12px !important; gap: 10px !important; }
+
+          /* Tables scroll horizontally on mobile */
+          .ns-panel { overflow-x: auto !important; }
+          .ns-table { min-width: 480px; }
+
+          /* KPI tiles smaller on mobile */
+          .ns-kpi-tile { padding: 12px 12px !important; }
+          .ns-kpi-tile .value { font-size: 15px !important; }
+        }
+
+        @media(max-width:480px){
+          .ns-grid-6 { grid-template-columns: 1fr !important; }
+          .ns-grid-4 { grid-template-columns: 1fr !important; }
+        }
+
+        /* Login responsive */
+        @media(max-width:700px){
+          .login-left-panel { display:none !important; }
+          .login-right-panel { padding:24px 16px !important; }
+        }
+
+        /* Sidebar hover */
+        nav button:hover { background:rgba(255,255,255,0.06)!important; }
+ 
+        /* Topbar */
+        header a { text-decoration:none; }
+ 
+        /* Admin panel table */
+        .admin-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .admin-table th { background:#F3F4F6; padding:8px 12px; text-align:left; font-size:10px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
+        .admin-table td { padding:8px 12px; border-bottom:1px solid #F3F4F6; color:#374151; font-size:12px; }
+        .admin-table tr:hover td { background:#F9FAFB; }
+ 
+        /* Smooth transitions */
+        button { transition:all 0.12s ease; }
+        input, textarea, select { font-family:inherit; }
+      `}</style>
+  );
+}
+
 // ─── RELEASING A REPORT, A PAGE AT A TIME ─────────────────────────────────────
 // A client's whole report lives in one row, so saving has always meant saving
 // everything. That is not how the work actually goes: the analysis lands, then
@@ -16367,219 +16609,7 @@ function Portal({ client, onLogout }) {
     <>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css"/>
     <div style={{ display:"flex", minHeight:"100vh", background:"#fff", fontFamily:F }}>
-      <style>{`
-        /* ── NetSuite Global Design System ── */
-        *, *::before, *::after { box-sizing: border-box; }
-        body { background: #F0F1F3; }
- 
-        /* Typography scale */
-        .ns-page-title { font-size:15px; font-weight:800; color:#1a1a2e; letter-spacing:-0.01em; }
-        .ns-section-title { font-size:11px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.08em; }
-        .ns-label { font-size:10px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; }
-        .ns-value { font-size:20px; font-weight:900; color:#1a1a2e; font-family:'JetBrains Mono','SF Mono',monospace; }
-        .ns-sub { font-size:11px; color:#9CA3AF; }
- 
-        /* Panel / Card */
-        .ns-panel {
-          background: white;
-          border: 1px solid #E5E7EB;
-          border-radius: 6px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-          overflow: hidden;
-        }
-        .ns-panel-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 14px;
-          background: #F8F9FA;
-          border-bottom: 1px solid #E5E7EB;
-        }
-        .ns-panel-header h3 {
-          margin: 0;
-          font-size: 11px;
-          font-weight: 700;
-          color: #374151;
-          text-transform: uppercase;
-          letter-spacing: 0.07em;
-        }
-        .ns-panel-body { padding: 14px; }
-        .ns-panel-body.no-pad { padding: 0; }
- 
-        /* Tables */
-        .ns-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .ns-table thead tr { background: #F0F1F3; }
-        .ns-table thead th {
-          padding: 6px 12px;
-          text-align: left;
-          font-size: 10px;
-          font-weight: 700;
-          color: #6B7280;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          border-bottom: 1px solid #E5E7EB;
-          white-space: nowrap;
-        }
-        .ns-table thead th.right { text-align: right; }
-        .ns-table tbody tr { border-bottom: 1px solid #F3F4F6; }
-        .ns-table tbody tr:hover { background: #F9FAFB; }
-        .ns-table tbody tr.striped:nth-child(even) { background: #FAFAFA; }
-        .ns-table tbody td {
-          padding: 7px 12px;
-          color: #374151;
-          font-size: 12px;
-          vertical-align: middle;
-        }
-        .ns-table tbody td.right { text-align: right; }
-        .ns-table tbody td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-        .ns-table tbody td.bold { font-weight: 700; color: #111827; }
-        .ns-table tbody td.muted { color: #9CA3AF; }
-        .ns-table tbody tr.subtotal td { background: #F9FAFB; font-weight: 700; color: #111827; }
-        .ns-table tbody tr.total td { background: #EEF2FF; font-weight: 800; color: #1E3A8A; border-top: 2px solid #C7D2FE; }
- 
-        /* Form controls do not inherit font-family by default — force it so
-           buttons, inputs and selects match the rest of the portal. */
-        button, input, select, textarea, optgroup { font-family: inherit; }
-
-        /* KPI Tiles */
-        .ns-kpi-tile {
-          background: white;
-          border: 1px solid #E5E7EB;
-          border-radius: 6px;
-          padding: 12px 14px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-        }
-        .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
-        .ns-kpi-tile .value { font-size:13px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
-        .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
-        .ns-kpi-tile.drillable { cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; }
-        .ns-kpi-tile.drillable:hover { border-color:#2563EB; box-shadow:0 3px 10px rgba(37,99,235,0.14); transform:translateY(-1px); }
-        .ns-kpi-tile .drill-hint {
-          position:absolute; top:8px; right:10px;
-          font-size:13px; font-weight:800; color:#2563EB; opacity:0.35;
-          transition:opacity .15s;
-        }
-        .ns-kpi-tile.drillable:hover .drill-hint { opacity:1; }
- 
-        /* Badges */
-        .ns-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:700; }
-        .ns-badge.green { background:#DCFCE7; color:#15803D; }
-        .ns-badge.red { background:#FEF2F2; color:#DC2626; }
-        .ns-badge.amber { background:#FEF3C7; color:#D97706; }
-        .ns-badge.blue { background:#DBEAFE; color:#1D4ED8; }
-        .ns-badge.purple { background:#EDE9FE; color:#6D28D9; }
- 
-        /* Stat bar (like NetSuite's performance bars) */
-        .ns-stat-row { display:flex; align-items:center; justify-content:space-between; padding:7px 14px; border-bottom:1px solid #F3F4F6; font-size:12px; }
-        .ns-stat-row:last-child { border-bottom:none; }
-        .ns-stat-row .stat-label { color:#374151; flex:1; }
-        .ns-stat-row .stat-period { color:#9CA3AF; font-size:11px; flex:1; }
-        .ns-stat-row .stat-value { font-family:'JetBrains Mono','SF Mono',monospace; font-weight:700; color:#111827; min-width:80px; text-align:right; }
-        .ns-stat-row .stat-change { min-width:50px; text-align:right; font-size:11px; font-weight:700; }
-        .ns-stat-row .stat-change.up { color:#059669; }
-        .ns-stat-row .stat-change.down { color:#EF4444; }
- 
-        /* Tiles (shortcut buttons) */
-        .ns-tile-row { display:flex; gap:10px; }
-        .ns-tile {
-          flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-          gap:8px; padding:16px 10px; border-radius:6px; border:none; cursor:pointer;
-          color:white; font-weight:700; font-size:11px; transition:opacity 0.15s;
-          box-shadow:0 1px 3px rgba(0,0,0,0.15);
-        }
-        .ns-tile:hover { opacity:0.88; }
-        .ns-tile .tile-icon { font-size:20px; }
- 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width:5px; height:5px; }
-        ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:#D1D5DB; border-radius:10px; }
-        ::-webkit-scrollbar-thumb:hover { background:#9CA3AF; }
- 
-        /* Page padding wrapper */
-        .ns-page { padding:16px; display:flex; flex-direction:column; gap:14px; background:#F0F1F3; min-height:calc(100vh - 44px); }
-        .ns-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-        .ns-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
-        .ns-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-        .ns-grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
-        @media(max-width:900px){
-          .ns-grid-6{grid-template-columns:repeat(3,1fr)!important}
-          .ns-grid-4{grid-template-columns:repeat(2,1fr)!important}
-          .ns-grid-3{grid-template-columns:1fr!important}
-          .ns-grid-2{grid-template-columns:1fr!important}
-        }
-
-        /* ── Mobile (< 768px) ── */
-        @media(max-width:768px){
-          /* Sidebar becomes a fixed overlay */
-          .main-sidebar {
-            position: fixed !important;
-            top: 0 !important; left: 0 !important;
-            height: 100vh !important;
-            z-index: 1000 !important;
-            width: 260px !important;
-            transform: translateX(-100%) !important;
-            transition: transform 0.25s ease !important;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
-          }
-          .main-sidebar.sidebar-open {
-            transform: translateX(0) !important;
-          }
-          /* Show mobile backdrop when sidebar open */
-          .main-sidebar.sidebar-open ~ * .mobile-backdrop,
-          .mobile-backdrop { display: block !important; }
-
-          /* Hamburger visible on mobile */
-          .hamburger-btn { display: flex !important; }
-
-          /* Hide breadcrumb home on tiny screens */
-          .bc-home { display: none !important; }
-
-          /* Grids stack on mobile */
-          .ns-grid-6 { grid-template-columns: 1fr 1fr !important; }
-          .ns-grid-4 { grid-template-columns: 1fr 1fr !important; }
-          .ns-grid-3 { grid-template-columns: 1fr !important; }
-          .ns-grid-2 { grid-template-columns: 1fr !important; }
-
-          /* Page padding tighter on mobile */
-          .ns-page { padding: 12px !important; gap: 10px !important; }
-
-          /* Tables scroll horizontally on mobile */
-          .ns-panel { overflow-x: auto !important; }
-          .ns-table { min-width: 480px; }
-
-          /* KPI tiles smaller on mobile */
-          .ns-kpi-tile { padding: 12px 12px !important; }
-          .ns-kpi-tile .value { font-size: 15px !important; }
-        }
-
-        @media(max-width:480px){
-          .ns-grid-6 { grid-template-columns: 1fr !important; }
-          .ns-grid-4 { grid-template-columns: 1fr !important; }
-        }
-
-        /* Login responsive */
-        @media(max-width:700px){
-          .login-left-panel { display:none !important; }
-          .login-right-panel { padding:24px 16px !important; }
-        }
-
-        /* Sidebar hover */
-        nav button:hover { background:rgba(255,255,255,0.06)!important; }
- 
-        /* Topbar */
-        header a { text-decoration:none; }
- 
-        /* Admin panel table */
-        .admin-table { width:100%; border-collapse:collapse; font-size:12px; }
-        .admin-table th { background:#F3F4F6; padding:8px 12px; text-align:left; font-size:10px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
-        .admin-table td { padding:8px 12px; border-bottom:1px solid #F3F4F6; color:#374151; font-size:12px; }
-        .admin-table tr:hover td { background:#F9FAFB; }
- 
-        /* Smooth transitions */
-        button { transition:all 0.12s ease; }
-        input, textarea, select { font-family:inherit; }
-      `}</style>
+      <ClientStyles/>
       {dataLoading && !isDemo && (
         <div style={{ position:"fixed", top:0, left:0, right:0, height:3, zIndex:9999,
           background:C.grad1, animation:"progress 1.5s ease-in-out infinite" }}/>
@@ -19050,79 +19080,78 @@ function ResetClientData({ client, reportData, setReportData, saveReportData, lo
   );
 }
 
-// ─── ONE PAGE OF THE CLIENT'S REPORT ──────────────────────────────────────────
-// The client's own screen, drawn here exactly as they will read it — reached
-// from the same sidebar as everything else, because two nested sidebars is one
-// too many. Above it: what state the page is in, a draft of the commentary
-// that belongs on it, and the button that releases it.
+// ─── THE CLIENT'S PORTAL, ON THE ADMIN SIDE ───────────────────────────────────
+// Their sidebar, their topbar, their pages. Not a preview pane, not a second
+// drawing of it — the portal itself, filled with this client's working copy.
 //
-// It is the real screen, not a second drawing of one. The admin panel used to
-// keep its own idea of what the client sees, and the two drifted until the
-// preview was reassuring about a report that was broken.
+// Everything the admin panel adds is one slim band across the top: which page
+// you are on, whether it has been published, and the two buttons this view
+// exists for. The analysis has already flowed in from the books; what is left
+// is to read the page, write the commentary, and publish it.
+//
+// Nested sidebars and preview frames were both tried and both were wrong. What
+// a Chartered Accountant needs to check is the screen the client opens, and
+// anything drawn around it is a different screen.
 
-// Which note each page carries. A page with no entry has no commentary of its
-// own — the compliance calendar and the action list are lists, not writing.
+// Which note each page carries, per jurisdiction. A page with no entry has no
+// commentary of its own — the compliance calendar and the action list are
+// lists, not writing.
 const PAGE_NOTE = {
-  overview:        { uae:"uaeGarimaNote",            india:"garimaNote",     topic:"this month's position overall" },
-  dashboard:       { uae:"uaeGarimaNote",            india:"garimaNote",     topic:"the dashboard figures" },
-  cashflow:        { uae:"cashflowGarimaNote",       india:"cashflowNote",   topic:"the cash position and forward outlook" },
-  myreport:        { uae:"uaeGarimaNote",            india:"reportNote",     topic:"this month's report" },
-  treasury:        { uae:"wcNote",                   india:"wcNote",         topic:"the deposit and facility position" },
-  corptax:         { uae:"ctGarimaNote",             india:"ctGarimaNote",   topic:"the corporate tax position" },
-  vat:             { uae:"vatGarimaNote",            india:"vatGarimaNote",  topic:"the VAT position" },
-  workingcapital:  { uae:"workingCapital.garimaNote",india:"wcNote",         topic:"working capital and the cash conversion cycle" },
-  verticalanalysis:{ uae:"verticalAnalysis.garimaNote", india:"verticalAnalysis.garimaNote", topic:"the vertical analysis" },
-  revrecon:        { uae:"revRecon.garimaNote",      india:"revReconNote",   topic:"the IFRS to VAT revenue reconciliation" },
-  qfzp:            { uae:"qfzpSubstance.garimaNote", india:"qfzpSubstance.garimaNote", topic:"the QFZP qualifying position" },
-  auditready:      { uae:"governanceNote",           india:"governanceNote", topic:"audit readiness" },
-  engagement:      { uae:"ipoNote",                  india:"ipoNote",        topic:"the valuation engagement" },
+  overview:        { uae:"uaeGarimaNote",              india:"garimaNote",     topic:"this month's position overall" },
+  dashboard:       { uae:"uaeGarimaNote",              india:"garimaNote",     topic:"the dashboard figures" },
+  cashflow:        { uae:"cashflowGarimaNote",         india:"cashflowNote",   topic:"the cash position and forward outlook" },
+  myreport:        { uae:"uaeGarimaNote",              india:"reportNote",     topic:"this month's report" },
+  treasury:        { uae:"wcNote",                     india:"wcNote",         topic:"the deposit and facility position" },
+  corptax:         { uae:"ctGarimaNote",               india:"ctGarimaNote",   topic:"the corporate tax position" },
+  vat:             { uae:"vatGarimaNote",              india:"vatGarimaNote",  topic:"the VAT position" },
+  workingcapital:  { uae:"workingCapital.garimaNote",  india:"wcNote",         topic:"working capital and the cash conversion cycle" },
+  verticalanalysis:{ uae:"verticalAnalysis.garimaNote",india:"verticalAnalysis.garimaNote", topic:"the vertical analysis" },
+  revrecon:        { uae:"revRecon.garimaNote",        india:"revReconNote",   topic:"the IFRS to VAT revenue reconciliation" },
+  qfzp:            { uae:"qfzpSubstance.garimaNote",   india:"qfzpSubstance.garimaNote", topic:"the QFZP qualifying position" },
+  auditready:      { uae:"governanceNote",             india:"governanceNote", topic:"audit readiness" },
+  engagement:      { uae:"ipoNote",                    india:"ipoNote",        topic:"the valuation engagement" },
 };
 
-function ClientReportPage({ page, client, reportData, setReportData, saveReportData,
+function ClientReportFull({ client, reportData, setReportData, saveReportData,
                             kpis, actions = [], invoices = [], liveSnapshot = null,
-                            loading, saved, goTo }) {
-  const [drafting, setDrafting] = React.useState(false);
-  const [draft,    setDraft]    = React.useState(null);
-  const [draftErr, setDraftErr] = React.useState("");
+                            loading, saved, onExit }) {
+  const [page, setPage]       = React.useState("overview");
+  const [collapsed, setColl]  = React.useState(false);
+  const [drafting, setDraft]  = React.useState(false);
+  const [draft, setDraftText] = React.useState(null);
+  const [err, setErr]         = React.useState("");
   const [confirmAll, setConfirmAll] = React.useState(false);
 
-  // A different page means a different note — the draft must not follow you.
-  React.useEffect(() => { setDraft(null); setDraftErr(""); }, [page, client?.id]);
-
-  if (!client) return (
-    <Card style={{ textAlign:"center", padding:40 }}>
-      <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-    </Card>
-  );
+  // A different page means a different note — a draft must not follow you.
+  React.useEffect(() => { setDraftText(null); setErr(""); setConfirmAll(false); }, [page]);
 
   const uae   = isUAE(client);
   const nav   = getNav(client);
   const tiles = buildKpiTiles({ client, isDemo:false, liveKpis:kpis, liveReportData:reportData });
   const list  = (v) => Array.isArray(v) ? v : [];
 
-  // gate false — this is a review, so the real page is drawn even before it has
-  // been released. The release state is said plainly in the bar instead.
+  // gate false — this is the review, so the real page is drawn even before it
+  // has been published. Its state is said plainly in the band instead.
   const pages = clientPages({
-    client, setPage: goTo, isDemo:false, dataLoading:false, reportSaveKey:0,
+    client, setPage, isDemo:false, dataLoading:false, reportSaveKey:0,
     liveSnapshot, liveKpis:kpis, liveReportData:reportData, liveInvoices:list(invoices),
     resolvedKpis: tiles, resolvedGarimaNote: kpis?.garima_note,
     resolvedActions: list(actions), resolvedEngagement: null,
     resolvedReportData: reportData || {}, gate:false,
   });
 
-  const gated      = GATED_PAGES.has(page);
-  const releasable = nav.filter(n => GATED_PAGES.has(n.id));
+  const gated        = GATED_PAGES.has(page);
+  const releasable   = nav.filter(n => GATED_PAGES.has(n.id));
   const releasedList = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : null;
-  const everyone   = releasedList === null;
-  const live       = isReleased(reportData, page);
-  const releasedAt = reportData?.publishedAt?.[page];
-  const label      = nav.find(n => n.id === page)?.label || getPageTitle(page, client);
+  const everyone     = releasedList === null;
+  const live         = isReleased(reportData, page);
+  const label        = nav.find(n => n.id === page)?.label || getPageTitle(page, client);
 
   const noteDef = PAGE_NOTE[page];
   const noteKey = noteDef ? (uae ? noteDef.uae : noteDef.india) : null;
-  const current = noteKey ? (getPath(reportData || {}, noteKey) || "") : "";
+  const written = noteKey ? (getPath(reportData || {}, noteKey) || "") : "";
 
-  const release = async (all) => {
+  const publish = async (all) => {
     const next = releasePage(reportData || {}, page,
       all ? Array.from(new Set([...(releasedList || []), ...releasable.map(n => n.id)])) : null);
     await saveReportData(next);
@@ -19132,158 +19161,143 @@ function ClientReportPage({ page, client, reportData, setReportData, saveReportD
   // Written about the figures on this page. The analysis is yours; this is the
   // paragraph that goes under it, and nothing is saved until you say so.
   const writeCommentary = async () => {
-    setDrafting(true); setDraftErr("");
+    setDraft(true); setErr("");
     try {
       const r = await fetch("/api/narrate", {
         method:"POST", headers:{ "Content-Type":"application/json" },
         body: JSON.stringify({ client, reportData, kpis, topic: noteDef.topic,
-                               rows: [["Figure","Value"], ...Object.entries(reportData?.pl || {})
-                                 .map(([k, v]) => [k, v?.actual ?? ""])] }),
+          rows: [["Figure","Value"], ...Object.entries(reportData?.pl || {})
+            .map(([k, v]) => [k, v?.actual ?? ""])] }),
       });
       const j = await r.json();
-      if (j.narration) setDraft(j.narration);
-      else setDraftErr(j.error || "The commentary could not be drafted.");
-    } catch { setDraftErr("Could not reach the drafting service."); }
-    setDrafting(false);
+      if (j.narration) setDraftText(j.narration);
+      else setErr(j.error || "The commentary could not be drafted.");
+    } catch { setErr("Could not reach the drafting service."); }
+    setDraft(false);
   };
 
-  const useDraft = () => {
-    setReportData(r => setPath(r || {}, noteKey, draft));
-    setDraft(null);
-  };
+  const band = { fontFamily:F, fontSize:12.5, fontWeight:700 };
+  const btn  = (bg, color, border) => ({
+    padding:"7px 15px", borderRadius:12, border: border || "none", background:bg, color,
+    fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer", whiteSpace:"nowrap",
+  });
 
   return (
-    <div>
-      {/* ── State, commentary, release ── */}
-      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:"13px 16px",
-        marginBottom:12, background:"#fff" }}>
-        <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap" }}>
-          <div style={{ flex:1, minWidth:250 }}>
-            <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text,
-              display:"flex", alignItems:"center", gap:9, flexWrap:"wrap" }}>
-              {label}
-              {!gated ? (
-                <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.dim,
-                  background:C.bg, padding:"3px 11px", borderRadius:60 }}>Always available</span>
-              ) : live ? (
-                <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
-                  color: everyone ? C.dim : C.green,
-                  background: everyone ? C.bg : `${C.green}12`,
-                  padding:"3px 11px", borderRadius:60 }}>
-                  {everyone ? "Open to your client"
-                    : `Released${releasedAt ? ` ${new Date(releasedAt).toLocaleDateString("en-GB",
-                        { day:"numeric", month:"short" })}` : ""}`}
-                </span>
-              ) : (
-                <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.warning,
-                  background:`${C.amber}14`, padding:"3px 11px", borderRadius:60 }}>Not released</span>
-              )}
-              {releasedList && (
-                <span style={{ fontFamily:F, fontSize:11, color:C.dim }}>
-                  {releasable.filter(n => releasedList.includes(n.id)).length} of {releasable.length} pages released
-                </span>
-              )}
-            </div>
-            <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
-              {!gated
-                ? "Part of their account rather than their report, so it is always open to them."
-                : live
-                  ? everyone
-                    ? "Nothing has been released page by page yet, so your client can see every page."
-                    : "Your client can read this page now. Releasing it again sends whatever you have changed since."
-                  : everyone
-                    ? "Release this page and the rest will show your client a note saying they are being prepared, until you release those too."
-                    : "Your client sees a note saying this page is being prepared."}
-            </div>
-          </div>
+    <>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css"/>
+    <ClientStyles/>
+    <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"#fff" }}>
 
-          <div style={{ display:"flex", gap:9, alignItems:"center", flexWrap:"wrap" }}>
-            {noteKey && (
-              <button onClick={writeCommentary} disabled={drafting}
-                style={{ padding:"10px 18px", borderRadius:12, border:`1.5px solid ${C.border}`,
-                  background:"none", fontFamily:F, fontWeight:700, fontSize:13, color:C.text,
-                  cursor: drafting ? "default" : "pointer" }}>
-                {drafting ? "Writing…" : current ? "Redraft commentary" : "Draft commentary"}
-              </button>
-            )}
-            {gated && (
-              <button onClick={() => release(false)} disabled={loading}
-                style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
-                  color:"white", fontFamily:F, fontWeight:700, fontSize:13,
-                  cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1 }}>
-                {loading ? "Publishing…" : (live && !everyone) ? "Publish again" : "Publish this page"}
-              </button>
-            )}
-            {saved && <span style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700 }}>Published</span>}
-          </div>
+      {/* ── The only thing the admin side adds ── */}
+      <div style={{ background:"#1a1a2e", color:"#fff", padding:"9px 16px",
+        display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", flexShrink:0 }}>
+        <button onClick={onExit} style={{ ...btn("rgba(255,255,255,0.12)", "#fff"), display:"flex",
+          alignItems:"center", gap:6 }}>
+          <i className="ti ti-arrow-left" style={{ fontSize:13 }}/> Admin
+        </button>
+        <div style={{ ...band, display:"flex", alignItems:"center", gap:9, flexWrap:"wrap", flex:1, minWidth:200 }}>
+          <span style={{ opacity:0.55, fontWeight:600 }}>Viewing as</span>
+          {client?.company || client?.name}
+          <span style={{ opacity:0.3 }}>·</span>
+          {label}
+          {!gated ? (
+            <span style={{ fontSize:10.5, fontWeight:700, opacity:0.55 }}>their account</span>
+          ) : live ? (
+            <span style={{ fontSize:10.5, fontWeight:700, color:"#86EFAC",
+              background:"rgba(134,239,172,0.14)", padding:"2px 9px", borderRadius:60 }}>
+              {everyone ? "visible to them" : "published"}
+            </span>
+          ) : (
+            <span style={{ fontSize:10.5, fontWeight:700, color:"#FCD34D",
+              background:"rgba(252,211,77,0.14)", padding:"2px 9px", borderRadius:60 }}>
+              not published
+            </span>
+          )}
+          {releasedList && (
+            <span style={{ fontSize:10.5, fontWeight:600, opacity:0.5 }}>
+              {releasable.filter(n => releasedList.includes(n.id)).length} of {releasable.length} pages published
+            </span>
+          )}
         </div>
 
-        {draftErr && (
-          <div style={{ marginTop:11, fontFamily:F, fontSize:12, color:C.red, lineHeight:1.7 }}>{draftErr}</div>
-        )}
-
-        {/* The draft, for correcting before it goes anywhere. */}
-        {draft != null && (
-          <div style={{ marginTop:14, paddingTop:13, borderTop:`1px solid ${C.border}` }}>
-            <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.muted,
-              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>
-              A draft about your figures, for you to correct
-            </div>
-            <textarea value={draft} onChange={e => setDraft(e.target.value)} rows={6}
-              style={{ width:"100%", boxSizing:"border-box", padding:"10px 13px", borderRadius:12,
-                fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
-                background:C.bg, outline:"none", resize:"vertical", lineHeight:1.75 }}/>
-            <div style={{ display:"flex", gap:9, marginTop:10, flexWrap:"wrap" }}>
-              <button onClick={useDraft}
-                style={{ padding:"9px 18px", borderRadius:12, border:"none", background:C.grad1,
-                  color:"white", fontFamily:F, fontWeight:700, fontSize:12.5, cursor:"pointer" }}>
-                Put this on the page
-              </button>
-              <button onClick={() => setDraft(null)}
-                style={{ padding:"9px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
-                  background:"none", fontFamily:F, fontWeight:700, fontSize:12.5,
-                  color:C.muted, cursor:"pointer" }}>
-                Discard
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Releasing the lot, once you have been through them. */}
-        {gated && !everyone && releasable.some(n => !isReleased(reportData, n.id)) && (
-          <div style={{ marginTop:13, paddingTop:12, borderTop:`1px solid ${C.border}`,
-            display:"flex", gap:9, alignItems:"center", flexWrap:"wrap" }}>
-            {confirmAll ? (
+        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+          {noteKey && (
+            <button onClick={writeCommentary} disabled={drafting}
+              style={btn("rgba(255,255,255,0.12)", "#fff")}>
+              {drafting ? "Writing…" : written ? "Redraft commentary" : "Generate commentary"}
+            </button>
+          )}
+          {gated && (
+            <button onClick={() => publish(false)} disabled={loading} style={btn(C.amber, "#1a1a2e")}>
+              {loading ? "Publishing…" : (live && !everyone) ? "Publish again" : "Publish this page"}
+            </button>
+          )}
+          {gated && !everyone && releasable.some(n => !isReleased(reportData, n.id)) && (
+            confirmAll ? (
               <>
-                <span style={{ fontFamily:F, fontSize:12, color:C.text }}>
-                  Publish all {releasable.length} pages?
-                </span>
-                <button onClick={() => release(true)}
-                  style={{ padding:"7px 15px", borderRadius:12, border:"none", background:C.grad1,
-                    color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>Yes</button>
+                <button onClick={() => publish(true)} style={btn("#fff", "#1a1a2e")}>Publish all</button>
                 <button onClick={() => setConfirmAll(false)}
-                  style={{ padding:"7px 13px", borderRadius:12, border:`1.5px solid ${C.border}`,
-                    background:"none", fontFamily:F, fontWeight:700, fontSize:12,
-                    color:C.muted, cursor:"pointer" }}>No</button>
+                  style={btn("none", "rgba(255,255,255,0.7)", "1px solid rgba(255,255,255,0.25)")}>No</button>
               </>
             ) : (
               <button onClick={() => setConfirmAll(true)}
-                style={{ padding:"8px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
-                  background:"none", fontFamily:F, fontWeight:700, fontSize:12,
-                  color:C.text, cursor:"pointer" }}>
-                Publish every remaining page
+                style={btn("none", "rgba(255,255,255,0.8)", "1px solid rgba(255,255,255,0.25)")}>
+                Publish all
               </button>
-            )}
-          </div>
-        )}
+            )
+          )}
+          {saved && <span style={{ ...band, color:"#86EFAC" }}>Published</span>}
+        </div>
       </div>
 
-      {/* ── The client's screen ── */}
-      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden",
-        background:C.canvas }}>
-        {pages[page] || <BeingPrepared title={label}/>}
+      {err && (
+        <div style={{ background:`${C.red}10`, borderBottom:`1px solid ${C.red}30`,
+          padding:"9px 16px", fontFamily:F, fontSize:12, color:C.red, flexShrink:0 }}>{err}</div>
+      )}
+
+      {/* The draft, for correcting before it goes anywhere near the client. */}
+      {draft != null && (
+        <div style={{ background:C.bg, borderBottom:`1px solid ${C.border}`,
+          padding:"13px 16px", flexShrink:0 }}>
+          <div style={{ fontFamily:F, fontSize:10.5, fontWeight:700, color:C.muted,
+            textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>
+            A draft about your figures, for you to correct — it appears on {label} once you keep it
+          </div>
+          <textarea value={draft} onChange={e => setDraftText(e.target.value)} rows={5}
+            style={{ width:"100%", boxSizing:"border-box", padding:"10px 13px", borderRadius:12,
+              fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+              background:"#fff", outline:"none", resize:"vertical", lineHeight:1.75 }}/>
+          <div style={{ display:"flex", gap:9, marginTop:9, flexWrap:"wrap" }}>
+            <button onClick={() => { setReportData(r => setPath(r || {}, noteKey, draft)); setDraftText(null); }}
+              style={{ padding:"9px 18px", borderRadius:12, border:"none", background:C.grad1,
+                color:"white", fontFamily:F, fontWeight:700, fontSize:12.5, cursor:"pointer" }}>
+              Keep it
+            </button>
+            <button onClick={() => setDraftText(null)}
+              style={{ padding:"9px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                background:"none", fontFamily:F, fontWeight:700, fontSize:12.5,
+                color:C.muted, cursor:"pointer" }}>
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Their portal ── */}
+      <div style={{ display:"flex", flex:1, minHeight:0, fontFamily:F, background:"#fff" }}>
+        <Sidebar page={page} setPage={setPage} client={client}
+          onLogout={onExit} collapsed={collapsed} setCollapsed={setColl}/>
+        <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0,
+          overflow:"hidden", background:"#fff" }}>
+          <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
+            onMenuToggle={() => setColl(c => !c)} notifItems={[]}/>
+          <div style={{ flex:1, overflowY:"auto", background:C.canvas }}>
+            {pages[page] || <BeingPrepared title={label}/>}
+          </div>
+        </div>
       </div>
     </div>
+    </>
   );
 }
 
@@ -20096,6 +20110,7 @@ function AdminPanel({ admin, onLogout }) {
 
     { id:"templates",  icon:"ti-table-export",     label:"Excel Workbook",    group:"Analysis" },
 
+    { id:"preview",    icon:"ti-eye",              label:"Client Report",     group:"Client report" },
   ];
 
   // The screens that still let a figure be typed in by hand. They are reached
@@ -20119,9 +20134,6 @@ function AdminPanel({ admin, onLogout }) {
   ];
   const isOverrideTab = OVERRIDE_TABS.some(t => t.id === tab);
 
-  // The client's own pages, as the client's sidebar lists them. Walking these
-  // is reviewing the real screen, not a second drawing of it.
-  const CLIENT_PAGES = selected ? getNav(selected).filter(n => GATED_PAGES.has(n.id)) : [];
 
   // Landing on a screen whose group is folded — from a "go to the UAE tab"
   // button, say — unfolds that group, so the sidebar never disagrees with the
@@ -20537,6 +20549,20 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
   };
  
  
+  // ── Client Report is the client's portal, whole ──
+  // Their sidebar, their topbar, their pages, with nothing of the admin's
+  // around it — what is being reviewed is the screen they will read, and an
+  // admin frame around it is a different screen. A slim band carries the only
+  // two things this view is for: the commentary, and publishing.
+  if (tab === "preview" && selected) {
+    return (
+      <ClientReportFull client={selected} reportData={reportData}
+        setReportData={setReportData} saveReportData={saveReportData}
+        kpis={kpis} actions={actions} invoices={invoices} liveSnapshot={liveSnap}
+        loading={loading} saved={saved} onExit={() => setTab("home")}/>
+    );
+  }
+
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
       <style>{`
@@ -20606,7 +20632,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           </div>
         )}
         <nav style={{ flex:1, padding:"6px 0", overflowY:"auto" }}>
-          {["Admin control","Data in","Analysis"].map(group => {
+          {["Admin control","Data in","Analysis","Client report"].map(group => {
             const groupTabs = ADMIN_TABS.filter(t => t.group === group)
               .filter(t => t.only !== "uae" || isUAE(selected));
             if (!groupTabs.length) return null;
@@ -20640,51 +20666,6 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             );
           })}
 
-          {/* ── The client's report, page by page ──
-              Their nav, in their order, in this one sidebar. Opening a page
-              draws the screen they will read, with the state of it and the
-              publish button above. A second nested sidebar was one too many. */}
-          {CLIENT_PAGES.length > 0 && (() => {
-            const shut = !!collapsed["Client report"];
-            const released = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : null;
-            const done = released ? CLIENT_PAGES.filter(n => released.includes(n.id)).length : null;
-            return (
-              <div>
-                <button onClick={() => setCollapsed(c => ({ ...c, ["Client report"]: !c["Client report"] }))}
-                  style={{ display:"flex", alignItems:"center", gap:6, width:"100%",
-                    padding:"9px 14px 4px", background:"none", border:"none", cursor:"pointer",
-                    fontFamily:F, fontSize:9, fontWeight:700, color:C.muted,
-                    textTransform:"uppercase", letterSpacing:"0.12em" }}>
-                  <span style={{ fontSize:8, opacity:0.7 }}>{shut ? "▸" : "▾"}</span>
-                  Client report
-                  {done != null && (
-                    <span style={{ marginLeft:"auto", fontSize:9, fontWeight:700, color:C.dim,
-                      letterSpacing:0, textTransform:"none" }}>{done}/{CLIENT_PAGES.length}</span>
-                  )}
-                </button>
-                {shut ? null : CLIENT_PAGES.map(n => {
-                  const id = `cp:${n.id}`;
-                  const live = isReleased(reportData, n.id);
-                  return (
-                    <button key={id} onClick={() => { setTab(id); setSidebarOpen(false); }} style={{
-                      display:"flex", alignItems:"center", gap:10, width:"100%",
-                      padding:"9px 14px", background:tab===id?`${C.amber}12`:"transparent",
-                      border:"none", cursor:"pointer",
-                      borderLeft:tab===id?`3px solid ${C.amber}`:"3px solid transparent",
-                      fontFamily:F }}>
-                      <i className={"ti " + (n.icon||"ti-circle")} style={{ fontSize:14,
-                        color:tab===id?C.amber:C.muted }}/>
-                      <span style={{ fontSize:12, fontWeight:600, flex:1, textAlign:"left",
-                        color:tab===id?C.amber:C.muted }}>{n.label}</span>
-                      <span title={live ? "Published" : "Not published yet"}
-                        style={{ width:7, height:7, borderRadius:60, flexShrink:0,
-                          background: live ? C.green : C.border }}/>
-                    </button>
-                  );
-                })}
-              </div>
-            );
-          })()}
         </nav>
         <div style={{ padding:"8px 10px", borderTop:`1px solid ${C.border}` }}>
           <button onClick={onLogout} style={{ display:"flex", alignItems:"center", gap:8,
@@ -20711,9 +20692,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
               borderRadius:8, color:C.text, fontSize:20, lineHeight:1, flexShrink:0 }}>&#x2630;</button>
           <h1 style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text,
             letterSpacing:"-0.02em", margin:0, flexShrink:0 }}>
-            {tab.startsWith("cp:")
-              ? (CLIENT_PAGES.find(n => `cp:${n.id}` === tab)?.label || "Client report")
-              : ADMIN_TABS.find(t=>t.id===tab)?.label}
+            {ADMIN_TABS.find(t=>t.id===tab)?.label}
           </h1>
           {selected && !["clients","addclient","requests","market","home"].includes(tab) && (
             <div style={{ display:"flex", alignItems:"center", gap:7, padding:"4px 12px",
@@ -20735,11 +20714,10 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
         </div>
  
         <div className="ns-page">
-          {(TAB_INTRO[tab] || tab.startsWith("cp:")) && (
+          {TAB_INTRO[tab] && (
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7,
               margin:"0 0 16px", maxWidth:680 }}>
-              {TAB_INTRO[tab] || "This page exactly as your client reads it. Draft the commentary, then publish it to them."}
-            </div>
+              {TAB_INTRO[tab]}</div>
           )}
 
           {/* ── DASHBOARD HOME ── */}
@@ -21363,14 +21341,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   saveReportData={saveReportData} loading={loading} saved={saved} adminEmail={admin?.email}/>
           )}
 
-          {/* ── ONE PAGE OF THE CLIENT'S REPORT ── */}
-          {tab.startsWith("cp:") && (
-            <ClientReportPage page={tab.slice(3)} client={selected} reportData={reportData}
-              setReportData={setReportData} saveReportData={saveReportData}
-              kpis={kpis} actions={actions} invoices={invoices}
-              liveSnapshot={liveSnap} loading={loading} saved={saved}
-              goTo={(pg) => setTab(`cp:${pg}`)}/>
-          )}
+
 
           {/* ── CONNECTIONS (Zoho Books) ── */}
           {tab === "connections" && !selected && (
