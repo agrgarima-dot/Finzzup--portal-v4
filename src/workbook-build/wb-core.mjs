@@ -1,19 +1,20 @@
 // Cover, conventions, lists and the integrity checks.
 import { T, NF, sheet, title, section, heads, cell, row, note, check, dropdown } from "./wb-lib.mjs";
 
-export function cover(wb) {
+export function cover(wb, client = null) {
   const ws = sheet(wb, "Cover", { tab: T.tabCover, widths: [34, 30, 4, 34, 30], freeze: null });
   let r = title(ws, "Finzzup — Virtual CFO Analysis Workbook",
     "One file. The analysis happens here; the portal reads the Portal Feed sheet.", 5);
 
   r++;
   r = section(ws, r, "Engagement", 5);
+  const uae = /uae|cross/i.test(client?.jurisdiction || "UAE");
   const eng = [
-    ["Client name",        "", "The name shown on their portal"],
-    ["Legal entity",       "", "Full registered name"],
-    ["Jurisdiction",       "UAE", "UAE · India · Cross-Border — drives which tax sheets apply"],
-    ["Free zone",          "DMCC", "Blank for mainland. Drives the QFZP sheets"],
-    ["Reporting currency", "AED", "Set from jurisdiction unless you override"],
+    ["Client name",        client?.name    || "", "The name shown on their portal"],
+    ["Legal entity",       client?.company || "", "Full registered name"],
+    ["Jurisdiction",       client?.jurisdiction || "UAE", "UAE · India · Cross-Border — drives which tax sheets apply"],
+    ["Free zone",          client?.freezone || "", "Blank for mainland. Drives the QFZP sheets"],
+    ["Reporting currency", uae ? "AED" : "INR", "Set from jurisdiction unless you override"],
     ["Units",              "Actual", "Actual · Thousands · Lakhs · Millions"],
     ["Financial year end", "31-Dec", ""],
     ["Period of this pack","", "e.g. January 2026 — appears on every client screen"],

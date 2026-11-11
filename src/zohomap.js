@@ -162,6 +162,10 @@ export function invoicesToReceivables(invoices = [], asOf = new Date()) {
       desc:   inv.customer_name || inv.company_name || "—",
       amount: outstanding,
       status: String(inv.status || "unpaid").toLowerCase(),
+      // Carried through so the analysis workbook can age against the terms
+      // actually given, rather than against the invoice date. Bills have
+      // always carried theirs; invoices dropped it here.
+      dueDate: inv.due_date || "",
       ageDays: age,
     });
   }

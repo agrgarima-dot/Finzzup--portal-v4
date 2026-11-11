@@ -4,16 +4,24 @@ import { T, NF, sheet, title, section, heads, cell, row, note, dropdown } from "
 
 const ROWS = 400;   // room to paste a real ledger into
 
-/** An input table with formulas carried down every row. */
-function table(ws, headerRow, cols, rows = ROWS) {
-  for (let i = 0; i < rows; i++) {
+/**
+ * An input table with formulas carried down every row.
+ *
+ * `seed` fills the typed columns from the accounting connection, so the sheet
+ * opens at the analysis rather than at the data entry. A seeded cell is still
+ * blue — it is yours to correct, and correcting it is the point.
+ */
+function table(ws, headerRow, cols, rows = ROWS, seed = []) {
+  const depth = Math.max(rows, seed.length + 40);
+  for (let i = 0; i < depth; i++) {
     const r = headerRow + 1 + i;
+    const s = seed[i];
     cols.forEach((c, j) => {
-      const v = typeof c.f === "function" ? c.f(r) : null;
+      const v = typeof c.f === "function" ? c.f(r) : (s ? (s[j] ?? null) : null);
       cell(ws, r, j + 1, v, { kind: c.f ? "calc" : "input", nf: c.nf, align: c.align });
     });
   }
-  return headerRow + 1 + rows;
+  return headerRow + 1 + depth;
 }
 
 export function coaMap(wb) {
@@ -67,7 +75,7 @@ export function coaMap(wb) {
   return ws;
 }
 
-export function tbInput(wb) {
+export function tbInput(wb, seed = {}) {
   const ws = sheet(wb, "TB Input", {
     tab: T.tabInput, widths: [14, 36, 24, 20, 16, 16, 16, 16, 16, 16], freeze: "C6" });
   let r = title(ws, "Trial balance",
@@ -87,7 +95,7 @@ export function tbInput(wb) {
     { f: (n) => `=IF($B${n}="","",MAX(0,$F${n}+$G${n}-$H${n}))`, nf: NF.money },
     { f: (n) => `=IF($B${n}="","",MAX(0,-($F${n}+$G${n}-$H${n})))`, nf: NF.money },
   ];
-  const after = table(ws, headerRow, cols);
+  const after = table(ws, headerRow, cols, ROWS, seed.trialBalance || []);
 
   // Totals live at a fixed row so the Checks sheet can point at them.
   const tr = 9999;
@@ -109,7 +117,7 @@ export function tbInput(wb) {
   return ws;
 }
 
-export function arInput(wb) {
+export function arInput(wb, seed = {}) {
   const ws = sheet(wb, "AR Input", {
     tab: T.tabInput, widths: [16, 32, 14, 14, 16, 16, 16, 12, 14, 16], freeze: "C6" });
   let r = title(ws, "Open invoices",
@@ -128,7 +136,7 @@ export function arInput(wb) {
     { f:(n)=>`=IF($A${n}="","",IF($H${n}=0,"Current",IF($H${n}<=30,"1–30d",IF($H${n}<=60,"31–60d",IF($H${n}<=90,"61–90d","90d+")))))` },
     {},
   ];
-  const after = table(ws, hr, cols);
+  const after = table(ws, hr, cols, ROWS, seed.receivables || []);
   const tr = 9999;
   cell(ws, tr, 2, "Total outstanding", { kind: "label", bold: true });
   cell(ws, tr, 10, `=SUM(G${hr + 1}:G${after})`, { kind: "lock", nf: NF.money, bold: true });
@@ -139,7 +147,7 @@ export function arInput(wb) {
   return ws;
 }
 
-export function apInput(wb) {
+export function apInput(wb, seed = {}) {
   const ws = sheet(wb, "AP Input", {
     tab: T.tabInput, widths: [16, 32, 14, 14, 16, 16, 16, 12, 14, 12], freeze: "C6" });
   let r = title(ws, "Open bills",
@@ -157,7 +165,7 @@ export function apInput(wb) {
     { f:(n)=>`=IF($A${n}="","",IF($H${n}=0,"Current",IF($H${n}<=30,"1–30d",IF($H${n}<=60,"31–60d",IF($H${n}<=90,"61–90d","90d+")))))` },
     { align: "center" },
   ];
-  const after = table(ws, hr, cols);
+  const after = table(ws, hr, cols, ROWS, seed.payables || []);
   for (let i = hr + 1; i <= after; i++) dropdown(ws, `J${i}`, "=YesNo");
   const tr = 9999;
   cell(ws, tr, 2, "Total outstanding", { kind: "label", bold: true });

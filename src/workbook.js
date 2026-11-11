@@ -856,3 +856,242 @@ export function readWorkbook(byName = {}, ctx = {}) {
 
   return { reportData: draft, kpis: kpisOut, actions, summary, problems };
 }
+
+// ─── THE P&L, LINE BY LINE ────────────────────────────────────────────────────
+// The P&L is declared as a table because that is how it reads on a sheet, but
+// the portal stores it as named figures and the feed has to carry it that way.
+// One list, used by the sheet that writes the feed and the reader that reads
+// it, so the two cannot disagree about what an id is called.
+export const PL_LINES = [
+  ["revenue",      "Revenue"],
+  ["cogs",         "Cost of sales"],
+  ["grossProfit",  "Gross profit"],
+  ["gpMargin",     "GP margin %"],
+  ["ebitda",       "EBITDA"],
+  ["ebitdaMargin", "EBITDA margin %"],
+  ["pat",          "Net profit / PAT"],
+  ["netMargin",    "Net margin %"],
+];
+
+export const PL_POINTS = PL_LINES.flatMap(([key, label]) => ([
+  { id: `pl.${key}.actual`, label: `${label} — this month`,     screen: "Monthly Report → P&L summary" },
+  { id: `pl.${key}.prev`,   label: `${label} — previous month`, screen: "Monthly Report → P&L summary" },
+]));
+
+// ─── READING THE PORTAL FEED ──────────────────────────────────────────────────
+// The analysis workbook carries one sheet the portal reads: Portal Feed, with
+// a data point id in the first column and its value in the Value column.
+//
+// That one fixed sheet is the whole mapping. The workings behind it can be
+// restructured freely — rows inserted, schedules rebuilt, sheets renamed —
+// and the portal still reads the right figure, because it never looks at them.
+// Binding to cells scattered across thirty tabs would break on the first
+// inserted row, and break silently.
+
+/** "Variance!A:G" or "'UAE Rev Recon'!A5:E20" → {sheet, r1, c1, r2, c2} */
+export function parseRef(ref) {
+  const s = String(ref || "").trim();
+  const m = s.match(/^(?:'((?:[^']|'')+)'|([^'!]+))!\s*([A-Za-z]+)(\d*)(?:\s*:\s*([A-Za-z]+)(\d*))?$/);
+  if (!m) return null;
+  const col = (letters) => {
+    let n = 0;
+    for (const ch of letters.toUpperCase()) n = n * 26 + (ch.charCodeAt(0) - 64);
+    return n - 1;
+  };
+  const sheet = (m[1] != null ? m[1].replace(/''/g, "'") : m[2]).trim();
+  const c1 = col(m[3]), c2 = m[5] ? col(m[5]) : c1;
+  // A whole-column reference ("A:G") has no row numbers; take the lot.
+  const r1 = m[4] ? parseInt(m[4], 10) - 1 : 0;
+  const r2 = m[6] ? parseInt(m[6], 10) - 1 : Infinity;
+  return { sheet, r1: Math.min(r1, r2), c1: Math.min(c1, c2),
+                  r2: Math.max(r1, r2), c2: Math.max(c1, c2) };
+}
+
+const norm = (v) => str(v).toLowerCase().replace(/\(.*?\)/g, " ").replace(/[^a-z0-9%]+/g, "");
+
+/** Do a heading and a wanted column mean the same thing? */
+const sameColumn = (head, want) => {
+  const a = norm(head), b = norm(want);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const short = a.length < b.length ? a : b;
+  return short.length >= 3 && (a.startsWith(b) || b.startsWith(a));
+};
+
+/**
+ * Rows out of a range, lined up with the columns the portal expects.
+ *
+ * The workbook's own tables are written to be read by a person — the variance
+ * sheet puts the variance and the percentage between the actual and the
+ * verdict, because that is the order you want them in when you are looking at
+ * it. The portal wants four specific columns. Rather than forcing one layout
+ * on the other, this finds the heading row and matches by name, so columns can
+ * be reordered, inserted or renamed a little and the figures still land.
+ *
+ * With no heading row it falls back to reading the columns in order, which is
+ * what a plain pasted range is.
+ */
+export function readRange(sheets, ref, columns = []) {
+  const p = parseRef(ref);
+  if (!p) return [];
+  const aoa = sheets[p.sheet];
+  if (!aoa) return [];
+
+  const slice = [];
+  const last = Math.min(p.r2, aoa.length - 1);
+  for (let r = p.r1; r <= last; r++) {
+    const row = [];
+    for (let c = p.c1; c <= p.c2; c++) row.push((aoa[r] || [])[c] ?? "");
+    slice.push(row);
+  }
+
+  // The heading row is the one that names the most of what we are looking for.
+  let headAt = -1, bestHits = 0;
+  if (columns.length) {
+    for (let i = 0; i < Math.min(slice.length, 40); i++) {
+      let hits = 0;
+      for (const want of columns) if (slice[i].some(cellv => sameColumn(cellv, want))) hits++;
+      if (hits > bestHits && hits >= Math.min(2, columns.length)) { bestHits = hits; headAt = i; }
+    }
+  }
+
+  if (headAt < 0) return slice.filter(r => r.some(v => str(v) !== ""));
+
+  // Which column of the sheet holds each column the portal wants.
+  const head = slice[headAt];
+  const index = columns.map(want => head.findIndex(cellv => sameColumn(cellv, want)));
+
+  const out = [];
+  for (let i = headAt + 1; i < slice.length; i++) {
+    const row = slice[i];
+    // A blank line ends the table. Sheets carry other things below their
+    // tables — a commentary box, a note, a second block — and a whole-column
+    // reference would otherwise sweep them in as data.
+    if (!row.some(v => str(v) !== "")) { if (out.length) break; else continue; }
+    // A second heading row, or a total, is not data.
+    if (columns.some(want => sameColumn(row[0], want))) continue;
+    if (/^(total|sum)\b/i.test(str(row[0]))) continue;
+    out.push(index.map((at, j) => (at >= 0 ? (row[at] ?? "") : "")));
+  }
+  return out;
+}
+
+/**
+ * Read an uploaded analysis workbook through its Portal Feed sheet.
+ *
+ * A blank value changes nothing, as everywhere else — clearing a figure is not
+ * the same as not having got to it yet. A row whose id the portal no longer
+ * shows is reported rather than dropped silently.
+ *
+ * @param {object} byName {sheetName: aoa}
+ * @returns {{reportData, kpis, actions, summary, problems}|null} null when
+ *          the file has no Portal Feed sheet at all
+ */
+export function readPortalFeed(byName = {}, ctx = {}) {
+  const feed = byName["Portal Feed"];
+  if (!feed) return null;
+
+  const uae   = !!ctx.uae;
+  const specs = sheetsFor(uae);
+  const byId  = {};
+  for (const s of specs) {
+    if (s.kind === "kv") {
+      for (const f of s.fields) {
+        const id = s.target === "kpis" ? `kpis.${f.key}` : (s.path ? `${s.path}.${f.key}` : f.key);
+        byId[id] = { spec: s, field: f, kind: "scalar" };
+      }
+    } else if (s.kind === "table") {
+      byId[s.target === "actions" ? "actions" : s.path] = { spec: s, kind: "table" };
+    } else if (s.kind === "map") {
+      byId[s.path] = { spec: s, kind: "map" };
+      for (const f of (s.extra || [])) byId[f.key] = { spec: s, field: f, kind: "scalar" };
+    }
+  }
+
+  // The P&L travels as named figures rather than as a range.
+  for (const p of PL_POINTS) {
+    byId[p.id] = { spec: { screen: p.screen, target: "report" }, field: { label: p.label }, kind: "scalar" };
+  }
+
+  let draft   = { ...(ctx.reportData || {}) };
+  let kpisOut = { ...(ctx.kpis || {}) };
+  let actions = null;
+  const changed  = [];
+  const problems = [];
+  const unknown  = [];
+
+  for (const rowArr of feed) {
+    const row = rowArr || [];
+    const id  = str(row[0]);
+    if (!id || id.startsWith("id") || id === "Figure") continue;
+    const point = byId[id];
+    // Section bands and notes live in the first column too. Only something
+    // shaped like an id is worth reporting as one the portal no longer shows.
+    if (!point) {
+      if (/^[a-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)*$/.test(id) && id.length < 60) unknown.push(id);
+      continue;
+    }
+
+    const raw = row[3];
+    if (blank(raw)) continue;                       // blank changes nothing
+
+    if (point.kind === "scalar") {
+      const val = typeof raw === "number" ? String(raw) : str(raw);
+      const key = id.replace(/^kpis\./, "");
+      const before = point.spec.target === "kpis" ? kpisOut[key] : getPath(draft, id);
+      if (str(before) === val) continue;
+      if (point.spec.target === "kpis") kpisOut[key] = val;
+      else draft = setPath(draft, id, val);
+      changed.push({ id, label: point.field?.label || id, screen: point.spec.screen,
+                     from: str(before), to: val });
+      continue;
+    }
+
+    // A table or a map says where its rows live rather than holding them.
+    const ref = str(raw);
+    const parsed = parseRef(ref);
+    if (!parsed) { problems.push(`${point.spec.name}: "${ref}" is not a range the portal understands.`); continue; }
+    if (!byName[parsed.sheet]) {
+      problems.push(`${point.spec.name}: this workbook has no sheet called "${parsed.sheet}", so it was left as it was.`);
+      continue;
+    }
+    const rows = readRange(byName, ref, point.spec.columns || [point.spec.keyColumn]);
+    if (!rows.length) { problems.push(`${point.spec.name}: ${ref} has no filled rows.`); continue; }
+
+    if (point.kind === "table") {
+      const res = point.spec.parse(rows, draft, ctx);
+      if (res.draft) draft = res.draft;
+      if (res.actions) actions = res.actions;
+      changed.push({ id, label: point.spec.name, screen: point.spec.screen,
+                     from: "", to: `${rows.length} row${rows.length === 1 ? "" : "s"}` });
+    } else {
+      const obj = { ...(getPath(draft, id) || {}) };
+      let n = 0;
+      for (const rr of rows) {
+        const name = str(rr[0]);
+        if (!name) continue;
+        const entry = { ...(obj[name] || {}) };
+        point.spec.fieldKeys.forEach((k, j) => {
+          if (!blank(rr[j + 1])) entry[k] = str(rr[j + 1]);
+        });
+        obj[name] = entry; n++;
+      }
+      draft = setPath(draft, id, obj);
+      changed.push({ id, label: point.spec.name, screen: point.spec.screen,
+                     from: "", to: `${n} row${n === 1 ? "" : "s"}` });
+    }
+  }
+
+  if (unknown.length) {
+    problems.push(`${unknown.length} row${unknown.length === 1 ? "" : "s"} in the feed name a figure the portal no longer shows (${unknown.slice(0, 3).join(", ")}${unknown.length > 3 ? "…" : ""}). They were ignored.`);
+  }
+
+  // Grouped the way the admin screen shows it: by the screen each figure feeds.
+  const byScreen = {};
+  for (const c of changed) (byScreen[c.screen] ||= []).push(c);
+  const summary = Object.entries(byScreen)
+    .map(([screen, items]) => ({ screen, changed: items.length, items }))
+    .sort((a, b) => b.changed - a.changed);
+
+  return { reportData: draft, kpis: kpisOut, actions, changed, summary, problems };
+}

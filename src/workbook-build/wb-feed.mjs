@@ -9,7 +9,7 @@
 // Without it the mapping would point at a hundred-odd cells scattered across
 // thirty tabs, and the first inserted row would silently shift half of them.
 import { T, NF, sheet, title, section, heads, cell, note } from "./wb-lib.mjs";
-import { sheetsFor } from "../src/workbook.js";
+import { sheetsFor, PL_POINTS } from "../workbook.js";
 
 // Where a figure comes from, when the workbook can work it out. Anything not
 // listed is left blue for you to point at a cell in your own workings.
@@ -141,6 +141,9 @@ export function portalFeed(wb) {
         emit(s.target === "kpis" ? `kpis.${f.key}` : (s.path ? `${s.path}.${f.key}` : f.key),
              f.label, "scalar");
       }
+    } else if (s.kind === "table" && s.path === "pl") {
+      // The P&L is stored as named figures, not as a range of rows.
+      for (const p of PL_POINTS) emit(p.id, p.label, "scalar");
     } else if (s.kind === "table") {
       emit(s.target === "actions" ? "actions" : s.path, s.name, "range");
     } else if (s.kind === "map") {
