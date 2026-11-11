@@ -35,14 +35,23 @@ const d = (v) => {
 export function seedFromSync(sync) {
   if (!sync) return {};
 
-  // Trial balance → code, name, type, (group), (side), opening, Dr, Cr
+  // Trial balance → code, name, type, (group), (side), opening, Dr, Cr.
+  //
+  // The field names are the mapper's, not Zoho's: it returns zohoCode,
+  // zohoType, dr and cr. Reading code/type/debit/credit instead produced a
+  // sheet with the account names filled in and everything else blank — which
+  // looked like a sync that had half worked, and was really a sync that had
+  // worked and a seeding step that was looking in the wrong place. The
+  // alternatives are kept so a rename in the mapper degrades rather than
+  // silently empties the column.
   const trialBalance = (sync.trialBalance?.rows || []).map(row => ([
-    row.code || row.accountCode || "",
-    row.name || row.account || "",
-    row.type || row.accountType || "",
+    row.zohoCode ?? row.code ?? "",
+    row.name ?? row.account ?? "",
+    row.zohoType ?? row.type ?? "",
     null, null,                               // group and side are formulas
     null,                                     // opening is not in the feed
-    n(row.debit), n(row.credit),
+    n(row.dr ?? row.debit),
+    n(row.cr ?? row.credit),
   ]));
 
   const fromBuckets = (buckets, received) => (buckets || []).flatMap(b =>
