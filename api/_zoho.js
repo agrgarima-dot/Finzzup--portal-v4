@@ -104,16 +104,35 @@ export async function isAdmin(supaUrl, serviceKey, email) {
 
 /** Read a client's connection row. Service role key only — these rows are invisible to anon. */
 export async function getConnection(supaUrl, serviceKey, clientId) {
-  const r = await fetch(
-    // The client's jurisdiction decides which rules apply to the derived
-    // figures, so it is embedded rather than looked up separately.
-    `${supaUrl}/rest/v1/zoho_connections?client_id=eq.${encodeURIComponent(clientId)}` +
-      `&select=*,clients(jurisdiction,freezone,client_pack)&limit=1`,
-    { headers: { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` } },
-  ).catch(() => null);
-  if (!r || !r.ok) return null;
-  const rows = await r.json().catch(() => null);
-  return Array.isArray(rows) ? rows[0] || null : null;
+  const head = { apikey: serviceKey, Authorization: `Bearer ${serviceKey}` };
+  const get = async (path) => {
+    const r = await fetch(`${supaUrl}/rest/v1/${path}`, { headers: head }).catch(() => null);
+    if (!r || !r.ok) return null;
+    const rows = await r.json().catch(() => null);
+    return Array.isArray(rows) ? rows : null;
+  };
+
+  // Two plain queries rather than one embedded one.
+  //
+  // This used to ask for the connection with clients(jurisdiction,freezone,
+  // client_pack) embedded. PostgREST rejects the whole request if any one of
+  // those columns is missing from the table, and the rejection arrives as a
+  // 400 that this function turned into null — which every screen then read as
+  // "this client has no Zoho Books connection". The connection was there the
+  // whole time. One absent optional column took out the entire integration
+  // for every client, and said nothing that pointed at the cause.
+  //
+  // select=* cannot fail that way: it returns whatever columns exist.
+  const rows = await get(`zoho_connections?client_id=eq.${encodeURIComponent(clientId)}&select=*&limit=1`);
+  const conn = rows?.[0] || null;
+  if (!conn) return null;
+
+  // The client record decides which rules apply to the derived figures. If it
+  // cannot be read the connection is still usable, so this never fails the
+  // sync — the jurisdiction simply falls back to the default.
+  const clients = await get(`clients?id=eq.${encodeURIComponent(clientId)}&select=*&limit=1`);
+  conn.clients = clients?.[0] || null;
+  return conn;
 }
 
 /** Record how the last sync went, so the admin screen can show it. */
