@@ -18166,6 +18166,164 @@ function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
   ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
 }
 
+// ─── CLIENT READINESS ─────────────────────────────────────────────────────────
+// What is filled for this client, what came out of their books, and what still
+// needs a person — with a button to wherever that is.
+//
+// The admin panel has twenty-odd tabs. Without this you have to remember which
+// ones matter for a given client and visit each to find out whether it is
+// empty, which is fine for one client and unworkable for ten.
+function ClientReadiness({ client, reportData, kpis, actions = [], invoices = [],
+                           docs = [], engagement = null, adminEmail, goTo }) {
+  // Connection status lives behind the service role key, so it is asked for
+  // rather than read from Supabase directly.
+  const [connected, setConnected] = React.useState(null);
+  React.useEffect(() => {
+    if (!client?.id || !/^[0-9a-f-]{36}$/i.test(String(client.id))) { setConnected(null); return; }
+    let live = true;
+    fetch(`/api/zoho?action=status&clientId=${encodeURIComponent(client.id)}` +
+          `&adminEmail=${encodeURIComponent(adminEmail || "")}`)
+      .then(r => r.json())
+      .then(j => { if (live) setConnected(j?.connected ? (j.connection?.organization_name || "connected") : null); })
+      .catch(() => { if (live) setConnected(null); });
+    return () => { live = false; };
+  }, [client?.id, adminEmail]);
+
+  if (!client) return (
+    <Card style={{ textAlign:"center", padding:40 }}>
+      <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
+    </Card>
+  );
+
+  const rd  = reportData || {};
+  const uae = isUAE(client);
+  const has = (v) => Array.isArray(v) ? v.length > 0 : v != null && v !== "" && !(typeof v === "object" && !Object.keys(v).length);
+
+  // source: "zoho" filled from the books · "you" needs a person · "either"
+  const rows = [
+    { group:"From the books", label:"Accounting connection",
+      done: !!connected, source:"zoho", tab:"connections",
+      detail: connected ? `Connected — ${connected}` : "Connect Zoho so the figures arrive on their own" },
+    { group:"From the books", label:"Trial balance and statements",
+      done: has(rd.pl), source:"zoho", tab:"trialbalance",
+      detail:"Fetch from Zoho, then Apply. Produces the P&L, balance sheet and margins." },
+    { group:"From the books", label:"Ageing, drill-downs and ratios",
+      done: has(rd.drill) || has(rd.workingCapital?.ar90plus), source:"zoho", tab:"trialbalance",
+      detail:"Comes with the same Apply — receivables and payables ageing, revenue by customer, DSO and DPO." },
+    { group:"From the books", label:"Vendor register",
+      done: has(rd.vendorRegister), source:"zoho", tab:"trialbalance",
+      detail:"Suppliers and their terms, from the connected contacts." },
+
+    { group:"Needs you", label:"Headline KPIs",
+      done: has(kpis?.revenue) || has(rd.pl?.revenue?.actual), source:"either", tab:"kpis",
+      detail:"The six tiles at the top of the client's dashboard." },
+    { group:"Needs you", label:"CFO brief",
+      done: has(rd.garimaNote) || has(kpis?.garima_note), source:"you", tab:"trialbalance",
+      detail:"Draft the review → Draft CFO brief writes a first version from the figures." },
+    { group:"Needs you", label:"Action items",
+      done: actions.length > 0, source:"either", tab:"actions",
+      detail:"Draft the review → Propose action items turns the alerts into a list." },
+    { group:"Needs you", label:"Compliance calendar",
+      done: has(rd.compliance) || has(rd.checklist), source:"either", tab:"drilldata",
+      detail:"Draft the review → Fill compliance calendar generates the statutory dates." },
+
+    ...(uae ? [
+      { group:"Needs you", label:"VAT position",
+        done: has(rd.vat), source:"either", tab:"uaereports",
+        detail:"Pull from Zoho fills the figures; confirm the period and deadline." },
+      { group:"Needs you", label:"Free zone assessment",
+        done: rd.qfzpSubstance?.overallScore != null, source:"you", tab:"uaereports",
+        detail:"The split comes from the books. The score is a judgement only you can make." },
+      { group:"Needs you", label:"UAE profile — free zone, TRN, VAT registration",
+        done: has(client.freezone) && has(client.trnVAT), source:"you", tab:"uae",
+        detail:"Feeds the VAT and corporate tax screens." },
+    ] : []),
+
+    { group:"Optional", label:"Budget and variance",
+      done: has(rd.variance), source:"you", tab:"reportdata",
+      detail:"Not in the books — a budget has to come from the client." },
+    { group:"Optional", label:"Scenarios",
+      done: has(rd.scenarioBase), source:"you", tab:"analytics",
+      detail:"Assumptions are a judgement, so nothing is derived." },
+    { group:"Optional", label:"Treasury — deposits and facilities",
+      done: has(rd.treasury), source:"you", tab:"treasury",
+      detail:"Facility terms and maturities are not in the accounting records." },
+    { group:"Optional", label:"Valuation engagement",
+      done: !!engagement, source:"you", tab:"engagement" },
+    { group:"Optional", label:"Documents",
+      done: docs.length > 0, source:"you", tab:"documents" },
+    { group:"Optional", label:"Invoices to the client",
+      done: invoices.length > 0, source:"you", tab:"invoices",
+      detail:"Your own billing, not theirs." },
+  ];
+
+  const groups = ["From the books", "Needs you", "Optional"];
+  const need = rows.filter(r => !r.done && r.group === "Needs you").length;
+
+  const TAG = { zoho:  { t:"Automatic", c:C.blue },
+                you:   { t:"You",       c:C.purple },
+                either:{ t:"Assisted",  c:C.teal } };
+
+  return (
+    <div style={{ maxWidth:820 }}>
+      <div style={{ marginBottom:14 }}>
+        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.02em" }}>
+          {client.company || client.name} — what is ready
+        </div>
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
+          {need === 0
+            ? "Everything the client needs is filled. Anything unticked below is optional."
+            : `${need} thing${need===1?"":"s"} still needed before this client's portal is complete.`}
+        </div>
+      </div>
+
+      {groups.map(g => {
+        const items = rows.filter(r => r.group === g);
+        if (!items.length) return null;
+        return (
+          <Card key={g} style={{ marginBottom:14 }}>
+            <div style={{ fontFamily:F, fontSize:11, fontWeight:800, color:C.muted,
+              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:10 }}>{g}</div>
+            {items.map((r, i) => (
+              <div key={i} style={{ display:"flex", gap:12, alignItems:"flex-start",
+                padding:"11px 0", borderTop: i ? `1px solid ${C.border}` : "none" }}>
+                <span style={{ width:18, flexShrink:0, marginTop:1, textAlign:"center",
+                  color: r.done ? C.green : C.dim, fontWeight:800, fontSize:13 }}>
+                  {r.done ? "✓" : "○"}
+                </span>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+                    <span style={{ fontFamily:F, fontWeight:700, fontSize:13,
+                      color: r.done ? C.text : C.muted }}>{r.label}</span>
+                    <Badge color={TAG[r.source].c}>{TAG[r.source].t}</Badge>
+                  </div>
+                  {r.detail && (
+                    <div style={{ fontFamily:F, fontSize:12, color:C.dim, marginTop:3, lineHeight:1.65 }}>
+                      {r.detail}
+                    </div>
+                  )}
+                </div>
+                <button onClick={() => goTo(r.tab)}
+                  style={{ padding:"6px 13px", borderRadius:10, border:`1.5px solid ${C.border}`,
+                    background:"none", fontFamily:F, fontWeight:700, fontSize:11.5,
+                    color:C.text, cursor:"pointer", flexShrink:0, whiteSpace:"nowrap" }}>
+                  {r.done ? "Review" : "Open"}
+                </button>
+              </div>
+            ))}
+          </Card>
+        );
+      })}
+
+      <div style={{ fontFamily:F, fontSize:11.5, color:C.dim, lineHeight:1.8 }}>
+        <strong>Automatic</strong> comes out of the connected books. <strong>Assisted</strong> is
+        drafted for you to correct. <strong>You</strong> is a judgement the books cannot make —
+        a budget nobody has given us, or an assessment only a Chartered Accountant can sign.
+      </div>
+    </div>
+  );
+}
+
 // ─── UAE REPORTS (VAT & QFZP) ─────────────────────────────────────────────────
 // The two UAE modules worth filling by hand. The rest are either annual, or
 // derivable from the trial balance the sync already brings across.
@@ -19283,6 +19441,7 @@ function AdminPanel({ admin, onLogout }) {
   const ADMIN_TABS = [
     // ── Overview ──
     { id:"home",       icon:"ti-layout-dashboard", label:"Dashboard",   group:"Overview"   },
+    { id:"readiness",  icon:"ti-checklist", label:"Client Setup",    group:"Overview"   },
     // ── Client Management ──
     { id:"clients",    icon:"ti-users", label:"All Clients",    group:"Clients"    },
     { id:"addclient",  icon:"ti-user-plus", label:"Add Client",     group:"Clients"    },
@@ -20333,6 +20492,13 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                 </>);
               })()}
             </div>
+          )}
+
+          {/* ── CLIENT READINESS ── */}
+          {tab === "readiness" && (
+            <ClientReadiness client={selected} reportData={reportData} kpis={kpis}
+              actions={actions} invoices={invoices} docs={docs} engagement={engagement}
+              adminEmail={admin?.email} goTo={setTab}/>
           )}
 
           {/* ── UAE REPORTS (VAT & QFZP) ── */}
