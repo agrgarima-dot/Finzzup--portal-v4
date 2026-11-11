@@ -3,7 +3,8 @@ import { supabase } from "./supabase.js";
 import { computeAlerts, parseAmount } from "./alerts.js";
 import { proposeActions, newProposalsOnly, complianceCalendar, newComplianceOnly } from "./autodraft.js";
 import { mergeDerived } from "./derive.js";
-import { buildWorkbook, readWorkbook, sheetsFor, getPath, setPath } from "./workbook.js";
+import { buildWorkbook, readWorkbook, readPortalFeed, sheetsFor, getPath, setPath } from "./workbook.js";
+import { WORKBOOK_SHEETS, SHEET_COUNT } from "./workbook-build/manifest.js";
 import { parseLedger, buildReceivablesDrill, buildRevenueDrill, buildPayablesDrill,
          buildSupplierSpendDrill, computeMsmeExposure, buildMsmeDrill, extractVendorRegister,
          isMsme, MSME_LIMIT_DAYS, reconcile, validateLedger } from "./ledgerimport.js";
@@ -11392,44 +11393,48 @@ function CorporateTax({ client, reportData, initialTab }) {
   const rd = reportData?.ct || {};
   if (!client?.isDemo && !Object.keys(rd).length) return <AwaitingData title="Your corporate tax position"/>;
  
-  const revenue       = rd.revenue     || 1850000;
-  const sbrThreshold  = 3000000;
-  const sbrEligible   = client?.sbrEligible ?? (revenue <= sbrThreshold);
-  const qfzpStatus    = client?.qfzpStatus ?? true;
- 
+  // Every figure on this screen used to have a default behind it — revenue of
+  // 1,850,000, taxable income of 271,000, a four-line adjustments table with
+  // amounts and explanations, a CT charge of 24,390, qualifying income at 92%.
+  // The guard above only fires when the whole ct object is missing, so a
+  // client with one synced figure saw the other dozen invented, under a
+  // Chartered Accountant's name. They are read or they are blank.
+  const num           = (v) => { const x = Number(v); return isFinite(x) && v !== "" && v != null ? x : null; };
+  const revenue       = num(rd.revenue);
+  const sbrThreshold  = num(rd.sbrCap) ?? 3000000;
+  const sbrEligible   = rd.sbrEligible != null
+    ? (rd.sbrEligible === true || /^(y|yes|true|eligible)$/i.test(String(rd.sbrEligible)))
+    : (revenue == null ? null : revenue <= sbrThreshold);
+  const qfzpStatus    = client?.qfzpStatus ?? null;
+
   const ctData = {
-    trnCT:               client?.trnCT || rd.trnCT || "Pending registration",
-    sbrEligible, revenue, qfzpStatus,
-    taxableIncome:       rd.taxableIncome || 271000,
-    adjustments: rd.adjustments || [
-      { item:"Accounting Profit (per audited FS)", amount: 271000, sign: 1, note:"Net profit before CT adjustments" },
-      { item:"Add: Non-deductible expenses",        amount:  12000, sign: 1, note:"Entertainment, fines, and non-business costs" },
-      { item:"Less: Exempt dividend income",        amount:  18000, sign:-1, note:"Dividends from UAE subsidiary — exempt under Art. 22" },
-      { item:"Less: QFZP qualifying income",        amount: 265000, sign:-1, note:"Income from qualifying activities — 0% CT rate" },
-    ],
-    taxableFinalIncome:  rd.taxableFinalIncome  || 0,
-    effectiveCTRate:     (qfzpStatus || sbrEligible) ? 0 : 9,
-    ctPayable:           (qfzpStatus || sbrEligible) ? 0 : rd.ctPayable || 24390,
+    trnCT:               client?.trnCT || rd.trnCT || "Not recorded",
+    sbrEligible, revenue, qfzpStatus, sbrThreshold,
+    taxableIncome:       num(rd.taxableIncome),
+    adjustments:         Array.isArray(rd.adjustments) ? rd.adjustments : [],
+    taxableFinalIncome:  num(rd.taxableFinalIncome),
+    effectiveCTRate:     num(rd.effectiveCTRate),
+    ctPayable:           num(rd.liability) ?? num(rd.ctPayable),
     ctDue:               ctDeadline(client?.financialYearEnd),
-    qualifyingPct:       rd.qualifyingPct     || 92,
-    nonQualifyingPct:    rd.nonQualifyingPct  || 8,
+    qualifyingPct:       num(rd.qualifyingPct),
+    nonQualifyingPct:    num(rd.nonQualifyingPct),
+    // Watching the cap rather than discovering it at the year end.
+    revenueYTD:          num(rd.revenueYTD),
+    sbrHeadroom:         num(rd.sbrHeadroom),
+    sbrPosition:         rd.sbrPosition || "",
+    provision:           num(rd.provision),
+    setAside:            num(rd.setAside),
     substanceItems: (() => {
-      if (rd.substanceItems && Array.isArray(rd.substanceItems)) return rd.substanceItems;
-      const si = rd.substanceItems || reportData?.ct?.substanceItems;
-      if (si && typeof si === "object" && !Array.isArray(si)) return [
+      if (Array.isArray(rd.substanceItems)) return rd.substanceItems;
+      const si = rd.substanceItems;
+      if (si && typeof si === "object") return [
         { item:"Adequate employees in free zone",   done:!!si.employees },
         { item:"Adequate operating expenditure",    done:!!si.opex      },
         { item:"Physical presence in free zone",    done:!!si.presence  },
         { item:"Core income-generating activities", done:!!si.ciga      },
         { item:"Audited financial statements",      done:!!si.auditedFS },
       ];
-      return [
-        { item:"Adequate employees in free zone",   done:true  },
-        { item:"Adequate operating expenditure",    done:true  },
-        { item:"Physical presence in free zone",    done:true  },
-        { item:"Core income-generating activities", done:true  },
-        { item:"Audited financial statements",      done:false },
-      ];
+      return [];
     })(),
   };
  
@@ -11495,9 +11500,68 @@ function CorporateTax({ client, reportData, initialTab }) {
  
       {tab === "overview" && (
         <>
+          {/* ── Watching the Small Business Relief cap ──
+              An owner near the cap finds out at the year end, by which point
+              the election is gone. Revenue to date against the cap says it in
+              month three instead. Shown only once there is a position. */}
+          {(ctData.sbrPosition || ctData.sbrHeadroom != null) && (
+            <Card style={{ marginBottom:20,
+              borderLeft:`3px solid ${/crossed/i.test(ctData.sbrPosition) ? C.red
+                : /on course/i.test(ctData.sbrPosition) ? C.amber : C.green}` }}>
+              <div className="ns-panel-header" style={{ margin:"-14px -14px 14px" }}>
+                <h3>Small Business Relief — where this sits against the cap</h3>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:12 }}>
+                {[
+                  { label:"Revenue this tax period", value: ctData.revenueYTD != null ? fmtAED(ctData.revenueYTD) : "—" },
+                  { label:"The cap",                 value: fmtAED(ctData.sbrThreshold) },
+                  { label:"Headroom left",           value: ctData.sbrHeadroom != null ? fmtAED(ctData.sbrHeadroom) : "—",
+                    warn: ctData.sbrHeadroom != null && ctData.sbrHeadroom < 0 },
+                ].map((t,i) => (
+                  <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:C.bg }}>
+                    <div className="ns-label" style={{ marginBottom:4 }}>{t.label}</div>
+                    <div style={{ fontFamily:FM, fontSize:15, fontWeight:800,
+                      color: t.warn ? C.red : C.text }}>{t.value}</div>
+                  </div>
+                ))}
+              </div>
+              {ctData.sbrPosition && (
+                <div style={{ marginTop:12, fontFamily:F, fontSize:13, fontWeight:700, lineHeight:1.7,
+                  color: /crossed/i.test(ctData.sbrPosition) ? C.red
+                       : /on course/i.test(ctData.sbrPosition) ? C.warning : C.green }}>
+                  {ctData.sbrPosition}
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* What to hold back, so March is not a surprise. */}
+          {(ctData.provision != null || ctData.setAside != null) && (
+            <Card style={{ marginBottom:20 }}>
+              <div className="ns-panel-header" style={{ margin:"-14px -14px 14px" }}>
+                <h3>Tax to carry</h3>
+              </div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))", gap:12 }}>
+                {[
+                  { label:"To provide this month", value: ctData.provision != null ? fmtAED(ctData.provision) : "—" },
+                  { label:"Set aside for tax",     value: ctData.setAside  != null ? fmtAED(ctData.setAside)  : "—" },
+                ].map((t,i) => (
+                  <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:C.bg }}>
+                    <div className="ns-label" style={{ marginBottom:4 }}>{t.label}</div>
+                    <div style={{ fontFamily:FM, fontSize:15, fontWeight:800, color:C.text }}>{t.value}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:10, lineHeight:1.7 }}>
+                Money already owed in tax is not money available to spend. Carrying the charge month
+                by month is the difference between having it when the return falls due and not.
+              </div>
+            </Card>
+          )}
+
           <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
             {[
-              { label:"Effective CT Rate", value:`${ctData.effectiveCTRate}%`, color:C.green, icon:"ti-building-bank" },
+              { label:"Effective CT Rate", value: ctData.effectiveCTRate == null ? "—" : `${ctData.effectiveCTRate}%`, color:C.green, icon:"ti-building-bank" },
               { label:"CT Payable",        value:fmtAED(ctData.ctPayable),     color:ctData.ctPayable>0?C.amber:C.green, icon:"ti-cash" },
               { label:"CT Return Due",     value:ctData.ctDue,                  color:C.blue, icon:"ti-calendar" },
             ].map((s,i) => (
@@ -14826,9 +14890,19 @@ function QFZPModule({ client, reportData }) {
 // ─── AUDIT READINESS ──────────────────────────────────────────────────────────
 function AuditReadiness({ client, reportData }) {
   const rd        = reportData?.auditReadiness || {};
-  if (!client?.isDemo && !Object.keys(rd).length) return <AwaitingData title="Your audit readiness review"/>;
+  // E-invoicing readiness is its own piece of work and arrives on its own
+  // schedule. Hiding it behind an empty audit checklist meant a client could
+  // have a deadline counting down and see nothing at all.
+  const einvAny   = Object.keys(reportData?.einv || {}).some(k => {
+    const v = reportData.einv[k]; return v != null && v !== "";
+  });
+  if (!client?.isDemo && !Object.keys(rd).length && !einvAny)
+    return <AwaitingData title="Your audit readiness review"/>;
   const freezone  = client?.freezone || "DMCC";
-  const auditScore = rd.auditScore || 68;
+  // 68 used to appear here for any client who had no score worked out. The
+  // checklist below is the honest read; with no score the dial stays off.
+  const auditScore = rd.auditScore ?? null;
+  const einv = reportData?.einv || {};
  
   const checklistItems = rd.checklistItems || [
     { cat:"Financial Statements",  item:"Audited P&L (current year)",                done:false, req:true  },
@@ -14864,7 +14938,7 @@ function AuditReadiness({ client, reportData }) {
         </div>
         <div style={{ textAlign:"right" }}>
           <div style={{ fontFamily:F, fontSize:20, fontWeight:700,
-            color:auditScore>=80?C.green:auditScore>=60?C.amber:C.red }}>{auditScore}/100</div>
+            color:auditScore==null?C.dim:auditScore>=80?C.green:auditScore>=60?C.amber:C.red }}>{auditScore==null?"—":`${auditScore}/100`}</div>
           <div style={{ fontFamily:F, fontSize:11, color:C.muted }}>Audit Readiness Score</div>
         </div>
       </div>
@@ -14895,12 +14969,52 @@ function AuditReadiness({ client, reportData }) {
         );
       })}
  
-      <Card style={{ borderLeft:"3px solid #059669", background:"#F0FDF4", marginBottom:14 }}>
-        <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:8 }}>Note from Garima — Audit Readiness</div>
-        <p style={{ fontFamily:F, fontSize:13, color:"#166534", lineHeight:1.8, margin:"0 0 12px" }}>
-          Your audit readiness score of {auditScore}/100 is encouraging, but there are 5 required documents still outstanding. The highest-priority gap is QFZP Supporting Documentation — without this, your free zone status cannot be confirmed in the audit. I'd suggest we schedule a 45-minute working session to close these items before the 30 April DMCC deadline. I can prepare the first draft of the CT computation and transfer pricing documentation if you share the relevant contracts.
-        </p>
-      </Card>
+      {/* ── E-invoicing readiness ──
+          Free zones get no exemption, and readiness is a master-data problem
+          long before it is a software one. Shown only once there is something
+          to show. */}
+      {(einv.date || einv.score || einv.monthsLeft) && (
+        <Card style={{ marginBottom:14 }}>
+          <div className="ns-panel-header" style={{ margin:"-14px -14px 14px" }}>
+            <h3>E-invoicing readiness</h3>
+            {einv.wave && <span className="ns-badge blue">{einv.wave}</span>}
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))", gap:12 }}>
+            {[
+              { label:"Mandatory from",  value: einv.date || "—" },
+              { label:"Months remaining", value: einv.monthsLeft || "—",
+                warn: Number(einv.monthsLeft) > 0 && Number(einv.monthsLeft) < 12 },
+              { label:"Readiness",       value: einv.score != null && einv.score !== "" ? `${einv.score}/100` : "—" },
+              { label:"Master data clean", value: einv.dataQuality || "—" },
+              { label:"Provider appointed", value: einv.provider || "—" },
+            ].map((t,i) => (
+              <div key={i} style={{ padding:"10px 12px", borderRadius:12, background:C.bg }}>
+                <div className="ns-label" style={{ marginBottom:4 }}>{t.label}</div>
+                <div style={{ fontFamily:FM, fontSize:15, fontWeight:800,
+                  color: t.warn ? C.warning : C.text }}>{t.value}</div>
+              </div>
+            ))}
+          </div>
+          {einv.note && (
+            <p style={{ fontFamily:F, fontSize:13, color:C.text, lineHeight:1.8, margin:"14px 0 0" }}>
+              {einv.note}
+            </p>
+          )}
+        </Card>
+      )}
+
+      {/* The note is written by a Chartered Accountant or it is not there.
+          A default paragraph used to stand in — naming five outstanding
+          documents, a forty-five minute session and a 30 April deadline — for
+          every client, whatever their actual position. */}
+      {reportData?.governanceNote && (
+        <Card style={{ borderLeft:"3px solid #059669", background:"#F0FDF4", marginBottom:14 }}>
+          <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:"#15803D", marginBottom:8 }}>Note from Garima — Audit Readiness</div>
+          <p style={{ fontFamily:F, fontSize:13, color:"#166534", lineHeight:1.8, margin:"0 0 12px", whiteSpace:"pre-wrap" }}>
+            {reportData.governanceNote}
+          </p>
+        </Card>
+      )}
       <button onClick={() => window.open(WA,"_blank")} style={{ width:"100%", padding:24,
         borderRadius:16, border:"none", background:C.green, color:"white",
         fontFamily:F, fontWeight:700, fontSize:14, cursor:"pointer" }}>
@@ -18298,37 +18412,50 @@ function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
 // schedule or a related party listing is spreadsheet work; typing it into
 // forty boxes once a month for every client is not.
 function AnalysisTemplates({ client, reportData, setReportData, saveReportData, loading, saved,
-                            kpis, setKpis, saveKPIs, actions = [], replaceActions }) {
+                            kpis, setKpis, saveKPIs, actions = [], replaceActions, adminEmail }) {
   const [busy,  setBusy]  = React.useState("");
   const [err,   setErr]   = React.useState("");
+  const [seeded, setSeeded] = React.useState(null);
   const [res,   setRes]   = React.useState(null);
   const [applied, setApplied] = React.useState(false);
   const uae = isUAE(client);
   const specs = sheetsFor(uae);
 
   const fileName = `${(client?.company || client?.name || "client")
-    .replace(/\W+/g, "-").toLowerCase()}-finzzup-${new Date().toISOString().slice(0,10)}.xlsx`;
+    .replace(/\W+/g, "-").toLowerCase()}-analysis-${new Date().toISOString().slice(0,10)}.xlsx`;
 
   // SheetJS is close to half a megabyte. It is pulled in only when the workbook
   // is actually used, so the client portal never pays for it.
+  // The workbook comes down carrying this client's figures. The sync has
+  // already read the chart of accounts, the open invoices and the open bills;
+  // asking for them to be exported and pasted again would be asking for the
+  // same work twice, and the paste is where transcription errors live.
+  //
+  // ExcelJS and the builders are pulled in only here. The client portal never
+  // carries a spreadsheet writer it has no use for.
   const download = async () => {
-    setErr(""); setBusy("download");
+    setErr(""); setBusy("download"); setSeeded(null);
     try {
-      const XLSX = await import("xlsx");
-      const wb = XLSX.utils.book_new();
-      for (const sheet of buildWorkbook({ client, reportData, kpis, actions, uae })) {
-        const ws = XLSX.utils.aoa_to_sheet(sheet.aoa);
-        // Column widths, so it opens readable rather than as a wall of ####.
-        const widest = sheet.aoa.reduce((acc, row) => {
-          (row || []).forEach((c, i) => {
-            acc[i] = Math.max(acc[i] || 10, Math.min(60, String(c ?? "").length + 2));
-          });
-          return acc;
-        }, []);
-        ws["!cols"] = widest.map(w => ({ wch: w }));
-        XLSX.utils.book_append_sheet(wb, ws, sheet.name.slice(0, 31));
+      let sync = null;
+      if (/^[0-9a-f-]{36}$/i.test(String(client?.id || ""))) {
+        const r = await fetch(`/api/zoho?action=sync&clientId=${encodeURIComponent(client.id)}` +
+                              `&adminEmail=${encodeURIComponent(adminEmail || "")}`).catch(() => null);
+        const j = r ? await r.json().catch(() => null) : null;
+        if (j?.ok) sync = j;
+        else if (j && j.reason !== "not_connected") {
+          setErr(`The books could not be read, so the workbook is empty: ${j.reason || "unknown"}.`);
+        }
       }
-      XLSX.writeFile(wb, fileName);
+      const { buildAnalysisWorkbook, seedFromSync, describeSeed } = await import("./workbook-build/index.js");
+      const wb  = buildAnalysisWorkbook({ client, sync });
+      const buf = await wb.xlsx.writeBuffer();
+      const a   = document.createElement("a");
+      a.href = URL.createObjectURL(new Blob([buf],
+        { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+      a.download = fileName;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 30000);
+      setSeeded(describeSeed(seedFromSync(sync)));
     } catch (e) {
       setErr(`The workbook could not be built: ${e.message}`);
     }
@@ -18345,12 +18472,26 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
       for (const name of wb.SheetNames) {
         byName[name] = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, blankrows: true, defval: "" });
       }
-      const out = readWorkbook(byName, { reportData, kpis, uae });
-      const total = out.summary.reduce((a, s) => a + (s.changed || 0), 0);
-      if (!total && out.problems.length === specs.length) {
-        setErr("Nothing in this file matched the workbook. Download a fresh one and fill that — the sheet names are how the portal finds its way around.");
+
+      // The analysis workbook carries a Portal Feed sheet, which is the whole
+      // mapping: an id and a value. Anything else is read the older way, so a
+      // file downloaded last month still works.
+      const feed = readPortalFeed(byName, { reportData, kpis, uae });
+      if (feed) {
+        const total = feed.changed.length;
+        if (!total && !feed.problems.length) {
+          setErr("Nothing in the Portal Feed differs from what is published.");
+        } else {
+          setRes({ ...feed, total, viaFeed: true });
+        }
       } else {
-        setRes({ ...out, total });
+        const out = readWorkbook(byName, { reportData, kpis, uae });
+        const total = out.summary.reduce((a, s) => a + (s.changed || 0), 0);
+        if (!total && out.problems.length === specs.length) {
+          setErr("Nothing in this file matched. Download a fresh workbook and fill that — the portal finds its figures by sheet name.");
+        } else {
+          setRes({ ...out, total });
+        }
       }
     } catch (e) {
       setErr(`That file could not be read as a workbook: ${e.message}`);
@@ -18383,15 +18524,19 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
       {/* ── The one workbook ── */}
       <Card style={{ marginBottom:16 }}>
         <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:6 }}>
-          One workbook, every report
+          The analysis workbook
         </div>
         <div style={{ fontFamily:F, fontSize:12.5, color:C.muted, lineHeight:1.8, marginBottom:16 }}>
-          {specs.length} sheets, one for each screen the client sees. It opens already carrying
-          everything the books know — the P&amp;L worked through from the trial balance, the ageing
-          off the invoices, the ratios{uae ? ", the corporate tax computation" : ""}. Do the analysis
-          in Excel and upload the same file back. Each sheet lands on the screen it belongs to.
+          {SHEET_COUNT} sheets, built to be worked in. It comes down carrying this client's trial
+          balance, open invoices and open bills straight from their books — so the P&amp;L, the balance
+          sheet, the ageings and the ratios are already worked out and you open it at the analysis.
           <br/>
-          <strong style={{ color:C.text }}>A blank cell changes nothing</strong> — leave anything you
+          One sheet, <strong style={{ color:C.text }}>Portal Feed</strong>, is the only one the portal
+          reads. Everything the client sees sits on a fixed row there, pulled from your workings by
+          formula — so you can rearrange the workings freely without the portal ever reading the wrong
+          cell.
+          <br/>
+          <strong style={{ color:C.text }}>A blank value changes nothing</strong> — leave anything you
           have not got to and what is published now stays as it is.
         </div>
 
@@ -18410,9 +18555,24 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
               onChange={e => { const f = e.target.files[0]; if (f) upload(f); e.target.value = ""; }}/>
           </label>
           <span style={{ fontFamily:F, fontSize:11.5, color:C.dim }}>
-            {filledCount} of {specs.length} sheets have something in them for this client.
+            {filledCount} of {specs.length} of this client's reports have something published.
           </span>
         </div>
+
+        {seeded && (
+          <div style={{ marginTop:14, padding:"10px 14px", borderRadius:12,
+            background:`${C.green}0A`, border:`1px solid ${C.green}30` }}>
+            <div style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.75 }}>
+              {seeded.accounts || seeded.receivables || seeded.payables
+                ? <>Downloaded carrying <strong>{seeded.accounts}</strong> ledger account
+                    {seeded.accounts===1?"":"s"}, <strong>{seeded.receivables}</strong> open invoice
+                    {seeded.receivables===1?"":"s"} and <strong>{seeded.payables}</strong> open bill
+                    {seeded.payables===1?"":"s"}. The statements, ageings and ratios are already worked out.</>
+                : <>Downloaded empty — this client has no accounting connection, so the trial balance,
+                    invoices and bills are yours to paste in.</>}
+            </div>
+          </div>
+        )}
 
         {err && (
           <div style={{ marginTop:14, padding:"10px 14px", borderRadius:12,
@@ -18428,7 +18588,9 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
           <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
             {res.summary.filter(s=>s.changed).length === 0
               ? "Nothing in this workbook differs from what is published"
-              : `Changes in ${res.summary.filter(s=>s.changed).length} of ${res.summary.length} sheets`}
+              : res.viaFeed
+                ? `${res.total} figure${res.total===1?"":"s"} changed, across ${res.summary.length} screen${res.summary.length===1?"":"s"}`
+                : `Changes in ${res.summary.filter(s=>s.changed).length} of ${res.summary.length} sheets`}
           </div>
           <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.7 }}>
             Nothing has been written yet. Check this is what you meant, then apply it.
@@ -18437,7 +18599,7 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
           <div style={{ overflowX:"auto" }}>
             <table style={{ borderCollapse:"collapse", width:"100%", fontFamily:F, fontSize:12 }}>
               <thead>
-                <tr>{["Sheet","Where it shows","Changes"].map((h,i) => (
+                <tr>{(res.viaFeed ? ["Where it shows","What changed","Figures"] : ["Sheet","Where it shows","Changes"]).map((h,i) => (
                   <th key={i} style={{ textAlign: i===2?"right":"left", padding:"7px 10px", color:C.dim,
                     fontSize:10, fontWeight:700, textTransform:"uppercase", letterSpacing:"0.06em",
                     borderBottom:`1px solid ${C.border}` }}>{h}</th>
@@ -18447,13 +18609,20 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
                 {res.summary.map((s,i) => (
                   <tr key={i} style={{ opacity: s.changed ? 1 : 0.45 }}>
                     <td style={{ padding:"7px 10px", color:C.text, fontWeight:600,
-                      borderBottom:`1px solid ${C.border}`, whiteSpace:"nowrap" }}>{s.sheet}</td>
+                      borderBottom:`1px solid ${C.border}` }}>
+                      {res.viaFeed ? s.screen : s.sheet}
+                    </td>
                     <td style={{ padding:"7px 10px", color:C.muted,
-                      borderBottom:`1px solid ${C.border}` }}>{s.screen}</td>
+                      borderBottom:`1px solid ${C.border}` }}>
+                      {res.viaFeed
+                        ? (s.items || []).map(x => x.label).slice(0, 4).join(", ") +
+                          ((s.items || []).length > 4 ? ` and ${s.items.length - 4} more` : "")
+                        : s.screen}
+                    </td>
                     <td style={{ padding:"7px 10px", textAlign:"right", whiteSpace:"nowrap",
                       color: s.changed ? C.green : C.dim, fontWeight:700,
                       borderBottom:`1px solid ${C.border}` }}>
-                      {s.changed ? `${s.changed} ${s.unit || ""}`.trim() : "left as it was"}
+                      {s.changed ? `${s.changed} ${res.viaFeed ? "" : (s.unit || "")}`.trim() : "left as it was"}
                     </td>
                   </tr>
                 ))}
@@ -18466,7 +18635,7 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
               background:`${C.amber}0A`, border:`1px solid ${C.amber}30` }}>
               <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.amber,
                 textTransform:"uppercase", letterSpacing:"0.07em", marginBottom:6 }}>
-                {res.problems.length} sheet{res.problems.length===1?"":"s"} skipped
+                {res.problems.length} thing{res.problems.length===1?"":"s"} skipped
               </div>
               {res.problems.map((p,i) => (
                 <div key={i} style={{ fontFamily:F, fontSize:12, color:C.text, lineHeight:1.75 }}>{p}</div>
@@ -18494,30 +18663,24 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
           What is in it
         </div>
         <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.7 }}>
-          Every sheet, and the screen it feeds.
+          {SHEET_COUNT} sheets, in the order the work happens.
         </div>
-        <div style={{ display:"grid", gap:1, background:C.border, borderRadius:12, overflow:"hidden" }}>
-          {specs.map(s => {
-            const src = s.target === "kpis" ? kpis : reportData;
-            const has = s.kind === "kv"
-              ? s.fields.some(f => { const v = getPath(src, s.path ? `${s.path}.${f.key}` : f.key); return v != null && v !== ""; })
-              : s.target === "actions" ? (actions || []).length > 0
-              : (() => { const v = getPath(reportData, s.path);
-                         return Array.isArray(v) ? v.length>0 : v && typeof v==="object" && Object.keys(v).length>0; })();
-            return (
-              <div key={s.name} style={{ display:"flex", gap:12, alignItems:"baseline",
-                padding:"9px 13px", background:"#fff", flexWrap:"wrap" }}>
-                <span style={{ fontFamily:F, fontSize:12.5, fontWeight:700, color:C.text,
-                  minWidth:170 }}>{s.name}</span>
-                <span style={{ fontFamily:F, fontSize:12, color:C.muted, flex:1, minWidth:200 }}>{s.screen}</span>
-                <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
-                  color: has ? C.green : C.dim, whiteSpace:"nowrap" }}>
-                  {has ? "filled" : "empty"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        {WORKBOOK_SHEETS.map(g => (
+          <div key={g.group} style={{ marginBottom:14 }}>
+            <div style={{ fontFamily:F, fontSize:10, fontWeight:700, color:C.dim,
+              textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>{g.group}</div>
+            <div style={{ display:"grid", gap:1, background:C.border, borderRadius:12, overflow:"hidden" }}>
+              {g.sheets.map(([name, what]) => (
+                <div key={name} style={{ display:"flex", gap:12, alignItems:"baseline",
+                  padding:"8px 13px", background:"#fff", flexWrap:"wrap" }}>
+                  <span style={{ fontFamily:FM, fontSize:12, fontWeight:700, color:C.text,
+                    minWidth:150 }}>{name}</span>
+                  <span style={{ fontFamily:F, fontSize:12, color:C.muted, flex:1, minWidth:200 }}>{what}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
       </Card>
     </div>
   );
@@ -21321,7 +21484,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
             ) : <AnalysisTemplates client={selected} reportData={reportData} setReportData={setReportData}
                   saveReportData={saveReportData} loading={loading} saved={saved}
                   kpis={kpis} setKpis={setKpis} saveKPIs={saveKPIs}
-                  actions={actions} replaceActions={replaceActions}/>
+                  actions={actions} replaceActions={replaceActions} adminEmail={admin?.email}/>
           )}
 
           {/* ── CLIENT READINESS ── */}
@@ -23248,6 +23411,70 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     val={reportData?.ctGarimaNote||""}
                     onChange={v=>setReportData(r=>({...r,ctGarimaNote:v}))}
                     placeholder="e.g. With QFZP status, your effective CT rate is 0%. Ensure audited FS are submitted to DMCC by 30 April."
+                    multiline/>
+                </Card>
+
+                {/* ── The SBR cap, and the tax to carry ──
+                    Written by the workbook, and typeable here, because
+                    correcting one figure should not need a round trip through
+                    Excel. Both write the same keys the client screen reads. */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-gauge" style={{fontSize:15,color:C.blue}}/>Small Business Relief &amp; tax to carry
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                    Shows on the client's <strong>Corporate Tax</strong> page. An owner near the
+                    AED 3M cap otherwise finds out at the year end, when the election has gone.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    {[
+                      { k:"revenueYTD",  label:"Revenue so far this tax period", ph:"e.g. 2400000" },
+                      { k:"sbrHeadroom", label:"Headroom before the cap",        ph:"e.g. 600000"  },
+                      { k:"provision",   label:"To provide this month",          ph:"e.g. 4500"    },
+                      { k:"setAside",    label:"Set aside for tax",              ph:"e.g. 18000"   },
+                    ].map(f => (
+                      <AdminInput C={C} F={F} FM={FM} key={f.k} label={f.label} mono
+                        val={reportData?.ct?.[f.k] ?? ""} placeholder={f.ph}
+                        onChange={v=>setReportData(r=>({...r, ct:{...(r?.ct||{}), [f.k]:v}}))}/>
+                    ))}
+                  </div>
+                  <AdminInput C={C} F={F} FM={FM} label="Position against the cap"
+                    val={reportData?.ct?.sbrPosition ?? ""}
+                    placeholder="e.g. On course to cross the cap — plan for 9% now"
+                    onChange={v=>setReportData(r=>({...r, ct:{...(r?.ct||{}), sbrPosition:v}}))}/>
+                  <div style={{ fontFamily:F, fontSize:11.5, color:C.dim, lineHeight:1.7 }}>
+                    The wording is read as written. "Crossed" shows red, "on course" amber,
+                    anything else green.
+                  </div>
+                </Card>
+
+                {/* ── E-invoicing readiness ── */}
+                <Card style={{ marginBottom:20 }}>
+                  <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4, display:"flex", alignItems:"center", gap:8 }}>
+                    <i className="ti ti-file-invoice" style={{fontSize:15,color:C.blue}}/>E-invoicing readiness
+                  </div>
+                  <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
+                    Shows on the client's <strong>Audit Readiness</strong> page. Free zones are not
+                    exempt, and readiness is a master-data problem long before it is a software one.
+                  </p>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:12 }}>
+                    {[
+                      { k:"wave",        label:"Which wave",            ph:"e.g. Later wave" },
+                      { k:"date",        label:"Mandatory from",        ph:"e.g. 1 July 2027" },
+                      { k:"monthsLeft",  label:"Months remaining",      ph:"e.g. 7.6", mono:true },
+                      { k:"score",       label:"Readiness (0–100)",     ph:"e.g. 38",  mono:true },
+                      { k:"dataQuality", label:"Master data clean",     ph:"e.g. 71%", mono:true },
+                      { k:"provider",    label:"Provider appointed",    ph:"Yes / No" },
+                    ].map(f => (
+                      <AdminInput C={C} F={F} FM={FM} key={f.k} label={f.label} mono={f.mono}
+                        val={reportData?.einv?.[f.k] ?? ""} placeholder={f.ph}
+                        onChange={v=>setReportData(r=>({...r, einv:{...(r?.einv||{}), [f.k]:v}}))}/>
+                    ))}
+                  </div>
+                  <AdminInput C={C} F={F} FM={FM} label="Your note on e-invoicing"
+                    val={reportData?.einv?.note ?? ""}
+                    placeholder="e.g. Master data is the gap, not the software. 340 of 1,200 customers have no TRN."
+                    onChange={v=>setReportData(r=>({...r, einv:{...(r?.einv||{}), note:v}}))}
                     multiline/>
                 </Card>
  
