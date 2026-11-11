@@ -3,6 +3,7 @@
 //   /api/zoho?action=status   — is this client connected, and how did it go
 //   /api/zoho?action=sync     — pull the books and map them for review
 //   /api/zoho?action=preview  — report the field names a connected org returns
+//   /api/zoho?action=connections — every connection, and the client it is on
 //
 // They are behind a single route because Vercel turns every file in api/ into
 // its own Serverless Function, and the Hobby plan allows twelve. Three separate
@@ -17,8 +18,9 @@
 import status  from "./_zoho-status.js";
 import sync    from "./_zoho-sync.js";
 import preview from "./_zoho-preview.js";
+import connections from "./_zoho-connections.js";
 
-const ACTIONS = { status, sync, preview };
+const ACTIONS = { status, sync, preview, connections };
 
 export default async function handler(req, res) {
   const action = String(req.query?.action || "");
