@@ -3,7 +3,7 @@ import { supabase } from "./supabase.js";
 import { computeAlerts, parseAmount } from "./alerts.js";
 import { proposeActions, newProposalsOnly, complianceCalendar, newComplianceOnly } from "./autodraft.js";
 import { mergeDerived } from "./derive.js";
-import { buildWorkbook, readWorkbook, sheetsFor, getPath } from "./workbook.js";
+import { buildWorkbook, readWorkbook, sheetsFor, getPath, setPath } from "./workbook.js";
 import { parseLedger, buildReceivablesDrill, buildRevenueDrill, buildPayablesDrill,
          buildSupplierSpendDrill, computeMsmeExposure, buildMsmeDrill, extractVendorRegister,
          isMsme, MSME_LIMIT_DAYS, reconcile, validateLedger } from "./ledgerimport.js";
@@ -1925,9 +1925,15 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
     );
   };
 
-  const healthScore = reportData?.healthScore || 72;
-  const healthColor = healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
-  const healthLabel = healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
+  // A score of 72 used to appear here whenever none had been worked out — a
+  // flat "Health: 72/100 — Moderate" on a client who had published nothing,
+  // under a Chartered Accountant's name. The five dimensions below give the
+  // honest read; with no score of its own this chip stays off.
+  const healthScore = reportData?.healthScore ?? null;
+  const healthColor = healthScore == null ? C.muted
+    : healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
+  const healthLabel = healthScore == null ? null
+    : healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
 
   // ── Proactive alerts ──────────────────────────────────────────────────────
   const [dismissedAlerts, setDismissedAlerts] = React.useState(new Set());
@@ -2047,9 +2053,11 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           {highPriority.length > 0 && (
             <span className="ns-badge red"><i className="ti ti-alert-triangle" style={{ fontSize:11 }}/> {highPriority.length} High Priority</span>
           )}
-          <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
-            Health: {healthScore}/100 — {healthLabel}
-          </span>
+          {healthScore != null && (
+            <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
+              Health: {healthScore}/100 — {healthLabel}
+            </span>
+          )}
         </div>
       </div>
 
@@ -2468,8 +2476,13 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       </div>
       )}
 
-      {/* ── Invoice Status + Connected Persons row ── */}
-      <div style={{ display:"grid", gridTemplateColumns:`${isMobile?"1fr":"180px 1fr"}`, gap:14 }}>
+      {/* ── Invoice Status + Connected Persons row ──
+          Connected persons are an Art. 36 corporate-tax concept. On an India
+          client the panel was headed with the term and then said there were
+          none on record — which there never would be, because the concept does
+          not apply to them. */}
+      <div style={{ display:"grid",
+        gridTemplateColumns:`${isMobile ? "1fr" : (isUAE(client) ? "180px 1fr" : "1fr")}`, gap:14 }}>
 
         {/* Invoice donut-style status */}
         <div className="ns-panel" style={{ margin:0, display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:18 }}>
@@ -2496,7 +2509,8 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           </button>
         </div>
 
-        {/* Connected Persons */}
+        {/* Connected Persons — UAE only */}
+        {isUAE(client) && (
         <div className="ns-panel" style={{ margin:0 }}>
           <div className="ns-panel-header">
             <h3>Connected Persons</h3>
@@ -2529,6 +2543,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
               </div>
           }
         </div>
+        )}
       </div>
 
       <DrillPortal/>
@@ -10973,57 +10988,68 @@ function MyDocuments({ client }) {
 function Treasury({ client, reportData }) {
   const [tab, setTab] = useState("overview");
   const uae = isUAE(client);
- 
-  // Use live admin-entered data if available, else fall back to defaults
-  const rd = reportData?.treasury;
- 
-  const UAE_T = {
-    totalCash:   rd?.totalCash   || "AED 620K",
-    investedPct: rd?.investedPct || 55,
-    yieldPA:     rd?.yieldPA     || "AED 22K",
-    dso: 38, dpo: 28, dio: 15,
-    cashPositions: (rd?.cashPositions?.some(p=>p.bank)) ? rd.cashPositions : [
-      { bank:"Emirates NBD — Current A/C",  balance:"AED 210K", type:"Operating",    rate:"0%",   flag:false },
-      { bank:"Mashreq — Term Deposit",       balance:"AED 300K", type:"Term Deposit", rate:"5.2%", flag:false },
-      { bank:"ADCB — Islamic Wakala",        balance:"AED 80K",  type:"Islamic Inv.", rate:"4.8%", flag:false },
-      { bank:"FAB — Current A/C",            balance:"AED 30K",  type:"Reserve",      rate:"0%",   flag:true,  note:"Consider moving to Wakala" },
-    ],
-    maturitySchedule: (rd?.maturitySchedule?.some(m=>m.item)) ? rd.maturitySchedule : [
-      { item:"Mashreq Term Deposit",    maturity:"15 Apr 2026", amount:"AED 150K", action:"Renew"      },
-      { item:"ADCB Islamic Wakala",     maturity:"30 Apr 2026", amount:"AED 80K",  action:"Redeem"     },
-      { item:"Mashreq TD — Tranche 2", maturity:"31 May 2026", amount:"AED 150K", action:"Auto-renew" },
-    ],
-    recommendations: (rd?.recommendations?.some(r=>r.text)) ? rd.recommendations : [
-      { priority:"High",   text:"Hold AED 92.5K cash reserve for Q1 VAT payment due 28 April — don't lock in FDs." },
-      { priority:"High",   text:"Renew Mashreq TD at 5.2% — UAE rates stabilising. Lock in before potential CBUAE cut." },
-      { priority:"Medium", text:"Move FAB idle AED 30K to ADCB Wakala — earn 4.8% profit share on Islamic structure." },
-      { priority:"Low",    text:"Consider ENBD Emirates Islamic Murabaha for April surplus — projected AED 50K." },
-    ],
+
+  // This screen used to invent a treasury. With nothing entered it named four
+  // banks, gave each a balance and a rate, scheduled three maturities and
+  // wrote four recommendations — one of them a specific AED 92.5K VAT reserve
+  // — and put the lot on a real client's screen under a Chartered
+  // Accountant's name. Convincing, specific and entirely fabricated.
+  //
+  // Facility terms, rates and maturities are not in the accounting records at
+  // all; they come from the Treasury and Deposits sheets of the workbook. Until
+  // those are filled, this says so.
+  const rd   = reportData?.treasury;
+  const cur  = (v) => (v == null || v === "") ? "—" : String(v);
+  const rows = (v, k) => Array.isArray(v) && v.some(x => x?.[k]) ? v : [];
+
+  const cashPositions    = rows(rd?.cashPositions, "bank");
+  const depositRows      = rows(rd?.deposits, "institution");
+  const maturitySchedule = rows(rd?.maturitySchedule, "item");
+  const recommendations  = rows(rd?.recommendations, "text");
+
+  // The deposit schedule from the workbook, shown as cash positions when no
+  // separate position list has been given.
+  const positions = cashPositions.length ? cashPositions : depositRows.map(d => ({
+    bank: d.institution, balance: d.amount, type: d.type,
+    rate: d.rate == null ? "" : `${d.rate}%`, flag:false, note: d.note,
+  }));
+  const maturities = maturitySchedule.length ? maturitySchedule : depositRows
+    .filter(d => d.maturity)
+    .map(d => ({ item: d.institution, maturity: d.maturity, amount: d.amount, action: d.note || "" }));
+
+  const anything = !!(rd && (rd.totalCash || rd.investedPct || rd.yieldPA)) ||
+                   positions.length || maturities.length || recommendations.length;
+
+  if (!client?.isDemo && !anything) {
+    return (
+      <div className="ns-page">
+        <SectionTitle sub={uae ? "Multi-currency cash, term deposits, and yield optimisation."
+                               : "Cash visibility, FD tracking, and yield optimisation."}>
+          {uae ? "Treasury Management (AED)" : "Treasury Management"}
+        </SectionTitle>
+        <AwaitingData title="Your treasury position"
+          detail="Deposits, facilities, rates and maturities are not in the accounting records, so they are prepared separately. This will fill once that work is published."/>
+      </div>
+    );
+  }
+
+  // Days come from the reviewed working capital figures, never from a default.
+  const wc = reportData?.workingCapital || {};
+  const n  = (v) => { const x = Number(v); return isFinite(x) ? x : null; };
+  const dso = n(wc.dso), dpo = n(wc.dpo), dio = n(wc.dio);
+  const ccc = (dso != null && dpo != null) ? dso - dpo + (dio || 0) : null;
+
+  const TREASURY_DATA = {
+    totalCash:   cur(rd?.totalCash),
+    investedPct: rd?.investedPct == null || rd?.investedPct === "" ? null : rd.investedPct,
+    yieldPA:     cur(rd?.yieldPA),
+    dso, dpo, dio, ccc,
+    cashPositions: positions,
+    maturitySchedule: maturities,
+    recommendations,
   };
- 
-  const TREASURY_DATA = uae ? UAE_T : {
-    totalCash:    rd?.totalCash    || "₹50.4L",
-    investedPct:  rd?.investedPct  || 65,
-    yieldPA:      rd?.yieldPA      || "₹3.2L",
-    cashPositions: (rd?.cashPositions?.some(p=>p.bank)) ? rd.cashPositions : [
-      { bank:"HDFC Bank — Current A/C",   balance:"₹14.2L", type:"Operating",   rate:"3.5%",  flag:false },
-      { bank:"SBI — Fixed Deposit",        balance:"₹25.0L", type:"FD (91 days)", rate:"7.1%",  flag:false },
-      { bank:"Axis Bank — Sweep Account",  balance:"₹8.4L",  type:"Sweep FD",    rate:"6.8%",  flag:false },
-      { bank:"ICICI Bank — Current A/C",   balance:"₹2.8L",  type:"Reserve",     rate:"0%",    flag:true,  note:"Consider sweeping to FD" },
-    ],
-    maturitySchedule: (rd?.maturitySchedule?.some(m=>m.item)) ? rd.maturitySchedule : [
-      { item:"SBI FD — Tranche 1", maturity:"15 Mar 2026", amount:"₹10.0L", action:"Renew"     },
-      { item:"SBI FD — Tranche 2", maturity:"28 Mar 2026", amount:"₹15.0L", action:"Redeem"    },
-      { item:"Axis Sweep",         maturity:"Revolving",    amount:"₹8.4L",  action:"Auto-renew"},
-    ],
-    recommendations: (rd?.recommendations?.some(r=>r.text)) ? rd.recommendations : [
-      { priority:"High",   text:"Renew SBI FD Tranche 1 — rates likely lower post April RBI meeting. Lock in 7.1% now." },
-      { priority:"High",   text:"Redeem SBI Tranche 2 (₹15L) to fund March advance tax outflow — avoid OD." },
-      { priority:"Medium", text:"Sweep ₹2.8L ICICI idle balance to sweep account — earn 6.8% vs 0%." },
-      { priority:"Low",    text:"Consider a 30-day liquid fund for the April surplus (₹8L projected) — yield ~7.5%." },
-    ],
-  };
- 
+  const UAE_T = TREASURY_DATA;
+
   return (
     <div className="ns-page">
       <SectionTitle sub={uae ? "Multi-currency cash, term deposits, and yield optimisation." : "Cash visibility, FD tracking, and yield optimisation."}>
@@ -11034,9 +11060,9 @@ function Treasury({ client, reportData }) {
       {uae && (
         <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:14, marginBottom:20 }}>
           {[
-            { label:"Days Sales Outstanding (DSO)", value:`${UAE_T.dso} days`, color:C.blue,  icon:"↑" },
-            { label:"Days Payable Outstanding (DPO)",value:`${UAE_T.dpo} days`, color:C.green, icon:"↓" },
-            { label:"Cash Conversion Cycle",         value:`${UAE_T.dso - UAE_T.dpo + UAE_T.dio} days`, color:C.amber, icon:"🔄" },
+            { label:"Days Sales Outstanding (DSO)", value: UAE_T.dso == null ? "—" : `${UAE_T.dso} days`, color:C.blue,  icon:"↑" },
+            { label:"Days Payable Outstanding (DPO)",value: UAE_T.dpo == null ? "—" : `${UAE_T.dpo} days`, color:C.green, icon:"↓" },
+            { label:"Cash Conversion Cycle",         value: UAE_T.ccc == null ? "—" : `${UAE_T.ccc} days`, color:C.amber, icon:"🔄" },
           ].map((s,i) => (
             <Card key={i} style={{ padding:18 }}>
               <div style={{ marginBottom:8 }}><i className={"ti " + (s.icon||"ti-circle")} style={{fontSize:18, color:s.color||"currentColor"}}/></div>
@@ -11064,7 +11090,7 @@ function Treasury({ client, reportData }) {
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14, marginBottom:20 }} className="tr-grid">
             {[
               { label:"Total Cash",      value:TREASURY_DATA.totalCash,              icon:"ti-wallet", color:C.blue  },
-              { label:uae?"In Term Deposits":"Invested in FDs", value:`${TREASURY_DATA.investedPct}%`, icon:"ti-trending-up", color:C.teal  },
+              { label:uae?"In Term Deposits":"Invested in FDs", value: TREASURY_DATA.investedPct == null ? "—" : `${TREASURY_DATA.investedPct}%`, icon:"ti-trending-up", color:C.teal  },
               { label:"Annual Yield",    value:TREASURY_DATA.yieldPA,                icon:"ti-building-bank", color:C.green },
             ].map((s,i) => (
               <Card key={i} style={{ padding:18 }}>
@@ -15976,6 +16002,233 @@ function ReportPDFBar({ client, kpis, garimaNote, reportData, actions, F, onSave
   );
 }
  
+// ─── THE CLIENT PORTAL'S DESIGN SYSTEM ────────────────────────────────────────
+// Every rule the client's screens are drawn with: the panels, the headings,
+// the tables, the tiles, the responsive behaviour.
+//
+// This used to live inside the Portal component, which meant it travelled with
+// the portal and nowhere else. The admin panel renders the same screens for
+// review, and without these rules every panel heading fell back to a raw <h3>
+// — the same page, in the same components, looking thrown together. Anything
+// drawing a client screen renders this first.
+function ClientStyles() {
+  return (
+      <style>{`
+        /* ── NetSuite Global Design System ── */
+        *, *::before, *::after { box-sizing: border-box; }
+        body { background: #F0F1F3; }
+ 
+        /* Typography scale */
+        .ns-page-title { font-size:15px; font-weight:800; color:#1a1a2e; letter-spacing:-0.01em; }
+        .ns-section-title { font-size:11px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.08em; }
+        .ns-label { font-size:10px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; }
+        .ns-value { font-size:20px; font-weight:900; color:#1a1a2e; font-family:'JetBrains Mono','SF Mono',monospace; }
+        .ns-sub { font-size:11px; color:#9CA3AF; }
+ 
+        /* Panel / Card */
+        .ns-panel {
+          background: white;
+          border: 1px solid #E5E7EB;
+          border-radius: 6px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+          overflow: hidden;
+        }
+        .ns-panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 8px 14px;
+          background: #F8F9FA;
+          border-bottom: 1px solid #E5E7EB;
+        }
+        .ns-panel-header h3 {
+          margin: 0;
+          font-size: 11px;
+          font-weight: 700;
+          color: #374151;
+          text-transform: uppercase;
+          letter-spacing: 0.07em;
+        }
+        .ns-panel-body { padding: 14px; }
+        .ns-panel-body.no-pad { padding: 0; }
+ 
+        /* Tables */
+        .ns-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .ns-table thead tr { background: #F0F1F3; }
+        .ns-table thead th {
+          padding: 6px 12px;
+          text-align: left;
+          font-size: 10px;
+          font-weight: 700;
+          color: #6B7280;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          border-bottom: 1px solid #E5E7EB;
+          white-space: nowrap;
+        }
+        .ns-table thead th.right { text-align: right; }
+        .ns-table tbody tr { border-bottom: 1px solid #F3F4F6; }
+        .ns-table tbody tr:hover { background: #F9FAFB; }
+        .ns-table tbody tr.striped:nth-child(even) { background: #FAFAFA; }
+        .ns-table tbody td {
+          padding: 7px 12px;
+          color: #374151;
+          font-size: 12px;
+          vertical-align: middle;
+        }
+        .ns-table tbody td.right { text-align: right; }
+        .ns-table tbody td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+        .ns-table tbody td.bold { font-weight: 700; color: #111827; }
+        .ns-table tbody td.muted { color: #9CA3AF; }
+        .ns-table tbody tr.subtotal td { background: #F9FAFB; font-weight: 700; color: #111827; }
+        .ns-table tbody tr.total td { background: #EEF2FF; font-weight: 800; color: #1E3A8A; border-top: 2px solid #C7D2FE; }
+ 
+        /* Form controls do not inherit font-family by default — force it so
+           buttons, inputs and selects match the rest of the portal. */
+        button, input, select, textarea, optgroup { font-family: inherit; }
+
+        /* KPI Tiles */
+        .ns-kpi-tile {
+          background: white;
+          border: 1px solid #E5E7EB;
+          border-radius: 6px;
+          padding: 12px 14px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
+        .ns-kpi-tile .value { font-size:13px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
+        .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
+        .ns-kpi-tile.drillable { cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; }
+        .ns-kpi-tile.drillable:hover { border-color:#2563EB; box-shadow:0 3px 10px rgba(37,99,235,0.14); transform:translateY(-1px); }
+        .ns-kpi-tile .drill-hint {
+          position:absolute; top:8px; right:10px;
+          font-size:13px; font-weight:800; color:#2563EB; opacity:0.35;
+          transition:opacity .15s;
+        }
+        .ns-kpi-tile.drillable:hover .drill-hint { opacity:1; }
+ 
+        /* Badges */
+        .ns-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:700; }
+        .ns-badge.green { background:#DCFCE7; color:#15803D; }
+        .ns-badge.red { background:#FEF2F2; color:#DC2626; }
+        .ns-badge.amber { background:#FEF3C7; color:#D97706; }
+        .ns-badge.blue { background:#DBEAFE; color:#1D4ED8; }
+        .ns-badge.purple { background:#EDE9FE; color:#6D28D9; }
+ 
+        /* Stat bar (like NetSuite's performance bars) */
+        .ns-stat-row { display:flex; align-items:center; justify-content:space-between; padding:7px 14px; border-bottom:1px solid #F3F4F6; font-size:12px; }
+        .ns-stat-row:last-child { border-bottom:none; }
+        .ns-stat-row .stat-label { color:#374151; flex:1; }
+        .ns-stat-row .stat-period { color:#9CA3AF; font-size:11px; flex:1; }
+        .ns-stat-row .stat-value { font-family:'JetBrains Mono','SF Mono',monospace; font-weight:700; color:#111827; min-width:80px; text-align:right; }
+        .ns-stat-row .stat-change { min-width:50px; text-align:right; font-size:11px; font-weight:700; }
+        .ns-stat-row .stat-change.up { color:#059669; }
+        .ns-stat-row .stat-change.down { color:#EF4444; }
+ 
+        /* Tiles (shortcut buttons) */
+        .ns-tile-row { display:flex; gap:10px; }
+        .ns-tile {
+          flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+          gap:8px; padding:16px 10px; border-radius:6px; border:none; cursor:pointer;
+          color:white; font-weight:700; font-size:11px; transition:opacity 0.15s;
+          box-shadow:0 1px 3px rgba(0,0,0,0.15);
+        }
+        .ns-tile:hover { opacity:0.88; }
+        .ns-tile .tile-icon { font-size:20px; }
+ 
+        /* Scrollbar */
+        ::-webkit-scrollbar { width:5px; height:5px; }
+        ::-webkit-scrollbar-track { background:transparent; }
+        ::-webkit-scrollbar-thumb { background:#D1D5DB; border-radius:10px; }
+        ::-webkit-scrollbar-thumb:hover { background:#9CA3AF; }
+ 
+        /* Page padding wrapper */
+        .ns-page { padding:16px; display:flex; flex-direction:column; gap:14px; background:#F0F1F3; min-height:calc(100vh - 44px); }
+        .ns-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+        .ns-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
+        .ns-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
+        .ns-grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
+        @media(max-width:900px){
+          .ns-grid-6{grid-template-columns:repeat(3,1fr)!important}
+          .ns-grid-4{grid-template-columns:repeat(2,1fr)!important}
+          .ns-grid-3{grid-template-columns:1fr!important}
+          .ns-grid-2{grid-template-columns:1fr!important}
+        }
+
+        /* ── Mobile (< 768px) ── */
+        @media(max-width:768px){
+          /* Sidebar becomes a fixed overlay */
+          .main-sidebar {
+            position: fixed !important;
+            top: 0 !important; left: 0 !important;
+            height: 100vh !important;
+            z-index: 1000 !important;
+            width: 260px !important;
+            transform: translateX(-100%) !important;
+            transition: transform 0.25s ease !important;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
+          }
+          .main-sidebar.sidebar-open {
+            transform: translateX(0) !important;
+          }
+          /* Show mobile backdrop when sidebar open */
+          .main-sidebar.sidebar-open ~ * .mobile-backdrop,
+          .mobile-backdrop { display: block !important; }
+
+          /* Hamburger visible on mobile */
+          .hamburger-btn { display: flex !important; }
+
+          /* Hide breadcrumb home on tiny screens */
+          .bc-home { display: none !important; }
+
+          /* Grids stack on mobile */
+          .ns-grid-6 { grid-template-columns: 1fr 1fr !important; }
+          .ns-grid-4 { grid-template-columns: 1fr 1fr !important; }
+          .ns-grid-3 { grid-template-columns: 1fr !important; }
+          .ns-grid-2 { grid-template-columns: 1fr !important; }
+
+          /* Page padding tighter on mobile */
+          .ns-page { padding: 12px !important; gap: 10px !important; }
+
+          /* Tables scroll horizontally on mobile */
+          .ns-panel { overflow-x: auto !important; }
+          .ns-table { min-width: 480px; }
+
+          /* KPI tiles smaller on mobile */
+          .ns-kpi-tile { padding: 12px 12px !important; }
+          .ns-kpi-tile .value { font-size: 15px !important; }
+        }
+
+        @media(max-width:480px){
+          .ns-grid-6 { grid-template-columns: 1fr !important; }
+          .ns-grid-4 { grid-template-columns: 1fr !important; }
+        }
+
+        /* Login responsive */
+        @media(max-width:700px){
+          .login-left-panel { display:none !important; }
+          .login-right-panel { padding:24px 16px !important; }
+        }
+
+        /* Sidebar hover */
+        nav button:hover { background:rgba(255,255,255,0.06)!important; }
+ 
+        /* Topbar */
+        header a { text-decoration:none; }
+ 
+        /* Admin panel table */
+        .admin-table { width:100%; border-collapse:collapse; font-size:12px; }
+        .admin-table th { background:#F3F4F6; padding:8px 12px; text-align:left; font-size:10px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
+        .admin-table td { padding:8px 12px; border-bottom:1px solid #F3F4F6; color:#374151; font-size:12px; }
+        .admin-table tr:hover td { background:#F9FAFB; }
+ 
+        /* Smooth transitions */
+        button { transition:all 0.12s ease; }
+        input, textarea, select { font-family:inherit; }
+      `}</style>
+  );
+}
+
 // ─── RELEASING A REPORT, A PAGE AT A TIME ─────────────────────────────────────
 // A client's whole report lives in one row, so saving has always meant saving
 // everything. That is not how the work actually goes: the analysis lands, then
@@ -16356,219 +16609,7 @@ function Portal({ client, onLogout }) {
     <>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css"/>
     <div style={{ display:"flex", minHeight:"100vh", background:"#fff", fontFamily:F }}>
-      <style>{`
-        /* ── NetSuite Global Design System ── */
-        *, *::before, *::after { box-sizing: border-box; }
-        body { background: #F0F1F3; }
- 
-        /* Typography scale */
-        .ns-page-title { font-size:15px; font-weight:800; color:#1a1a2e; letter-spacing:-0.01em; }
-        .ns-section-title { font-size:11px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.08em; }
-        .ns-label { font-size:10px; font-weight:600; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; }
-        .ns-value { font-size:20px; font-weight:900; color:#1a1a2e; font-family:'JetBrains Mono','SF Mono',monospace; }
-        .ns-sub { font-size:11px; color:#9CA3AF; }
- 
-        /* Panel / Card */
-        .ns-panel {
-          background: white;
-          border: 1px solid #E5E7EB;
-          border-radius: 6px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.04);
-          overflow: hidden;
-        }
-        .ns-panel-header {
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 8px 14px;
-          background: #F8F9FA;
-          border-bottom: 1px solid #E5E7EB;
-        }
-        .ns-panel-header h3 {
-          margin: 0;
-          font-size: 11px;
-          font-weight: 700;
-          color: #374151;
-          text-transform: uppercase;
-          letter-spacing: 0.07em;
-        }
-        .ns-panel-body { padding: 14px; }
-        .ns-panel-body.no-pad { padding: 0; }
- 
-        /* Tables */
-        .ns-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .ns-table thead tr { background: #F0F1F3; }
-        .ns-table thead th {
-          padding: 6px 12px;
-          text-align: left;
-          font-size: 10px;
-          font-weight: 700;
-          color: #6B7280;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          border-bottom: 1px solid #E5E7EB;
-          white-space: nowrap;
-        }
-        .ns-table thead th.right { text-align: right; }
-        .ns-table tbody tr { border-bottom: 1px solid #F3F4F6; }
-        .ns-table tbody tr:hover { background: #F9FAFB; }
-        .ns-table tbody tr.striped:nth-child(even) { background: #FAFAFA; }
-        .ns-table tbody td {
-          padding: 7px 12px;
-          color: #374151;
-          font-size: 12px;
-          vertical-align: middle;
-        }
-        .ns-table tbody td.right { text-align: right; }
-        .ns-table tbody td.mono { font-family: 'JetBrains Mono', monospace; font-size: 11px; }
-        .ns-table tbody td.bold { font-weight: 700; color: #111827; }
-        .ns-table tbody td.muted { color: #9CA3AF; }
-        .ns-table tbody tr.subtotal td { background: #F9FAFB; font-weight: 700; color: #111827; }
-        .ns-table tbody tr.total td { background: #EEF2FF; font-weight: 800; color: #1E3A8A; border-top: 2px solid #C7D2FE; }
- 
-        /* Form controls do not inherit font-family by default — force it so
-           buttons, inputs and selects match the rest of the portal. */
-        button, input, select, textarea, optgroup { font-family: inherit; }
-
-        /* KPI Tiles */
-        .ns-kpi-tile {
-          background: white;
-          border: 1px solid #E5E7EB;
-          border-radius: 6px;
-          padding: 12px 14px;
-          box-shadow: 0 1px 2px rgba(0,0,0,0.03);
-        }
-        .ns-kpi-tile .label { font-size:10px; font-weight:700; color:#9CA3AF; text-transform:uppercase; letter-spacing:0.07em; margin-bottom:6px; }
-        .ns-kpi-tile .value { font-size:13px; font-weight:700; color:#111827; font-family:'Inter',sans-serif; line-height:1.2; }
-        .ns-kpi-tile .trend { font-size:10px; margin-top:4px; display:flex; align-items:center; gap:3px; }
-        .ns-kpi-tile.drillable { cursor:pointer; transition:border-color .15s, box-shadow .15s, transform .15s; }
-        .ns-kpi-tile.drillable:hover { border-color:#2563EB; box-shadow:0 3px 10px rgba(37,99,235,0.14); transform:translateY(-1px); }
-        .ns-kpi-tile .drill-hint {
-          position:absolute; top:8px; right:10px;
-          font-size:13px; font-weight:800; color:#2563EB; opacity:0.35;
-          transition:opacity .15s;
-        }
-        .ns-kpi-tile.drillable:hover .drill-hint { opacity:1; }
- 
-        /* Badges */
-        .ns-badge { display:inline-flex; align-items:center; padding:1px 7px; border-radius:10px; font-size:10px; font-weight:700; }
-        .ns-badge.green { background:#DCFCE7; color:#15803D; }
-        .ns-badge.red { background:#FEF2F2; color:#DC2626; }
-        .ns-badge.amber { background:#FEF3C7; color:#D97706; }
-        .ns-badge.blue { background:#DBEAFE; color:#1D4ED8; }
-        .ns-badge.purple { background:#EDE9FE; color:#6D28D9; }
- 
-        /* Stat bar (like NetSuite's performance bars) */
-        .ns-stat-row { display:flex; align-items:center; justify-content:space-between; padding:7px 14px; border-bottom:1px solid #F3F4F6; font-size:12px; }
-        .ns-stat-row:last-child { border-bottom:none; }
-        .ns-stat-row .stat-label { color:#374151; flex:1; }
-        .ns-stat-row .stat-period { color:#9CA3AF; font-size:11px; flex:1; }
-        .ns-stat-row .stat-value { font-family:'JetBrains Mono','SF Mono',monospace; font-weight:700; color:#111827; min-width:80px; text-align:right; }
-        .ns-stat-row .stat-change { min-width:50px; text-align:right; font-size:11px; font-weight:700; }
-        .ns-stat-row .stat-change.up { color:#059669; }
-        .ns-stat-row .stat-change.down { color:#EF4444; }
- 
-        /* Tiles (shortcut buttons) */
-        .ns-tile-row { display:flex; gap:10px; }
-        .ns-tile {
-          flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
-          gap:8px; padding:16px 10px; border-radius:6px; border:none; cursor:pointer;
-          color:white; font-weight:700; font-size:11px; transition:opacity 0.15s;
-          box-shadow:0 1px 3px rgba(0,0,0,0.15);
-        }
-        .ns-tile:hover { opacity:0.88; }
-        .ns-tile .tile-icon { font-size:20px; }
- 
-        /* Scrollbar */
-        ::-webkit-scrollbar { width:5px; height:5px; }
-        ::-webkit-scrollbar-track { background:transparent; }
-        ::-webkit-scrollbar-thumb { background:#D1D5DB; border-radius:10px; }
-        ::-webkit-scrollbar-thumb:hover { background:#9CA3AF; }
- 
-        /* Page padding wrapper */
-        .ns-page { padding:16px; display:flex; flex-direction:column; gap:14px; background:#F0F1F3; min-height:calc(100vh - 44px); }
-        .ns-grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-        .ns-grid-3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:14px; }
-        .ns-grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; }
-        .ns-grid-6 { display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
-        @media(max-width:900px){
-          .ns-grid-6{grid-template-columns:repeat(3,1fr)!important}
-          .ns-grid-4{grid-template-columns:repeat(2,1fr)!important}
-          .ns-grid-3{grid-template-columns:1fr!important}
-          .ns-grid-2{grid-template-columns:1fr!important}
-        }
-
-        /* ── Mobile (< 768px) ── */
-        @media(max-width:768px){
-          /* Sidebar becomes a fixed overlay */
-          .main-sidebar {
-            position: fixed !important;
-            top: 0 !important; left: 0 !important;
-            height: 100vh !important;
-            z-index: 1000 !important;
-            width: 260px !important;
-            transform: translateX(-100%) !important;
-            transition: transform 0.25s ease !important;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.18) !important;
-          }
-          .main-sidebar.sidebar-open {
-            transform: translateX(0) !important;
-          }
-          /* Show mobile backdrop when sidebar open */
-          .main-sidebar.sidebar-open ~ * .mobile-backdrop,
-          .mobile-backdrop { display: block !important; }
-
-          /* Hamburger visible on mobile */
-          .hamburger-btn { display: flex !important; }
-
-          /* Hide breadcrumb home on tiny screens */
-          .bc-home { display: none !important; }
-
-          /* Grids stack on mobile */
-          .ns-grid-6 { grid-template-columns: 1fr 1fr !important; }
-          .ns-grid-4 { grid-template-columns: 1fr 1fr !important; }
-          .ns-grid-3 { grid-template-columns: 1fr !important; }
-          .ns-grid-2 { grid-template-columns: 1fr !important; }
-
-          /* Page padding tighter on mobile */
-          .ns-page { padding: 12px !important; gap: 10px !important; }
-
-          /* Tables scroll horizontally on mobile */
-          .ns-panel { overflow-x: auto !important; }
-          .ns-table { min-width: 480px; }
-
-          /* KPI tiles smaller on mobile */
-          .ns-kpi-tile { padding: 12px 12px !important; }
-          .ns-kpi-tile .value { font-size: 15px !important; }
-        }
-
-        @media(max-width:480px){
-          .ns-grid-6 { grid-template-columns: 1fr !important; }
-          .ns-grid-4 { grid-template-columns: 1fr !important; }
-        }
-
-        /* Login responsive */
-        @media(max-width:700px){
-          .login-left-panel { display:none !important; }
-          .login-right-panel { padding:24px 16px !important; }
-        }
-
-        /* Sidebar hover */
-        nav button:hover { background:rgba(255,255,255,0.06)!important; }
- 
-        /* Topbar */
-        header a { text-decoration:none; }
- 
-        /* Admin panel table */
-        .admin-table { width:100%; border-collapse:collapse; font-size:12px; }
-        .admin-table th { background:#F3F4F6; padding:8px 12px; text-align:left; font-size:10px; font-weight:700; color:#6B7280; text-transform:uppercase; letter-spacing:0.06em; border-bottom:1px solid #E5E7EB; }
-        .admin-table td { padding:8px 12px; border-bottom:1px solid #F3F4F6; color:#374151; font-size:12px; }
-        .admin-table tr:hover td { background:#F9FAFB; }
- 
-        /* Smooth transitions */
-        button { transition:all 0.12s ease; }
-        input, textarea, select { font-family:inherit; }
-      `}</style>
+      <ClientStyles/>
       {dataLoading && !isDemo && (
         <div style={{ position:"fixed", top:0, left:0, right:0, height:3, zIndex:9999,
           background:C.grad1, animation:"progress 1.5s ease-in-out infinite" }}/>
@@ -19039,33 +19080,58 @@ function ResetClientData({ client, reportData, setReportData, saveReportData, lo
   );
 }
 
-// ─── THE CLIENT'S REPORT, WALKED AND RELEASED ─────────────────────────────────
-// The client's portal, drawn here exactly as they will read it — their sidebar,
-// their topbar, their pages, in their order. You walk it the way they will,
-// and release each page from the page itself once you have read it through.
+// ─── THE CLIENT'S PORTAL, ON THE ADMIN SIDE ───────────────────────────────────
+// Their sidebar, their topbar, their pages. Not a preview pane, not a second
+// drawing of it — the portal itself, filled with this client's working copy.
 //
-// It is the real screen, not a second drawing of one. The admin panel used to
-// keep its own idea of what the client sees, and the two drifted until the
-// preview was reassuring about a report that was broken.
-function ClientReportWalk({ client, reportData, setReportData, saveReportData,
+// Everything the admin panel adds is one slim band across the top: which page
+// you are on, whether it has been published, and the two buttons this view
+// exists for. The analysis has already flowed in from the books; what is left
+// is to read the page, write the commentary, and publish it.
+//
+// Nested sidebars and preview frames were both tried and both were wrong. What
+// a Chartered Accountant needs to check is the screen the client opens, and
+// anything drawn around it is a different screen.
+
+// Which note each page carries, per jurisdiction. A page with no entry has no
+// commentary of its own — the compliance calendar and the action list are
+// lists, not writing.
+const PAGE_NOTE = {
+  overview:        { uae:"uaeGarimaNote",              india:"garimaNote",     topic:"this month's position overall" },
+  dashboard:       { uae:"uaeGarimaNote",              india:"garimaNote",     topic:"the dashboard figures" },
+  cashflow:        { uae:"cashflowGarimaNote",         india:"cashflowNote",   topic:"the cash position and forward outlook" },
+  myreport:        { uae:"uaeGarimaNote",              india:"reportNote",     topic:"this month's report" },
+  treasury:        { uae:"wcNote",                     india:"wcNote",         topic:"the deposit and facility position" },
+  corptax:         { uae:"ctGarimaNote",               india:"ctGarimaNote",   topic:"the corporate tax position" },
+  vat:             { uae:"vatGarimaNote",              india:"vatGarimaNote",  topic:"the VAT position" },
+  workingcapital:  { uae:"workingCapital.garimaNote",  india:"wcNote",         topic:"working capital and the cash conversion cycle" },
+  verticalanalysis:{ uae:"verticalAnalysis.garimaNote",india:"verticalAnalysis.garimaNote", topic:"the vertical analysis" },
+  revrecon:        { uae:"revRecon.garimaNote",        india:"revReconNote",   topic:"the IFRS to VAT revenue reconciliation" },
+  qfzp:            { uae:"qfzpSubstance.garimaNote",   india:"qfzpSubstance.garimaNote", topic:"the QFZP qualifying position" },
+  auditready:      { uae:"governanceNote",             india:"governanceNote", topic:"audit readiness" },
+  engagement:      { uae:"ipoNote",                    india:"ipoNote",        topic:"the valuation engagement" },
+};
+
+function ClientReportFull({ client, reportData, setReportData, saveReportData,
                             kpis, actions = [], invoices = [], liveSnapshot = null,
-                            loading, saved }) {
-  const [page, setPage] = React.useState("overview");
-  const [collapsed, setCollapsed] = React.useState(false);
+                            loading, saved, onExit }) {
+  const [page, setPage]       = React.useState("overview");
+  const [collapsed, setColl]  = React.useState(false);
+  const [drafting, setDraft]  = React.useState(false);
+  const [draft, setDraftText] = React.useState(null);
+  const [err, setErr]         = React.useState("");
   const [confirmAll, setConfirmAll] = React.useState(false);
 
-  if (!client) return (
-    <Card style={{ textAlign:"center", padding:40 }}>
-      <div style={{ fontFamily:F, fontSize:14, color:C.muted }}>Select a client from the sidebar first</div>
-    </Card>
-  );
+  // A different page means a different note — a draft must not follow you.
+  React.useEffect(() => { setDraftText(null); setErr(""); setConfirmAll(false); }, [page]);
 
+  const uae   = isUAE(client);
   const nav   = getNav(client);
   const tiles = buildKpiTiles({ client, isDemo:false, liveKpis:kpis, liveReportData:reportData });
   const list  = (v) => Array.isArray(v) ? v : [];
 
-  // gate false — this is a review, so the real page is drawn even before it has
-  // been released. The release state is shown in the bar above it instead.
+  // gate false — this is the review, so the real page is drawn even before it
+  // has been published. Its state is said plainly in the band instead.
   const pages = clientPages({
     client, setPage, isDemo:false, dataLoading:false, reportSaveKey:0,
     liveSnapshot, liveKpis:kpis, liveReportData:reportData, liveInvoices:list(invoices),
@@ -19074,140 +19140,164 @@ function ClientReportWalk({ client, reportData, setReportData, saveReportData,
     resolvedReportData: reportData || {}, gate:false,
   });
 
-  const gated      = GATED_PAGES.has(page);
-  const releasable = nav.filter(n => GATED_PAGES.has(n.id));
+  const gated        = GATED_PAGES.has(page);
+  const releasable   = nav.filter(n => GATED_PAGES.has(n.id));
   const releasedList = Array.isArray(reportData?.publishedPages) ? reportData.publishedPages : null;
-  const live       = isReleased(reportData, page);
-  const releasedAt = reportData?.publishedAt?.[page];
-  const label      = nav.find(n => n.id === page)?.label || getPageTitle(page, client);
-  const everyone   = releasedList === null;
+  const everyone     = releasedList === null;
+  const live         = isReleased(reportData, page);
+  const label        = nav.find(n => n.id === page)?.label || getPageTitle(page, client);
 
-  const release = async (all) => {
+  const noteDef = PAGE_NOTE[page];
+  const noteKey = noteDef ? (uae ? noteDef.uae : noteDef.india) : null;
+  const written = noteKey ? (getPath(reportData || {}, noteKey) || "") : "";
+
+  const publish = async (all) => {
     const next = releasePage(reportData || {}, page,
       all ? Array.from(new Set([...(releasedList || []), ...releasable.map(n => n.id)])) : null);
     await saveReportData(next);
     setConfirmAll(false);
   };
 
+  // Written about the figures on this page. The analysis is yours; this is the
+  // paragraph that goes under it, and nothing is saved until you say so.
+  const writeCommentary = async () => {
+    setDraft(true); setErr("");
+    try {
+      const r = await fetch("/api/narrate", {
+        method:"POST", headers:{ "Content-Type":"application/json" },
+        body: JSON.stringify({ client, reportData, kpis, topic: noteDef.topic,
+          rows: [["Figure","Value"], ...Object.entries(reportData?.pl || {})
+            .map(([k, v]) => [k, v?.actual ?? ""])] }),
+      });
+      const j = await r.json();
+      if (j.narration) setDraftText(j.narration);
+      else setErr(j.error || "The commentary could not be drafted.");
+    } catch { setErr("Could not reach the drafting service."); }
+    setDraft(false);
+  };
+
+  const band = { fontFamily:F, fontSize:12.5, fontWeight:700 };
+  const btn  = (bg, color, border) => ({
+    padding:"7px 15px", borderRadius:12, border: border || "none", background:bg, color,
+    fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer", whiteSpace:"nowrap",
+  });
+
   return (
-    <div>
-      {/* ── The release bar. Not part of the client's screen — it sits above it. ── */}
-      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:"13px 16px",
-        marginBottom:12, background:"#fff", display:"flex", alignItems:"center",
-        gap:14, flexWrap:"wrap" }}>
-        <div style={{ flex:1, minWidth:260 }}>
-          <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text,
-            display:"flex", alignItems:"center", gap:9, flexWrap:"wrap" }}>
-            {label}
-            {!gated ? (
-              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.dim,
-                background:C.bg, padding:"3px 11px", borderRadius:60 }}>Always available</span>
-            ) : live ? (
-              <span style={{ fontFamily:F, fontSize:11, fontWeight:700,
-                color: everyone ? C.dim : C.green,
-                background: everyone ? C.bg : `${C.green}12`,
-                padding:"3px 11px", borderRadius:60 }}>
-                {everyone ? "Open to your client"
-                  : `Released${releasedAt ? ` ${new Date(releasedAt).toLocaleDateString("en-GB",
-                      { day:"numeric", month:"short" })}` : ""}`}
-              </span>
-            ) : (
-              <span style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.warning,
-                background:`${C.amber}14`, padding:"3px 11px", borderRadius:60 }}>Not released</span>
-            )}
-          </div>
-          <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
-            {!gated
-              ? "This page is part of their account rather than their report, so it is always open to them."
-              : live
-                ? "Your client can read this page now. Releasing it again sends whatever you have changed since."
-                : everyone
-                  ? "Nothing has been released page by page yet, so your client can still see everything. Release this page and the rest will show them a note saying they are being prepared, until you release those too."
-                  : "Your client sees a note saying this page is being prepared."}
-          </div>
-        </div>
+    <>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.29.0/dist/tabler-icons.min.css"/>
+    <ClientStyles/>
+    <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"#fff" }}>
 
-        {gated && (
-          <div style={{ display:"flex", gap:9, alignItems:"center", flexWrap:"wrap" }}>
-            <button onClick={() => release(false)} disabled={loading}
-              style={{ padding:"10px 20px", borderRadius:12, border:"none", background:C.grad1,
-                color:"white", fontFamily:F, fontWeight:700, fontSize:13,
-                cursor: loading ? "default" : "pointer", opacity: loading ? 0.6 : 1 }}>
-              {loading ? "Releasing…" : (live && !everyone) ? "Release again" : "Release this page"}
-            </button>
-            {saved && <span style={{ fontFamily:F, fontSize:12, color:C.green, fontWeight:700 }}>Released</span>}
-          </div>
-        )}
-      </div>
-
-      {/* How far through the report you are. */}
-      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, padding:"11px 16px",
-        marginBottom:12, background:"#fff", display:"flex", alignItems:"center",
-        gap:12, flexWrap:"wrap" }}>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, flex:1, minWidth:230 }}>
-          {everyone
-            ? <>All {releasable.length} report pages are open to your client — nothing is being held back.</>
-            : <><strong style={{ color:C.text }}>
-                {releasable.filter(n => releasedList.includes(n.id)).length} of {releasable.length}
-                </strong> report pages released.</>}
-        </div>
-        <div style={{ display:"flex", gap:5, flexWrap:"wrap" }}>
-          {releasable.map(n => {
-            const ok = isReleased(reportData, n.id);
-            return (
-              <button key={n.id} onClick={() => setPage(n.id)} title={n.label}
-                style={{ display:"flex", alignItems:"center", gap:5, padding:"4px 10px",
-                  borderRadius:60, cursor:"pointer", fontFamily:F, fontSize:11, fontWeight:700,
-                  border:`1px solid ${page===n.id ? C.blue : C.border}`,
-                  background: page===n.id ? `${C.blue}0C` : "none",
-                  color: page===n.id ? C.blue : C.muted }}>
-                <span style={{ width:6, height:6, borderRadius:60,
-                  background: ok ? C.green : C.border }}/>
-                {n.label}
-              </button>
-            );
-          })}
-        </div>
-        {!everyone && releasable.some(n => !isReleased(reportData, n.id)) && (
-          confirmAll ? (
-            <div style={{ display:"flex", gap:8, alignItems:"center" }}>
-              <span style={{ fontFamily:F, fontSize:12, color:C.text }}>Release every page?</span>
-              <button onClick={() => release(true)}
-                style={{ padding:"7px 15px", borderRadius:12, border:"none", background:C.grad1,
-                  color:"white", fontFamily:F, fontWeight:700, fontSize:12, cursor:"pointer" }}>Yes</button>
-              <button onClick={() => setConfirmAll(false)}
-                style={{ padding:"7px 13px", borderRadius:12, border:`1.5px solid ${C.border}`,
-                  background:"none", fontFamily:F, fontWeight:700, fontSize:12,
-                  color:C.muted, cursor:"pointer" }}>No</button>
-            </div>
+      {/* ── The only thing the admin side adds ── */}
+      <div style={{ background:"#1a1a2e", color:"#fff", padding:"9px 16px",
+        display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", flexShrink:0 }}>
+        <button onClick={onExit} style={{ ...btn("rgba(255,255,255,0.12)", "#fff"), display:"flex",
+          alignItems:"center", gap:6 }}>
+          <i className="ti ti-arrow-left" style={{ fontSize:13 }}/> Admin
+        </button>
+        <div style={{ ...band, display:"flex", alignItems:"center", gap:9, flexWrap:"wrap", flex:1, minWidth:200 }}>
+          <span style={{ opacity:0.55, fontWeight:600 }}>Viewing as</span>
+          {client?.company || client?.name}
+          <span style={{ opacity:0.3 }}>·</span>
+          {label}
+          {!gated ? (
+            <span style={{ fontSize:10.5, fontWeight:700, opacity:0.55 }}>their account</span>
+          ) : live ? (
+            <span style={{ fontSize:10.5, fontWeight:700, color:"#86EFAC",
+              background:"rgba(134,239,172,0.14)", padding:"2px 9px", borderRadius:60 }}>
+              {everyone ? "visible to them" : "published"}
+            </span>
           ) : (
-            <button onClick={() => setConfirmAll(true)}
-              style={{ padding:"8px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
-                background:"none", fontFamily:F, fontWeight:700, fontSize:12,
-                color:C.text, cursor:"pointer" }}>
-              Release all pages
+            <span style={{ fontSize:10.5, fontWeight:700, color:"#FCD34D",
+              background:"rgba(252,211,77,0.14)", padding:"2px 9px", borderRadius:60 }}>
+              not published
+            </span>
+          )}
+          {releasedList && (
+            <span style={{ fontSize:10.5, fontWeight:600, opacity:0.5 }}>
+              {releasable.filter(n => releasedList.includes(n.id)).length} of {releasable.length} pages published
+            </span>
+          )}
+        </div>
+
+        <div style={{ display:"flex", gap:8, alignItems:"center", flexWrap:"wrap" }}>
+          {noteKey && (
+            <button onClick={writeCommentary} disabled={drafting}
+              style={btn("rgba(255,255,255,0.12)", "#fff")}>
+              {drafting ? "Writing…" : written ? "Redraft commentary" : "Generate commentary"}
             </button>
-          )
-        )}
+          )}
+          {gated && (
+            <button onClick={() => publish(false)} disabled={loading} style={btn(C.amber, "#1a1a2e")}>
+              {loading ? "Publishing…" : (live && !everyone) ? "Publish again" : "Publish this page"}
+            </button>
+          )}
+          {gated && !everyone && releasable.some(n => !isReleased(reportData, n.id)) && (
+            confirmAll ? (
+              <>
+                <button onClick={() => publish(true)} style={btn("#fff", "#1a1a2e")}>Publish all</button>
+                <button onClick={() => setConfirmAll(false)}
+                  style={btn("none", "rgba(255,255,255,0.7)", "1px solid rgba(255,255,255,0.25)")}>No</button>
+              </>
+            ) : (
+              <button onClick={() => setConfirmAll(true)}
+                style={btn("none", "rgba(255,255,255,0.8)", "1px solid rgba(255,255,255,0.25)")}>
+                Publish all
+              </button>
+            )
+          )}
+          {saved && <span style={{ ...band, color:"#86EFAC" }}>Published</span>}
+        </div>
       </div>
 
-      {/* ── The client's screen, whole: their sidebar, their topbar, their page ── */}
-      <div style={{ border:`1px solid ${C.border}`, borderRadius:16, overflow:"hidden",
-        background:"#fff" }}>
-        <div style={{ display:"flex", minHeight:560, fontFamily:F, background:"#fff" }}>
-          <Sidebar page={page} setPage={setPage} client={client}
-            onLogout={() => {}} collapsed={collapsed} setCollapsed={setCollapsed}/>
-          <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0,
-            overflow:"hidden", background:"#fff" }}>
-            <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
-              onMenuToggle={() => setCollapsed(c => !c)} notifItems={[]}/>
-            <div style={{ flex:1, overflowY:"auto", background:C.canvas }}>
-              {pages[page] || <BeingPrepared title={label}/>}
-            </div>
+      {err && (
+        <div style={{ background:`${C.red}10`, borderBottom:`1px solid ${C.red}30`,
+          padding:"9px 16px", fontFamily:F, fontSize:12, color:C.red, flexShrink:0 }}>{err}</div>
+      )}
+
+      {/* The draft, for correcting before it goes anywhere near the client. */}
+      {draft != null && (
+        <div style={{ background:C.bg, borderBottom:`1px solid ${C.border}`,
+          padding:"13px 16px", flexShrink:0 }}>
+          <div style={{ fontFamily:F, fontSize:10.5, fontWeight:700, color:C.muted,
+            textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6 }}>
+            A draft about your figures, for you to correct — it appears on {label} once you keep it
+          </div>
+          <textarea value={draft} onChange={e => setDraftText(e.target.value)} rows={5}
+            style={{ width:"100%", boxSizing:"border-box", padding:"10px 13px", borderRadius:12,
+              fontSize:13, border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+              background:"#fff", outline:"none", resize:"vertical", lineHeight:1.75 }}/>
+          <div style={{ display:"flex", gap:9, marginTop:9, flexWrap:"wrap" }}>
+            <button onClick={() => { setReportData(r => setPath(r || {}, noteKey, draft)); setDraftText(null); }}
+              style={{ padding:"9px 18px", borderRadius:12, border:"none", background:C.grad1,
+                color:"white", fontFamily:F, fontWeight:700, fontSize:12.5, cursor:"pointer" }}>
+              Keep it
+            </button>
+            <button onClick={() => setDraftText(null)}
+              style={{ padding:"9px 16px", borderRadius:12, border:`1.5px solid ${C.border}`,
+                background:"none", fontFamily:F, fontWeight:700, fontSize:12.5,
+                color:C.muted, cursor:"pointer" }}>
+              Discard
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Their portal ── */}
+      <div style={{ display:"flex", flex:1, minHeight:0, fontFamily:F, background:"#fff" }}>
+        <Sidebar page={page} setPage={setPage} client={client}
+          onLogout={onExit} collapsed={collapsed} setCollapsed={setColl}/>
+        <div style={{ flex:1, display:"flex", flexDirection:"column", minWidth:0,
+          overflow:"hidden", background:"#fff" }}>
+          <Topbar title={getPageTitle(page, client)} client={client} setPage={setPage}
+            onMenuToggle={() => setColl(c => !c)} notifItems={[]}/>
+          <div style={{ flex:1, overflowY:"auto", background:C.canvas }}>
+            {pages[page] || <BeingPrepared title={label}/>}
           </div>
         </div>
       </div>
     </div>
+    </>
   );
 }
 
@@ -19991,7 +20081,7 @@ function AdminPanel({ admin, onLogout }) {
     uaecashflow: "UAE cash position and the notes that go with it.",
     preview:     "Your client's portal, exactly as they read it. Walk it page by page and release each one.",
     override:    "Type a figure in by hand when the workbook is more trouble than the correction is worth.",
-    documents:   "Files this client has shared with you, and anything with an expiry worth watching.",
+    documents:   "Documents both ways — what this client has sent you, and what you have sent them.",
     engagement:  "Valuation engagements and their status.",
     invoices:    "Your billing to this client.",
     requests:    "Service requests clients have submitted.",
@@ -20044,9 +20134,6 @@ function AdminPanel({ admin, onLogout }) {
   ];
   const isOverrideTab = OVERRIDE_TABS.some(t => t.id === tab);
 
-  // The client's own pages, as the client's sidebar lists them. Walking these
-  // is reviewing the real screen, not a second drawing of it.
-  const CLIENT_PAGES = selected ? getNav(selected).filter(n => GATED_PAGES.has(n.id)) : [];
 
   // Landing on a screen whose group is folded — from a "go to the UAE tab"
   // button, say — unfolds that group, so the sidebar never disagrees with the
@@ -20462,6 +20549,20 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
   };
  
  
+  // ── Client Report is the client's portal, whole ──
+  // Their sidebar, their topbar, their pages, with nothing of the admin's
+  // around it — what is being reviewed is the screen they will read, and an
+  // admin frame around it is a different screen. A slim band carries the only
+  // two things this view is for: the commentary, and publishing.
+  if (tab === "preview" && selected) {
+    return (
+      <ClientReportFull client={selected} reportData={reportData}
+        setReportData={setReportData} saveReportData={saveReportData}
+        kpis={kpis} actions={actions} invoices={invoices} liveSnapshot={liveSnap}
+        loading={loading} saved={saved} onExit={() => setTab("home")}/>
+    );
+  }
+
   return (
     <div style={{ display:"flex", minHeight:"100vh", background:C.bg, fontFamily:F }}>
       <style>{`
@@ -20615,7 +20716,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
         <div className="ns-page">
           {TAB_INTRO[tab] && (
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7,
-              margin:"0 0 16px", maxWidth:680 }}>{TAB_INTRO[tab]}</div>
+              margin:"0 0 16px", maxWidth:680 }}>
+              {TAB_INTRO[tab]}</div>
           )}
 
           {/* ── DASHBOARD HOME ── */}
@@ -21239,13 +21341,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   saveReportData={saveReportData} loading={loading} saved={saved} adminEmail={admin?.email}/>
           )}
 
-          {/* ── THE CLIENT'S REPORT, WALKED AND RELEASED ── */}
-          {tab === "preview" && (
-            <ClientReportWalk client={selected} reportData={reportData}
-              setReportData={setReportData} saveReportData={saveReportData}
-              kpis={kpis} actions={actions} invoices={invoices}
-              liveSnapshot={liveSnap} loading={loading} saved={saved}/>
-          )}
+
 
           {/* ── CONNECTIONS (Zoho Books) ── */}
           {tab === "connections" && !selected && (
@@ -24338,6 +24434,20 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                               <span>{d.file_size}</span>
                               <span>·</span>
                               <span>{d.created_at ? new Date(d.created_at).toLocaleDateString("en-IN") : "—"}</span>
+                              {/* Who put it here. Both sides write to the same table,
+                                  so without this you cannot tell a file the client
+                                  sent you from one you sent them. */}
+                              {(() => {
+                                const mine = /^garima$/i.test(String(d.uploaded_by || ""));
+                                return (
+                                  <span style={{ fontWeight:700, fontSize:10, textTransform:"uppercase",
+                                    letterSpacing:"0.05em", padding:"1px 7px", borderRadius:60,
+                                    color: mine ? C.dim : C.green,
+                                    background: mine ? C.bg : `${C.green}12` }}>
+                                    {mine ? "Sent to them" : `From ${d.uploaded_by || "the client"}`}
+                                  </span>
+                                );
+                              })()}
                               {d.doc_type && d.doc_type !== "general" && (
                                 <span style={{ color:C.blue, fontWeight:700, textTransform:"uppercase", fontSize:10,
                                   background:`${C.blue}12`, padding:"1px 7px", borderRadius:60 }}>
