@@ -17944,15 +17944,12 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
 
   return (<>
     <Card style={{ marginBottom:18 }}>
-      <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:4 }}>
-        Trial Balance → Statements — {client.name}
-      </div>
-      <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14, lineHeight:1.6 }}>
-        Paste the trial balance from Tally, Zoho or Excel. Columns can be Account/Debit/Credit or Account/Balance.
-        Accounts are mapped automatically, your corrections are remembered, and next month only new accounts need attention.
-        {Object.keys(savedMap).length > 0 &&
-          <span style={{ color:C.green, fontWeight:700 }}> {Object.keys(savedMap).length} accounts already mapped for this client.</span>}
-      </p>
+      <AdminPageHeader title="Trial balance" client={client}
+        subtitle={<>Paste the trial balance from Tally, Zoho or Excel, or fetch it from the connected books.
+          Accounts are mapped automatically, your corrections are remembered, and next month only new
+          accounts need attention.
+          {Object.keys(savedMap).length > 0 &&
+            <span style={{ color:C.green, fontWeight:700 }}> {Object.keys(savedMap).length} accounts already mapped for this client.</span>}</>}/>
       <textarea value={raw} onChange={e=>setRaw(e.target.value)}
         placeholder={"Particulars,Debit,Credit\nSales Account,,22500000\nPurchase Account,13200000,\nSundry Debtors,9800000,"}
         rows={7}
@@ -18167,6 +18164,30 @@ function buildKpiTiles({ client, isDemo, liveKpis, liveReportData }) {
   ] : (normalizePack(client?.client_pack || client?.clientPack) === "msme" ? KPIs_MSME : KPIs);
 }
 
+// ─── ADMIN PAGE HEADER ────────────────────────────────────────────────────────
+// Title, who it is for, and one line of context. Used by every admin screen so
+// the client being edited is always on the page, not only in the sidebar.
+function AdminPageHeader({ title, client, subtitle }) {
+  return (
+    <div style={{ marginBottom:16 }}>
+      <div style={{ display:"flex", alignItems:"baseline", gap:10, flexWrap:"wrap" }}>
+        <h2 style={{ fontFamily:F, fontWeight:800, fontSize:16, color:C.text,
+          letterSpacing:"-0.02em", margin:0 }}>{title}</h2>
+        {client && (
+          <span style={{ fontFamily:F, fontSize:12.5, color:C.muted }}>
+            {client.company || client.name}
+            {isUAE(client) && <span style={{ color:"#00732F", fontWeight:700 }}> · UAE</span>}
+          </span>
+        )}
+      </div>
+      {subtitle && (
+        <div style={{ fontFamily:F, fontSize:12, color:C.muted, lineHeight:1.7,
+          margin:"5px 0 0", maxWidth:640 }}>{subtitle}</div>
+      )}
+    </div>
+  );
+}
+
 // ─── ANALYSIS TEMPLATES ───────────────────────────────────────────────────────
 // Download a template already carrying what the portal knows, do the analysis
 // in Excel, upload it back, read what was parsed, publish.
@@ -18229,35 +18250,23 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
 
   return (
     <div style={{ maxWidth:820 }}>
-      <div style={{ marginBottom:14 }}>
-        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.02em" }}>
-          Analysis templates
-        </div>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7, maxWidth:620 }}>
-          For the reports the books cannot answer on their own. Download the template — it comes
-          with whatever the portal already knows — do the analysis in Excel, and upload it back.
-          Anything that flows from Zoho is never templated; re-typing it would be a step backwards.
-        </div>
-      </div>
+      <AdminPageHeader title="Analysis templates" client={client}
+        subtitle="For the reports the books cannot answer on their own. Download the template — it comes with whatever the portal already knows — do the analysis in Excel, and upload it back. Anything that flows from Zoho is never templated."/>
 
       <Card style={{ marginBottom:16 }}>
-        <div style={{ display:"flex", gap:8, flexWrap:"wrap", marginBottom:14 }}>
-          {TEMPLATES.map(t => {
-            const on = t.key === sel;
-            const has = (() => { const e = reportData?.[t.writes];
-              return Array.isArray(e) ? e.length > 0 : e && typeof e === "object" ? Object.keys(e).length > 0 : false; })();
-            return (
-              <button key={t.key} onClick={() => { setSel(t.key); setRes(null); setErr(""); }}
-                style={{ padding:"7px 14px", borderRadius:60, cursor:"pointer", fontFamily:F,
-                  fontSize:12, fontWeight: on ? 700 : 600,
-                  border:`1.5px solid ${on ? C.blue : C.border}`,
-                  background: on ? `${C.blue}0C` : "white",
-                  color: on ? C.blue : C.muted, display:"flex", alignItems:"center", gap:6 }}>
-                {has && <span style={{ color:C.green, fontWeight:800 }}>✓</span>}
-                {t.label}
-              </button>
-            );
-          })}
+        <div style={{ maxWidth:420, marginBottom:14 }}>
+          <label style={{ fontSize:11, fontWeight:700, color:C.muted, textTransform:"uppercase",
+            letterSpacing:"0.08em", display:"block", marginBottom:6, fontFamily:F }}>Report</label>
+          <select value={sel} onChange={e => { setSel(e.target.value); setRes(null); setErr(""); setNote(""); }}
+            style={{ width:"100%", padding:"9px 12px", borderRadius:12, fontSize:13,
+              border:`1.5px solid ${C.border}`, fontFamily:F, color:C.text,
+              background:C.bg, outline:"none", cursor:"pointer" }}>
+            {TEMPLATES.map(t => {
+              const e = reportData?.[t.writes];
+              const has = Array.isArray(e) ? e.length > 0 : e && typeof e === "object" ? Object.keys(e).length > 0 : false;
+              return <option key={t.key} value={t.key}>{has ? "✓ " : ""}{t.label}</option>;
+            })}
+          </select>
         </div>
 
         <div style={{ fontFamily:F, fontSize:12.5, color:C.muted, lineHeight:1.8, marginBottom:14 }}>
@@ -18470,16 +18479,10 @@ function ClientReadiness({ client, reportData, kpis, actions = [], invoices = []
 
   return (
     <div style={{ maxWidth:820 }}>
-      <div style={{ marginBottom:14 }}>
-        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.02em" }}>
-          {client.company || client.name} — what is ready
-        </div>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
-          {need === 0
-            ? "Everything the client needs is filled. Anything unticked below is optional."
-            : `${need} thing${need===1?"":"s"} still needed before this client's portal is complete.`}
-        </div>
-      </div>
+      <AdminPageHeader title="Client setup" client={client}
+        subtitle={need === 0
+          ? "Everything the client needs is filled. Anything unticked below is optional."
+          : `${need} thing${need===1?"":"s"} still needed before this client's portal is complete.`}/>
 
       {groups.map(g => {
         const items = rows.filter(r => r.group === g);
@@ -18598,15 +18601,8 @@ function UAEReportsTab({ client, reportData, setReportData, saveReportData, load
 
   return (
     <div style={{ maxWidth:760 }}>
-      <div style={{ marginBottom:14 }}>
-        <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.02em" }}>
-          UAE reports
-        </div>
-        <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
-          Until these are filled, the client's VAT and QFZP screens say they have not been
-          published yet — which is the truth, and better than a figure nobody calculated.
-        </div>
-      </div>
+      <AdminPageHeader title="VAT &amp; QFZP" client={client}
+        subtitle="Until these are filled, the client's VAT and QFZP screens say they have not been published yet — which is the truth, and better than a figure nobody calculated."/>
 
       <Card style={{ marginBottom:16 }}>
         <div style={{ display:"flex", gap:10, alignItems:"center", flexWrap:"wrap" }}>
@@ -20817,15 +20813,8 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
           )}
           {tab === "connections" && selected && (
             <div style={{ maxWidth:640 }}>
-              <div style={{ marginBottom:14 }}>
-                <div style={{ fontFamily:F, fontWeight:800, fontSize:15, color:C.text, letterSpacing:"-0.02em" }}>
-                  Accounting connections
-                </div>
-                <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginTop:4, lineHeight:1.7 }}>
-                  Where this client's books live. A connected client's numbers arrive on their own;
-                  everyone else is imported by hand from CSV Import.
-                </div>
-              </div>
+              <AdminPageHeader title="Connections" client={selected}
+                subtitle="Where this client's books live. A connected client's numbers arrive on their own; everyone else is imported by hand from CSV Import."/>
               <ZohoConnectionCard client={selected} adminEmail={admin?.email}/>
             </div>
           )}
