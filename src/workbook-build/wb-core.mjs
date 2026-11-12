@@ -20,16 +20,25 @@ export function cover(wb, client = null) {
     ["Period of this pack","", "e.g. January 2026 — appears on every client screen"],
     ["Period start",       "", ""],
     ["Period end",         "", ""],
-    ["Days in period",     "", "Used for DSO, DPO and DIO. Without it they are meaningless"],
+    ["Days in period",     "", "Worked out from the period start and end. DSO, DPO and DIO need it"],
     ["Prepared by",        "", ""],
     ["Reviewed by",        "", ""],
     ["Date prepared",      "", ""],
     ["Version",            "1.0", ""],
   ];
   const first = r;
+  // Dates are dates. These were all formatted as text, so a period end typed
+  // here was stored as a string and every "days overdue" formula that
+  // subtracted from it failed.
+  const DATE_ROWS = new Set(["Period start", "Period end", "Date prepared"]);
   for (const [label, val, hint] of eng) {
     cell(ws, r, 1, label, { kind: "label", indent: 1 });
-    cell(ws, r, 2, val, { kind: "input", nf: NF.text });
+    if (label === "Days in period") {
+      // Worked out from the two dates, so it cannot disagree with them.
+      cell(ws, r, 2, `=IF(OR(B${r - 2}="",B${r - 1}=""),"",B${r - 1}-B${r - 2}+1)`, { kind: "calc", nf: NF.num });
+    } else {
+      cell(ws, r, 2, val, { kind: "input", nf: DATE_ROWS.has(label) ? NF.date : NF.text });
+    }
     cell(ws, r, 4, hint, { kind: "label", size: 9 }).font = { size: 9, italic: true, color: { argb: T.muted } };
     r++;
   }
@@ -42,6 +51,8 @@ export function cover(wb, client = null) {
   wb.definedNames.add(`Cover!$B$${first + 3}`,  "Cl_FreeZone");
   wb.definedNames.add(`Cover!$B$${first + 4}`,  "Cl_Currency");
   wb.definedNames.add(`Cover!$B$${first + 7}`,  "Cl_Period");
+  wb.definedNames.add(`Cover!$B$${first + 8}`,  "Cl_PeriodStart");
+  wb.definedNames.add(`Cover!$B$${first + 9}`,  "Cl_PeriodEnd");
   wb.definedNames.add(`Cover!$B$${first + 10}`, "Cl_Days");
 
   r++;
@@ -175,7 +186,7 @@ export function lists(wb) {
   return ws;
 }
 
-export function checks(wb) {
+export function checks(wb, uae = true) {
   const ws = sheet(wb, "Checks", { tab: T.tabOut, widths: [52, 18, 14, 60], freeze: "A5" });
   let r = title(ws, "Checks",
     "Everything that must tie. Read this before anything leaves the building.", 4);
@@ -183,25 +194,35 @@ export function checks(wb) {
   r = section(ws, r, "Integrity", 4);
   r = heads(ws, r, ["What is being checked", "Difference", "Status", "What it means if it fails"], { align: ["left","right","center","left"] });
 
+  // Every check reads a named figure. These used to point at fixed cell
+  // addresses that had drifted: the trial balance compared period credits with
+  // closing debits, "balance sheet balances" read two empty cells far below
+  // the balance sheet, and "every account is mapped" counted the wrong column
+  // — so three of them could never fail. A check that cannot fail is worse
+  // than no check, because it says the model ties when nobody has looked.
   const items = [
-    ["Trial balance balances", "'TB Input'!H9999-'TB Input'!I9999",
+    ["Trial balance balances", "TB_DrTotal-TB_CrTotal",
      "Debits do not equal credits. Nothing downstream can be trusted."],
-    ["Every account is mapped to a group", "COUNTIF('TB Input'!E:E,\"UNMAPPED\")",
+    ["Every account is mapped to a group", "COUNTIF(TB_Group,\"UNMAPPED\")",
      "An unmapped account is left out of the statements entirely."],
-    ["Balance sheet balances", "'Balance Sheet'!C60-'Balance Sheet'!C61",
+    ["Balance sheet balances", "BS_Diff",
      "Assets do not equal liabilities plus equity."],
-    ["Cash flow ties to the balance sheet", "'Cash Flow'!C40-'Balance Sheet'!C30",
-     "Closing cash on the cash flow is not the cash on the balance sheet."],
-    ["Receivables tie to the ageing", "'Balance Sheet'!C26-'AR Input'!J9999",
+    ["Cash flow ties to the balance sheet", "CF_Diff",
+     "Closing cash on the cash flow is not the cash on the balance sheet. Fill the opening cash and movements."],
+    ["Receivables tie to the open invoices", "BS_AR-AR_Total",
      "The ledger and the open invoice list disagree."],
-    ["Payables tie to the ageing", "'Balance Sheet'!C44-'AP Input'!J9999",
+    ["Payables tie to the open bills", "BS_AP-AP_Total",
      "The ledger and the open bill list disagree."],
-    ["Output VAT is 5% of standard-rated sales", "'UAE VAT'!C12-'UAE VAT'!C8*0.05",
-     "Either a sale is misclassified or the VAT has been posted wrongly."],
-    ["IFRS revenue reconciles to VAT revenue", "'UAE Rev Recon'!D20",
-     "The reconciling items do not explain the whole difference."],
-    ["Days in the period are set", "IF(Cl_Days>0,0,1)",
-     "DSO, DPO and DIO cannot be worked out. They will show a dash on the client's screen."],
+    ...(uae ? [
+      ["VAT split by emirate adds up", "VAT_EmirateDiff",
+       "Standard-rated supplies split by emirate do not add up to the total."],
+      ["IFRS revenue reconciles to the P&L", "RR_Unexplained",
+       "The reconciling items do not explain the whole difference."],
+    ] : []),
+    ["Twelve-month forecast balances every month", "FC_Check",
+     "The forecast balance sheet does not balance — a formula on the forecast sheet has been overtyped."],
+    ["Days in the period are set", "IF(N(Cl_Days)>0,0,1)",
+     "DSO, DPO and DIO cannot be worked out. Set the period start and end on the Cover."],
   ];
   for (const [label, formula, meaning] of items) {
     const at = r;

@@ -88,6 +88,17 @@ const FORMULA = {
   "scenarioBase.opex":           "=PL_Opex",
   "spendRevenue":                "=PL_Revenue",
 
+  // The twelve-month forecast.
+  "projection.endCash":          "=FC_EndCash",
+  "projection.endCashDown":      "=FC_EndCashDown",
+  "projection.lowCash":          "=FC_LowCash",
+  "projection.runway":           "=FC_Runway",
+  "projection.runwayDown":       "=FC_RunwayDown",
+  "projection.taxReserve":       "=FC_TaxReserve",
+  "projection.vatPeak":          "=FC_VatPeak",
+  "projection.sbrCross":         "=IFERROR(FC_SBRCross,\"\")",
+  "projection.note":             "=IF(FC_Note=\"\",\"\",FC_Note)",
+
   // Bank and investor readiness — the portal already shows these.
   "loanScore":                   "=LN_Score",
   "dscr":                        "=LN_DSCR",
@@ -114,6 +125,7 @@ const RANGES = {
   "workingCapital.arAging":        "Concentration!A:F",
   "workingCapital.apSchedule":     "Concentration!A:F",
   "geoIndia":                      "Segments!A:G",
+  "projection.months":             "'12-Month Forecast'!A:E",
   "depts":                         "Segments!A:G",
 };
 

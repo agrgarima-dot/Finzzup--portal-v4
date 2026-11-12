@@ -418,6 +418,40 @@ export const SHEETS = [
     ],
   },
   {
+    name: "12-Month Forecast",
+    screen: "Forecast — the next twelve months",
+    kind: "kv",
+    path: "projection",
+    note: "Worked out on the 12-Month Forecast sheet from your assumptions. Base case and downside.",
+    fields: [
+      { key: "endCash",     label: "Cash in twelve months — base",      source: YOU },
+      { key: "endCashDown", label: "Cash in twelve months — downside",  source: YOU },
+      { key: "lowCash",     label: "Lowest cash — base",                source: YOU },
+      { key: "runway",      label: "Falls below the buffer — base",     source: YOU },
+      { key: "runwayDown",  label: "Falls below the buffer — downside", source: YOU },
+      { key: "taxReserve",  label: "Tax to set aside over the year",    source: YOU },
+      { key: "vatPeak",     label: "Largest single VAT/GST payment ahead", source: YOU },
+      { key: "sbrCross",    label: "Crosses the Small Business Relief cap", source: YOU },
+      { key: "note",        label: "Your note on the forecast",         source: YOU, long: true },
+    ],
+  },
+  {
+    name: "Forecast months",
+    screen: "Forecast — month by month",
+    kind: "table",
+    path: "projection.months",
+    columns: ["Month", "Revenue", "EBITDA", "Closing cash", "Closing cash — downside"],
+    rows: (rd) => (getPath(rd, "projection.months") || [])
+      .map(m => [str(m.month), str(m.revenue), str(m.ebitda), str(m.cash), str(m.cashDown)]),
+    parse: (rows, draft) => {
+      const list = rows.filter(r => !blank(r[0])).map(r => ({
+        month: str(r[0]), revenue: cellNum(r[1]), ebitda: cellNum(r[2]),
+        cash: cellNum(r[3]), cashDown: cellNum(r[4]),
+      }));
+      return { draft: setPath(draft, "projection.months", list), changed: list.length };
+    },
+  },
+  {
     name: "Treasury",
     screen: "Treasury",
     kind: "kv",
@@ -988,7 +1022,13 @@ export function readRange(sheets, ref, columns = []) {
 
   // Which column of the sheet holds each column the portal wants.
   const head = slice[headAt];
-  const index = columns.map(want => head.findIndex(cellv => sameColumn(cellv, want)));
+  // An exact heading wins over a partial one. "Closing cash" is the start of
+  // "Closing cash — downside", so matching by prefix alone would read the base
+  // case into the downside column and nothing on screen would look wrong.
+  const index = columns.map(want => {
+    const exact = head.findIndex(cellv => norm(cellv) === norm(want));
+    return exact >= 0 ? exact : head.findIndex(cellv => sameColumn(cellv, want));
+  });
 
   const out = [];
   for (let i = headAt + 1; i < slice.length; i++) {

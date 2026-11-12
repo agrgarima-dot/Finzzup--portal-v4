@@ -29,6 +29,7 @@ export const WORKBOOK_SHEETS = [
     ["Trend",            "Twelve months across"],
     ["Scenarios",        "Base, downside, upside"],
     ["13-Week Cash",     "Weekly, with the headroom row that turns red"],
+    ["12-Month Forecast","Profit, balance sheet and cash linked — base and downside, checked every month"],
     ["Unit Economics",   "CAC, LTV, churn, runway — off for a client without subscriptions"],
     ["Concentration",    "Who the business depends on, customer and supplier"],
     ["Segments",         "Profit by business line, emirate and branch"],

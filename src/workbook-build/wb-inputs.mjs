@@ -106,6 +106,8 @@ export function tbInput(wb, seed = {}) {
   cell(ws, tr, 10,`=SUM(J${headerRow + 1}:J${after})`, { kind: "lock", nf: NF.money, bold: true });
 
   wb.definedNames.add(`'TB Input'!$D$${headerRow + 1}:$D$${after}`, "TB_Group");
+  wb.definedNames.add(`'TB Input'!$I$${tr}`, "TB_DrTotal");
+  wb.definedNames.add(`'TB Input'!$J$${tr}`, "TB_CrTotal");
   wb.definedNames.add(`'TB Input'!$I$${headerRow + 1}:$I$${after}`, "TB_Dr");
   wb.definedNames.add(`'TB Input'!$J$${headerRow + 1}:$J$${after}`, "TB_Cr");
 
@@ -132,7 +134,7 @@ export function arInput(wb, seed = {}) {
   const cols = [
     {}, {}, { nf: NF.date }, { nf: NF.date }, { nf: NF.money }, { nf: NF.money },
     { f:(n)=>`=IF($A${n}="","",$E${n}-$F${n})`, nf: NF.money },
-    { f:(n)=>`=IF(OR($A${n}="",$D${n}=""),"",MAX(0,Cover!$B$12-$D${n}))`, nf: NF.num, align:"right" },
+    { f:(n)=>`=IF(OR($A${n}="",$D${n}=""),"",MAX(0,Cl_PeriodEnd-$D${n}))`, nf: NF.num, align:"right" },
     { f:(n)=>`=IF($A${n}="","",IF($H${n}=0,"Current",IF($H${n}<=30,"1–30d",IF($H${n}<=60,"31–60d",IF($H${n}<=90,"61–90d","90d+")))))` },
     {},
   ];
@@ -141,6 +143,7 @@ export function arInput(wb, seed = {}) {
   cell(ws, tr, 2, "Total outstanding", { kind: "label", bold: true });
   cell(ws, tr, 10, `=SUM(G${hr + 1}:G${after})`, { kind: "lock", nf: NF.money, bold: true });
   wb.definedNames.add(`'AR Input'!$B$${hr + 1}:$J$${after}`, "AR");
+  wb.definedNames.add(`'AR Input'!$J$${tr}`, "AR_Total");
   wb.definedNames.add(`'AR Input'!$I$${hr + 1}:$I$${after}`, "AR_Bucket");
   wb.definedNames.add(`'AR Input'!$G$${hr + 1}:$G$${after}`, "AR_Out");
   wb.definedNames.add(`'AR Input'!$B$${hr + 1}:$B$${after}`, "AR_Cust");
@@ -161,7 +164,7 @@ export function apInput(wb, seed = {}) {
   const cols = [
     {}, {}, { nf: NF.date }, { nf: NF.date }, { nf: NF.money }, { nf: NF.money },
     { f:(n)=>`=IF($A${n}="","",$E${n}-$F${n})`, nf: NF.money },
-    { f:(n)=>`=IF(OR($A${n}="",$D${n}=""),"",MAX(0,Cover!$B$12-$D${n}))`, nf: NF.num, align:"right" },
+    { f:(n)=>`=IF(OR($A${n}="",$D${n}=""),"",MAX(0,Cl_PeriodEnd-$D${n}))`, nf: NF.num, align:"right" },
     { f:(n)=>`=IF($A${n}="","",IF($H${n}=0,"Current",IF($H${n}<=30,"1–30d",IF($H${n}<=60,"31–60d",IF($H${n}<=90,"61–90d","90d+")))))` },
     { align: "center" },
   ];
@@ -171,6 +174,7 @@ export function apInput(wb, seed = {}) {
   cell(ws, tr, 2, "Total outstanding", { kind: "label", bold: true });
   cell(ws, tr, 10, `=SUM(G${hr + 1}:G${after})`, { kind: "lock", nf: NF.money, bold: true });
   wb.definedNames.add(`'AP Input'!$I$${hr + 1}:$I$${after}`, "AP_Bucket");
+  wb.definedNames.add(`'AP Input'!$J$${tr}`, "AP_Total");
   wb.definedNames.add(`'AP Input'!$G$${hr + 1}:$G$${after}`, "AP_Out");
   wb.definedNames.add(`'AP Input'!$B$${hr + 1}:$B$${after}`, "AP_Supp");
   return ws;
@@ -208,9 +212,13 @@ export function assumptions(wb) {
     ["Monthly fixed overhead",         "", "", ""],
     ["Minimum cash buffer",            "", "", "The level you do not want to go below"],
   ];
+  // Named, because the 12-month forecast drives from them. Percentages are
+  // formatted as percentages so "3" and "3%" cannot be confused.
+  const OPS_NAMES = ["A_Growth","A_DSO","A_DPO","A_DIO","A_GM","A_Payroll","A_Overhead","A_Buffer"];
+  ops.forEach((_, i) => wb.definedNames.add(`Assumptions!$B$${r + i}`, OPS_NAMES[i]));
   for (const [label, v, unit, hint] of ops) {
     cell(ws, r, 1, label, { kind: "label", indent: 1 });
-    cell(ws, r, 2, v, { kind: "input", nf: NF.num });
+    cell(ws, r, 2, v, { kind: "input", nf: unit === "%" ? NF.pct : unit === "days" ? NF.num : NF.money });
     cell(ws, r, 3, unit, { kind: "label", size: 9 });
     cell(ws, r, 4, hint, { size: 9 }).font = { size: 9, italic: true, color: { argb: T.muted } };
     r++;
