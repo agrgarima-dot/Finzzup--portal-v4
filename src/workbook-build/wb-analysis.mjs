@@ -100,6 +100,7 @@ export function scenarios(wb) {
     r++;
   }
 
+  wb.definedNames.add(`Scenarios!$B$${dFirst}:$D$${dFirst + 3}`, "SC_Drivers");
   r++;
   r = section(ws, r, "What it does", 5);
   r = heads(ws, r, ["", "Base", "Downside", "Upside", ""], { align: ["left","right","right","right","left"] });
@@ -229,14 +230,14 @@ export function unitEconomics(wb) {
   }
   // The ones that genuinely follow from the others are formulas, not inputs.
   cell(ws, first + 3, 2, `=IF(B${first}="","",B${first}+B${first+1}-B${first+2})`, { nf: NF.num });
-  cell(ws, first + 4, 2, `=IF(B${first}=0,"",B${first+2}/B${first})`, { nf: NF.pct });
+  cell(ws, first + 4, 2, `=IF(N(B${first})=0,"",N(B${first+2})/B${first})`, { nf: NF.pct });
   cell(ws, first + 7, 2, `=IF(B${first+6}="","",B${first+6}*12)`, { nf: NF.money });
-  cell(ws, first + 9, 2, `=IF(B${first+1}=0,"",B${first+8}/B${first+1})`, { nf: NF.money });
-  cell(ws, first + 12,2, `=IF(B${first+4}=0,"",1/B${first+4})`, { nf: NF.num });
-  cell(ws, first + 13,2, `=IF(OR(B${first+11}="",B${first+12}=""),"",B${first+11}*B${first+12})`, { nf: NF.money });
-  cell(ws, first + 14,2, `=IF(B${first+9}=0,"",B${first+13}/B${first+9})`, { nf: NF.ratio });
-  cell(ws, first + 15,2, `=IF(B${first+11}=0,"",B${first+9}/B${first+11})`, { nf: NF.num });
-  cell(ws, first + 17,2, `=IF(B${first+16}=0,"",BS_Cash/B${first+16})`, { nf: NF.num });
+  cell(ws, first + 9, 2, `=IF(OR(N(B${first+1})=0,N(B${first+8})=0),"",B${first+8}/B${first+1})`, { nf: NF.money });
+  cell(ws, first + 12,2, `=IF(N(B${first+4})=0,"",1/B${first+4})`, { nf: NF.num });
+  cell(ws, first + 13,2, `=IF(OR(N(B${first+11})=0,N(B${first+12})=0),"",B${first+11}*B${first+12})`, { nf: NF.money });
+  cell(ws, first + 14,2, `=IF(OR(N(B${first+9})=0,N(B${first+13})=0),"",B${first+13}/B${first+9})`, { nf: NF.ratio });
+  cell(ws, first + 15,2, `=IF(OR(N(B${first+11})=0,N(B${first+9})=0),"",B${first+9}/B${first+11})`, { nf: NF.num });
+  cell(ws, first + 17,2, `=IF(N(B${first+16})=0,"",BS_Cash/B${first+16})`, { nf: NF.num });
   wb.definedNames.add(`'Unit Economics'!$B$${first + 7}`,  "UE_ARR");
   wb.definedNames.add(`'Unit Economics'!$B$${first + 9}`,  "UE_CAC");
   wb.definedNames.add(`'Unit Economics'!$B$${first + 13}`, "UE_LTV");
@@ -312,7 +313,7 @@ export function treasury(wb) {
     cell(ws, r, 4, null, { kind: "input", nf: NF.pct });
     cell(ws, r, 5, null, { kind: "input", nf: NF.date });
     cell(ws, r, 6, null, { kind: "input", nf: NF.date });
-    cell(ws, r, 7, `=IF(OR($C${r}="",$D${r}="",$E${r}=""),"",$C${r}*$D${r}*(Cover!$B$12-$E${r})/365)`,
+    cell(ws, r, 7, `=IF(OR($C${r}="",$D${r}="",$E${r}=""),"",$C${r}*$D${r}*(Cl_PeriodEnd-$E${r})/365)`,
          { nf: NF.money });
     cell(ws, r, 8, null, { kind: "input" });
     r++;

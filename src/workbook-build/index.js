@@ -12,6 +12,7 @@ import { variance, vertical, trend, scenarios, cash13, unitEconomics,
          concentration, treasury } from "./wb-analysis.mjs";
 import { uaeVat, uaeCT, uaeQfzp, uaeRpt, uaeRevRecon, indiaTax } from "./wb-tax.mjs";
 import { eInvoicing, segments, loanReadiness, crossBorder } from "./wb-uae2.mjs";
+import { forecast } from "./wb-forecast.mjs";
 import { portalFeed } from "./wb-feed.mjs";
 
 const n = (v) => { const x = Number(v); return isFinite(x) ? x : 0; };
@@ -117,6 +118,7 @@ export function buildAnalysisWorkbook({ client, sync } = {}) {
   trend(wb);
   scenarios(wb);
   cash13(wb);
+  forecast(wb, { uae });
   unitEconomics(wb);
   concentration(wb);
   segments(wb, uae);
@@ -137,7 +139,7 @@ export function buildAnalysisWorkbook({ client, sync } = {}) {
   if (uae) crossBorder(wb);
 
   portalFeed(wb, uae);
-  checks(wb);
+  checks(wb, uae);
   return wb;
 }
 

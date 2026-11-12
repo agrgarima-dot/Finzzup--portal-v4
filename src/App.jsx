@@ -1463,6 +1463,7 @@ function getNav(client) {
  
   if (type === "cfo" || type === "both") {
     base.push({ id:"cashflow", icon:"ti-trending-up", label:"Cash Flow" });
+    base.push({ id:"forecast", icon:"ti-chart-line",  label:"Forecast"  });
     // Treasury: Growth+ or UAE
     if (tier >= 2 || uae) {
       base.push({ id:"treasury", icon:"ti-building-bank", label:"Treasury" });
@@ -1501,7 +1502,7 @@ function Sidebar({ page, setPage, client, onLogout, collapsed, setCollapsed }) {
   const nav = getNav(client);
   const groups = [
     { label:"Home",         ids:["overview","dashboard"] },
-    { label:"Financial",    ids:["cashflow","treasury","myreport","corptax"] },
+    { label:"Financial",    ids:["cashflow","forecast","treasury","myreport","corptax"] },
     { label:"Operations",   ids:["actions","compliance","auditready"] },
     { label:"Intelligence", ids:["market"] },
     { label:"Account",      ids:["calendar","newrequest","documents","invoices","engagement"] },
@@ -3591,6 +3592,116 @@ const CASHFLOW_MSME = [
   { month:"May", inflow:null, outflow:null, net:null, fInflow:90, fOutflow:67, fNet:23 },
 ];
  
+// ─── THE TWELVE-MONTH FORECAST ────────────────────────────────────────────────
+// Where the business goes from here, base case and downside, as worked out on
+// the 12-Month Forecast sheet and reviewed before it is published.
+//
+// The forecast is analysis, not data: every figure on it rests on assumptions
+// a Chartered Accountant chose. So the page says so, shows the downside only
+// when one has actually been set, and states each position — the month cash
+// falls below the buffer, the month the relief cap is crossed — rather than
+// leaving a client to read it off a chart.
+function ForecastPage({ client, reportData }) {
+  const uae = isUAE(client);
+  const p   = reportData?.projection || {};
+  const months = asList(p.months).filter(m => m && m.month);
+  const n = (v) => { if (v == null || v === "") return null; const x = parseFloat(String(v).replace(/[^0-9.\-]/g, "")); return isFinite(x) ? x : null; };
+  const money = (v) => { const x = n(v); return x == null ? "—" : uae ? fmtAED(x) : `₹${Math.round(x).toLocaleString("en-IN")}`; };
+  const hasAny = months.length || n(p.endCash) != null || p.note;
+  if (!hasAny) {
+    return <div className="ns-page"><AwaitingData title="Your twelve-month forecast"
+      detail="The forecast is prepared from your books and your plans, and reviewed before it appears here."/></div>;
+  }
+  // A downside identical to the base case is a downside nobody has set.
+  const hasDown = months.some(m => n(m.cashDown) != null && n(m.cashDown) !== n(m.cash))
+               || (n(p.endCashDown) != null && n(p.endCashDown) !== n(p.endCash));
+  const chart = months.map(m => ({ month: m.month, base: n(m.cash), downside: hasDown ? n(m.cashDown) : null }));
+  const warn  = (t) => t && !/not within/i.test(String(t));
+
+  const tiles = [
+    { label:"Cash in twelve months", value: money(p.endCash), sub: hasDown ? `Downside: ${money(p.endCashDown)}` : "Base case" },
+    { label:"Lowest point",          value: money(p.lowCash), sub: "Base case" },
+    { label:"Cash buffer",           value: p.runway ? (warn(p.runway) ? `Breached ${p.runway}` : "Holds all year") : "—",
+      sub: hasDown && p.runwayDown ? (warn(p.runwayDown) ? `Downside: breached ${p.runwayDown}` : "Downside: holds") : "",
+      bad: warn(p.runway) },
+    ...(uae ? [{ label:"Small Business Relief cap", value: p.sbrCross ? (warn(p.sbrCross) ? `Crossed ${p.sbrCross}` : "Not crossed") : "—",
+      sub: warn(p.sbrCross) ? "Plan for 9% from then" : "", bad: warn(p.sbrCross) }] : []),
+    { label: uae ? "Corporate tax to set aside" : "Tax to set aside", value: money(p.taxReserve), sub: "Over the twelve months" },
+    { label: uae ? "Largest VAT payment ahead" : "Largest GST payment ahead", value: money(p.vatPeak), sub: "Single quarter" },
+  ];
+
+  return (
+    <div className="ns-page">
+      <SectionTitle sub="Base case and downside, built from your books and your plans">Twelve-month forecast</SectionTitle>
+
+      {p.note && (
+        <Card style={{ borderLeft:`4px solid ${C.blue}`, marginBottom:16 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
+            letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
+          <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>{p.note}</p>
+        </Card>
+      )}
+
+      <div className="fc-tiles" style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:12, marginBottom:16 }}>
+        {tiles.map(t => (
+          <Card key={t.label} style={{ padding:"14px 16px", borderLeft: t.bad ? `3px solid ${C.red}` : undefined }}>
+            <div className="ns-label" style={{ marginBottom:6 }}>{t.label}</div>
+            <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color: t.bad ? C.red : t.value === "—" ? C.dim : C.text }}>{t.value}</div>
+            {t.sub && <div style={{ fontFamily:F, fontSize:11, color:C.muted, marginTop:4 }}>{t.sub}</div>}
+          </Card>
+        ))}
+        <style>{`@media(max-width:700px){.fc-tiles{grid-template-columns:1fr 1fr!important}}`}</style>
+      </div>
+
+      {months.length > 0 && (
+        <div className="ns-panel" style={{ marginBottom:16 }}>
+          <div className="ns-panel-header"><h3>Closing cash, month by month</h3>
+            <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>{hasDown ? "base case and downside" : "base case"}</span></div>
+          <div style={{ padding:"14px 8px 6px" }}>
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={chart} margin={{ top:6, right:12, left:4, bottom:0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+                <XAxis dataKey="month" tick={{ fontSize:11, fill:C.muted }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize:11, fill:C.muted }} axisLine={false} tickLine={false} width={64}
+                  tickFormatter={(v) => Math.abs(v) >= 1e6 ? `${(v/1e6).toFixed(1)}M` : Math.abs(v) >= 1e3 ? `${Math.round(v/1e3)}K` : v}/>
+                <Tooltip formatter={(v) => money(v)}/>
+                <Legend wrapperStyle={{ fontSize:11 }}/>
+                <ReferenceLine y={0} stroke={C.border}/>
+                <Area type="monotone" dataKey="base" name="Base case" stroke={C.blue} fill={`${C.blue}22`} strokeWidth={2}/>
+                {hasDown && <Area type="monotone" dataKey="downside" name="Downside" stroke={C.red} fill={`${C.red}14`} strokeWidth={2} strokeDasharray="5 4"/>}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+          <table className="ns-table">
+            <thead><tr>
+              <th style={{ textAlign:"left", padding:"8px 14px" }}>Month</th>
+              <th style={{ textAlign:"right", padding:"8px 14px" }}>Revenue</th>
+              <th style={{ textAlign:"right", padding:"8px 14px" }}>EBITDA</th>
+              <th style={{ textAlign:"right", padding:"8px 14px" }}>Closing cash</th>
+              {hasDown && <th style={{ textAlign:"right", padding:"8px 14px" }}>Downside</th>}
+            </tr></thead>
+            <tbody>{months.map(m => (
+              <tr key={m.month}>
+                <td style={{ padding:"8px 14px" }}>{m.month}</td>
+                <td style={{ padding:"8px 14px", textAlign:"right", fontFamily:FM }}>{money(m.revenue)}</td>
+                <td style={{ padding:"8px 14px", textAlign:"right", fontFamily:FM }}>{money(m.ebitda)}</td>
+                <td style={{ padding:"8px 14px", textAlign:"right", fontFamily:FM,
+                  color: n(m.cash) < 0 ? C.red : C.text }}>{money(m.cash)}</td>
+                {hasDown && <td style={{ padding:"8px 14px", textAlign:"right", fontFamily:FM,
+                  color: n(m.cashDown) < 0 ? C.red : C.muted }}>{money(m.cashDown)}</td>}
+              </tr>))}</tbody>
+          </table>
+        </div>
+      )}
+
+      <div style={{ fontFamily:F, fontSize:11.5, color:C.dim, lineHeight:1.7 }}>
+        A forecast rests on assumptions about growth, costs and how quickly customers pay. These were
+        set by your Chartered Accountant and are reviewed each month.
+      </div>
+    </div>
+  );
+}
+
 // ─── CASH FLOW, FROM THE CLIENT'S OWN FIGURES ─────────────────────────────────
 // The Cash Flow page was a mockup on every pack. The MSME and corporate
 // versions never read the client's data at all — every value was written into
@@ -16293,6 +16404,7 @@ function getPageTitle(page, client) {
     overview:    "Overview",
     dashboard:   "Dashboard",
     cashflow:    "Cash Flow",
+    forecast:    "Forecast",
     actions:     "Action Items",
     myreport:    reportLabel,
     engagement:  "Valuation Status",
@@ -16635,6 +16747,7 @@ function ClientStyles() {
 // is withheld. Releasing page by page is something you opt into by releasing a
 // first page, and the admin screen says plainly what that does to the rest.
 const GATED_PAGES = new Set([
+  "forecast",
   "overview", "dashboard", "cashflow", "treasury", "actions", "myreport",
   "engagement", "corptax", "compliance", "auditready",
   "vat", "revrecon", "workingcapital", "verticalanalysis", "qfzp",
@@ -16690,6 +16803,7 @@ function clientPages({ client, setPage, isDemo, dataLoading, reportSaveKey,
     overview:   <Overview   liveSnapshot={liveSnapshot} client={client} setPage={setPage} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} actions={resolvedActions} engagement={resolvedEngagement} reportData={resolvedReportData} invoices={isDemo ? [] : (liveInvoices||[])} isDemo={isDemo} liveKpis={liveKpis} liveReportData={liveReportData}/>,
     dashboard:  <Dashboard  client={client} kpis={resolvedKpis} garimaNote={resolvedGarimaNote} reportData={resolvedReportData} loading={dataLoading} setPage={setPage} actions={resolvedActions} invoices={isDemo ? [] : (liveInvoices||[])}/>,
     cashflow:   <CashFlow   reportData={resolvedReportData} client={client} kpis={resolvedKpis}/>,
+    forecast:   <ForecastPage client={client} reportData={resolvedReportData}/>,
     actions:    <ActionItems actions={resolvedActions} kpis={resolvedKpis} reportData={resolvedReportData}/>,
     myreport:   <MyReport   key={reportSaveKey} client={client} reportData={resolvedReportData} kpis={resolvedKpis}/>,
     engagement: <Engagement liveData={resolvedEngagement}/>,
@@ -19610,6 +19724,7 @@ function ResetClientData({ client, reportData, setReportData, saveReportData, lo
 // commentary of its own — the compliance calendar and the action list are
 // lists, not writing.
 const PAGE_NOTE = {
+  forecast:        { uae:"projection.note",          india:"projection.note", topic:"the twelve-month forecast, base case and downside" },
   overview:        { uae:"uaeGarimaNote",              india:"garimaNote",     topic:"this month's position overall" },
   dashboard:       { uae:"uaeGarimaNote",              india:"garimaNote",     topic:"the dashboard figures" },
   cashflow:        { uae:"cashflowGarimaNote",         india:"cashflowNote",   topic:"the cash position and forward outlook" },

@@ -27,7 +27,7 @@ export function eInvoicing(wb) {
   cell(ws, P.thresh, 2, "=R_EinvThreshold", { kind: "link", nf: NF.money });
   P.wave  = fact("Wave", `IF(B${P.rev}>=B${P.thresh},"Earlier wave","Later wave")`, "", false);
   P.date  = fact("Mandatory from", `IF(B${P.rev}>=B${P.thresh},R_EinvDate1,R_EinvDate2)`, "Set both dates on Assumptions", false, NF.date);
-  P.left  = fact("Months remaining", `IF(OR(B${P.date}="",Cover!$B$12=""),"",(B${P.date}-Cover!$B$12)/30.4)`, "", false, NF.num);
+  P.left  = fact("Months remaining", `IF(OR(B${P.date}="",Cl_PeriodEnd=""),"",(B${P.date}-Cl_PeriodEnd)/30.4)`, "", false, NF.num);
   P.asp   = fact("Accredited service provider appointed", null, "Appointing late is where the cost sits", true);
   dropdown(ws, `B${P.asp}`, "=YesNo");
   P.cost  = fact("Cost of a month's delay", null, "From Assumptions", true, NF.money);

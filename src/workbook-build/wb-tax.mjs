@@ -384,6 +384,7 @@ export function uaeRevRecon(wb) {
   r++;
   cell(ws, r, 1, "Unexplained difference", { kind: "label", indent: 1, bold: true });
   cell(ws, r, 2, `=B${totalRow}-PL_Revenue`, { kind: "lock", nf: NF.money, bold: true });
+  wb.definedNames.add(`'UAE Rev Recon'!$B$${r}`, "RR_Unexplained");
   wb.definedNames.add(`'UAE Rev Recon'!$A$${first}:$E$${totalRow - 1}`, "RevReconTable");
   wb.definedNames.add(`'UAE Rev Recon'!$D$${totalRow}`, "RR_Diff");
   return ws;
@@ -452,7 +453,7 @@ export function indiaTax(wb) {
     dropdown(ws, `B${r}`, "=YesNo");
     cell(ws, r, 3, null, { kind: "input", nf: NF.date });
     cell(ws, r, 4, `=IF(C${r}="","",C${r}+R_MSMEDays)`, { nf: NF.date });
-    cell(ws, r, 5, `=IF(C${r}="","",MAX(0,Cover!$B$12-C${r}))`, { nf: NF.num });
+    cell(ws, r, 5, `=IF(C${r}="","",MAX(0,Cl_PeriodEnd-C${r}))`, { nf: NF.num });
     cell(ws, r, 6, null, { kind: "input", nf: NF.money });
     r++;
   }
