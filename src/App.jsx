@@ -8889,6 +8889,9 @@ function VerticalPnL({ reportData, accentColor }) {
 }
  
 function CFOPackContent({ reportData, client, kpis }) {
+  const vcRows = asList(reportData?.varianceCommentary)
+    .filter(v => v && (v.item || v.note))
+    .map(v => ({ item: v.item || "", note: v.note || "", c: v.favorable === false ? C.amber : C.green }));
   // The ageing split used to read 47% / 32% / 13% / 8% beside the client's
   // own balances, whatever those balances were. It is their split now.
   const ageNum = (v) => { const n = parseFloat(String(v ?? "").replace(/[^0-9.\-]/g,"")); return isFinite(n) ? n : 0; };
@@ -9172,14 +9175,18 @@ function CFOPackContent({ reportData, client, kpis }) {
               </table>
             </div>
           </Card>
+          {/* Written commentary — "Driven by early renewal from Client A (+₹38L)…" —
+              used to be shown to every startup client. It is the commentary written
+              for this client, or nothing. */}
+          {(client?.isDemo || vcRows.length > 0) && (
           <Card style={{ borderLeft:`4px solid ${C.amber}` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:12 }}>Variance Commentary</div>
-            {[
+            {(client?.isDemo ? [
               { item:"Revenue ₹52L above budget", note:"Driven by early renewal from Client A (+₹38L) and new logo added in mid-Feb (+₹14L). March pipeline looks equally strong.", c:C.green },
               { item:"Headcount costs ₹7L under budget", note:"2 open roles not yet filled — saving budget but creating capacity risk in engineering. Hiring to resume in March.", c:C.green },
               { item:"Cash balance ₹0.3Cr below budget", note:"Advance vendor payments pulled forward from March. Temporary — will normalise by end of March.", c:C.amber },
-            ].map((v,i) => (
-              <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<2?`1px solid ${C.border}`:"none" }}>
+] : vcRows).map((v,i) => (
+              <div key={i} style={{ display:"flex", gap:12, padding:"10px 0", borderBottom:i<(client?.isDemo?2:vcRows.length-1)?`1px solid ${C.border}`:"none" }}>
                 <div style={{ width:8, height:8, borderRadius:60, background:v.c, flexShrink:0, marginTop:6 }}/>
                 <div>
                   <div style={{ fontFamily:F, fontSize:13, fontWeight:700, color:C.text, marginBottom:3 }}>{v.item}</div>
@@ -9188,6 +9195,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               </div>
             ))}
           </Card>
+          )}
         </div>
       )}
  
