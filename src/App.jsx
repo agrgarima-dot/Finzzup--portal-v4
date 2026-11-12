@@ -92,6 +92,12 @@ const fmtAED2 = (n) => {
  
  
 // ─── JURISDICTION HELPERS ─────────────────────────────────────────────────────
+// A value the code is about to walk as a list. Report data is hand-entered,
+// uploaded and synced, and a field meant to hold rows sometimes holds a
+// sentence. `(x || []).map` passes a non-empty string straight through to
+// .map, which throws and takes the whole screen with it — so every list read
+// goes through this instead, and anything that is not a list reads as empty.
+const asList = (v) => (Array.isArray(v) ? v : []);
 const isUAE         = c => c?.jurisdiction === "UAE" || c?.jurisdiction === "Cross-Border";
 const isCrossBorder = c => c?.jurisdiction === "Cross-Border";
 const isIndia       = c => !c?.jurisdiction || c?.jurisdiction === "India";
@@ -491,15 +497,16 @@ const DEMO_COMPLIANCE_UAE = [
 ];
 function getOutstandingCompliances(reportData, client, expiringDocs = []) {
   let items = null;
+  // Deadlines come from the published calendar. The monthly checklist is not a
+  // calendar — and a blank checklist template used to surface here as a real
+  // client's "outstanding compliances".
   if (Array.isArray(reportData?.compliance) && reportData.compliance.length) {
     items = reportData.compliance;
-  } else if (Array.isArray(reportData?.checklist) && reportData.checklist.length) {
-    items = reportData.checklist;
   } else if (client?.isDemo) {
     items = isUAE(client) ? DEMO_COMPLIANCE_UAE : DEMO_COMPLIANCE;
   }
   // Documents expiring within 60 days become compliance items — renewals are compliance.
-  const docItems = (expiringDocs || []).map(d => ({
+  const docItems = asList(expiringDocs).map(d => ({
     item:   `Renewal — ${String(d.name || "Document").replace(/\.[a-z]+$/i, "")}`,
     detail: "Document expiring — arrange renewal",
     dueDate: d.expiry_date,
@@ -1941,7 +1948,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const proAlerts = React.useMemo(() => {
     if (isDemo || !liveKpis) return [];
     const out = [];
-    const runwayKpi = (kpis||[]).find(k => k.label?.toLowerCase().includes("runway"));
+    const runwayKpi = asList(kpis).find(k => k.label?.toLowerCase().includes("runway"));
     if (runwayKpi?.value && runwayKpi.value !== "—") {
       const months = parseFloat(String(runwayKpi.value).replace(/[^0-9.]/g,""));
       if (!isNaN(months) && months < 3)
@@ -1955,7 +1962,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
     }
     if (uaeClient && liveReportData?.vat?.pendingReturns) {
       const today = new Date();
-      (liveReportData.vat.pendingReturns || []).forEach(r => {
+      asList(liveReportData.vat.pendingReturns).forEach(r => {
         if ((r.status === "Due" || r.status === "Overdue") && r.due) {
           const days = Math.ceil((new Date(r.due) - today) / 86400000);
           if (days <= 14)
@@ -1982,7 +1989,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const pl = reportData?.pl || {};
 
   // Cashflow
-  const cfRaw  = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+  const cfRaw  = asList(reportData?.cashflow).filter(m => m.actual || m.forecast);
   const cfData = cfRaw.map(m => {
     const parse = v => parseFloat(String(v||"0").replace(/[^0-9.-]/g,"")) || 0;
     return { name: m.month, Actual: parse(m.actual)||null, Forecast: parse(m.forecast)||null };
@@ -2027,13 +2034,13 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
   const vendorMax = Math.max(...top5Vendors.map(v => v.val), 1);
 
   // Invoice status
-  const paidInv   = (invoices||[]).filter(i => i.status === "paid").length;
-  const unpaidInv = (invoices||[]).filter(i => i.status === "unpaid").length;
-  const totalInv  = (invoices||[]).length;
+  const paidInv   = asList(invoices).filter(i => i.status === "paid").length;
+  const unpaidInv = asList(invoices).filter(i => i.status === "unpaid").length;
+  const totalInv  = asList(invoices).length;
   const paidPct   = totalInv > 0 ? Math.round((paidInv/totalInv)*100) : 0;
 
   // Connected persons
-  const connPersons = (reportData?.connectedPersonsAdmin || []).filter(p => p?.name);
+  const connPersons = asList(reportData?.connectedPersonsAdmin).filter(p => p?.name);
 
   const currSym = uaeClient ? "AED " : "₹";
   const fmtVal  = v => uaeClient ? fmtAED(v) : fmtINR(v);
@@ -2078,14 +2085,14 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       {/* ── Business Snapshot — section-wise key metrics ── */}
       {(() => {
         const pNum = s => parseFloat(String(s||"0").replace(/[^0-9.-]/g,"")) || 0;
-        const cfRaw2 = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+        const cfRaw2 = asList(reportData?.cashflow).filter(m => m.actual || m.forecast);
         const latestMonth = cfRaw2.length > 0 ? cfRaw2[cfRaw2.length - 1] : null;
         const latestCashVal = latestMonth ? (latestMonth.actual || latestMonth.forecast || "—") : (displayKpis.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—");
         const dso2 = Number(wc.dso || wc.debtorDays || wc.debtor_days || 0);
         const checklistItems2 = reportData?.checklist || [];
         const checkDone2 = checklistItems2.filter(c=>c.done||c.status==="done").length;
-        const paidInv2   = (invoices||[]).filter(i=>i.status==="paid").length;
-        const unpaidInv2 = (invoices||[]).filter(i=>i.status==="unpaid").length;
+        const paidInv2   = asList(invoices).filter(i=>i.status==="paid").length;
+        const unpaidInv2 = asList(invoices).filter(i=>i.status==="unpaid").length;
         const arTotal2   = arBuckets.reduce((s,b)=>s+b.val,0);
         const ar90plus2  = arBuckets.find(b=>b.label.includes("90+"))?.val || 0;
         const ovaPack    = normalizePack(client?.client_pack || client?.clientPack);
@@ -2128,7 +2135,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
           // Invoices
           { section:"Invoices",    icon:"ti-file-text",       color:unpaidInv2>0?C.amber:C.green,
             metric: unpaidInv2 > 0 ? `${unpaidInv2} unpaid` : "All paid",
-            sub: `${(invoices||[]).length} total · ${paidInv2} paid`,
+            sub: `${asList(invoices).length} total · ${paidInv2} paid`,
             page:"invoices" },
         ].filter(Boolean);
 
@@ -2200,21 +2207,29 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         const revPrev      = pNum(pl.revenue?.prev);
         const growthPct    = revPrev > 0 ? ((revActual-revPrev)/revPrev)*100 : null;
 
-        const liqScore  = currentRatio >= 2 ? 92 : currentRatio >= 1.5 ? 76 : currentRatio >= 1 ? 55 : currentRatio > 0 ? 32 : 50;
-        const profScore = netM >= 15 ? 90 : netM >= 10 ? 75 : netM >= 5 ? 58 : netM > 0 ? 38 : netM < 0 ? 15 : 50;
-        const effScore  = dso === 0 ? 55 : dso <= 30 ? 90 : dso <= 45 ? 74 : dso <= 60 ? 52 : dso <= 90 ? 32 : 15;
-        const compScore = checklistItems2.length === 0 ? 60 : Math.round((checkDone2/checklistItems2.length)*100);
-        const growScore = growthPct === null ? 60 : growthPct >= 20 ? 90 : growthPct >= 10 ? 76 : growthPct >= 0 ? 56 : growthPct >= -10 ? 36 : 16;
+        // A dimension with nothing to score is not scored. Each of these used
+        // to fall back to a middling number — 50, 55, 60 — so a client with no
+        // figures at all was told their business scored in the forties, and a
+        // blank checklist template counted as compliance of nil.
+        const comps        = asList(reportData?.compliance);
+        const compDone     = comps.filter(c => c.done).length;
+        const liqScore  = currentRatio > 0 ? (currentRatio >= 2 ? 92 : currentRatio >= 1.5 ? 76 : currentRatio >= 1 ? 55 : 32) : null;
+        const profScore = pl.netMargin?.actual ? (netM >= 15 ? 90 : netM >= 10 ? 75 : netM >= 5 ? 58 : netM > 0 ? 38 : 15) : null;
+        const effScore  = dso > 0 ? (dso <= 30 ? 90 : dso <= 45 ? 74 : dso <= 60 ? 52 : dso <= 90 ? 32 : 15) : null;
+        const compScore = comps.length ? Math.round((compDone/comps.length)*100) : null;
+        const growScore = growthPct === null ? null : growthPct >= 20 ? 90 : growthPct >= 10 ? 76 : growthPct >= 0 ? 56 : growthPct >= -10 ? 36 : 16;
 
         const dims = [
           { label:"Liquidity",     score:liqScore,  icon:"ti-droplet",      desc:currentRatio>0?`Current ratio ${currentRatio.toFixed(1)}x`:"Enter balance sheet", benchmark:"Target ≥ 1.5x" },
           { label:"Profitability", score:profScore, icon:"ti-trending-up",  desc:pl.netMargin?.actual?`Net margin ${pl.netMargin.actual}`:"Enter P&L data",        benchmark:"Target ≥ 10%" },
           { label:"Efficiency",    score:effScore,  icon:"ti-clock",        desc:dso>0?`DSO ${dso} days`:"Enter working capital",                                  benchmark:"Target ≤ 45d" },
-          { label:"Compliance",    score:compScore, icon:"ti-shield-check", desc:checklistItems2.length>0?`${checkDone2}/${checklistItems2.length} items done`:"No checklist",   benchmark:"Target 100%" },
+          { label:"Compliance",    score:compScore, icon:"ti-shield-check", desc:comps.length>0?`${compDone}/${comps.length} filings done`:"No checklist",   benchmark:"Target 100%" },
           { label:"Growth",        score:growScore, icon:"ti-rocket",       desc:growthPct!==null?`Rev growth ${growthPct>=0?"+":""}${growthPct.toFixed(1)}%`:"Enter prev period", benchmark:"Target ≥ 10%" },
         ];
 
-        const scoreColor = s => s >= 75 ? C.green : s >= 50 ? C.amber : C.red;
+        const scored     = dims.filter(d => d.score != null);
+        if (!scored.length) return null;     // nothing to score yet — no panel
+        const scoreColor = s => s == null ? C.dim : s >= 75 ? C.green : s >= 50 ? C.amber : C.red;
         const scoreLabel = s => s >= 75 ? "Strong" : s >= 50 ? "Moderate" : "Needs Work";
 
         // Pentagon SVG
@@ -2222,14 +2237,14 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
         const cx = pSize/2, cy = pSize/2, r = pSize/2 * 0.72;
         const angles = dims.map((_,i) => (i * 2*Math.PI/dims.length) - Math.PI/2);
         const polyPts = (scale) => angles.map(a => `${cx+r*scale*Math.cos(a)},${cy+r*scale*Math.sin(a)}`).join(" ");
-        const dataPts = angles.map((a,i) => `${cx+r*(dims[i].score/100)*Math.cos(a)},${cy+r*(dims[i].score/100)*Math.sin(a)}`).join(" ");
+        const dataPts = angles.map((a,i) => `${cx+r*((dims[i].score||0)/100)*Math.cos(a)},${cy+r*((dims[i].score||0)/100)*Math.sin(a)}`).join(" ");
 
         return (
           <div className="ns-panel">
             <div className="ns-panel-header">
               <h3>Strategic Health — 5 Dimensions</h3>
               <span className="ns-badge" style={{ background:`${accentColor}12`, color:accentColor, border:`1px solid ${accentColor}30` }}>
-                {Math.round(dims.reduce((s,d)=>s+d.score,0)/dims.length)}/100 avg
+                {Math.round(scored.reduce((s,d)=>s+d.score,0)/scored.length)}/100 avg{scored.length < dims.length ? ` · ${scored.length} of ${dims.length} assessed` : ""}
               </span>
             </div>
             <div style={{ display:"flex", gap:0, alignItems:"stretch", flexWrap:"wrap" }}>
@@ -2275,10 +2290,10 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
                           whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{d.label}</span>
                       </div>
                       <span style={{ fontFamily:FM, fontSize:11, fontWeight:800, color:scoreColor(d.score),
-                        flexShrink:0 }}>{d.score}</span>
+                        flexShrink:0 }}>{d.score ?? "—"}</span>
                     </div>
                     <div style={{ position:"relative", height:5, background:"#F3F4F6", borderRadius:12 }}>
-                      <div style={{ height:"100%", width:`${d.score}%`, background:scoreColor(d.score), borderRadius:12, transition:"width 0.6s ease" }}/>
+                      <div style={{ height:"100%", width:`${d.score||0}%`, background:scoreColor(d.score), borderRadius:12, transition:"width 0.6s ease" }}/>
                     </div>
                     <div style={{ fontFamily:F, fontSize:9.5, color:C.dim, marginTop:3,
                       whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>
@@ -2400,7 +2415,7 @@ function Overview({ client, setPage, kpis, garimaNote, actions=[], engagement=nu
       )}
 
       {/* ── Top clients and vendors — hidden until one of them has rows ── */}
-      {(arAging.length > 0 || (wc.apSchedule || []).length > 0) && (
+      {(arAging.length > 0 || asList(wc.apSchedule).length > 0) && (
       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:14 }} className="ov-top5-row">
         <style>{`.ov-top5-row{grid-template-columns:1fr 1fr!important}@media(max-width:580px){.ov-top5-row{grid-template-columns:1fr!important}}`}</style>
 
@@ -2683,7 +2698,7 @@ function DrillDownPanel({ drill, onClose, uae }) {
             rows.map((r, i) => {
               const pct = isPct ? r.value : totalNum ? (r.value / totalNum) * 100 : 0;
               const barPct = isPct ? (r.value / maxVal) * 100 : pct;
-              const clickable = (r.txns || []).length > 0;
+              const clickable = asList(r.txns).length > 0;
               const rowDelta = (r.prev != null && r.prev !== "") ? delta(r.value, r.prev, r.betterWhen) : null;
               // Prior-period bar sits on the same scale as the current one.
               const prevBarPct = rowDelta
@@ -2748,7 +2763,7 @@ function DrillDownPanel({ drill, onClose, uae }) {
                 </div>
                 <div style={{ fontFamily:FM, fontSize:16, fontWeight:900, color:C.accent }}>{fmtV(sel.value)}</div>
               </div>
-              {(sel.txns || []).map((t, i) => (
+              {asList(sel.txns).map((t, i) => (
                 <div key={i} style={{ display:"flex", justifyContent:"space-between", alignItems:"center",
                   gap:10, padding:"11px 4px", borderBottom:`1px solid #F3F4F6` }}>
                   <div style={{ minWidth:0 }}>
@@ -2861,7 +2876,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
   const healthColor = healthScore == null ? C.muted : healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
   const healthLabel = healthScore == null ? null : healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
 
-  const pendingActions = (actions||[]).filter(a => !a.done);
+  const pendingActions = asList(actions).filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
 
   const hour      = new Date().getHours();
@@ -2903,11 +2918,11 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
 
   // ── Summary digest cards ──────────────────────────────────────────────────
   const wc = reportData?.workingCapital || {};
-  const cfData = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+  const cfData = asList(reportData?.cashflow).filter(m => m.actual || m.forecast);
   const latestCF = cfData.length > 0 ? cfData[cfData.length - 1] : null;
   const cashVal  = latestCF ? (latestCF.actual || latestCF.forecast || "—") : (displayKpis.find(k=>k.label?.toLowerCase().includes("cash"))?.value || "—");
   const debtorDays = wc.debtorDays || wc.debtor_days || null;
-  const unpaidInv  = (invoices||[]).filter(i => i.status === "unpaid").length;
+  const unpaidInv  = asList(invoices).filter(i => i.status === "unpaid").length;
   const checklistItems = reportData?.checklist || [];
   const checkDone = checklistItems.filter(c => c.done || c.status === "done").length;
   const vatStatus = reportData?.vat?.filingStatus || null;
@@ -2920,7 +2935,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
     uae ? { icon:"ti-file-invoice", label:"VAT Status", value:vatStatus||(reportData?.vat?.vatRegistered?"Registered":"—"), sub:reportData?.vat?.trnNumber?`TRN: ${reportData.vat.trnNumber}`:"Check VAT tab", color:"#00732F", page:"uaetax" }
         : { icon:"ti-shield-check", label:"Compliance",  value:checklistItems.length>0?`${checkDone}/${checklistItems.length} done`:"—", sub:checklistItems.length>0?(checkDone===checklistItems.length?"All complete":`${checklistItems.length-checkDone} pending`):"No items", color:checkDone===checklistItems.length?C.green:C.amber, page:"compliance" },
     { icon:"ti-briefcase",     label:"Working Capital", value:debtorDays?`${debtorDays}d`:(wc.currentRatio?`${wc.currentRatio}x`:"—"), sub:debtorDays?"Debtor days":(wc.currentRatio?"Current ratio":"See W/C tab"), color:C.purple, page:"myreport" },
-    { icon:"ti-receipt",       label:"Invoices",      value:unpaidInv>0?`${unpaidInv} unpaid`:"All paid", sub:`${(invoices||[]).length} total invoices`, color:unpaidInv>0?C.amber:C.green, page:"invoices" },
+    { icon:"ti-receipt",       label:"Invoices",      value:unpaidInv>0?`${unpaidInv} unpaid`:"All paid", sub:`${asList(invoices).length} total invoices`, color:unpaidInv>0?C.amber:C.green, page:"invoices" },
   ].filter(Boolean);
 
   // ── P&L rows ──────────────────────────────────────────────────────────────
@@ -2934,7 +2949,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
     { label:"Net Profit",    curr:pl.pat?.actual||"—",         prev:pl.pat?.prev||"—",         key:"pat"        },
     { label:"Net Margin %",  curr:pl.netMargin?.actual||"—",   prev:pl.netMargin?.prev||"—",   key:"netmargin"  },
   ];
-  const varRows = (reportData?.variance||[]).slice(0,6);
+  const varRows = asList(reportData?.variance).slice(0,6);
 
   // ── AR aging ──────────────────────────────────────────────────────────────
   const arBuckets = [
@@ -3290,7 +3305,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
             : <div style={{ padding:"12px 16px 16px" }}>
                 {arBuckets.map((b,i) => {
                   const pct = (b.val/arTotal*100);
-                  const canDrill = !!recvDrill && (recvDrill.dims?.[0]?.rows?.[i]?.txns || []).length > 0;
+                  const canDrill = !!recvDrill && asList(recvDrill.dims?.[0]?.rows?.[i]?.txns).length > 0;
                   return (
                     <div key={i} style={{ marginBottom:10, cursor:canDrill?"pointer":"default", borderRadius:8, padding:"2px 4px", margin:"0 -4px 10px" }}
                       onClick={canDrill ? () => setDrill({ ...recvDrill, _selectIdx:i }) : undefined}
@@ -3523,7 +3538,7 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
         </div>
       )}
 
-      {(reportData?.scoreBreakdown||[]).length > 0 && (
+      {asList(reportData?.scoreBreakdown).length > 0 && (
         <div className="ns-panel">
           <div className="ns-panel-header">
             <h3>Financial Health Score — Breakdown</h3>
@@ -3576,8 +3591,119 @@ const CASHFLOW_MSME = [
   { month:"May", inflow:null, outflow:null, net:null, fInflow:90, fOutflow:67, fNet:23 },
 ];
  
+// ─── CASH FLOW, FROM THE CLIENT'S OWN FIGURES ─────────────────────────────────
+// The Cash Flow page was a mockup on every pack. The MSME and corporate
+// versions never read the client's data at all — every value was written into
+// the page: "Advance tax Q4 −₹22L due 15 Mar", "Client B overdue ₹4.8L",
+// "Supplier X raw material payment". The startup version read a few fields and
+// hardcoded the rest, including the cash balance, the runway and a full cash
+// bridge. A real client opening it saw a sample company's position under a
+// Chartered Accountant's name.
+//
+// This page is built from what actually exists for the client: their monthly
+// cash rows, their working capital, the cash balance and the note written for
+// them. With none of it, the page says it is being prepared. Demo clients keep
+// the original pages, which are labelled as demonstrations.
+function CashFlowLive({ client, reportData, kpis }) {
+  const uae  = isUAE(client);
+  const rd   = reportData || {};
+  const wc   = rd.workingCapital || {};
+  const num  = (v) => {
+    if (v == null || v === "") return null;
+    const n = parseFloat(String(v).replace(/[^0-9.\-]/g, ""));
+    return isFinite(n) ? n : null;
+  };
+  const rows = asList(rd.cashflow)
+    .filter(r => r && (r.actual || r.forecast))
+    .map(r => ({ month: r.month, actual: num(r.actual), forecast: num(r.forecast),
+                 actualText: r.actual || "", forecastText: r.forecast || "" }));
+  const cashKpi = asList(kpis).find(k => /cash/i.test(k?.label || ""))?.value;
+  const cash    = wc.cashBank ?? rd.cash_balance ?? (cashKpi && cashKpi !== "—" ? cashKpi : null);
+  const note    = (uae ? rd.cashflowGarimaNote : null) || rd.cashflowNote || null;
+  const figure  = (v, days) => v == null || v === "" ? "—"
+    : typeof v === "number" ? (days ? `${v} days` : (uae ? fmtAED(v) : `₹${v.toLocaleString("en-IN")}`))
+    : String(v);
+
+  const anything = rows.length || cash != null || wc.debtors != null || wc.creditors != null || note;
+  if (!anything) {
+    return <div className="ns-page"><AwaitingData title="Your cash flow"
+      detail="Cash flow is prepared from your books and reviewed before it appears here."/></div>;
+  }
+
+  const tiles = [
+    { label:"Cash and bank",      value: figure(cash) },
+    { label:"Owed to you",        value: figure(wc.debtors ?? wc.receivables) },
+    { label:"You owe",            value: figure(wc.creditors ?? wc.payables) },
+    { label:"Cash conversion",    value: figure(num(wc.ccc), true) },
+  ];
+
+  return (
+    <div className="ns-page">
+      <SectionTitle sub="From your books, reviewed by your Chartered Accountant">Cash Flow</SectionTitle>
+
+      {note && (
+        <Card style={{ borderLeft:`4px solid ${C.blue}`, marginBottom:16 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase",
+            letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
+          <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>{note}</p>
+        </Card>
+      )}
+
+      <div className="cfl-tiles" style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12, marginBottom:16 }}>
+        {tiles.map(t => (
+          <Card key={t.label} style={{ padding:"14px 16px" }}>
+            <div className="ns-label" style={{ marginBottom:6 }}>{t.label}</div>
+            <div style={{ fontFamily:FM, fontSize:16, fontWeight:800, color: t.value === "—" ? C.dim : C.text }}>{t.value}</div>
+          </Card>
+        ))}
+        <style>{`@media(max-width:640px){.cfl-tiles{grid-template-columns:1fr 1fr!important}}`}</style>
+      </div>
+
+      {rows.length > 0 ? (
+        <div className="ns-panel" style={{ marginBottom:16 }}>
+          <div className="ns-panel-header"><h3>By month</h3>
+            <span style={{ fontFamily:F, fontSize:11, color:C.muted }}>actual and forecast</span></div>
+          <div style={{ padding:"14px 8px 6px" }}>
+            <ResponsiveContainer width="100%" height={240}>
+              <BarChart data={rows} margin={{ top:6, right:12, left:0, bottom:0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false}/>
+                <XAxis dataKey="month" tick={{ fontSize:11, fill:C.muted }} axisLine={false} tickLine={false}/>
+                <YAxis tick={{ fontSize:11, fill:C.muted }} axisLine={false} tickLine={false} width={44}/>
+                <Tooltip/>
+                <Legend wrapperStyle={{ fontSize:11 }}/>
+                <Bar dataKey="actual"   name="Actual"   fill={C.blue}  radius={[4,4,0,0]}/>
+                <Bar dataKey="forecast" name="Forecast" fill={`${C.blue}55`} radius={[4,4,0,0]}/>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <table className="ns-table" style={{ margin:"4px 0 0" }}>
+            <thead><tr><th style={{ textAlign:"left", padding:"8px 14px" }}>Month</th>
+              <th style={{ textAlign:"right", padding:"8px 14px" }}>Actual</th>
+              <th style={{ textAlign:"right", padding:"8px 14px" }}>Forecast</th></tr></thead>
+            <tbody>{rows.map(r => (
+              <tr key={r.month}>
+                <td style={{ padding:"8px 14px" }}>{r.month}</td>
+                <td style={{ padding:"8px 14px", textAlign:"right", fontFamily:FM }}>{r.actualText || "—"}</td>
+                <td style={{ padding:"8px 14px", textAlign:"right", fontFamily:FM, color:C.muted }}>{r.forecastText || "—"}</td>
+              </tr>))}</tbody>
+          </table>
+        </div>
+      ) : (
+        <Card style={{ marginBottom:16 }}>
+          <div style={{ fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7 }}>
+            The month-by-month view appears once the cash flow has been prepared.
+          </div>
+        </Card>
+      )}
+    </div>
+  );
+}
+
 function CashFlow({ reportData, client, kpis }) {
   const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
+  // Real clients get the page built from their own figures; see CashFlowLive.
+  // After the hook, so the hook order never depends on who the client is.
+  if (!client?.isDemo) return <CashFlowLive client={client} reportData={reportData} kpis={kpis}/>;
   const pack = normalizePack(client?.client_pack || client?.clientPack);
  
   // ── Shared tooltip ──────────────────────────────────────────────────────────
@@ -3786,8 +3912,8 @@ function CashFlow({ reportData, client, kpis }) {
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="wc-cf-s">
             {[
-              { label:"Debtors (AR)",   value: reportData?.debtors   || "₹38.4L", days: reportData?.debtorDays   || "—", color:C.blue,   flag: !!(reportData?.debtorDays  && parseInt(reportData.debtorDays)>30),  note: reportData?.debtorDays  ? `${reportData.debtorDays} debtor days` : "Target: <30 days" },
-              { label:"Creditors (AP)", value: reportData?.creditors  || "₹22.1L", days: reportData?.creditorDays || "—", color:C.purple, flag: false,                                                              note: reportData?.creditorDays ? `${reportData.creditorDays} creditor days` : "Well managed" },
+              { label:"Debtors (AR)",   value: reportData?.debtors   || "—", days: reportData?.debtorDays   || "—", color:C.blue,   flag: !!(reportData?.debtorDays  && parseInt(reportData.debtorDays)>30),  note: reportData?.debtorDays  ? `${reportData.debtorDays} debtor days` : "Target: <30 days" },
+              { label:"Creditors (AP)", value: reportData?.creditors  || "—", days: reportData?.creditorDays || "—", color:C.purple, flag: false,                                                              note: reportData?.creditorDays ? `${reportData.creditorDays} creditor days` : "Well managed" },
               { label:"Inventory",      value: reportData?.inventory  || "—",       days: reportData?.inventoryDays|| "—", color:C.teal,   flag: false,                                                              note: "Stock on hand" },
             ].map((w,i) => (
               <div key={i} style={{ padding:"14px 12px", borderRadius:16,
@@ -3820,9 +3946,9 @@ function CashFlow({ reportData, client, kpis }) {
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="wc-cf-s">
             {[
-              { label:"Gross Burn",    value: kpis?.find(k=>k.label?.toLowerCase().includes("burn"))?.value || "₹48L/mo",  color:C.red,   note:"Total monthly spend" },
-              { label:"Net Burn",      value: kpis?.find(k=>k.label?.toLowerCase().includes("net"))?.value  || "₹31L/mo",  color:C.amber, note:"After revenue" },
-              { label:"Runway",        value: kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value|| "4.4 mo",  color: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? C.red : C.green, note: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? "⚠️ Below 6 months" : "✅ Healthy" },
+              { label:"Gross Burn",    value: kpis?.find(k=>k.label?.toLowerCase().includes("burn"))?.value || "—",  color:C.red,   note:"Total monthly spend" },
+              { label:"Net Burn",      value: kpis?.find(k=>k.label?.toLowerCase().includes("net"))?.value  || "—",  color:C.amber, note:"After revenue" },
+              { label:"Runway",        value: kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value|| "—",  color: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? C.red : C.green, note: (kpis?.find(k=>k.label?.toLowerCase().includes("runway"))?.value && parseFloat(kpis.find(k=>k.label?.toLowerCase().includes("runway")).value) < 6) ? "⚠️ Below 6 months" : "✅ Healthy" },
             ].map((b,i) => (
               <div key={i} style={{ padding:"14px 12px", borderRadius:16, background:"#fff", border:`1px solid ${C.border}`, textAlign:"center" }}>
                 <div style={{ fontFamily:F, fontSize:16, fontWeight:700, color:b.color }}>{b.value}</div>
@@ -3834,10 +3960,10 @@ function CashFlow({ reportData, client, kpis }) {
           {/* Efficiency metrics */}
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:10 }}>
             {[
-              { label:"Burn Multiple",       value: reportData?.burnMultiple      || "1.8x",  note:"Revenue / Net Burn. Target <1.5x", flag: reportData?.burnMultiple ? parseFloat(reportData.burnMultiple)>1.5 : true },
+              { label:"Burn Multiple",       value: reportData?.burnMultiple      || "—",  note:"Revenue / Net Burn. Target <1.5x", flag: reportData?.burnMultiple ? parseFloat(reportData.burnMultiple)>1.5 : true },
               { label:"EBITDA-to-Cash Conv.", value: reportData?.ebitdaCashConv    || "—",     note:"Operating cash efficiency",         flag: false },
-              { label:"CAC Payback Period",  value: reportData?.cacPayback        || "18 mo", note:"Investors prefer <12 months",       flag: reportData?.cacPayback ? parseInt(reportData.cacPayback)>12 : true },
-              { label:"Net Revenue Retention",value: reportData?.nrr              || "108%",  note:"Expansion + retention. Target >100%",flag: false },
+              { label:"CAC Payback Period",  value: reportData?.cacPayback        || "—", note:"Investors prefer <12 months",       flag: reportData?.cacPayback ? parseInt(reportData.cacPayback)>12 : true },
+              { label:"Net Revenue Retention",value: reportData?.nrr              || "—",  note:"Expansion + retention. Target >100%",flag: false },
             ].map((m,i) => (
               <div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"10px 14px",
                 borderRadius:16, background:m.flag?`${C.amber}08`:C.bg,
@@ -4131,7 +4257,7 @@ function CashFlow({ reportData, client, kpis }) {
 
 // ─── ACTION ITEMS ─────────────────────────────────────────────────────────────
 function ActionItems({ actions: actionsProp, kpis, reportData }) {
-  const [items, setItems] = useState(actionsProp || ACTIONS);
+  const [items, setItems] = useState(asList(actionsProp));
   useEffect(() => { if (actionsProp) setItems(actionsProp); }, [actionsProp]);
  
   const toggle = async (id) => {
@@ -4461,13 +4587,13 @@ function MSMECFOPack({ data, reportData }) {
         <SectionTitle sub="Readiness for working capital loans & term finance">Bank Finance Readiness</SectionTitle>
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:12, marginBottom:16 }} className="inv-grid">
           {[
-            { label:"DSCR",                    value: reportData?.dscr || "2.1x",            flag: reportData?.dscr ? parseFloat(reportData.dscr)<1.5 : false,  note: reportData?.dscr ? (parseFloat(reportData.dscr)<1.5?"Below bank threshold":"Banks prefer >1.5x") : "Banks prefer >1.5x" },
-            { label:"Interest Coverage",       value: reportData?.interestCoverage || "4.2x", flag: reportData?.interestCoverage ? parseFloat(reportData.interestCoverage)<3 : false, note: reportData?.interestCoverage ? (parseFloat(reportData.interestCoverage)<3?"Below threshold":"Comfortable coverage") : "Target >3.0x" },
-            { label:"Interest Margin",         value: reportData?.interestMargin || "3.8%",   flag: false, note:"Net interest spread" },
-            { label:"ROE",                     value: reportData?.roe || "18.4%",             flag: reportData?.roe ? parseFloat(reportData.roe)<12 : false,    note: reportData?.roe ? (parseFloat(reportData.roe)<12?"Below sector avg":"Above sector avg") : "Return on equity" },
-            { label:"Debt:Equity Ratio",       value: reportData?.debtEquity || "0.8:1",      flag: false, note:"Conservative — good" },
-            { label:"Current Ratio",           value: reportData?.currentRatio || "1.62x",    flag: reportData?.currentRatio ? parseFloat(reportData.currentRatio)<1.2 : false, note: reportData?.currentRatio ? (parseFloat(reportData.currentRatio)<1.2?"Below bank norms":"Meets bank norms") : "Meets bank norms" },
-            { label:"Cash Conversion Cycle",   value: reportData?.ccc || "37 days",           flag: reportData?.ccc ? parseFloat(reportData.ccc)>45 : false,  note: reportData?.ccc ? (parseFloat(reportData.ccc)>45?"Target <30 days":"Target <30 days") : "Target <30 days" },
+            { label:"DSCR",                    value: reportData?.dscr || "—",            flag: reportData?.dscr ? parseFloat(reportData.dscr)<1.5 : false,  note: reportData?.dscr ? (parseFloat(reportData.dscr)<1.5?"Below bank threshold":"Banks prefer >1.5x") : "Banks prefer >1.5x" },
+            { label:"Interest Coverage",       value: reportData?.interestCoverage || "—", flag: reportData?.interestCoverage ? parseFloat(reportData.interestCoverage)<3 : false, note: reportData?.interestCoverage ? (parseFloat(reportData.interestCoverage)<3?"Below threshold":"Comfortable coverage") : "Target >3.0x" },
+            { label:"Interest Margin",         value: reportData?.interestMargin || "—",   flag: false, note:"Net interest spread" },
+            { label:"ROE",                     value: reportData?.roe || "—",             flag: reportData?.roe ? parseFloat(reportData.roe)<12 : false,    note: reportData?.roe ? (parseFloat(reportData.roe)<12?"Below sector avg":"Above sector avg") : "Return on equity" },
+            { label:"Debt:Equity Ratio",       value: reportData?.debtEquity || "—",      flag: false, note:"Conservative — good" },
+            { label:"Current Ratio",           value: reportData?.currentRatio || "—",    flag: reportData?.currentRatio ? parseFloat(reportData.currentRatio)<1.2 : false, note: reportData?.currentRatio ? (parseFloat(reportData.currentRatio)<1.2?"Below bank norms":"Meets bank norms") : "Meets bank norms" },
+            { label:"Cash Conversion Cycle",   value: reportData?.ccc || "—",           flag: reportData?.ccc ? parseFloat(reportData.ccc)>45 : false,  note: reportData?.ccc ? (parseFloat(reportData.ccc)>45?"Target <30 days":"Target <30 days") : "Target <30 days" },
             { label:"Working Capital",         value: reportData?.workingCapital || "Rs.32.4L", flag: false, note:"Net current assets" },
           ].map((m,i) => (
             <div key={i} style={{ padding:"12px 14px", borderRadius:12,
@@ -4888,8 +5014,8 @@ function openPDF(html) {
 function generateVariancePDF({ client, reportData }) {
   const company = client?.company || "Your Company";
   const month = reportData?.monthLabel || "Current Period";
-  const rows = (reportData?.variance || []).filter(r => r.item);
-  const commentary = (reportData?.varianceCommentary || []).filter(v => v.item);
+  const rows = asList(reportData?.variance).filter(r => r.item);
+  const commentary = asList(reportData?.varianceCommentary).filter(v => v.item);
   const rowsHTML = rows.length ? rows.map(r => `
     <tr><td class="b">${r.item}</td><td class="r">${r.budget||"—"}</td><td class="r">${r.actual||"—"}</td>
     <td class="r"><span class="${r.fav?"fav":"unfav"}">${r.fav?"▲ Fav":"▼ Unfav"}</span></td></tr>`).join("") :
@@ -4937,8 +5063,8 @@ function generateFundraisePDF({ client, reportData }) {
   const company = client?.company || "Your Company";
   const month = reportData?.monthLabel || "Current Period";
   const score = reportData?.score || reportData?.healthScore || "—";
-  const breakdown = (reportData?.scoreBreakdown || []).filter(s => s.label);
-  const metrics = (reportData?.metrics || []).filter(m => m.label);
+  const breakdown = asList(reportData?.scoreBreakdown).filter(s => s.label);
+  const metrics = asList(reportData?.metrics).filter(m => m.label);
   const rowsHTML = breakdown.map(s => `<tr><td class="b">${s.label}</td><td class="r">${s.score||"—"}/100</td><td>${s.comment||""}</td></tr>`).join("");
   const metricsHTML = metrics.map(m => `<tr><td class="b">${m.label}</td><td class="r">${m.yours||"—"}</td><td class="r">${m.median||"—"}</td><td class="r">${m.bench||"—"}</td></tr>`).join("");
   return pdfBase("Fundraise Readiness Report", company, month, `
@@ -5030,7 +5156,7 @@ function generateGovernancePDF({ client, reportData }) {
   const company = client?.company || "Your Company";
   const month = reportData?.monthLabel || "Current Period";
   const note = reportData?.boardNote || reportData?.packNote || "";
-  const items = (reportData?.boardItems || []).filter(i => i.item);
+  const items = asList(reportData?.boardItems).filter(i => i.item);
   const rowsHTML = items.length ? items.map(i => `<tr><td class="b">${i.item}</td><td>${i.status||"—"}</td><td>${i.owner||"—"}</td><td>${i.date||"—"}</td></tr>`).join("") :
     `<tr><td colspan="4" style="text-align:center;padding:20px;color:#6B7280">Board governance items will appear here once entered.</td></tr>`;
   return pdfBase("Board Governance Report", company, month, `
@@ -5044,8 +5170,8 @@ function generateIPOPDF({ client, reportData }) {
   const company = client?.company || "Your Company";
   const month = reportData?.monthLabel || "Current Period";
   const score = reportData?.score || "—";
-  const breakdown = (reportData?.scoreBreakdown || []).filter(s => s.label);
-  const metrics = (reportData?.metrics || []).filter(m => m.label);
+  const breakdown = asList(reportData?.scoreBreakdown).filter(s => s.label);
+  const metrics = asList(reportData?.metrics).filter(m => m.label);
   const rowsHTML = breakdown.map(s => `<tr><td class="b">${s.label}</td><td class="r">${s.score||"—"}/100</td><td>${s.comment||""}</td></tr>`).join("");
   const metricsHTML = metrics.map(m => `<tr><td class="b">${m.label}</td><td class="r">${m.yours||"—"}</td><td class="r">${m.median||"—"}</td><td class="r">${m.bench||"—"}</td></tr>`).join("");
   return pdfBase("IPO Readiness Report", company, month, `
@@ -5061,7 +5187,7 @@ function generateIPOPDF({ client, reportData }) {
 function generateCashHealthPDF({ client, reportData, kpis }) {
   const company = client?.company || "Your Company";
   const month = reportData?.monthLabel || "Current Period";
-  const cf = (reportData?.cashflow || []).filter(m => m.actual || m.forecast);
+  const cf = asList(reportData?.cashflow).filter(m => m.actual || m.forecast);
   const rowsHTML = cf.length ? cf.map(m => `<tr><td class="b">${m.month}</td><td class="r">${m.actual||"—"}</td><td class="r">${m.forecast||"—"}</td></tr>`).join("") :
     `<tr><td colspan="3" style="text-align:center;padding:20px;color:#6B7280">Cash flow data not yet entered.</td></tr>`;
   const note = reportData?.cashflowNote || reportData?.packNote || "";
@@ -5765,7 +5891,7 @@ function generateLoanPDF({ client, reportData, kpis }) {
   const sought   = reportData?.loanAmountSought || "Not specified";
   const purpose  = reportData?.loanPurpose || "Not specified";
   const loanNote = reportData?.loanNote || "";
-  const improvements = (reportData?.loanImprovements || []).filter(x=>x);
+  const improvements = asList(reportData?.loanImprovements).filter(x=>x);
   const ratios = [
     { label:"Current Ratio",     value:reportData?.currentRatio,     benchmark:"Target >2.0x",  good:parseFloat(reportData?.currentRatio)>=2 },
     { label:"DSCR",              value:reportData?.dscr,             benchmark:"Target >1.25x", good:parseFloat(reportData?.dscr)>=1.25 },
@@ -6215,9 +6341,13 @@ const CFO_PACK_DATA = {
 };
  
 function MSMEPackContent({ reportData, kpis, client }) {
+  // The ageing split used to read 47% / 32% / 13% / 8% beside the client's
+  // own balances, whatever those balances were. It is their split now.
+  const ageNum = (v) => { const n = parseFloat(String(v ?? "").replace(/[^0-9.\-]/g,"")); return isFinite(n) ? n : 0; };
+  const ageTot = ["ar0to30","ar31to60","ar61to90","ar90plus"].reduce((t,k) => t + ageNum(reportData?.[k]), 0);
+  const agePct = (v) => ageTot > 0 && v != null && v !== "" ? `${Math.round(ageNum(v)/ageTot*100)}%` : "—";
   const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
   const [tab, setTab] = useState("monthly");
-  const data = CFO_PACK_DATA.msme;
  
   // Grouped nav — cleaner than 11 pills in a row
   const groups = [
@@ -6302,6 +6432,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
               );
             });
           }
+          if (!client?.isDemo) return (<div style={{ padding:"14px 4px", fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7 }}>
+                The profit and loss appears here once this month's figures have been prepared.
+              </div>);
           return [
             { label:"Revenue",            value:"₹84.2L", pct:"6.1%",  trend:"up",   sub:"vs ₹79.4L last month" },
             { label:"Cost of Goods Sold", value:"₹49.7L", pct:"4.2%",  trend:"down", sub:"58.9% of revenue" },
@@ -6535,10 +6668,10 @@ function MSMEPackContent({ reportData, kpis, client }) {
             </div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {[
-                { band:"0–30 days",   value: reportData?.ar0to30   || "₹18.2L", pct:"47%", color:C.green,  action:"On track — follow standard reminder cycle" },
-                { band:"31–60 days",  value: reportData?.ar31to60  || "₹12.4L", pct:"32%", color:C.amber,  action:"Send formal reminder + confirm payment date" },
-                { band:"61–90 days",  value: reportData?.ar61to90  || "₹4.8L",  pct:"13%", color:C.red,    action:"Escalate to senior contact — consider credit hold" },
-                { band:"90+ days",    value: reportData?.ar90plus  || "₹2.9L",  pct:"8%",  color:C.red,    action:"Legal notice or write-off decision required" },
+                { band:"0–30 days",   value: reportData?.ar0to30   || "₹18.2L", pct:agePct(reportData?.ar0to30), color:C.green,  action:"On track — follow standard reminder cycle" },
+                { band:"31–60 days",  value: reportData?.ar31to60  || "₹12.4L", pct:agePct(reportData?.ar31to60), color:C.amber,  action:"Send formal reminder + confirm payment date" },
+                { band:"61–90 days",  value: reportData?.ar61to90  || "₹4.8L",  pct:agePct(reportData?.ar61to90), color:C.red,    action:"Escalate to senior contact — consider credit hold" },
+                { band:"90+ days",    value: reportData?.ar90plus  || "₹2.9L",  pct:agePct(reportData?.ar90plus),  color:C.red,    action:"Legal notice or write-off decision required" },
               ].map((row, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
                   borderRadius:16, background:"#fff", border:`1px solid ${C.border}` }}>
@@ -6570,9 +6703,9 @@ function MSMEPackContent({ reportData, kpis, client }) {
             </div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
               {[
-                { label:"Current Ratio",        value: reportData?.currentRatio || "1.62x", benchmark: reportData?.benchCurrentRatio || "Sector avg: 1.5–2.0x", target:1.5, actual: parseFloat(reportData?.currentRatio||"1.62"), higher:true  },
+                { label:"Current Ratio",        value: reportData?.currentRatio || "1.62x", benchmark: reportData?.benchCurrentRatio || "", target:1.5, actual: parseFloat(reportData?.currentRatio||"1.62"), higher:true  },
                 { label:"Quick Ratio",           value: reportData?.quickRatio   || "1.18x", benchmark: reportData?.benchQuickRatio   || "Target: >1.0x",         target:1.0, actual: parseFloat(reportData?.quickRatio||"1.18"),   higher:true  },
-                { label:"Inventory Turnover",    value: reportData?.invTurnover  || "6.2x",  benchmark: reportData?.benchInvTurnover  || "MSME avg: 4–8x",         target:4,   actual: parseFloat(reportData?.invTurnover||"6.2"),   higher:true  },
+                { label:"Inventory Turnover",    value: reportData?.invTurnover  || "6.2x",  benchmark: reportData?.benchInvTurnover  || "",         target:4,   actual: parseFloat(reportData?.invTurnover||"6.2"),   higher:true  },
                 { label:"Debtor Turnover",       value: reportData?.debtorTurn   || "7.8x",  benchmark: reportData?.benchDebtorTurn   || "Target: >10x",           target:10,  actual: parseFloat(reportData?.debtorTurn||"7.8"),    higher:true  },
               ].map((r, i) => {
                 const good = r.higher ? r.actual >= r.target : r.actual <= r.target;
@@ -6805,6 +6938,24 @@ function MSMEPackContent({ reportData, kpis, client }) {
 }
  
 function CorporatePackContent({ reportData, kpis, client }) {
+  // The ageing split used to read 47% / 32% / 13% / 8% beside the client's
+  // own balances, whatever those balances were. It is their split now.
+  const ageNum = (v) => { const n = parseFloat(String(v ?? "").replace(/[^0-9.\-]/g,"")); return isFinite(n) ? n : 0; };
+  const ageTot = ["ar0to30","ar31to60","ar61to90","ar90plus"].reduce((t,k) => t + ageNum(reportData?.[k]), 0);
+  const agePct = (v) => ageTot > 0 && v != null && v !== "" ? `${Math.round(ageNum(v)/ageTot*100)}%` : "—";
+  // Budget figures come from the client's budget, entered with the analysis.
+  const budgetFor = (label) => {
+    const v = asList(reportData?.variance).find(r => String(r.metric||r.item||"").toLowerCase() === label.toLowerCase());
+    return v && v.budget !== "" && v.budget != null ? String(v.budget) : "—";
+  };
+  const plFor = (k) => reportData?.pl?.[k]?.actual || reportData?.plInputs?.[k] || null;
+  const corpRows = [
+    ["Revenue","revenue",true], ["COGS","cogs",false], ["Gross Profit","grossProfit",true],
+    ["GP Margin","gpMargin",false], ["EBITDA","ebitda",true], ["EBITDA Margin","ebitdaMargin",false],
+    ["Net Profit","pat",true], ["Net Margin","netMargin",false],
+  ].filter(([, k]) => plFor(k))
+   .map(([row, k, bold]) => ({ row, actual: plFor(k), budget: budgetFor(row),
+      varAbs:"—", varPct:"—", py:"—", yoy:"—", bold }));
   const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
   const [tab, setTab] = useState("monthly");
  
@@ -6874,10 +7025,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
  
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr 1fr", gap:12 }} className="corp-kpi">
             {[
-              { label:"Revenue",       value:reportData?.plInputs?.revenue      ||"₹842L", budget:"₹810L",  color:C.blue   },
-              { label:"EBITDA",        value:reportData?.plInputs?.ebitda       ||"₹147L", budget:"₹115L",  color:C.teal   },
-              { label:"EBITDA Margin", value:reportData?.plInputs?.ebitdaMargin ||"17.5%", budget:"14.2%",  color:C.purple },
-              { label:"PAT",           value:reportData?.plInputs?.pat          ||"₹81L",  budget:"₹56L",   color:C.green  },
+              { label:"Revenue",       value:reportData?.plInputs?.revenue      ||"—", budget:budgetFor("Revenue"),  color:C.blue   },
+              { label:"EBITDA",        value:reportData?.plInputs?.ebitda       ||"—", budget:budgetFor("EBITDA"),  color:C.teal   },
+              { label:"EBITDA Margin", value:reportData?.plInputs?.ebitdaMargin ||"—", budget:budgetFor("EBITDA Margin"),  color:C.purple },
+              { label:"PAT",           value:reportData?.plInputs?.pat          ||"—",  budget:budgetFor("PAT"),   color:C.green  },
             ].map((k,i) => (
               <div key={i} style={{ padding:"14px", borderRadius:16,
                 background:`${k.color}08`, border:`1px solid ${k.color}20`, textAlign:"center" }}>
@@ -6912,7 +7063,11 @@ function CorporatePackContent({ reportData, kpis, client }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
+                  {/* A full P&L — actual, budget, variance, prior year and growth, every
+                      figure literal — used to be shown to every corporate client. The
+                      rows are the client's own now; prior-year figures are not held, so
+                      those columns show a dash rather than a number. */}
+                  {(client?.isDemo ? [
                     { row:"Revenue",            actual:"₹842L", budget:"₹810L", varAbs:"+₹32L", varPct:"+4.0%",  py:"₹720L", yoy:"+16.9%", bold:true  },
                     { row:"COGS",               actual:"₹497L", budget:"₹490L", varAbs:"−₹7L",  varPct:"−1.4%", py:"₹446L", yoy:"+11.4%", bold:false },
                     { row:"Gross Profit",       actual:"₹345L", budget:"₹320L", varAbs:"+₹25L", varPct:"+7.8%",  py:"₹274L", yoy:"+25.9%", bold:true  },
@@ -6923,7 +7078,7 @@ function CorporatePackContent({ reportData, kpis, client }) {
                     { row:"Finance Costs",      actual:"₹22L",  budget:"₹22L",  varAbs:"—",     varPct:"—",      py:"₹24L",  yoy:"−8.3%",  bold:false },
                     { row:"PBT",                actual:"₹107L", budget:"₹75L",  varAbs:"+₹32L", varPct:"+42.7%", py:"₹49L",  yoy:"+118.4%",bold:true  },
                     { row:"PAT",                actual:"₹81L",  budget:"₹56L",  varAbs:"+₹25L", varPct:"+44.6%", py:"₹37L",  yoy:"+118.9%",bold:true  },
-                  ].map((r,i) => (
+] : corpRows).map((r,i) => (
                     <tr key={i} style={{ background:i%2===0?C.bg2:C.bg }}>
                       <td style={{ padding:"9px 12px", fontWeight:r.bold?700:400,
                         fontSize:12, color:C.text, borderBottom:`1px solid ${C.border}`,
@@ -6951,15 +7106,17 @@ function CorporatePackContent({ reportData, kpis, client }) {
             </div>
           </Card>
  
+          {(reportData?.cashflowNote || reportData?.packNote) && (
           <Card style={{ borderLeft:`4px solid ${C.purple}` }}>
             <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
               {"Garima's Board Commentary"}
             </div>
             <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
-              {reportData?.cashflowNote || reportData?.packNote || data.garimaNote}
+              {reportData?.cashflowNote || reportData?.packNote}
             </p>
           </Card>
+          )}
  
           {reportData?.boardHighlight1 && (
             <Card>
@@ -7009,13 +7166,13 @@ function CorporatePackContent({ reportData, kpis, client }) {
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>{"Days your cash is tied up before you collect it back"}</div>
             <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:16 }}>
               {[
-                { label:"Debtor Days",    value:reportData?.debtorDays   || "46",       color:C.blue,   bad:parseInt(reportData?.debtorDays||"46")>30 },
+                { label:"Debtor Days",    value:reportData?.debtorDays   || "—",       color:C.blue,   bad:parseInt(reportData?.debtorDays||"—")>30 },
                 { label:"−",             value:null, color:C.muted },
-                { label:"Creditor Days",  value:reportData?.creditorDays  || "31",       color:C.purple, bad:false },
+                { label:"Creditor Days",  value:reportData?.creditorDays  || "—",       color:C.purple, bad:false },
                 { label:"+",             value:null, color:C.muted },
-                { label:"Inventory Days", value:reportData?.inventoryDays || "22",       color:C.teal,   bad:false },
+                { label:"Inventory Days", value:reportData?.inventoryDays || "—",       color:C.teal,   bad:false },
                 { label:"=",             value:null, color:C.muted },
-                { label:"CCC",            value:reportData?.ccc           || "37 days",  color:parseInt(reportData?.ccc||"37")<=30?C.green:C.amber, bad:parseInt(reportData?.ccc||"37")>30 },
+                { label:"CCC",            value:reportData?.ccc           || "—",  color:parseInt(reportData?.ccc||"—")<=30?C.green:C.amber, bad:parseInt(reportData?.ccc||"—")>30 },
               ].map((item, i) => item.value === null ? (
                 <div key={i} style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:item.color }}>{item.label}</div>
               ) : (
@@ -7033,10 +7190,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>{"Money earned but not yet collected"}</div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {[
-                { band:"0–30 days",  value:reportData?.ar0to30  || "₹18.2L", pct:"47%", color:C.green, action:"On track — follow standard reminder cycle" },
-                { band:"31–60 days", value:reportData?.ar31to60 || "₹12.4L", pct:"32%", color:C.amber, action:"Send formal reminder + confirm payment date" },
-                { band:"61–90 days", value:reportData?.ar61to90 || "₹4.8L",  pct:"13%", color:C.red,   action:"Escalate to senior contact — consider credit hold" },
-                { band:"90+ days",   value:reportData?.ar90plus || "₹2.9L",  pct:"8%",  color:C.red,   action:"Legal notice or write-off decision required" },
+                { band:"0–30 days",  value:reportData?.ar0to30  || "—", pct:agePct(reportData?.ar0to30), color:C.green, action:"On track — follow standard reminder cycle" },
+                { band:"31–60 days", value:reportData?.ar31to60 || "—", pct:agePct(reportData?.ar31to60), color:C.amber, action:"Send formal reminder + confirm payment date" },
+                { band:"61–90 days", value:reportData?.ar61to90 || "—",  pct:agePct(reportData?.ar61to90), color:C.red,   action:"Escalate to senior contact — consider credit hold" },
+                { band:"90+ days",   value:reportData?.ar90plus || "—",  pct:agePct(reportData?.ar90plus),  color:C.red,   action:"Legal notice or write-off decision required" },
               ].map((row, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
                   borderRadius:16, background:"#fff", border:`1px solid ${C.border}` }}>
@@ -7054,10 +7211,10 @@ function CorporatePackContent({ reportData, kpis, client }) {
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>{"How your efficiency ratios compare to sector medians"}</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
               {[
-                { label:"Current Ratio",     value:reportData?.currentRatio || "1.62x", benchmark:reportData?.benchCurrentRatio || "Sector avg: 1.5–2.0x", target:1.5, actual:parseFloat(reportData?.currentRatio||"1.62"), higher:true },
-                { label:"Quick Ratio",        value:reportData?.quickRatio   || "1.18x", benchmark:reportData?.benchQuickRatio   || "Target: >1.0x",         target:1.0, actual:parseFloat(reportData?.quickRatio||"1.18"),   higher:true },
-                { label:"Inventory Turnover", value:reportData?.invTurnover  || "6.2x",  benchmark:reportData?.benchInvTurnover  || "Sector avg: 4–8x",       target:4,   actual:parseFloat(reportData?.invTurnover||"6.2"),   higher:true },
-                { label:"Debtor Turnover",    value:reportData?.debtorTurn   || "7.8x",  benchmark:reportData?.benchDebtorTurn   || "Target: >10x",           target:10,  actual:parseFloat(reportData?.debtorTurn||"7.8"),    higher:true },
+                { label:"Current Ratio",     value:reportData?.currentRatio || "—", benchmark:reportData?.benchCurrentRatio || "", target:1.5, actual:parseFloat(reportData?.currentRatio||"—"), higher:true },
+                { label:"Quick Ratio",        value:reportData?.quickRatio   || "—", benchmark:reportData?.benchQuickRatio   || "Target: >1.0x",         target:1.0, actual:parseFloat(reportData?.quickRatio||"—"),   higher:true },
+                { label:"Inventory Turnover", value:reportData?.invTurnover  || "—",  benchmark:reportData?.benchInvTurnover  || "",       target:4,   actual:parseFloat(reportData?.invTurnover||"—"),   higher:true },
+                { label:"Debtor Turnover",    value:reportData?.debtorTurn   || "—",  benchmark:reportData?.benchDebtorTurn   || "Target: >10x",           target:10,  actual:parseFloat(reportData?.debtorTurn||"—"),    higher:true },
               ].map((r, i) => {
                 const good = r.higher ? r.actual >= r.target : r.actual <= r.target;
                 return (
@@ -7357,14 +7514,14 @@ function CorporatePackContent({ reportData, kpis, client }) {
           </Card>
  
           {/* Garima's note */}
-          {(reportData?.ipoNote || reportData?.packNote || data.garimaNote) && (
+          {(reportData?.ipoNote || reportData?.packNote) && (
             <Card style={{ borderLeft:`4px solid ${C.purple}` }}>
               <div style={{ fontSize:11, fontWeight:700, color:C.purple, textTransform:"uppercase",
                 letterSpacing:"0.08em", marginBottom:8, fontFamily:F }}>
                 {"Garima's Assessment"}
               </div>
               <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0 }}>
-                {reportData?.ipoNote || reportData?.packNote || data.garimaNote}
+                {reportData?.ipoNote || reportData?.packNote}
               </p>
             </Card>
           )}
@@ -8732,6 +8889,11 @@ function VerticalPnL({ reportData, accentColor }) {
 }
  
 function CFOPackContent({ reportData, client, kpis }) {
+  // The ageing split used to read 47% / 32% / 13% / 8% beside the client's
+  // own balances, whatever those balances were. It is their split now.
+  const ageNum = (v) => { const n = parseFloat(String(v ?? "").replace(/[^0-9.\-]/g,"")); return isFinite(n) ? n : 0; };
+  const ageTot = ["ar0to30","ar31to60","ar61to90","ar90plus"].reduce((t,k) => t + ageNum(reportData?.[k]), 0);
+  const agePct = (v) => ageTot > 0 && v != null && v !== "" ? `${Math.round(ageNum(v)/ageTot*100)}%` : "—";
   const [tab, setTab] = useState("monthly");
   const { drillFor, openDrill, DrillPortal } = useDrill(client, reportData);
  
@@ -8829,9 +8991,13 @@ function CFOPackContent({ reportData, client, kpis }) {
                   );
                 });
               }
+              if (!client?.isDemo) return (<div style={{ padding:"14px 4px", fontFamily:F, fontSize:13, color:C.muted, lineHeight:1.7 }}>
+                The profit and loss appears here once this month's figures have been prepared.
+              </div>);
               return (PACK_CONFIG[client?.client_pack||client?.clientPack||"startup"]?.plRows || PACK_CONFIG.startup.plRows).map((r,i) => <StatRow key={i} {...r}/>);
             }())}
           </Card>
+          {client?.isDemo && (
           <Card style={{ borderLeft:`4px solid ${C.green}` }}>
             <div style={{ fontFamily:F, fontWeight:700, fontSize:15, color:C.text, marginBottom:14 }}>Action Items</div>
             {ACTIONS.map((a,i,arr) => (
@@ -8846,6 +9012,7 @@ function CFOPackContent({ reportData, client, kpis }) {
               </div>
             ))}
           </Card>
+          )}
         </div>
       )}
  
@@ -8871,13 +9038,13 @@ function CFOPackContent({ reportData, client, kpis }) {
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16 }}>{"Days your cash is tied up before you collect it back"}</div>
             <div style={{ display:"flex", alignItems:"center", gap:8, flexWrap:"wrap", marginBottom:16 }}>
               {[
-                { label:"Debtor Days",   value:reportData?.debtorDays   || "46",        color:C.blue,   bad:parseInt(reportData?.debtorDays||"46")>30 },
+                { label:"Debtor Days",   value:reportData?.debtorDays   || "—",        color:C.blue,   bad:parseInt(reportData?.debtorDays||"—")>30 },
                 { label:"−",            value:null, color:C.muted },
-                { label:"Creditor Days", value:reportData?.creditorDays  || "31",        color:C.purple, bad:false },
+                { label:"Creditor Days", value:reportData?.creditorDays  || "—",        color:C.purple, bad:false },
                 { label:"+",            value:null, color:C.muted },
-                { label:"Inventory Days",value:reportData?.inventoryDays || "22",        color:C.teal,   bad:false },
+                { label:"Inventory Days",value:reportData?.inventoryDays || "—",        color:C.teal,   bad:false },
                 { label:"=",            value:null, color:C.muted },
-                { label:"CCC",           value:reportData?.ccc           || "37 days",   color:parseInt(reportData?.ccc||"37")<=30?C.green:C.amber, bad:parseInt(reportData?.ccc||"37")>30 },
+                { label:"CCC",           value:reportData?.ccc           || "—",   color:parseInt(reportData?.ccc||"—")<=30?C.green:C.amber, bad:parseInt(reportData?.ccc||"—")>30 },
               ].map((item, i) => item.value === null ? (
                 <div key={i} style={{ fontFamily:FM, fontSize:18, fontWeight:700, color:item.color }}>{item.label}</div>
               ) : (
@@ -8895,10 +9062,10 @@ function CFOPackContent({ reportData, client, kpis }) {
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>{"Money earned but not yet collected"}</div>
             <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
               {[
-                { band:"0–30 days",  value:reportData?.ar0to30  || "₹18.2L", pct:"47%", color:C.green, action:"On track — follow standard reminder cycle" },
-                { band:"31–60 days", value:reportData?.ar31to60 || "₹12.4L", pct:"32%", color:C.amber, action:"Send formal reminder + confirm payment date" },
-                { band:"61–90 days", value:reportData?.ar61to90 || "₹4.8L",  pct:"13%", color:C.red,   action:"Escalate to senior contact — consider credit hold" },
-                { band:"90+ days",   value:reportData?.ar90plus || "₹2.9L",  pct:"8%",  color:C.red,   action:"Legal notice or write-off decision required" },
+                { band:"0–30 days",  value:reportData?.ar0to30  || "—", pct:agePct(reportData?.ar0to30), color:C.green, action:"On track — follow standard reminder cycle" },
+                { band:"31–60 days", value:reportData?.ar31to60 || "—", pct:agePct(reportData?.ar31to60), color:C.amber, action:"Send formal reminder + confirm payment date" },
+                { band:"61–90 days", value:reportData?.ar61to90 || "—",  pct:agePct(reportData?.ar61to90), color:C.red,   action:"Escalate to senior contact — consider credit hold" },
+                { band:"90+ days",   value:reportData?.ar90plus || "—",  pct:agePct(reportData?.ar90plus),  color:C.red,   action:"Legal notice or write-off decision required" },
               ].map((row, i) => (
                 <div key={i} style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 14px",
                   borderRadius:16, background:"#fff", border:`1px solid ${C.border}` }}>
@@ -8916,10 +9083,10 @@ function CFOPackContent({ reportData, client, kpis }) {
             <div style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:14 }}>{"How your efficiency ratios compare to sector medians"}</div>
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
               {[
-                { label:"Current Ratio",     value:reportData?.currentRatio || "1.62x", benchmark:reportData?.benchCurrentRatio || "Sector avg: 1.5–2.0x", target:1.5, actual:parseFloat(reportData?.currentRatio||"1.62"), higher:true },
-                { label:"Quick Ratio",        value:reportData?.quickRatio   || "1.18x", benchmark:reportData?.benchQuickRatio   || "Target: >1.0x",         target:1.0, actual:parseFloat(reportData?.quickRatio||"1.18"),   higher:true },
-                { label:"Inventory Turnover", value:reportData?.invTurnover  || "6.2x",  benchmark:reportData?.benchInvTurnover  || "Sector avg: 4–8x",       target:4,   actual:parseFloat(reportData?.invTurnover||"6.2"),   higher:true },
-                { label:"Debtor Turnover",    value:reportData?.debtorTurn   || "7.8x",  benchmark:reportData?.benchDebtorTurn   || "Target: >10x",           target:10,  actual:parseFloat(reportData?.debtorTurn||"7.8"),    higher:true },
+                { label:"Current Ratio",     value:reportData?.currentRatio || "—", benchmark:reportData?.benchCurrentRatio || "", target:1.5, actual:parseFloat(reportData?.currentRatio||"—"), higher:true },
+                { label:"Quick Ratio",        value:reportData?.quickRatio   || "—", benchmark:reportData?.benchQuickRatio   || "Target: >1.0x",         target:1.0, actual:parseFloat(reportData?.quickRatio||"—"),   higher:true },
+                { label:"Inventory Turnover", value:reportData?.invTurnover  || "—",  benchmark:reportData?.benchInvTurnover  || "",       target:4,   actual:parseFloat(reportData?.invTurnover||"—"),   higher:true },
+                { label:"Debtor Turnover",    value:reportData?.debtorTurn   || "—",  benchmark:reportData?.benchDebtorTurn   || "Target: >10x",           target:10,  actual:parseFloat(reportData?.debtorTurn||"—"),    higher:true },
               ].map((r, i) => {
                 const good = r.higher ? r.actual >= r.target : r.actual <= r.target;
                 return (
@@ -8965,7 +9132,9 @@ function CFOPackContent({ reportData, client, kpis }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {[
+                  {/* A full budget-versus-actual table — revenue 842 against 790, burn,
+                      cash, headcount — used to be shown to every startup client. */}
+                  {(client?.isDemo ? [
                     { m:"Revenue",         bud:"790", act:"842", fav:true  },
                     { m:"Gross Profit",    bud:"316", act:"345", fav:true  },
                     { m:"Gross Margin %",  bud:"40%", act:"41%", fav:true, noCalc:true },
@@ -8975,7 +9144,11 @@ function CFOPackContent({ reportData, client, kpis }) {
                     { m:"Burn Rate",       bud:"52L/mo",act:"48L/mo",fav:true, noCalc:true },
                     { m:"Cash Balance",    bud:"2.4Cr",act:"2.1Cr",fav:false, noCalc:true },
                     { m:"Headcount Cost",  bud:"95",  act:"88",  fav:true  },
-                  ].map((r,i) => {
+] : asList(reportData?.variance)
+                    .filter(v => v && (v.metric || v.item) && (v.actual !== "" || v.budget !== ""))
+                    .map(v => ({ m: v.metric || v.item, bud: v.budget ?? "—", act: v.actual ?? "—",
+                                 fav: !!v.fav, noCalc: !!v.noCalc || /%/.test(String(v.metric || "")) }))
+                  ).map((r,i) => {
                     const bv = parseFloat(r.bud), av = parseFloat(r.act);
                     const varVal = r.noCalc ? "—" : (av - bv).toFixed(1);
                     const varPct = r.noCalc ? "—" : ((av - bv)/bv*100).toFixed(1)+"%";
@@ -9045,7 +9218,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 label:"CAC",
                 full:"Customer Acquisition Cost",
                 value: reportData?.cac || "—",
-                benchmark: reportData?.cacBenchmark || "Sector avg: ₹8,000–15,000",
+                benchmark: reportData?.cacBenchmark || "",
                 note:"Total sales+marketing spend ÷ new customers acquired",
                 color:C.blue,
                 target: reportData?.cacTarget || null,
@@ -9146,7 +9319,7 @@ function CFOPackContent({ reportData, client, kpis }) {
                 {
                   label:"ARR",
                   value: reportData?.arr || kpis?.find(k=>k.label?.toLowerCase().includes("arr"))?.value || "—",
-                  benchmark: reportData?.arrBenchmark || "Series A: ₹3–10 Cr",
+                  benchmark: reportData?.arrBenchmark || "",
                   good: null,
                   color:C.blue,
                 },
@@ -9628,15 +9801,17 @@ function CFOPacks({ client, reportData }) {
       {tab === "pack" && (
         <>
           {/* Garima's note */}
+          {reportData?.packNote && (
           <Card style={{ marginBottom:14, borderLeft:`3px solid ${data.color}` }}>
             <div style={{ fontSize:11, fontWeight:700, color:data.color, textTransform:"uppercase",
               letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>
-              Garima's Analysis — Feb 2026
+              Garima's Analysis{reportData?.monthLabel ? ` — ${reportData.monthLabel}` : ""}
             </div>
             <p style={{ fontSize:14, color:C.text, lineHeight:1.8, fontFamily:F, margin:0, whiteSpace:"pre-wrap" }}>
-              {reportData?.packNote || data.garimaNote}
+              {reportData?.packNote}
             </p>
           </Card>
+          )}
  
           {packType === "startup"   && <StartupCFOPack   data={data} client={client} reportData={reportData}/>}
           {packType === "msme"      && <MSMECFOPack      data={data} reportData={reportData}/>}
@@ -10046,7 +10221,7 @@ function downloadInvoicePDF(inv, client) {
 <table>
   <thead><tr><th>Description</th><th>Qty</th><th style="text-align:right">Rate</th><th style="text-align:right">Total</th></tr></thead>
   <tbody>
-    ${(inv.items||[]).map(it=>'<tr><td>'+it.desc+'</td><td>'+it.qty+'</td><td style="text-align:right">'+it.unit+'</td><td style="text-align:right"><strong>'+it.total+'</strong></td></tr>').join('')}
+    ${asList(inv.items).map(it=>'<tr><td>'+it.desc+'</td><td>'+it.qty+'</td><td style="text-align:right">'+it.unit+'</td><td style="text-align:right"><strong>'+it.total+'</strong></td></tr>').join('')}
   </tbody>
 </table>
 <div class="total-row">
@@ -12719,7 +12894,7 @@ function generateCTSummaryPDF({ client, reportData, ctData }) {
   const sbrNote  = ctData?.sbrEligible
     ? "Revenue is below AED 3,000,000 — Small Business Relief eligible. Elect in CT return."
     : "Revenue exceeds AED 3,000,000 — SBR not available. Standard 9% CT applies to taxable income.";
-  const rows = (ctData?.adjustments || []).map(a =>
+  const rows = asList(ctData?.adjustments).map(a =>
     "<tr><td style='padding:9px 12px;font-size:12px'>" + a.item + "</td>" +
     "<td style='padding:9px 12px;font-size:12px;font-family:monospace;text-align:right;color:" + (a.sign>0?"#059669":"#EF4444") + "'>" +
     (a.sign>0?"+":"−") + "AED " + Math.abs(a.amount).toLocaleString() + "</td>" +
@@ -12760,6 +12935,35 @@ function generateCTSummaryPDF({ client, reportData, ctData }) {
 }
  
 // ─── NEW: REVENUE RECONCILIATION (IFRS vs VAT) ───────────────────────────────
+// ─── A REPORT THAT HAS NOT BEEN PREPARED ──────────────────────────────────────
+// What a download returns when the figures behind it do not exist yet.
+//
+// These generators used to fill the gap with a complete, specific, invented
+// report: named debtors, a revenue of 1,850,000, a reconciliation with five
+// reconciling items, an IFRS 9 provision recommendation — every one signed with
+// a membership number. A client who downloads before the work is done gets a
+// page saying so, and nothing that could be read as advice.
+function awaitingPDF({ client, title }) {
+  const company = client?.company || client?.name || "Client";
+  const now = new Date().toLocaleDateString("en-GB",{day:"numeric",month:"long",year:"numeric"});
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>${title} — ${company}</title>
+<style>
+  body{font-family:Inter,-apple-system,Helvetica,Arial,sans-serif;color:#1a1a2e;margin:0;padding:64px 56px}
+  .brand{font-weight:800;font-size:20px;letter-spacing:-.02em}.brand span{color:#7C3AED}
+  h1{font-size:24px;margin:44px 0 6px;letter-spacing:-.02em} .co{color:#6B7280;font-size:13px}
+  .box{margin-top:30px;padding:22px 24px;border:1px solid #E5E7EB;border-left:4px solid #9CA3AF;border-radius:10px;
+       background:#F9FAFB;font-size:14px;line-height:1.8;color:#374151;max-width:620px}
+  .foot{margin-top:60px;font-size:11px;color:#9CA3AF}
+</style></head><body>
+  <div class="brand">Finz<span>zup</span></div>
+  <h1>${title}</h1><div class="co">${company} · ${now}</div>
+  <div class="box"><strong>Not yet prepared.</strong><br/>
+    This report is produced from your books by a Chartered Accountant and is issued once it has been
+    reviewed. It will be available here when it is ready.</div>
+  <div class="foot">Finzzup</div>
+</body></html>`;
+}
+
 function generateRevReconPDF({ client, reportData }) {
   const company  = client?.company || "Client";
   const trnVAT   = client?.trnVAT  || "—";
@@ -12769,16 +12973,9 @@ function generateRevReconPDF({ client, reportData }) {
   const period   = rr.period   || reportData?.monthLabel || "Current Quarter";
   const note     = rr.garimaNote || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed.";
  
-  const rows = (rr.rows && rr.rows.length)
-    ? rr.rows
-    : [
-        { desc:"Standard-rated UAE sales (5% VAT)",           ifrs:1500000, vat:1500000, diff:0,      explanation:"Identical — fully taxable in both IFRS and VAT" },
-        { desc:"Export sales — zero-rated",                   ifrs:350000,  vat:350000,  diff:0,      explanation:"Same amount — zero-rated in VAT, full revenue in IFRS" },
-        { desc:"Advance/deposits received (unearned revenue)", ifrs:0,       vat:85000,   diff:-85000, explanation:"VAT point triggered on receipt; IFRS revenue deferred until delivery" },
-        { desc:"Services — % completion basis",               ifrs:120000,  vat:0,        diff:120000, explanation:"IFRS recognises by % completion; VAT point on invoice date (next quarter)" },
-        { desc:"Exempt supplies",                             ifrs:45000,   vat:0,        diff:45000,  explanation:"IFRS records as revenue; VAT exempt — not included in VAT return" },
-        { desc:"Credit notes issued",                        ifrs:-28000,  vat:-28000,  diff:0,      explanation:"Both reduce revenue / output VAT equally" },
-      ];
+  // Five reconciling items with amounts and explanations used to stand in here.
+  const rows = asList(rr.rows);
+  if (!rows.length) return awaitingPDF({ client, title:"Revenue Reconciliation — IFRS to VAT" });
  
   const totalIFRS = rows.reduce((s,r)=>s+Number(r.ifrs||0),0);
   const totalVAT  = rows.reduce((s,r)=>s+Number(r.vat||0),0);
@@ -12890,7 +13087,7 @@ tr.total td:first-child { font-family:Arial,Helvetica,sans-serif; }
  
   <div class="garima">
     <strong>Note from Garima — Revenue Reconciliation (${period}):</strong><br/>
-    ${note}
+    ${rr.garimaNote || ""}
   </div>
  
   <div style="background:#F0FDF4;border:1px solid #86EFAC;border-left:4px solid #059669;border-radius:8px;padding:12px 14px;font-size:11px;color:#065f46;line-height:1.7">
@@ -13163,40 +13360,41 @@ function generateWorkingCapitalPDF({ client, reportData }) {
   const period   = wc.period || reportData?.monthLabel || "Current Period";
   const note     = wc.garimaNote || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed.";
  
-  const dso = Number(wc.dso || 38);
-  const dio = Number(wc.dio || 15);
-  const dpo = Number(wc.dpo || 28);
-  const ccc = dso + dio - dpo;
+  const cur = isUAE(client) ? "AED " : "₹";
+  const num = (v) => (v == null || v === "" || !isFinite(Number(v)) ? null : Number(v));
+  // 38, 15 and 28 days used to stand in for figures nobody had worked out.
+  const dso = num(wc.dso), dio = num(wc.dio), dpo = num(wc.dpo);
+  const ccc = num(wc.ccc) ?? (dso != null && dpo != null ? dso + (dio || 0) - dpo : null);
+  const d   = (v) => (v == null ? "—" : v);
  
-  const arRows = (wc.arAging && wc.arAging.length)
-    ? wc.arAging
-    : [
-        { customer:"Gulf Fresh Foods LLC",    current:125000, d30:0,     d60:0,     d90:0,     risk:"Low",    action:"On schedule" },
-        { customer:"Emarat Trading Co.",      current:95000,  d30:0,     d60:0,     d90:0,     risk:"Low",    action:"On schedule" },
-        { customer:"Desert Star Logistics",   current:0,      d30:82500, d60:0,     d90:0,     risk:"Medium", action:"Send reminder" },
-        { customer:"Al Habtoor Properties",  current:0,      d30:35000, d60:42500, d90:0,     risk:"Medium", action:"Follow up call" },
-        { customer:"Al Manara Group",         current:0,      d30:0,     d60:0,     d90:87500, risk:"High",   action:"Demand letter NOW" },
-      ];
+  // Five named debtors — Gulf Fresh Foods, Emarat Trading, Al Habtoor and
+  // others — with balances, risk ratings and actions used to stand in here.
+  // A synced client carries one total per customer rather than ageing
+  // buckets, so that total is shown as itself rather than spread across
+  // buckets it was never split into.
+  const arRows = asList(wc.arAging).map(r => r.customer != null ? r : {
+    customer: r.name || "—", total: Number(r.total || 0), risk: r.risk || "", action: r.action || "" });
  
-  const totalAR      = arRows.reduce((s,r)=>s+Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0),0);
+  const rowTotal     = (r) => r.total != null ? Number(r.total) : Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0);
+  const totalAR      = arRows.reduce((s,r)=>s+rowTotal(r),0);
   const total90plus  = arRows.reduce((s,r)=>s+Number(r.d90||0),0);
  
   const riskColor = r => r==="High"?"#EF4444":r==="Medium"?"#D97706":"#059669";
   const riskBg    = r => r==="High"?"#FEF2F2":r==="Medium"?"#FFFBEB":"#ECFDF5";
  
   const arTableRows = arRows.map((r,i)=>{
-    const total = Number(r.current||0)+Number(r.d30||0)+Number(r.d60||0)+Number(r.d90||0);
+    const total = rowTotal(r);
     const pct   = totalAR > 0 ? ((total/totalAR)*100).toFixed(1) : "0.0";
     return `<tr style="background:${i%2===0?"#fff":"#fafafa"};border-left:3px solid ${riskColor(r.risk)}">
       <td style="padding:9px 12px;font-size:12px;font-weight:600;color:#111827">${r.customer}</td>
-      <td style="padding:9px 12px;font-family:monospace;text-align:right;color:${Number(r.current||0)>0?"#059669":"#9CA3AF"}">${Number(r.current||0)>0?"AED "+Number(r.current).toLocaleString():"—"}</td>
-      <td style="padding:9px 12px;font-family:monospace;text-align:right;color:${Number(r.d30||0)>0?"#D97706":"#9CA3AF"}">${Number(r.d30||0)>0?"AED "+Number(r.d30).toLocaleString():"—"}</td>
-      <td style="padding:9px 12px;font-family:monospace;text-align:right;color:${Number(r.d60||0)>0?"#EF4444":"#9CA3AF"}">${Number(r.d60||0)>0?"AED "+Number(r.d60).toLocaleString():"—"}</td>
-      <td style="padding:9px 12px;font-family:monospace;text-align:right;font-weight:700;color:${Number(r.d90||0)>0?"#991B1B":"#9CA3AF"}">${Number(r.d90||0)>0?"AED "+Number(r.d90).toLocaleString():"—"}</td>
-      <td style="padding:9px 12px;font-family:monospace;text-align:right;font-weight:700;color:#111827">AED ${total.toLocaleString()}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;color:${Number(r.current||0)>0?"#059669":"#9CA3AF"}">${Number(r.current||0)>0?cur+Number(r.current).toLocaleString():"—"}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;color:${Number(r.d30||0)>0?"#D97706":"#9CA3AF"}">${Number(r.d30||0)>0?cur+Number(r.d30).toLocaleString():"—"}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;color:${Number(r.d60||0)>0?"#EF4444":"#9CA3AF"}">${Number(r.d60||0)>0?cur+Number(r.d60).toLocaleString():"—"}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;font-weight:700;color:${Number(r.d90||0)>0?"#991B1B":"#9CA3AF"}">${Number(r.d90||0)>0?cur+Number(r.d90).toLocaleString():"—"}</td>
+      <td style="padding:9px 12px;font-family:monospace;text-align:right;font-weight:700;color:#111827">${cur}${total.toLocaleString()}</td>
       <td style="padding:9px 12px;font-size:11px;text-align:right;color:#6B7280">${pct}%</td>
-      <td style="padding:9px 12px"><span style="background:${riskBg(r.risk)};color:${riskColor(r.risk)};font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px">${r.risk}</span></td>
-      <td style="padding:9px 12px;font-size:11px;color:${r.risk==="High"?"#991B1B":"#374151"};font-weight:${r.risk==="High"?"700":"400"}">${r.action}</td>
+      <td style="padding:9px 12px"><span style="background:${riskBg(r.risk)};color:${riskColor(r.risk)};font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px">${r.risk||"—"}</span></td>
+      <td style="padding:9px 12px;font-size:11px;color:${r.risk==="High"?"#991B1B":"#374151"};font-weight:${r.risk==="High"?"700":"400"}">${r.action||"—"}</td>
     </tr>`;
   }).join("");
  
@@ -13204,21 +13402,19 @@ function generateWorkingCapitalPDF({ client, reportData }) {
   const total30      = arRows.reduce((s,r)=>s+Number(r.d30||0),0);
   const total60      = arRows.reduce((s,r)=>s+Number(r.d60||0),0);
  
-  const apRows = (wc.apSchedule && wc.apSchedule.length)
-    ? wc.apSchedule
-    : [
-        { supplier:"Al Rashidi Brothers Trading", amount:65000, terms:"Net 30", due:"15 Apr 2026", daysLeft:15, priority:"Upcoming" },
-        { supplier:"Emirates Paper & Packaging",  amount:48000, terms:"Net 30", due:"20 Apr 2026", daysLeft:20, priority:"On Track" },
-        { supplier:"Mashreq Bank — Loan EMI",     amount:35000, terms:"Monthly",due:"01 Apr 2026", daysLeft:-1, priority:"Overdue"  },
-        { supplier:"Gulf Freight Solutions",      amount:28500, terms:"Net 45", due:"30 Apr 2026", daysLeft:30, priority:"On Track" },
-        { supplier:"DEWA (Utilities)",            amount:12000, terms:"Monthly",due:"10 Apr 2026", daysLeft:10, priority:"Upcoming" },
-      ];
+  // Five named creditors, including a bank loan instalment, used to stand in here.
+  const apRows = asList(wc.apSchedule).map(r => r.supplier != null ? r : {
+    supplier: r.vendor || r.name || "—", amount: r.amount, due: r.dueDate || r.due || "",
+    terms: r.terms || "", priority: r.priority || "" });
+
+  if (!arRows.length && !apRows.length && dso == null && dpo == null && wc.debtors == null)
+    return awaitingPDF({ client, title:"Working Capital Report" });
  
   const apTableRows = apRows.map((r,i)=>{
     const ov = r.priority==="Overdue";
     return `<tr style="background:${ov?"#FEF2F2":i%2===0?"#fff":"#fafafa"}">
       <td style="padding:9px 12px;font-size:12px;font-weight:600;color:#111827">${r.supplier}</td>
-      <td style="padding:9px 12px;font-family:monospace;font-weight:700;color:#111827;text-align:right">AED ${Number(r.amount||0).toLocaleString()}</td>
+      <td style="padding:9px 12px;font-family:monospace;font-weight:700;color:#111827;text-align:right">${cur}${Number(r.amount||0).toLocaleString()}</td>
       <td style="padding:9px 12px;font-size:11px;color:#6B7280">${r.terms||"—"}</td>
       <td style="padding:9px 12px;font-size:11px;color:#374151">${r.due||"—"}</td>
       <td style="padding:9px 12px"><span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:100px;background:${ov?"#FEF2F2":r.priority==="Upcoming"?"#FFFBEB":"#ECFDF5"};color:${ov?"#EF4444":r.priority==="Upcoming"?"#D97706":"#059669"}">${r.priority}</span></td>
@@ -13273,17 +13469,17 @@ tr.total-row td:first-child { font-family:Arial,Helvetica,sans-serif; }
   <div class="sub">Cash Conversion Cycle · AR Aging · AP Schedule · Liquidity Analysis — ${company} (${freezone})</div>
   <div class="meta">
     <div class="meta-item"><label>Period</label>${period}</div>
-    <div class="meta-item"><label>CCC</label>${ccc} days</div>
-    <div class="meta-item"><label>Total AR</label>AED ${totalAR.toLocaleString()}</div>
-    <div class="meta-item"><label>Total AP</label>AED ${totalAP.toLocaleString()}</div>
-    <div class="meta-item"><label>90+ Days AR</label>AED ${total90plus.toLocaleString()}</div>
+    <div class="meta-item"><label>CCC</label>${ccc==null?"—":ccc+" days"}</div>
+    <div class="meta-item"><label>Total AR</label>${cur}${totalAR.toLocaleString()}</div>
+    <div class="meta-item"><label>Total AP</label>${cur}${totalAP.toLocaleString()}</div>
+    <div class="meta-item"><label>90+ Days AR</label>${cur}${total90plus.toLocaleString()}</div>
     <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
   </div>
 </div>
  
 <div class="page">
  
-  <div class="garima"><strong>Note from Garima:</strong><br/>${note}</div>
+  ${wc.garimaNote ? `<div class="garima"><strong>Note from Garima:</strong><br/>${wc.garimaNote}</div>` : ""}
  
   <!-- CCC Visual -->
   <div class="ccc-visual">
@@ -13291,26 +13487,26 @@ tr.total-row td:first-child { font-family:Arial,Helvetica,sans-serif; }
       Cash Conversion Cycle — DSO + DIO − DPO = CCC
     </div>
     <div class="ccc-formula">
-      <div class="ccc-box"><div class="val">${dso}</div><div class="lbl">DSO (Days)</div></div>
+      <div class="ccc-box"><div class="val">${d(dso)}</div><div class="lbl">DSO (Days)</div></div>
       <div class="ccc-op">+</div>
-      <div class="ccc-box"><div class="val">${dio}</div><div class="lbl">DIO (Days)</div></div>
+      <div class="ccc-box"><div class="val">${d(dio)}</div><div class="lbl">DIO (Days)</div></div>
       <div class="ccc-op">−</div>
-      <div class="ccc-box"><div class="val">${dpo}</div><div class="lbl">DPO (Days)</div></div>
+      <div class="ccc-box"><div class="val">${d(dpo)}</div><div class="lbl">DPO (Days)</div></div>
       <div class="ccc-op">=</div>
-      <div class="ccc-result"><div class="val">${ccc}</div><div class="lbl">CCC (Days)</div></div>
+      <div class="ccc-result"><div class="val">${d(ccc)}</div><div class="lbl">CCC (Days)</div></div>
     </div>
     <div class="ccc-notes">
-      <div class="ccc-note"><strong>DSO ${dso} days</strong> — Days to collect from customers. Target: &lt;35 days. ${dso>35?"Above target — collections need attention.":"Within target."}</div>
-      <div class="ccc-note"><strong>DIO ${dio} days</strong> — Days inventory held before sale. ${dio<=20?"✓ Excellent for trading company.":"Monitor stock levels."} Industry median: 20–30 days.</div>
-      <div class="ccc-note"><strong>DPO ${dpo} days</strong> — Days to pay suppliers. ${dpo<35?"Scope to extend to 45 days — would release additional working capital.":"Well managed."}</div>
+      <div class="ccc-note"><strong>DSO ${dso==null?"—":dso+" days"}</strong> — how long customers take to pay. Compare it with the credit terms you actually give.</div>
+      <div class="ccc-note"><strong>DIO ${dio==null?"—":dio+" days"}</strong> — how long stock is held before it is sold.</div>
+      <div class="ccc-note"><strong>DPO ${dpo==null?"—":dpo+" days"}</strong> — how long you take to pay suppliers. Paying later than agreed costs goodwill; paying earlier costs cash.</div>
     </div>
   </div>
  
   <div class="kpi-row">
-    <div class="kpi-card"><div class="val" style="color:#2563EB">${dso}d</div><div class="lbl">DSO</div><div class="bench">Target &lt;35 · Industry 30–45</div></div>
-    <div class="kpi-card"><div class="val" style="color:#059669">${dio}d</div><div class="lbl">DIO</div><div class="bench">Excellent · Industry 20–30</div></div>
-    <div class="kpi-card"><div class="val" style="color:#D97706">${dpo}d</div><div class="lbl">DPO</div><div class="bench">${dpo<35?"Extend to 45d":"Good"} · Industry 30–45</div></div>
-    <div class="kpi-card"><div class="val" style="color:${ccc<=30?"#059669":ccc<=45?"#D97706":"#EF4444"}">${ccc}d</div><div class="lbl">CCC</div><div class="bench">Lower = better · Target &lt;30</div></div>
+    <div class="kpi-card"><div class="val" style="color:#2563EB">${dso==null?"—":dso+"d"}</div><div class="lbl">DSO</div><div class="bench">Days to collect</div></div>
+    <div class="kpi-card"><div class="val" style="color:#059669">${dio==null?"—":dio+"d"}</div><div class="lbl">DIO</div><div class="bench">Days stock is held</div></div>
+    <div class="kpi-card"><div class="val" style="color:#D97706">${dpo==null?"—":dpo+"d"}</div><div class="lbl">DPO</div><div class="bench">Days to pay</div></div>
+    <div class="kpi-card"><div class="val" style="color:#111827">${ccc==null?"—":ccc+"d"}</div><div class="lbl">CCC</div><div class="bench">Lower releases cash</div></div>
   </div>
  
   <!-- AR Aging -->
@@ -13323,7 +13519,7 @@ tr.total-row td:first-child { font-family:Arial,Helvetica,sans-serif; }
         <th class="num" style="width:10%">31–60 days</th>
         <th class="num" style="width:10%">61–90 days</th>
         <th class="num" style="width:10%">90+ days</th>
-        <th class="num" style="width:10%">Total AED</th>
+        <th class="num" style="width:10%">Total</th>
         <th class="num" style="width:7%">% of AR</th>
         <th style="width:7%">Risk</th>
         <th style="width:15%">Action</th>
@@ -13333,29 +13529,29 @@ tr.total-row td:first-child { font-family:Arial,Helvetica,sans-serif; }
       ${arTableRows}
       <tr class="total-row">
         <td><strong>TOTAL</strong></td>
-        <td style="text-align:right"><strong>AED ${totalCurrent.toLocaleString()}</strong></td>
-        <td style="text-align:right"><strong>AED ${total30.toLocaleString()}</strong></td>
-        <td style="text-align:right"><strong>AED ${total60.toLocaleString()}</strong></td>
-        <td style="text-align:right;color:#EF4444"><strong>AED ${total90plus.toLocaleString()}</strong></td>
-        <td style="text-align:right"><strong>AED ${totalAR.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>${cur}${totalCurrent.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>${cur}${total30.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>${cur}${total60.toLocaleString()}</strong></td>
+        <td style="text-align:right;color:#EF4444"><strong>${cur}${total90plus.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>${cur}${totalAR.toLocaleString()}</strong></td>
         <td style="text-align:right"><strong>100%</strong></td>
         <td colspan="2"></td>
       </tr>
     </tbody>
   </table>
-  ${total90plus>0?('<div class="alert">⚠️ <strong>AED '+total90plus.toLocaleString()+' is 90+ days overdue ('+((total90plus/totalAR)*100).toFixed(1)+'% of total AR).</strong> Under IFRS 9 ECL model, provision at minimum 50% = AED '+Math.round(total90plus*0.5).toLocaleString()+' required if not collected within 30 days. Issue demand letter immediately.</div>'):""}
+  ${total90plus>0?('<div class="alert">⚠️ <strong>'+cur+total90plus.toLocaleString()+' is 90+ days overdue ('+((total90plus/totalAR)*100).toFixed(1)+'% of total AR).</strong> An expected credit loss provision against these balances should be assessed under IFRS 9. Issue a demand letter.</div>'):""}
  
   <!-- AP Schedule -->
   <div class="section-title" style="margin-top:24px">AP Schedule — Outstanding Payables</div>
   <table>
     <thead>
-      <tr><th style="width:30%">Supplier</th><th class="num">Amount AED</th><th>Terms</th><th>Due Date</th><th>Status</th></tr>
+      <tr><th style="width:30%">Supplier</th><th class="num">Amount</th><th>Terms</th><th>Due Date</th><th>Status</th></tr>
     </thead>
     <tbody>
       ${apTableRows}
       <tr class="total-row">
         <td><strong>TOTAL PAYABLES</strong></td>
-        <td style="text-align:right"><strong>AED ${totalAP.toLocaleString()}</strong></td>
+        <td style="text-align:right"><strong>${cur}${totalAP.toLocaleString()}</strong></td>
         <td colspan="3"></td>
       </tr>
     </tbody>
@@ -13363,7 +13559,7 @@ tr.total-row td:first-child { font-family:Arial,Helvetica,sans-serif; }
  
   <div style="margin-top:16px">
     <div class="insight"><strong>💡 Working Capital Opportunity:</strong> DSO ${dso} days vs DPO ${dpo} days — ${dso>dpo?"you collect slower than you pay. Priority: reduce DSO and extend DPO to improve cash position.":"collection is faster than payment — strong position. Maintain this discipline."}</div>
-    ${total90plus>0?('<div class="alert"><strong>🔴 Collection Priority:</strong> AED '+total90plus.toLocaleString()+' at 90+ days. Every 30-day delay in collection increases credit loss risk. Issue demand letter, offer structured payment plan, consider withholding next delivery.</div>'):""}
+    ${total90plus>0?('<div class="alert"><strong>🔴 Collection Priority:</strong> '+cur+total90plus.toLocaleString()+' at 90+ days. Every 30-day delay in collection increases credit loss risk. Issue demand letter, offer structured payment plan, consider withholding next delivery.</div>'):""}
   </div>
  
   <div class="footer">
@@ -13604,9 +13800,11 @@ function WorkingCapital({ client, reportData }) {
         <div style={{ padding:"12px 16px", borderRadius:16, background:"#FEF2F2",
           border:"1px solid #FCA5A5", borderLeft:`4px solid ${C.red}`,
           marginBottom:14, fontFamily:F, fontSize:12, color:C.red }}>
-          <strong>⚠️ IFRS 9 ECL Provision Required:</strong> AED {fmtAED(total90)} is 90+ days overdue.
-          Provision AED {fmtAED(Math.round(total90*0.5))} (50% ECL) in accounts if not collected within 30 days.
-          Issue formal demand letter immediately.
+          {/* IFRS 9 sets no minimum provision percentage. This used to state a
+              50% provision as a requirement, on the client's own screen. */}
+          <strong>⚠️ {fmtAED(total90)} is more than 90 days overdue.</strong>{" "}
+          An expected credit loss provision against these balances should be assessed under IFRS 9.
+          Issue a formal demand letter.
         </div>
       )}
  
@@ -13744,29 +13942,23 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
   const period   = va.period  || reportData?.monthLabel || "Current Period";
   const note     = va.garimaNote || "Vertical analysis note not yet added.";
  
-  // Build rows — use admin data or defaults
-  const defaultRows = [
-    { label:"Revenue",              ifrs:1850000, prev:1400000, cogs:false, subtotal:false, total:false, section:"revenue" },
-    { label:"Cost of Goods Sold",   ifrs:1017500, prev:812000,  cogs:true,  subtotal:false, total:false, section:"cogs"    },
-    { label:"  Direct Materials",   ifrs:750000,  prev:582000,  cogs:false, subtotal:false, total:false, section:"cogs"    },
-    { label:"  Direct Labour",      ifrs:185000,  prev:140000,  cogs:false, subtotal:false, total:false, section:"cogs"    },
-    { label:"  Direct Overheads",   ifrs:82500,   prev:90000,   cogs:false, subtotal:false, total:false, section:"cogs"    },
-    { label:"Gross Profit",         ifrs:832500,  prev:588000,  cogs:false, subtotal:true,  total:false, section:"gp"      },
-    { label:"Salaries & Benefits",  ifrs:375000,  prev:360000,  cogs:false, subtotal:false, total:false, section:"opex"    },
-    { label:"Rent & Utilities",     ifrs:52000,   prev:52000,   cogs:false, subtotal:false, total:false, section:"opex"    },
-    { label:"Marketing & Sales",    ifrs:48000,   prev:42000,   cogs:false, subtotal:false, total:false, section:"opex"    },
-    { label:"Professional Fees",    ifrs:35000,   prev:30000,   cogs:false, subtotal:false, total:false, section:"opex"    },
-    { label:"Other OpEx",           ifrs:51500,   prev:48000,   cogs:false, subtotal:false, total:false, section:"opex"    },
-    { label:"Total OpEx",           ifrs:561500,  prev:532000,  cogs:false, subtotal:true,  total:false, section:"opex"    },
-    { label:"EBITDA",               ifrs:271000,  prev:56000,   cogs:false, subtotal:true,  total:false, section:"ebitda"  },
-    { label:"Depreciation",         ifrs:18000,   prev:18000,   cogs:false, subtotal:false, total:false, section:"below"   },
-    { label:"Finance Costs",        ifrs:12000,   prev:12000,   cogs:false, subtotal:false, total:false, section:"below"   },
-    { label:"Net Profit (PAT)",     ifrs:241000,  prev:26000,   cogs:false, subtotal:false, total:true,  section:"pat"     },
-  ];
- 
-  const rows = (va.rows && va.rows.length >= 5) ? va.rows : defaultRows;
-  const revenue     = Number(rows[0]?.ifrs || 1850000);
-  const prevRevenue = Number(rows[0]?.prev || 1400000);
+  const cur = isUAE(client) ? "AED " : "₹";
+  // A full P&L — revenue of 1,850,000, materials, labour, salaries, rent —
+  // used to stand in here. Synced clients carry {label, value} rows from the
+  // books, which this did not read at all, so even a connected client got the
+  // invented one. Both shapes are read now; with neither there is no report.
+  const SECTION = { "revenue":"revenue", "cost of sales":"cogs", "cost of goods sold":"cogs",
+    "gross profit":"gp", "operating expenses":"opex", "ebitda":"ebitda",
+    "depreciation":"below", "finance cost":"below", "tax":"below", "net profit":"pat" };
+  const src  = asList(va.rows).length ? asList(va.rows) : asList(reportData?.verticalPnL);
+  const rows = src.map(r => r.ifrs != null ? r : (() => {
+    const sec = SECTION[String(r.label||"").trim().toLowerCase()] || "below";
+    return { label:r.label, ifrs:Number(r.value||0), prev:r.prev ?? null, section:sec,
+             cogs:sec==="cogs", subtotal:["gp","ebitda"].includes(sec), total:sec==="pat" };
+  })());
+  if (!rows.length || !Number(rows[0]?.ifrs)) return awaitingPDF({ client, title:"Vertical Analysis" });
+  const revenue     = Number(rows[0]?.ifrs || 0);
+  const prevRevenue = Number(rows[0]?.prev || 0);
  
   const sectionColors = {
     revenue:"#EFF6FF", cogs:"#FEF2F2", gp:"#ECFDF5",
@@ -13798,23 +13990,23 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
  
     return `<tr style="background:${bg};border-left:${borderL}${isTotal?";border-top:2px solid #059669":""}">
       <td style="padding:${isSubtotal||isTotal?"10":"8"}px 12px;font-size:11.5px;font-weight:${fw};color:${isTotal?"#065f46":"#374151"};padding-left:${indent?"24":"12"}px">${r.label?.trim()}</td>
-      <td style="padding:8px 10px;font-family:monospace;font-weight:${fw};color:#111827;text-align:right">AED ${Number(r.ifrs||0).toLocaleString()}</td>
+      <td style="padding:8px 10px;font-family:monospace;font-weight:${fw};color:#111827;text-align:right">${cur}${Number(r.ifrs||0).toLocaleString()}</td>
       <td style="padding:8px 10px;font-family:monospace;font-weight:700;color:${r.section==="cogs"||r.section==="opex"?"#EF4444":"#059669"};text-align:right">${pct}%</td>
-      <td style="padding:8px 10px;font-family:monospace;font-weight:${fw};color:#6B7280;text-align:right">AED ${Number(r.prev||0).toLocaleString()}</td>
+      <td style="padding:8px 10px;font-family:monospace;font-weight:${fw};color:#6B7280;text-align:right">${r.prev==null?"—":cur+Number(r.prev).toLocaleString()}</td>
       <td style="padding:8px 10px;font-family:monospace;color:#6B7280;text-align:right">${prevPct}%</td>
-      <td style="padding:8px 10px;font-family:monospace;font-weight:700;color:${ppColor};text-align:right">${Number(pp)>0?"▲":"▼"} ${ppLabel}</td>
+      <td style="padding:8px 10px;font-family:monospace;font-weight:700;color:${ppColor};text-align:right">${pp==="—"?"—":(Number(pp)>0?"▲ ":"▼ ")+ppLabel}</td>
     </tr>`;
   }).join("");
  
   // GP Ratio benchmark
   const gpRow     = rows.find(r=>r.section==="gp");
-  const gpAmt     = Number(gpRow?.ifrs || 832500);
+  const gpAmt     = Number(gpRow?.ifrs || 0);
   const gpPct     = revenue > 0 ? ((gpAmt/revenue)*100).toFixed(1) : "—";
-  const gpPrevPct = prevRevenue > 0 ? ((Number(gpRow?.prev||588000)/prevRevenue)*100).toFixed(1) : "—";
+  const gpPrevPct = prevRevenue > 0 ? ((Number(gpRow?.prev||0)/prevRevenue)*100).toFixed(1) : "—";
   const ebitdaRow = rows.find(r=>r.section==="ebitda");
-  const ebitdaPct = revenue > 0 ? ((Number(ebitdaRow?.ifrs||271000)/revenue)*100).toFixed(1) : "—";
+  const ebitdaPct = revenue > 0 ? ((Number(ebitdaRow?.ifrs||0)/revenue)*100).toFixed(1) : "—";
   const patRow    = rows.find(r=>r.section==="pat");
-  const patPct    = revenue > 0 ? ((Number(patRow?.ifrs||241000)/revenue)*100).toFixed(1) : "—";
+  const patPct    = revenue > 0 ? ((Number(patRow?.ifrs||0)/revenue)*100).toFixed(1) : "—";
  
   // These used to carry industry ranges — 38–42% gross, 8–12% EBITDA — that
   // came from nowhere, and an OpEx line worked out from a hardcoded 561,500.
@@ -13858,10 +14050,10 @@ td { border-bottom:1px solid #F3F4F6; }
  
 <div class="header">
   <h1>Vertical Analysis Report</h1>
-  <div class="sub">Common-Size P&amp;L · Every Line as % of Revenue · GP Ratio vs Industry — ${company} (${freezone})</div>
+  <div class="sub">Common-Size P&amp;L · Every Line as % of Revenue — ${company} (${freezone})</div>
   <div class="meta">
     <div class="meta-item"><label>Period</label>${period}</div>
-    <div class="meta-item"><label>Revenue</label>AED ${revenue.toLocaleString()}</div>
+    <div class="meta-item"><label>Revenue</label>${cur}${revenue.toLocaleString()}</div>
     <div class="meta-item"><label>Gross Margin</label>${gpPct}%</div>
     <div class="meta-item"><label>Net Margin</label>${patPct}%</div>
     <div class="meta-item"><label>Base</label>Revenue = 100%</div>
@@ -13875,10 +14067,20 @@ td { border-bottom:1px solid #F3F4F6; }
   </div>
  
   <div class="kpi-row">
-    <div class="kpi-card"><div class="val" style="color:#2563EB">${gpPct}%</div><div class="lbl">Gross Margin</div><div class="chg" style="color:${Number(gpPct)>Number(gpPrevPct)?"#059669":"#EF4444"}">${Number(gpPct)>Number(gpPrevPct)?"▲":"▼"} vs ${gpPrevPct}% prior</div></div>
-    <div class="kpi-card"><div class="val" style="color:#059669">${ebitdaPct}%</div><div class="lbl">EBITDA Margin</div><div class="chg" style="color:#059669">▲ Strong improvement</div></div>
-    <div class="kpi-card"><div class="val" style="color:#7C3AED">${patPct}%</div><div class="lbl">Net Profit Margin</div><div class="chg" style="color:#059669">▲ Best quarter</div></div>
-    <div class="kpi-card"><div class="val" style="color:#D97706">${((Number(rows.find(r=>r.section==="opex"&&r.subtotal)?.ifrs||561500)/revenue)*100).toFixed(1)}%</div><div class="lbl">OpEx % Revenue</div><div class="chg" style="color:#059669">▲ Improving efficiency</div></div>
+    ${(() => {
+      // "Strong improvement", "Best quarter" and "Improving" used to be printed
+      // under these whatever the numbers said.
+      const opexRow = rows.find(r => r.section === "opex");
+      const opexPct = revenue > 0 && opexRow ? ((Number(opexRow.ifrs||0)/revenue)*100).toFixed(1) : "—";
+      const move = (now, before) => (now === "—" || before === "—" || !isFinite(Number(before))) ? ""
+        : `<div class="chg" style="color:${Number(now)>=Number(before)?"#059669":"#EF4444"}">${Number(now)>=Number(before)?"▲":"▼"} vs ${before}% prior</div>`;
+      const card = (val, colour, label, extra="") =>
+        `<div class="kpi-card"><div class="val" style="color:${colour}">${val==="—"?"—":val+"%"}</div><div class="lbl">${label}</div>${extra}</div>`;
+      return card(gpPct, "#2563EB", "Gross Margin", move(gpPct, gpPrevPct))
+           + card(ebitdaPct, "#059669", "EBITDA Margin")
+           + card(patPct, "#7C3AED", "Net Profit Margin")
+           + card(opexPct, "#D97706", "OpEx % Revenue");
+    })()}
   </div>
  
   <div class="section-title">Common-Size P&amp;L — ${period} vs Prior Period</div>
@@ -13886,9 +14088,9 @@ td { border-bottom:1px solid #F3F4F6; }
     <thead>
       <tr>
         <th style="width:30%">Line Item</th>
-        <th class="num" style="width:15%">Current AED</th>
+        <th class="num" style="width:15%">Current</th>
         <th class="num" style="width:10%">% of Rev</th>
-        <th class="num" style="width:15%">Prior AED</th>
+        <th class="num" style="width:15%">Prior</th>
         <th class="num" style="width:10%">% of Rev</th>
         <th class="num" style="width:10%">Change (pp)</th>
       </tr>
@@ -13896,15 +14098,15 @@ td { border-bottom:1px solid #F3F4F6; }
     <tbody>${tableRows}</tbody>
   </table>
  
-  <div class="garima"><strong>Note from Garima:</strong><br/>${note}</div>
+  ${va.garimaNote ? `<div class="garima"><strong>Note from Garima:</strong><br/>${va.garimaNote}</div>` : ""}
  
-  <div class="section-title pb">GP Ratio — Industry Benchmark Comparison</div>
+${benchmarks.length ? `  <div class="section-title pb">GP Ratio — Industry Benchmark Comparison</div>
   <table>
     <thead>
-      <tr><th style="width:30%">Metric</th><th class="num" style="width:20%">Your Business</th><th style="width:25%;text-align:center">UAE Industry Range (${freezone} peers)</th><th style="width:25%;text-align:center">Assessment</th></tr>
+      <tr><th style="width:30%">Metric</th><th class="num" style="width:20%">Your Business</th><th style="width:25%;text-align:center">Benchmark</th><th style="width:25%;text-align:center">Assessment</th></tr>
     </thead>
     <tbody>${benchRows}</tbody>
-  </table>
+  </table>` : ""}
  
   <div class="footer">
     <span style="font-weight:800;color:#2563EB">Finzzup</span>
@@ -14241,14 +14443,28 @@ function ComplianceCalendar({ client, reportData }) {
   // This screen had no data source at all — the deadlines below are sample
   // dates, including a named AED 92.5K payment to the FTA. Real clients get
   // the calendar their CA published, or nothing.
-  const published = reportData?.compliance || reportData?.checklist || [];
+  // The calendar a CA published. A checklist used to count here too, so a
+  // blank checklist template was enough to switch on the hardcoded sample
+  // deadlines below — "pay AED 92.5K to FTA" among them — for a real client,
+  // and the dates actually published were never read at all.
+  const published = asList(reportData?.compliance);
   if (!client?.isDemo && !published.length)
     return <AwaitingData title="Your compliance calendar"
       detail="Your filing dates are set when your CA reviews the period. They will appear here once published."/>;
   const freezone = client?.freezone || "DMCC";
   const fye      = client?.financialYearEnd || "31 Dec";
  
-  const deadlines = [
+  const categoryOf = (t) => {
+    const x = String(t || "").toLowerCase();
+    return /vat/.test(x) ? "vat" : /corporate tax|\bct\b|sbr|qfzp/.test(x) ? "ct"
+         : /audit/.test(x) ? "audit" : /licen[cs]e|renewal/.test(x) ? "license" : "other";
+  };
+  const fmtDate = (d) => {
+    const t = new Date(d);
+    return isFinite(t) ? t.toLocaleDateString("en-GB",{ day:"numeric", month:"short", year:"numeric" }) : String(d || "—");
+  };
+  const soon = (d) => { const t = new Date(d); return isFinite(t) && (t - Date.now()) < 30*864e5; };
+  const deadlines = (client?.isDemo ? [
     { date:"28 Apr 2026", label:"VAT Return — Q1 2026",          category:"vat",     priority:"High",   desc:"File Q1 VAT return (Jan–Mar 2026) and pay AED 92.5K to FTA." },
     { date:"30 Apr 2026", label:"Audit Report Submission",        category:"audit",   priority:"High",   desc:`Submit audited financial statements to ${freezone}.` },
     { date:"15 May 2026", label:`${freezone} License Renewal`,    category:"license", priority:"High",   desc:`Renew annual trade license. Prepare documents early.` },
@@ -14258,7 +14474,13 @@ function ComplianceCalendar({ client, reportData }) {
     { date:"31 Dec 2026", label:"SBR Election Window Closes",     category:"ct",      priority:"High",   desc:"Last period for Small Business Relief election under current regime." },
     { date:"28 Jan 2027", label:"VAT Return — Q4 2026",           category:"vat",     priority:"Medium", desc:"File Q4 VAT return (Oct–Dec 2026)." },
     { date:"30 Jun 2026", label:"ESR Annual Notification",        category:"other",   priority:"Low",    desc:"Economic Substance Regulations notification (if applicable)." },
-  ].sort((a,b) => new Date(a.date) - new Date(b.date));
+  ] : published.map(c => ({
+    date:     fmtDate(c.dueDate || c.due || c.date),
+    label:    c.item || c.label || "—",
+    category: categoryOf(`${c.item || ""} ${c.detail || ""}`),
+    priority: c.done ? "Low" : soon(c.dueDate || c.due || c.date) ? "High" : "Medium",
+    desc:     [c.detail, c.amount].filter(Boolean).join(" · "),
+  }))).sort((a,b) => new Date(a.date) - new Date(b.date));
  
   const catColors = { vat:"#3B82F6", ct:"#8B5CF6", audit:"#10B981", license:"#F59E0B", other:"#6B7280" };
   const catLabels = { vat:"VAT", ct:"Corp Tax", audit:"Audit", license:"License", other:"Other" };
@@ -14367,7 +14589,7 @@ function generateQFZPSubstancePDF({ client, reportData }) {
     {
       pillar:"Operating Expenditure",
       requirement:"Adequate operating expenditure incurred in the free zone commensurate with the level of activities",
-      current:"AED " + (qd.opexAED||"412,000") + " p.a. DMCC-based opex",
+      current:"AED " + (qd.opexAED||"—") + " p.a. DMCC-based opex",
       status:"met",
       evidence:["DMCC lease invoice AED 52,000 p.a.","Utilities — DEWA / district cooling","Staff costs (payroll)","Professional fees (audit, legal, CA)"],
       gap:"",
@@ -14560,7 +14782,7 @@ function QFZPModule({ client, reportData }) {
     {
       pillar:"Operating Expenditure",
       requirement:"Adequate opex incurred in the free zone commensurate with level of activities",
-      current:`AED ${qd.opexAED||"412,000"} p.a. ${freezone}-based opex`,
+      current:`AED ${qd.opexAED||"—"} p.a. ${freezone}-based opex`,
       status:"met",
       evidence:["DMCC lease invoice","Utilities (DEWA/district cooling)","Payroll costs","Professional fees"],
       gap:"",
@@ -14568,7 +14790,7 @@ function QFZPModule({ client, reportData }) {
     {
       pillar:"Physical Presence",
       requirement:"Adequate physical assets — office premises in the free zone",
-      current:`${qd.officeSqft||"1,200"} sq ft leased office — ${freezone} — Lease until Dec 2026`,
+      current:`${qd.officeSqft||"—"} sq ft leased office — ${freezone} — Lease until Dec 2026`,
       status:"met",
       evidence:["Lease agreement (valid)","Office floor plan","License showing registered address","Utility bills"],
       gap:"",
@@ -15121,8 +15343,8 @@ function generateRPTPDF({ client, reportData }) {
   const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
  
   // Build Related Party rows from admin data
-  const rptEntities = (reportData?.rptEntities || []).filter(e => e?.name);
-  const cpPersons   = (reportData?.connectedPersonsAdmin || []).filter(p => p?.name);
+  const rptEntities = asList(reportData?.rptEntities).filter(e => e?.name);
+  const cpPersons   = asList(reportData?.connectedPersonsAdmin).filter(p => p?.name);
  
   const rptRows = rptEntities.length ? rptEntities.map((e,i) => {
     const compliant = e.compliant === "yes";
@@ -15330,7 +15552,7 @@ tr.total td { background:#F0FDF4; font-weight:800; color:#065f46; }
     <div class="kpi-card"><div class="val" style="color:#00732F">5%</div><div class="lbl">Standard VAT Rate</div></div>
   </div>
  
-  <div class="alert">⏰ <strong>Payment Deadline: ${deadline}</strong> — AED ${vatPayable.toLocaleString()} must reach FTA by this date. Late payment penalty: AED 1,000 + 2% of unpaid tax per month.</div>
+  <div class="alert">⏰ <strong>Payment Deadline: ${deadline}</strong> — AED ${vatPayable.toLocaleString()} must reach FTA by this date. Late filing and late payment both attract penalties under the UAE Tax Procedures Law.</div>
  
   <div class="garima"><strong>Garima's Note:</strong><br/>${vatNote}</div>
  
@@ -15387,7 +15609,11 @@ function generateQFZPPDF({ client, reportData }) {
   const determined     = qualifyingPct != null && revenue > 0;
   const pc  = (v) => (v == null ? "—" : `${v}%`);
   const sc  = (v) => (v == null ? "—" : `${v}/100`);
-  const effectiveCT    = (qfzpStatus || sbrEligible) ? 0 : 9;
+  // With neither free zone status nor relief assessed, there is no rate to
+  // state. This used to fall through to 9% — a position nobody had taken.
+  const effectiveCT    = (qfzpStatus || sbrEligible) ? 0
+                       : (qfzpStatus === false || sbrEligible === false) ? 9 : null;
+  const ctRate         = effectiveCT == null ? "—" : `${effectiveCT}%`;
   const qualIncome     = Math.round(accountingProfit * (qualifyingPct || 0) / 100);
   const nonQualIncome  = accountingProfit - qualIncome;
   const ctPayable      = qfzpStatus ? 0 : Math.round(nonQualIncome * 0.09);
@@ -15445,16 +15671,16 @@ tr.less-row td { color:#059669; }
   <div class="sub">${company} · ${freezone} · CT TRN: ${trnCT}</div>
   <div class="meta">
     <div class="meta-item"><label>CT Return Due</label>${ctDue} 2026</div>
-    <div class="meta-item"><label>Effective CT Rate</label>${effectiveCT}%</div>
+    <div class="meta-item"><label>Effective CT Rate</label>${ctRate}</div>
     <div class="meta-item"><label>QFZP Score</label>${sc(qfzpScore)}</div>
-    <div class="meta-item"><label>SBR Eligible</label>${sbrEligible?"✅ Yes":"❌ No"}</div>
+    <div class="meta-item"><label>SBR Eligible</label>${sbrEligible==null?"Not assessed":sbrEligible?"✅ Yes":"❌ No"}</div>
     <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
     <div class="meta-item"><label>Date</label>${now}</div>
   </div>
 </div>
 <div class="page">
   <div class="kpi-row">
-    <div class="kpi-card"><div class="val" style="color:#059669">${effectiveCT}%</div><div class="lbl">Effective CT Rate</div></div>
+    <div class="kpi-card"><div class="val" style="color:#059669">${ctRate}</div><div class="lbl">Effective CT Rate</div></div>
     <div class="kpi-card"><div class="val" style="color:#059669">AED ${ctPayable.toLocaleString()}</div><div class="lbl">CT Payable</div></div>
     <div class="kpi-card"><div class="val" style="color:#7C3AED">${pc(qualifyingPct)}</div><div class="lbl">Qualifying Income</div></div>
     <div class="kpi-card"><div class="val" style="color:${nonQualPct>=5?"#EF4444":"#D97706"}">${nonQualPct}%</div><div class="lbl">Non-Qualifying</div></div>
@@ -15468,10 +15694,12 @@ tr.less-row td { color:#059669; }
     <tbody>${substanceRows}</tbody>
   </table>
  
-  <div class="sbr-box" style="background:${sbrEligible?"#F0FDF4":"#FEF2F2"};border:1px solid ${sbrEligible?"#86EFAC":"#FCA5A5"}">
+  ${sbrEligible == null ? `<div class="sbr-box" style="background:#F9FAFB;border:1px solid #E5E7EB">
+    <strong style="color:#374151">Small Business Relief — not yet assessed</strong><br/>
+    Eligibility turns on revenue for the tax period, which has not been reviewed yet.</div>`
+  : `<div class="sbr-box" style="background:${sbrEligible?"#F0FDF4":"#FEF2F2"};border:1px solid ${sbrEligible?"#86EFAC":"#FCA5A5"}">
     <strong style="color:${sbrEligible?"#15803D":"#991B1B"}">${sbrEligible?"✅ Small Business Relief (SBR) — Eligible":"❌ SBR — Not Eligible"}</strong><br/>
-    ${sbrEligible?("Revenue AED " + revenue.toLocaleString() + " is below the AED 3,000,000 SBR threshold. Elect SBR in CT Return by " + ctDue + " 2026."):("Revenue AED " + revenue.toLocaleString() + " exceeds the AED 3,000,000 SBR threshold.")}
-  </div>
+    ${sbrEligible?("Revenue AED " + revenue.toLocaleString() + " is within the AED 3,000,000 SBR threshold. The election is made in the corporate tax return."):("Revenue AED " + revenue.toLocaleString() + " exceeds the AED 3,000,000 SBR threshold.")}</div>`}
  
   <div class="section-title" style="margin-top:20px">CT Taxable Income Computation</div>
   <table>
@@ -15509,7 +15737,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
   const now       = new Date().toLocaleDateString("en-IN", { day:"numeric", month:"long", year:"numeric" });
  
   // KPI cards — 2 per row grid
-  const kpiCards  = (kpis || []).map(k => {
+  const kpiCards  = asList(kpis).map(k => {
     const isUp = k.trend === "up";
     return `<div style="background:#f8faff;border:1px solid #e0e7ff;border-radius:10px;padding:16px 18px;break-inside:avoid">
       <div style="font-size:10px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px">${k.label}</div>
@@ -15531,7 +15759,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
       <td style="padding:10px 14px;font-size:12px;color:#6B7280;font-family:monospace;border-bottom:1px solid #F3F4F6">${plData[k].prev || "—"}</td>
     </tr>`).join("");
  
-  const pendingActions = (actions || []).filter(a => !a.done);
+  const pendingActions = asList(actions).filter(a => !a.done);
   const actionRows = pendingActions.map(a => {
     const col = a.priority==="High"?"#EF4444":a.priority==="Medium"?"#D97706":"#059669";
     const bg  = a.priority==="High"?"#FEF2F2":a.priority==="Medium"?"#FFFBEB":"#ECFDF5";
@@ -15543,7 +15771,7 @@ function generateReportPDF({ client, kpis, garimaNote, reportData, actions }) {
     </tr>`;
   }).join("");
  
-  const variance  = (reportData?.variance || []).filter(r => r.item && (r.budget || r.actual));
+  const variance  = asList(reportData?.variance).filter(r => r.item && (r.budget || r.actual));
   const varianceRows = variance.map((r,i) => `
     <tr style="background:${i%2===0?"#fff":"#f9fafb"}">
       <td style="padding:10px 14px;font-size:12px;color:#374151;border-bottom:1px solid #F3F4F6">${r.item}</td>
@@ -15809,20 +16037,22 @@ function UAECFOReport({ client, reportData, kpis }) {
           {/* FIXED: Future-only. No historical revenue/GM/AR (those are in Dashboard/Working Capital) */}
           {tab === "cashflow" && (
             <div style={{ display:"flex", flexDirection:"column", gap:16, padding:20 }}>
-              {/* Garima Note — prominent at top */}
+              {/* Hers, or nothing. A generic paragraph used to sit here under "Note from Garima". */}
+              {reportData?.cashflowGarimaNote && (
               <Card style={{ borderLeft:`4px solid #00732F` }}>
                 <div style={{ fontSize:11, fontWeight:700, color:"#00732F", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
-                <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:0 }}>
-                  {reportData?.cashflowGarimaNote || "Cash flow forecast for the next 3–6 months. This section covers projected cash inflows, outflows, and ending balance only. For historical cash performance, see the Full Dashboard."}
+                <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:0, whiteSpace:"pre-wrap" }}>
+                  {reportData.cashflowGarimaNote}
                 </p>
               </Card>
+              )}
  
               {/* Forecast KPIs — future only, styled like Related Party report */}
               <div style={{ display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:20 }}>
                 {[
-                  { label:"Projected Cash — End of Quarter", value:reportData?.projectedCash    || reportData?.treasury?.totalCash || "AED 580K", color:C.teal,   icon:"ti-cash",          drill:drillFor("cash balance") },
-                  { label:"VAT Reserve Required",            value:reportData?.vatReserve       || "AED 92.5K",                                   color:C.amber,  icon:"ti-receipt",       drill:drillFor("vat") },
-                  { label:"Net Cash After Obligations",      value:reportData?.netCashAfterObl  || "AED 487K",                                    color:C.green,  icon:"ti-circle-check",  drill:drillFor("cash flow") },
+                  { label:"Projected Cash — End of Quarter", value:reportData?.projectedCash    || reportData?.treasury?.totalCash || "—", color:C.teal,   icon:"ti-cash",          drill:drillFor("cash balance") },
+                  { label:"VAT Reserve Required",            value:reportData?.vatReserve       || "—",                                   color:C.amber,  icon:"ti-receipt",       drill:drillFor("vat") },
+                  { label:"Net Cash After Obligations",      value:reportData?.netCashAfterObl  || "—",                                    color:C.green,  icon:"ti-circle-check",  drill:drillFor("cash flow") },
                 ].map((s,i) => (
                   <Card key={i} style={{ padding:18, cursor:s.drill?"pointer":"default" }}
                     onClick={s.drill ? () => openDrill(s.drill) : undefined}
@@ -15854,14 +16084,31 @@ function UAECFOReport({ client, reportData, kpis }) {
                       textAlign:i===0?"left":"right" }}>{h}</div>
                   ))}
                 </div>
-                {[
+                {/* A six-month projection with an opening balance of AED 620K and a VAT
+                    payment of 92.5K in the first month used to be written here for every
+                    client. It is read from the report now; demo clients keep the sample. */}
+                {(asList(reportData?.cashProjection).length ? asList(reportData.cashProjection)
+                  : client?.isDemo ? [
                   { label:"Opening Balance",     values:["620K","587K","561K","598K","642K","705K"], type:"neutral" },
                   { label:"+ Expected Inflows",  values:["185K","190K","210K","195K","220K","215K"], type:"in"      },
                   { label:"− VAT Payment",        values:["92.5K","—","—","88K","—","—"],            type:"out"     },
                   { label:"− Operating Costs",    values:["125K","125K","125K","125K","125K","125K"], type:"out"     },
                   { label:"− Other Obligations",  values:["—","91K","48K","26K","32K","—"],           type:"out"     },
                   { label:"= Closing Balance",   values:["587K","561K","598K","554K","705K","795K"], type:"total"   },
-                ].map((r,i) => (
+] : []).length === 0 && (
+                  <div style={{ padding:"18px 16px", fontFamily:F, fontSize:13, color:C.muted }}>
+                    The six-month projection appears here once it has been prepared.
+                  </div>
+                )}
+                {(asList(reportData?.cashProjection).length ? asList(reportData.cashProjection)
+                  : client?.isDemo ? [
+                  { label:"Opening Balance",     values:["620K","587K","561K","598K","642K","705K"], type:"neutral" },
+                  { label:"+ Expected Inflows",  values:["185K","190K","210K","195K","220K","215K"], type:"in"      },
+                  { label:"− VAT Payment",        values:["92.5K","—","—","88K","—","—"],            type:"out"     },
+                  { label:"− Operating Costs",    values:["125K","125K","125K","125K","125K","125K"], type:"out"     },
+                  { label:"− Other Obligations",  values:["—","91K","48K","26K","32K","—"],           type:"out"     },
+                  { label:"= Closing Balance",   values:["587K","561K","598K","554K","705K","795K"], type:"total"   },
+] : []).map((r,i) => (
                   <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr 1fr 1fr 1fr",
                     padding:"9px 16px",
                     background:r.type==="total"?"#ECFDF5":r.type==="in"?"#F0FDF4":i%2===0?"white":"#FAFAFA",
@@ -15884,18 +16131,22 @@ function UAECFOReport({ client, reportData, kpis }) {
                 ))}
               </Card>
  
-              {/* What-If Scenarios */}
+              {/* What-If Scenarios — named counterparties and amounts used to be written
+                  here for every client ("Al Manara Group pays AED 87.5K"). Shown only when
+                  scenarios have been prepared, or for a demo client. */}
+              {(asList(reportData?.cashScenarios).length > 0 || client?.isDemo) && (
               <Card>
                 <div style={{ fontFamily:F, fontWeight:700, fontSize:14, color:C.text, letterSpacing:"-0.02em", marginBottom:14 }}>
                   What-If Scenarios
                 </div>
                 <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
-                  {[
+                  {(asList(reportData?.cashScenarios).length ? asList(reportData.cashScenarios)
+                    : [
                     { scenario:"Al Manara Group pays AED 87.5K this month",          impact:"Cash improves to AED 675K by month-end", color:C.green, tag:"Upside" },
                     { scenario:"VAT return delayed — penalty AED 1K + 2%/month",      impact:"Cash position reduces by ~AED 12.7K over 3 months", color:C.amber, tag:"Risk" },
                     { scenario:"Mainland contracts restructured — non-qualifying drops below 5%", impact:"QFZP status secured, no CT exposure", color:C.blue, tag:"Action" },
                     { scenario:"Two new client contracts close in M+2",               impact:"Inflows increase AED 180K — closing balance AED 741K",  color:C.green, tag:"Upside" },
-                  ].map((s,i) => (
+]).map((s,i) => (
                     <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:12,
                       padding:"11px 14px", borderRadius:16,
                       background:s.color===C.green?"#F0FDF4":s.color===C.amber?"#FFFBEB":"#EFF6FF",
@@ -15912,7 +16163,8 @@ function UAECFOReport({ client, reportData, kpis }) {
                   ))}
                 </div>
               </Card>
- 
+              )}
+
               {/* Download */}
               <div style={{ display:"flex", gap:10 }}>
                 <button onClick={() => { const html = generateVATPDF({client,reportData}); const w=window.open("","_blank"); w.document.write(html); w.document.close(); setTimeout(()=>w.print(),600); }}
@@ -16514,9 +16766,12 @@ function Portal({ client, onLogout }) {
   // Build merged KPI array — live data + prev values from report_data
   const resolvedKpis = buildKpiTiles({ client, isDemo, liveKpis, liveReportData });
  
-  const resolvedActions = isUAE(client)
-    ? ACTIONS_BY_PACK.uae
-    : (!isDemo && liveActions) ? liveActions : (ACTIONS_BY_PACK[client?.client_pack||"startup"] || ACTIONS);
+  // Every UAE client used to be shown the sample UAE action list — real or
+  // demo — so actions published for a UAE client never reached them. Real
+  // clients see their own actions, or none.
+  const resolvedActions = isDemo
+    ? (isUAE(client) ? ACTIONS_BY_PACK.uae : (ACTIONS_BY_PACK[client?.client_pack||"startup"] || ACTIONS))
+    : asList(liveActions);
   const resolvedEngagement = (!isDemo && liveEngagement) ? liveEngagement : null;
   const DEMO_REPORT_DATA = {
     monthLabel: "March 2026",
@@ -16792,7 +17047,7 @@ function Portal({ client, onLogout }) {
               // UAE VAT due
               if (isUAE(client) && liveReportData?.vat?.pendingReturns) {
                 const today = new Date();
-                (liveReportData.vat.pendingReturns || []).forEach(r => {
+                asList(liveReportData.vat.pendingReturns).forEach(r => {
                   if ((r.status === "Due" || r.status === "Overdue") && r.due) {
                     const days = Math.ceil((new Date(r.due) - today) / 86400000);
                     if (days <= 14)
@@ -16878,7 +17133,7 @@ function AIChatbot({ client, reportData, kpis }) {
       uae ? `Region: UAE | Freezone: ${reportData?.uaeProfile?.freezone || "DMCC"}` : `Region: India`,
       reportData?.monthLabel ? `Reporting Period: ${reportData.monthLabel}` : "",
       // KPIs
-      (kpis||[]).length ? `KPIs: ${(kpis||[]).map(k=>`${k.label}=${k.value}`).join(", ")}` : "",
+      asList(kpis).length ? `KPIs: ${asList(kpis).map(k=>`${k.label}=${k.value}`).join(", ")}` : "",
       // P&L
       pl.revenue?.actual   ? `Revenue: ${pl.revenue.actual} (prev: ${pl.revenue.prev||"—"})` : "",
       pl.grossProfit?.actual ? `Gross Profit: ${pl.grossProfit.actual} | GP Margin: ${pl.gpMargin?.actual||"—"}` : "",
@@ -16895,8 +17150,8 @@ function AIChatbot({ client, reportData, kpis }) {
       // Garima's note (summarised)
       reportData?.garimaNote ? `Advisor note summary: ${String(reportData.garimaNote).slice(0,300)}` : "",
       // Pending actions
-      (reportData?.actions||[]).filter(a=>!a.done).length
-        ? `Pending actions: ${(reportData.actions||[]).filter(a=>!a.done).map(a=>a.text||a.title).slice(0,5).join("; ")}` : "",
+      asList(reportData?.actions).filter(a=>!a.done).length
+        ? `Pending actions: ${asList(reportData.actions).filter(a=>!a.done).map(a=>a.text||a.title).slice(0,5).join("; ")}` : "",
     ].filter(Boolean).join("\n");
 
     const systemPrompt = uae
@@ -17862,7 +18117,7 @@ function parseTxnLines(txt) {
   });
 }
 function txnLinesToText(txns) {
-  return (txns || []).map(t => [t.id, t.date, t.desc, t.amount, t.status].filter((_,i)=>i<5).join(" | ")).join("\n");
+  return asList(txns).map(t => [t.id, t.date, t.desc, t.amount, t.status].filter((_,i)=>i<5).join(" | ")).join("\n");
 }
 
 // Generic breakup-row editor: name / amount / sub-label / optional txns textarea
@@ -17897,10 +18152,10 @@ function DrillRowsEditor({ rows, onChange, nameLabel="Name", fixedNames=null }) 
           </div>
           <textarea
             defaultValue={txnLinesToText(r.txns)}
-            key={`tx-${i}-${(r.txns||[]).length}`}
+            key={`tx-${i}-${asList(r.txns).length}`}
             onBlur={e => update(i, { txns: parseTxnLines(e.target.value) })}
             placeholder={"Invoices (optional, one per line):  INV-101 | 12 Jul 2026 | Description | ₹4.2L | paid/unpaid/overdue"}
-            rows={Math.max(1, (r.txns||[]).length)}
+            rows={Math.max(1, asList(r.txns).length)}
             style={{ width:"100%", boxSizing:"border-box", marginTop:4, padding:"6px 8px", borderRadius:8,
               fontSize:11, border:`1px dashed ${C.border}`, fontFamily:FM, color:C.muted,
               background:C.bg2, outline:"none", resize:"vertical" }}/>
@@ -18146,7 +18401,7 @@ function TrialBalanceTab({ client, reportData, setReportData, saveReportData, lo
         if (j.reason === "not_connected") {
           const cr = await fetch(`/api/zoho?action=connections&adminEmail=${encodeURIComponent(adminEmail || "")}`)
             .then(x => x.json()).catch(() => null);
-          if (cr?.ok) elsewhere = (cr.connections || []).filter(c => c.clientId !== client.id);
+          if (cr?.ok) elsewhere = asList(cr.connections).filter(c => c.clientId !== client.id);
         }
         setZohoInfo({ elsewhere, error: {
           not_connected:        "This client has no Zoho Books connection. Connect it from the Connections tab.",
@@ -18576,7 +18831,7 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
       const v = getPath(src, s.path ? `${s.path}.${f.key}` : f.key);
       return v != null && v !== "";
     });
-    if (s.target === "actions") return (actions || []).length > 0;
+    if (s.target === "actions") return asList(actions).length > 0;
     const v = getPath(reportData, s.path);
     return Array.isArray(v) ? v.length > 0 : v && typeof v === "object" && Object.keys(v).length > 0;
   }).length;
@@ -18702,8 +18957,8 @@ function AnalysisTemplates({ client, reportData, setReportData, saveReportData, 
                     <td style={{ padding:"7px 10px", color:C.muted,
                       borderBottom:`1px solid ${C.border}` }}>
                       {res.viaFeed
-                        ? (s.items || []).map(x => x.label).slice(0, 4).join(", ") +
-                          ((s.items || []).length > 4 ? ` and ${s.items.length - 4} more` : "")
+                        ? asList(s.items).map(x => x.label).slice(0, 4).join(", ") +
+                          (asList(s.items).length > 4 ? ` and ${s.items.length - 4} more` : "")
                         : s.screen}
                     </td>
                     <td style={{ padding:"7px 10px", textAlign:"right", whiteSpace:"nowrap",
@@ -20005,14 +20260,14 @@ function AdminPanel({ admin, onLogout }) {
       supabase.from("invoices").select("*").neq("status","Paid"),
     ]);
     const sm = {};
-    (kpiMeta||[]).forEach(r => { if (!sm[r.client_id]) sm[r.client_id]={}; sm[r.client_id].kpiAt=r.updated_at; });
-    (rdMeta||[]).forEach(r  => { if (!sm[r.client_id]) sm[r.client_id]={}; sm[r.client_id].rdAt=r.updated_at; });
+    asList(kpiMeta).forEach(r => { if (!sm[r.client_id]) sm[r.client_id]={}; sm[r.client_id].kpiAt=r.updated_at; });
+    asList(rdMeta).forEach(r  => { if (!sm[r.client_id]) sm[r.client_id]={}; sm[r.client_id].rdAt=r.updated_at; });
     setStaleness(sm);
     const today = new Date(); today.setHours(0,0,0,0);
     setDashStats({
       highPriority: allActs||[],
-      overdueInvoices: (allInvs||[]).filter(i => i.due_date && new Date(i.due_date)<today),
-      pendingRequests: (allReqs||[]).filter(r => !r.resolved).length,
+      overdueInvoices: asList(allInvs).filter(i => i.due_date && new Date(i.due_date)<today),
+      pendingRequests: asList(allReqs).filter(r => !r.resolved).length,
     });
   };
  
@@ -22133,7 +22388,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                         </tr>
                       </thead>
                       <tbody>
-                        {(reportData.variance || []).map((row, i) => {
+                        {asList(reportData.variance).map((row, i) => {
                           const bv = parseFloat(row.budget), av = parseFloat(row.actual);
                           const varNum = (!row.noCalc && !isNaN(bv) && !isNaN(av)) ? (av-bv).toFixed(1) : "—";
                           const varPct = (!row.noCalc && !isNaN(bv) && !isNaN(av) && bv!==0)
@@ -22177,7 +22432,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                     <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:14 }}>
                       <span style={{display:"flex",alignItems:"center",gap:8}}><i className="ti ti-notes" style={{fontSize:15,color:C.blue}}/>Variance Commentary — 3 key points shown in client report</span>
                     </div>
-                    {(reportData.varianceCommentary || []).map((row, i) => (
+                    {asList(reportData.varianceCommentary).map((row, i) => (
                       <div key={i} style={{ display:"grid", gridTemplateColumns:"20px 1fr 2fr 38px", gap:10, marginBottom:12, alignItems:"flex-start" }}>
                         <div style={{ fontFamily:F, fontSize:13, color:C.muted, fontWeight:700, paddingTop:24 }}>{i+1}.</div>
                         <div>
@@ -22299,7 +22554,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                         </tr>
                       </thead>
                       <tbody>
-                        {(reportData.cashflow || []).map((row, i) => (
+                        {asList(reportData.cashflow).map((row, i) => (
                           <tr key={i} style={{ borderBottom:`1px solid ${C.border}` }}>
                             <td style={{ padding:"8px 10px", fontFamily:FM, fontSize:18, fontWeight:600, color:C.text, width:80 }}>{row.month}</td>
                             <td style={{ padding:"6px 10px" }}>
@@ -22332,7 +22587,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <AdminInput C={C} F={F} FM={FM} label="Overall Score (0-100)" val={reportData.score || ""}
                     onChange={v => setReportData(r=>({...r,score:v}))} placeholder="e.g. 72" mono/>
                   <div style={{ fontFamily:F, fontWeight:700, fontSize:13, color:C.text, marginBottom:10, marginTop:4 }}>Score Breakdown</div>
-                  {(reportData.scoreBreakdown || []).map((item, i) => (
+                  {asList(reportData.scoreBreakdown).map((item, i) => (
                     <div key={i} style={{ marginBottom:12, padding:"12px 14px", borderRadius:12, background:C.bg, border:`1px solid ${C.border}` }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{item.label}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 2fr", gap:10 }}>
@@ -22698,7 +22953,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Investor metrics / working capital ratios shown in the client's pack.
                   </p>
-                  {(reportData.metrics || []).map((m, i) => (
+                  {asList(reportData.metrics).map((m, i) => (
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"140px 1fr 1fr auto", gap:8,
                       alignItems:"center", marginBottom:8, padding:"8px 12px", borderRadius:16,
                       background:C.bg, border:`1px solid ${C.border}` }}>
@@ -22729,7 +22984,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Tick items as the client completes/provides them. Shown on their report page.
                   </p>
-                  {(reportData.checklist || []).map((item, i) => (
+                  {asList(reportData.checklist).map((item, i) => (
                     <div key={i} onClick={() => {
                       const cl=[...reportData.checklist]; cl[i]={...cl[i],done:!cl[i].done};
                       setReportData(r=>({...r,checklist:cl}));
@@ -22754,7 +23009,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Shown in the market benchmarks table on the client's dashboard.
                   </p>
-                  {(reportData.benchmarks || []).map((b, i) => (
+                  {asList(reportData.benchmarks).map((b, i) => (
                     <div key={i} style={{ marginBottom:10, padding:"10px 14px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
                       <div style={{ fontFamily:F, fontSize:12, fontWeight:700, color:C.text, marginBottom:8 }}>{b.metric}</div>
                       <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr auto", gap:8 }}>
@@ -24557,7 +24812,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Each row = one bank account or FD shown on the client's Treasury page.
                   </p>
-                  {(reportData.treasury?.cashPositions || []).map((p,i) => (
+                  {asList(reportData.treasury?.cashPositions).map((p,i) => (
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr auto", gap:8,
                       marginBottom:10, padding:"10px 12px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
                       <InlineInput value={p.bank} placeholder="Bank / FD name"
@@ -24587,7 +24842,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Shown on the Maturity Schedule tab. Enter maturing FDs and recommended action.
                   </p>
-                  {(reportData.treasury?.maturitySchedule || []).map((m,i) => (
+                  {asList(reportData.treasury?.maturitySchedule).map((m,i) => (
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:8,
                       marginBottom:10, padding:"10px 12px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}` }}>
                       <InlineInput value={m.item} placeholder="FD / instrument name"
@@ -24612,7 +24867,7 @@ Respond ONLY with a valid JSON object (no markdown, no backticks):
                   <p style={{ fontFamily:F, fontSize:12, color:C.muted, marginBottom:16, lineHeight:1.6 }}>
                     Shown on the client's Recommendations tab. Write specific, actionable advice.
                   </p>
-                  {(reportData.treasury?.recommendations || []).map((r,i) => (
+                  {asList(reportData.treasury?.recommendations).map((r,i) => (
                     <div key={i} style={{ display:"grid", gridTemplateColumns:"auto 1fr", gap:10,
                       marginBottom:10, padding:"10px 12px", borderRadius:16, background:C.bg, border:`1px solid ${C.border}`, alignItems:"center" }}>
                       <AdminSelect C={C} F={F} label="" val={r.priority||"Medium"}
