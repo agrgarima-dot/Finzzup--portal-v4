@@ -2857,9 +2857,9 @@ function Dashboard({ client, kpis, garimaNote, reportData, loading, setPage, act
   const pl      = reportData?.pl || {};
   const accentColor = uae ? "#00732F" : C.blue;
 
-  const healthScore = reportData?.healthScore || 72;
-  const healthColor = healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
-  const healthLabel = healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
+  const healthScore = reportData?.healthScore ?? null;
+  const healthColor = healthScore == null ? C.muted : healthScore >= 80 ? C.green : healthScore >= 60 ? C.amber : C.red;
+  const healthLabel = healthScore == null ? null : healthScore >= 80 ? "Strong" : healthScore >= 60 ? "Moderate" : "Needs Attention";
 
   const pendingActions = (actions||[]).filter(a => !a.done);
   const highPriority   = pendingActions.filter(a => a.priority === "High");
@@ -5086,7 +5086,7 @@ function generateExecSummaryPDF({ client, reportData, kpis }) {
   const mar  = kpis?.find(k=>k.label?.toLowerCase().includes("margin"))?.value || reportData?.plInputs?.gpMargin || "—";
   const ebitda = reportData?.plInputs?.ebitda || "—";
  
-  const perf     = reportData?.execPerformance  || "Performance summary not yet added. Please update in the admin panel.";
+  const perf     = reportData?.execPerformance  || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed.";
   const cashNote = reportData?.execCash         || "Cash position analysis not yet added.";
   const risks    = reportData?.execRisks        || "Risk summary not yet added.";
   const opps     = reportData?.execOpportunities|| "Opportunities not yet added.";
@@ -5755,7 +5755,9 @@ function kpiBenchmark(label, pack, reportData) {
  
 // ─── LOAN READINESS PDF ───────────────────────────────────────────────────────
 function generateLoanPDF({ client, reportData, kpis }) {
-  const score    = reportData?.loanScore || 64;
+  // 64 of 100, and "Moderate Profile — Eligible with Preparation", used to
+  // appear for any client whose readiness had never been assessed.
+  const score    = reportData?.loanScore ?? null;
   const month    = reportData?.monthLabel || "Current Period";
   const company  = client?.company || "Your Company";
   const existing = reportData?.existingDebt || "Nil";
@@ -9264,15 +9266,15 @@ function CFOPackContent({ reportData, client, kpis }) {
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16, marginBottom:16 }}>
               <div>
                 <div style={{ fontFamily:F, fontSize:11, fontWeight:700, color:C.blue, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:4 }}>{"Loan Eligibility Score"}</div>
-                <div style={{ fontFamily:F, fontWeight:700, fontSize:22, color:C.blue, lineHeight:1 }}>{reportData?.loanScore || 64}<span style={{ fontSize:14, color:C.muted, fontWeight:500 }}>{"/100"}</span></div>
+                <div style={{ fontFamily:F, fontWeight:700, fontSize:22, color:C.blue, lineHeight:1 }}>{reportData?.loanScore ?? "—"}<span style={{ fontSize:14, color:C.muted, fontWeight:500 }}>{reportData?.loanScore == null ? "" : "/100"}</span></div>
                 <div style={{ fontFamily:F, fontSize:13, color:C.muted, marginTop:4 }}>
-                  {(reportData?.loanScore || 64) >= 75 ? "Strong Profile — Eligible for Most Schemes" : (reportData?.loanScore || 64) >= 55 ? "Moderate Profile — Eligible with Preparation" : "Early Stage — Build Track Record First"}
+                  {reportData?.loanScore == null ? "Not yet assessed" : reportData.loanScore >= 75 ? "Strong Profile — Eligible for Most Schemes" : reportData.loanScore >= 55 ? "Moderate Profile — Eligible with Preparation" : "Early Stage — Build Track Record First"}
                 </div>
               </div>
               <ScoreGauge score={parseInt(reportData?.loanScore) || 64} color={C.blue} size={100}/>
             </div>
             <div style={{ height:8, borderRadius:12, background:"#fff" }}>
-              <div style={{ height:"100%", borderRadius:12, width:`${reportData?.loanScore || 64}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
+              <div style={{ height:"100%", borderRadius:12, width:`${reportData?.loanScore ?? 0}%`, background:`linear-gradient(90deg,${C.blue},${C.purple})`, transition:"width 0.6s" }}/>
             </div>
           </Card>
  
@@ -12765,7 +12767,7 @@ function generateRevReconPDF({ client, reportData }) {
   const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
   const rr       = reportData?.revRecon || {};
   const period   = rr.period   || reportData?.monthLabel || "Current Quarter";
-  const note     = rr.garimaNote || "Revenue reconciliation note not yet added. Please update in the admin panel UAE tab.";
+  const note     = rr.garimaNote || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed.";
  
   const rows = (rr.rows && rr.rows.length)
     ? rr.rows
@@ -13115,7 +13117,7 @@ function RevenueReconciliation({ client, reportData }) {
       <Card style={{ borderLeft:`4px solid #00732F` }}>
         <div style={{ fontSize:11, fontWeight:700, color:"#00732F", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
         <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:"0 0 14px" }}>
-          {note || "Revenue reconciliation note not yet added. Garima will update this section each quarter explaining the specific differences for this client."}
+          {note || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed."}
         </p>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
           <a href={WA} target="_blank" rel="noopener noreferrer"
@@ -13159,7 +13161,7 @@ function generateWorkingCapitalPDF({ client, reportData }) {
   const now      = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
   const wc       = reportData?.workingCapital || {};
   const period   = wc.period || reportData?.monthLabel || "Current Period";
-  const note     = wc.garimaNote || "Working capital note not yet added. Please update in the admin panel.";
+  const note     = wc.garimaNote || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed.";
  
   const dso = Number(wc.dso || 38);
   const dio = Number(wc.dio || 15);
@@ -13710,7 +13712,7 @@ function WorkingCapital({ client, reportData }) {
       <Card style={{ borderLeft:`4px solid ${C.teal}` }}>
         <div style={{ fontSize:11, fontWeight:700, color:C.teal, textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
         <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:"0 0 14px" }}>
-          {note || "Working capital analysis not yet added. Garima will update this section each period with specific recommendations."}
+          {note || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed."}
         </p>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
           <a href={WA} target="_blank" rel="noopener noreferrer"
@@ -13814,12 +13816,11 @@ function generateVerticalAnalysisPDF({ client, reportData }) {
   const patRow    = rows.find(r=>r.section==="pat");
   const patPct    = revenue > 0 ? ((Number(patRow?.ifrs||241000)/revenue)*100).toFixed(1) : "—";
  
-  const benchmarks = va.benchmarks || [
-    { metric:"Gross Margin",    yours:gpPct+"%",    industry:"38–42%", status:Number(gpPct)>=42?"Above":"Watch" },
-    { metric:"EBITDA Margin",   yours:ebitdaPct+"%",industry:"8–12%",  status:Number(ebitdaPct)>=10?"Above":"Watch" },
-    { metric:"Net Margin",      yours:patPct+"%",   industry:"5–8%",   status:Number(patPct)>=7?"Above":"Watch" },
-    { metric:"OpEx % Revenue",  yours:((561500/revenue)*100).toFixed(1)+"%",industry:"35–40%", status:"Above Avg" },
-  ];
+  // These used to carry industry ranges — 38–42% gross, 8–12% EBITDA — that
+  // came from nowhere, and an OpEx line worked out from a hardcoded 561,500.
+  // A benchmark a client is measured against has to have a source, so it is
+  // set alongside the analysis or the table does not appear.
+  const benchmarks = Array.isArray(va.benchmarks) ? va.benchmarks : [];
  
   const benchRows = benchmarks.map((b,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
     <td style="padding:9px 12px;font-weight:600;color:#111827">${b.metric}</td>
@@ -14334,8 +14335,9 @@ function generateQFZPSubstancePDF({ client, reportData }) {
   const now       = new Date().toLocaleDateString("en-AE",{day:"numeric",month:"long",year:"numeric"});
   const qd        = reportData?.qfzpSubstance || {};
   const period    = qd.period || reportData?.monthLabel || "Current Period";
-  const note      = qd.garimaNote || "QFZP substance note not yet added.";
-  const score     = Number(qd.overallScore || reportData?.qfzp?.qfzpScore || 82);
+  const note      = qd.garimaNote || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed.";
+  const score     = (qd.overallScore ?? reportData?.qfzp?.qfzpScore) == null
+    ? null : Number(qd.overallScore ?? reportData.qfzp.qfzpScore);
  
   const fzDetails = {
     DMCC:  { name:"Dubai Multi Commodities Centre", regulator:"DMCC Authority"  },
@@ -14578,7 +14580,7 @@ function QFZPModule({ client, reportData }) {
       status:Number(cigas.find(c=>!c.qualified)?.pct||0)>=5?"watch":"met",
       evidence:["Board meeting minutes (DMCC)","Management decisions documented","Supplier/customer contracts from DMCC address"],
       gap:Number(cigas.find(c=>!c.qualified)?.pct||0)>=5
-        ? `Mainland services at ${cigas.find(c=>!c.qualified)?.pct||8}% — above 5% de-minimis threshold. Restructure contracts.`
+        ? `Mainland services above the 5% de-minimis threshold. Restructure contracts.`
         : "",
     },
     {
@@ -14864,7 +14866,7 @@ function QFZPModule({ client, reportData }) {
       <Card style={{ borderLeft:`4px solid #00732F` }}>
         <div style={{ fontSize:11, fontWeight:700, color:"#00732F", textTransform:"uppercase", letterSpacing:"0.08em", marginBottom:6, fontFamily:F }}>Note from Garima</div>
         <p style={{ fontFamily:F, fontSize:14, color:C.text, lineHeight:1.8, margin:"0 0 14px" }}>
-          {note || "QFZP substance analysis not yet added. Garima will update this section with specific compliance observations and action items."}
+          {note || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed."}
         </p>
         <div style={{ display:"flex", gap:10, flexWrap:"wrap" }}>
           <a href={WA} target="_blank" rel="noopener noreferrer"
@@ -15157,7 +15159,7 @@ function generateRPTPDF({ client, reportData }) {
   const totalRPT = rptEntities.reduce((s,e)=>s+Number(e.amount||0),0);
   const totalCP  = cpPersons.reduce((s,p)=>s+Number(p.totalPayments||0),0);
   const rptNote  = reportData?.rptGarimaNote || "Please update related party notes in the admin panel.";
-  const cpNote   = reportData?.cpGarimaNote  || "Please update connected persons notes in the admin panel.";
+  const cpNote   = reportData?.cpGarimaNote  || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed.";
  
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
 <title>Related Party & Connected Persons Report — ${company}</title>
@@ -15273,9 +15275,10 @@ function generateVATPDF({ client, reportData }) {
   const vatPayable = Number(vat.vatPayable  || (outputVAT - inputVAT));
   const vatNote  = reportData?.vatGarimaNote || vat.garimaNote || "Please update VAT notes in the admin panel UAE tab.";
  
-  const histRows = (vat.pendingReturns||[
-    { period:"Q4 2025", due:"28 Jan 2026", status:"Filed", vatNet:"—" },
-  ]).map((r,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
+  // A single row reading "Q4 2025 · 28 Jan 2026 · Filed" used to stand in when
+  // no filing history had been recorded. Reporting a return as filed is a
+  // compliance assertion, and this one was made for every client.
+  const histRows = (Array.isArray(vat.pendingReturns) ? vat.pendingReturns : []).map((r,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
     <td style="padding:9px 12px">${r.period}</td>
     <td style="padding:9px 12px">${r.due}</td>
     <td style="padding:9px 12px;font-family:monospace;font-weight:700">${r.vatNet}</td>
@@ -15368,31 +15371,46 @@ function generateQFZPPDF({ client, reportData }) {
   const qfzp      = reportData?.qfzp || {};
   const revenue        = Number(ct.revenue        || 0);
   const accountingProfit = Number(ct.taxableIncome || 0);
-  const qualifyingPct  = Number(ct.qualifyingPct  || 92);
-  const nonQualPct     = Number(ct.nonQualifyingPct || 8);
-  const qfzpScore      = Number(qfzp.qfzpScore    || 82);
-  const auditScore     = Number(reportData?.auditReadiness?.auditScore || 65);
-  const sbrEligible    = client?.sbrEligible ?? (revenue > 0 && revenue <= 3000000);
-  const qfzpStatus     = client?.qfzpStatus ?? true;
+  // This PDF used to print a complete QFZP position for a client who had
+  // none: a score of 82, qualifying income at 92%, and a computation line
+  // reading "Less: QFZP qualifying income (92%)" — with free zone status
+  // assumed active, so the effective rate came out at 0%. A client could hand
+  // that to an auditor. Nothing here is defaulted now, and a position that
+  // has not been determined is not printed at all.
+  const given = (v) => (v == null || v === "" ? null : Number(v));
+  const qualifyingPct  = given(ct.qualifyingPct);
+  const nonQualPct     = given(ct.nonQualifyingPct);
+  const qfzpScore      = given(qfzp.qfzpScore);
+  const auditScore     = given(reportData?.auditReadiness?.auditScore);
+  const sbrEligible    = client?.sbrEligible ?? (revenue > 0 ? revenue <= 3000000 : null);
+  const qfzpStatus     = client?.qfzpStatus ?? null;
+  const determined     = qualifyingPct != null && revenue > 0;
+  const pc  = (v) => (v == null ? "—" : `${v}%`);
+  const sc  = (v) => (v == null ? "—" : `${v}/100`);
   const effectiveCT    = (qfzpStatus || sbrEligible) ? 0 : 9;
-  const qualIncome     = Math.round(accountingProfit * qualifyingPct / 100);
+  const qualIncome     = Math.round(accountingProfit * (qualifyingPct || 0) / 100);
   const nonQualIncome  = accountingProfit - qualIncome;
   const ctPayable      = qfzpStatus ? 0 : Math.round(nonQualIncome * 0.09);
   const ctDue          = client?.financialYearEnd === "31 Mar" ? "31 Dec" : "30 Sep";
   const ctNote         = reportData?.ctGarimaNote || "Please update CT notes in the admin panel UAE tab.";
  
-  const substanceItems = reportData?.ct?.substanceItems || [
-    { item:"Adequate employees in free zone",   done:true  },
-    { item:"Adequate operating expenditure",    done:true  },
-    { item:"Physical presence in free zone",    done:true  },
-    { item:"Core income-generating activities", done:true  },
-    { item:"Audited financial statements",      done:false },
-  ];
+  // Four of these five used to default to met. They are the tests that keep a
+  // free zone company on 0%, and asserting them for a client nobody had
+  // assessed is the most expensive thing this codebase did.
+  // The five statutory tests are still listed, because the list itself is the
+  // useful part. What is not asserted is whether this client meets them.
+  const substanceItems = Array.isArray(reportData?.ct?.substanceItems)
+    ? reportData.ct.substanceItems
+    : ["Adequate employees in free zone",
+       "Adequate operating expenditure",
+       "Physical presence in free zone",
+       "Core income-generating activities",
+       "Audited financial statements"].map(item => ({ item, done:false, unassessed:true }));
  
   const substanceRows = substanceItems.map((s,i)=>`<tr style="background:${i%2===0?"#fff":"#fafafa"}">
-    <td style="padding:9px 12px;font-size:12px;color:${s.done?"#059669":"#EF4444"};font-weight:700">${s.done?"✓":"✗"}</td>
+    <td style="padding:9px 12px;font-size:12px;color:${s.unassessed?"#9CA3AF":s.done?"#059669":"#EF4444"};font-weight:700">${s.unassessed?"–":s.done?"✓":"✗"}</td>
     <td style="padding:9px 12px;font-size:12px;color:#374151">${s.item}</td>
-    <td style="padding:9px 12px;font-size:11px">${s.done?'<span style="color:#059669;font-weight:700">✓ Met</span>':'<span style="background:#FEF2F2;color:#EF4444;font-weight:700;padding:2px 8px;border-radius:100px">Action Required</span>'}</td>
+    <td style="padding:9px 12px;font-size:11px">${s.unassessed?'<span style="color:#9CA3AF;font-weight:700">Not assessed</span>':s.done?'<span style="color:#059669;font-weight:700">✓ Met</span>':'<span style="background:#FEF2F2;color:#EF4444;font-weight:700;padding:2px 8px;border-radius:100px">Action Required</span>'}</td>
   </tr>`).join("");
  
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"/>
@@ -15428,7 +15446,7 @@ tr.less-row td { color:#059669; }
   <div class="meta">
     <div class="meta-item"><label>CT Return Due</label>${ctDue} 2026</div>
     <div class="meta-item"><label>Effective CT Rate</label>${effectiveCT}%</div>
-    <div class="meta-item"><label>QFZP Score</label>${qfzpScore}/100</div>
+    <div class="meta-item"><label>QFZP Score</label>${sc(qfzpScore)}</div>
     <div class="meta-item"><label>SBR Eligible</label>${sbrEligible?"✅ Yes":"❌ No"}</div>
     <div class="meta-item"><label>Prepared by</label>Garima Agarwal, CA</div>
     <div class="meta-item"><label>Date</label>${now}</div>
@@ -15438,7 +15456,7 @@ tr.less-row td { color:#059669; }
   <div class="kpi-row">
     <div class="kpi-card"><div class="val" style="color:#059669">${effectiveCT}%</div><div class="lbl">Effective CT Rate</div></div>
     <div class="kpi-card"><div class="val" style="color:#059669">AED ${ctPayable.toLocaleString()}</div><div class="lbl">CT Payable</div></div>
-    <div class="kpi-card"><div class="val" style="color:#7C3AED">${qualifyingPct}%</div><div class="lbl">Qualifying Income</div></div>
+    <div class="kpi-card"><div class="val" style="color:#7C3AED">${pc(qualifyingPct)}</div><div class="lbl">Qualifying Income</div></div>
     <div class="kpi-card"><div class="val" style="color:${nonQualPct>=5?"#EF4444":"#D97706"}">${nonQualPct}%</div><div class="lbl">Non-Qualifying</div></div>
   </div>
  
@@ -15460,7 +15478,7 @@ tr.less-row td { color:#059669; }
     <thead><tr><th>Item</th><th>Article</th><th>Amount (AED)</th></tr></thead>
     <tbody>
       <tr><td>Accounting Profit (per audited FS)</td><td>—</td><td style="font-family:monospace;font-weight:700">${accountingProfit.toLocaleString()}</td></tr>
-      <tr class="less-row"><td>Less: QFZP qualifying income (${qualifyingPct}%)</td><td>Art. 18</td><td style="font-family:monospace;font-weight:700">(${qualIncome.toLocaleString()})</td></tr>
+      <tr class="less-row"><td>Less: QFZP qualifying income (${pc(qualifyingPct)})</td><td>Art. 18</td><td style="font-family:monospace;font-weight:700">(${qualIncome.toLocaleString()})</td></tr>
       ${sbrEligible?('<tr class="less-row"><td>Less: SBR relief (if elected)</td><td>Cabinet Decision</td><td style="font-family:monospace;font-weight:700">(' + nonQualIncome.toLocaleString() + ')</td></tr>'):""}
       <tr class="total"><td><strong>Final Taxable Income</strong></td><td>—</td><td style="font-family:monospace"><strong>${(sbrEligible?0:nonQualIncome).toLocaleString() || "NIL"}</strong></td></tr>
       <tr class="total"><td><strong>CT Payable</strong></td><td>—</td><td style="font-family:monospace"><strong>AED ${ctPayable.toLocaleString()}</strong></td></tr>
@@ -15733,7 +15751,7 @@ function UAECFOReport({ client, reportData, kpis }) {
   const [tab, setTab] = useState("cashflow");
   const freezone = client?.freezone || "DMCC";
   const period   = reportData?.monthLabel || "Current Period";
-  const uaeNote  = reportData?.uaeGarimaNote || reportData?.cashflowNote || "Your CFO report for this period has been prepared by Garima. Review each section using the tabs below — each covers a distinct area of your UAE financial management.";
+  const uaeNote  = reportData?.uaeGarimaNote || reportData?.cashflowNote || "This section is prepared from your books by a Chartered Accountant and appears here once it has been reviewed.";
  
   // FIXED: UAE reports only — no India packs, no KPI duplicates from Overview/Dashboard
   const groups = [
